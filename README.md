@@ -1,8 +1,12 @@
 # power-grid-env
 
+[English](README.en.md)
+
+![Однолинейная схема фидера: источник, линия, повреждённый участок и резервное питание](docs/assets/power-grid-env-banner.jpg)
+
 Платформа инженерной проверки алгоритмов управления распределительной сетью. Первая поставка — квазистационарный несимметричный фидер: импорт, preflight, внешний контроллер, набор сценариев восстановления, сравнение с baseline, отчёт и повтор.
 
-Это не допуск к управлению реальной сетью, не real-time и не полный EMT.
+Симуляция не является допуском к управлению реальной сетью, real-time-режимом или полным EMT.
 
 ## Что проверено и что только реализовано
 
@@ -15,7 +19,7 @@
 - переходные RL/RLC против замкнутых формул;
 - DC-поток, PTDF и линейный WLS на малых схемах.
 
-Реализовано и прогнано сценариями, но не объявлено `validated_for_declared_scope`: восстановление, блокировки, Gymnasium, инструменты LLM, холст VLM, локальный AC OPF. Distance, differential, полный EMT и hardware-in-the-loop не сделаны.
+Реализовано и прогнано сценариями, но не объявлено `validated_for_declared_scope`: восстановление, блокировки, Gymnasium, инструменты LLM, холст VLM, локальный AC OPF. Distance, differential, полный EMT и hardware-in-the-loop остаются за пределами текущей поставки.
 
 Документы требований: [техническое задание](AGENT_IMPLEMENTATION_SPEC_RU.md), [архитектура](IMPLEMENTATION_PLAN_RU.md). При расхождении приоритет у технического задания. Уравнения и допущения: [docs/physics](docs/physics/conventions.md).
 
@@ -44,7 +48,7 @@ power-grid accept
 
 `validate` пишет `reports/validation`. `accept` повторяет приёмку разделов 16–20: чужой DSS, отказ неполного файла, subprocess-контроллеры, suite, HTML, checksums, просмотр, replay, численные проверки, короткий Gymnasium rollout.
 
-Внешний контроллер — отдельный процесс со строками JSON (`initialize`, `reset`, `act`, `close`). Примеры: `examples/controllers`. Subprocess не является песочницей.
+Внешний контроллер — отдельный процесс со строками JSON (`initialize`, `reset`, `act`, `close`). Примеры: `examples/controllers`. Subprocess не изолирует файлы и сеть недоверенного кода.
 
 ## Модель
 
