@@ -2,7 +2,7 @@
 
 [Русский](README.md)
 
-![One-line feeder diagram: source, line, faulted section, and backup supply](docs/assets/power-grid-env-banner.jpg)
+![Industrial substation and plant with a neural-network graph over the equipment](docs/assets/power-grid-env-banner.jpg)
 
 An engineering testbed for distribution-grid control algorithms. The first release is a quasi-static unbalanced feeder: import, preflight, an external controller, a restoration suite, comparison with a baseline, a report, and replay.
 
