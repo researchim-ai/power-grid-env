@@ -1,0 +1,42 @@
+{
+  "source": "cases/acceptance/phase_drop/feeder.dss",
+  "source_sha256": "f27a7c2e4af8bd949e006dcdb850977f6c1776504537e092abece34b869f542b",
+  "format": "dss",
+  "errors": [],
+  "warnings": [],
+  "mappings": [
+    {
+      "from": "Line.sw_head",
+      "to": "switch:sw_head",
+      "kind": "breaker"
+    },
+    {
+      "from": "Line.lateral",
+      "to": "line:lateral",
+      "r1_ohm": 1.2,
+      "x1_ohm": 2.4,
+      "length_m": 1000.0
+    },
+    {
+      "from": "Load.heavy_a",
+      "to": "load:heavy_a",
+      "kw": 1500.0,
+      "kvar": 200.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Vsource.source",
+      "to": "source",
+      "r_ohm": 0.05,
+      "x_ohm": 0.4
+    }
+  ],
+  "approximations": [
+    "Последовательные r1/x1 переведены в диагональную фазную матрицу без взаимоиндукции. Z0 не измерялся и не подставлялся отдельным значением: он совпал с Z1 только из-за нулевой взаимности.",
+    "Line.sw_head: импеданс switch=yes опущен, аппарат топологический"
+  ],
+  "assumptions": [
+    "diagonal_from_positive_sequence"
+  ],
+  "sidecar_sha256": "533d84fc4a13fb99635d75dc3f5048b0ce0339c6dff810f9142cd7a6e9ec8e1d"
+}

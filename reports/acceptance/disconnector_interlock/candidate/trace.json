@@ -1,0 +1,154 @@
+[
+  {
+    "time_s": 60.0,
+    "dt_s": 60.0,
+    "action": {
+      "kind": "switch",
+      "equipment_id": "knife",
+      "command": "open"
+    },
+    "acceptance": {
+      "accepted": false,
+      "reason": "disconnector_cannot_interrupt",
+      "interlock": true,
+      "origin": "controller",
+      "time_s": 0.0
+    },
+    "origin": "controller",
+    "solve_status": "converged",
+    "observation": {
+      "schema_version": "power-grid-env.observation/v1",
+      "time_s": 60.0,
+      "source": "observation",
+      "switches": [
+        {
+          "id": "knife",
+          "kind": "disconnector",
+          "closed": true,
+          "operable": true,
+          "locked": false,
+          "tagged_for_maintenance": false
+        }
+      ],
+      "voltages": [
+        {
+          "meter_id": "meter_n2",
+          "node_id": "n2",
+          "phase": "A",
+          "v_pu": 0.999886918651414,
+          "angle_rad": -0.00022257963532747803,
+          "available_s": 0.0
+        },
+        {
+          "meter_id": "meter_n2",
+          "node_id": "n2",
+          "phase": "B",
+          "v_pu": 0.9998869186514153,
+          "angle_rad": -2.094617682141197,
+          "available_s": 0.0
+        },
+        {
+          "meter_id": "meter_n2",
+          "node_id": "n2",
+          "phase": "C",
+          "v_pu": 0.9998869186514163,
+          "angle_rad": 2.0941725225325247,
+          "available_s": 0.0
+        }
+      ],
+      "known_fault_section": null,
+      "action_mask": [
+        {
+          "equipment_id": "knife",
+          "command": "open",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "knife",
+          "command": "close",
+          "allowed": true,
+          "reason": "accepted"
+        }
+      ],
+      "limits": {
+        "v_min_pu": 0.95,
+        "v_max_pu": 1.05
+      },
+      "public_scenario_id": "disconnector_interlock"
+    },
+    "privileged": {
+      "source": "privileged",
+      "solve_status": "converged",
+      "node_of_bus": {
+        "bus_54769a317d93d9dc": [
+          "n1",
+          "sourcebus"
+        ],
+        "bus_0480a93d2e9b094b": [
+          "n2"
+        ]
+      },
+      "voltages": [
+        {
+          "bus_id": "bus_54769a317d93d9dc",
+          "phase": "A",
+          "v_pu": 0.9999640514191158,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_54769a317d93d9dc",
+          "phase": "B",
+          "v_pu": 0.999964051419117,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_54769a317d93d9dc",
+          "phase": "C",
+          "v_pu": 0.999964051419118,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_0480a93d2e9b094b",
+          "phase": "A",
+          "v_pu": 0.999886918651414,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_0480a93d2e9b094b",
+          "phase": "B",
+          "v_pu": 0.9998869186514153,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_0480a93d2e9b094b",
+          "phase": "C",
+          "v_pu": 0.9998869186514163,
+          "energized": true
+        }
+      ],
+      "currents": [
+        {
+          "equipment_id": "span",
+          "current_a": 9.306301852593702,
+          "rating_a": 400.0
+        }
+      ]
+    },
+    "violations": [],
+    "restorable_ok": true,
+    "ok_since_s": 0.0,
+    "interlock_attempts": 1,
+    "rejected_actions": 1,
+    "operations": 0,
+    "timeouts": 0,
+    "energy_not_served_wh": 0.0,
+    "critical_served_wh": 3333.3333333333335,
+    "critical_demand_wh": 3333.3333333333335,
+    "voltage_violation_s": 0.0,
+    "voltage_violation_pu_s": 0.0,
+    "overload_s": 0.0,
+    "overload_pu_s": 0.0,
+    "reward": -50.0
+  }
+]

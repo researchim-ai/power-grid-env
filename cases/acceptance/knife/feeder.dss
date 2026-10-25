@@ -1,0 +1,7 @@
+Clear
+New Circuit.knife basekv=12.47 pu=1 phases=3 bus1=sourcebus
+Edit Vsource.source r1=0.02 x1=0.08
+New Line.knife bus1=sourcebus bus2=n1 phases=3 switch=yes length=1 units=m r1=0.0001 x1=0
+New Line.span bus1=n1 bus2=n2 phases=3 length=0.2 units=km r1=0.05 x1=0.1
+New Load.load bus1=n2 phases=3 conn=wye kv=12.47 kw=200 kvar=20
+Set voltagebases=[12.47]

@@ -1,0 +1,15 @@
+Clear
+New Circuit.feeder_tight basekv=12.47 pu=1.0 phases=3 bus1=sourcebus angle=0
+Edit Vsource.source r1=0.02 x1=0.08 basekv=12.47 pu=1.0 angle=0
+New Line.sw_head bus1=sourcebus bus2=n0 phases=3 switch=yes length=1 units=m r1=0.0001 x1=0.0001
+New Line.main bus1=n0 bus2=n1 phases=3 length=1 units=km r1=0.08 x1=0.20
+New Load.load_local bus1=n1 phases=3 conn=wye kv=12.47 kw=300 kvar=40
+New Line.sw_up bus1=n1 bus2=n2 phases=3 switch=yes length=1 units=m r1=0.0001 x1=0.0001
+New Line.damaged bus1=n2 bus2=n3 phases=3 length=0.5 units=km r1=0.15 x1=0.30
+New Line.sw_down bus1=n3 bus2=n4 phases=3 switch=yes length=1 units=m r1=0.0001 x1=0.0001
+New Load.load_far bus1=n4 phases=3 conn=wye kv=12.47 kw=250 kvar=30
+New Line.tie_line bus1=n0 bus2=n5 phases=3 length=0.6 units=km r1=0.12 x1=0.25
+New Line.sw_tie bus1=n5 bus2=n4 phases=3 switch=yes length=1 units=m r1=0.0001 x1=0.0001
+Open Line.sw_tie
+Set voltagebases=[12.47]
+Calcvoltagebases

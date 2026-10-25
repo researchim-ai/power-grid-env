@@ -1,0 +1,54 @@
+schema_version: power-grid-env.import/v1
+network_id: feeder_tight
+name: Фидер с узкой резервной связью
+s_base_va: 1000000
+frequency_hz: 50
+impedance_interpretation: diagonal_from_positive_sequence
+grounding:
+  Load.load_local: solid
+  Load.load_far: solid
+switches:
+  Line.sw_head:
+    kind: breaker
+    rated_current_a: 400
+    interrupt_current_a: 8000
+    operate_time_s: 0
+  Line.sw_up:
+    kind: breaker
+    rated_current_a: 400
+    interrupt_current_a: 8000
+    operate_time_s: 0
+  Line.sw_down:
+    kind: breaker
+    rated_current_a: 400
+    interrupt_current_a: 8000
+    operate_time_s: 0
+  Line.sw_tie:
+    kind: breaker
+    rated_current_a: 200
+    interrupt_current_a: 8000
+    operate_time_s: 0
+    normally_closed: false
+lines:
+  Line.main:
+    rating_a: 400
+  Line.damaged:
+    rating_a: 400
+  Line.tie_line:
+    rating_a: 5
+loads:
+  Load.load_far:
+    critical: true
+    priority: 10
+meters:
+  - {id: meter_n1, node: n1}
+  - {id: meter_n4, node: n4}
+coordinates:
+  sourcebus: [40, 160]
+  n0: [140, 160]
+  n1: [260, 160]
+  n2: [380, 160]
+  n3: [500, 160]
+  n4: [620, 160]
+  n5: [620, 40]
+assumptions: []

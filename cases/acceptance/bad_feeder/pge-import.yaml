@@ -1,0 +1,11 @@
+schema_version: power-grid-env.import/v1
+network_id: bad_feeder
+name: Неполный фидер
+s_base_va: 1000000
+frequency_hz: 50
+impedance_interpretation: diagonal_from_positive_sequence
+grounding: {}
+lines:
+  Line.main:
+    rating_a: 200
+assumptions: []

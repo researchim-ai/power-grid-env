@@ -1,0 +1,7 @@
+Clear
+New Circuit.phase_drop basekv=12.47 pu=1 phases=3 bus1=sourcebus
+Edit Vsource.source r1=0.05 x1=0.4
+New Line.sw_head bus1=sourcebus bus2=n0 phases=3 switch=yes length=1 units=m r1=0.0001 x1=0.0001
+New Line.lateral bus1=n0 bus2=n1 phases=3 length=1 units=km r1=1.2 x1=2.4
+New Load.heavy_a bus1=n1.1 phases=1 conn=wye kv=7.2 kw=1500 kvar=200
+Set voltagebases=[12.47]

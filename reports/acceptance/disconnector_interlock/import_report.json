@@ -1,0 +1,42 @@
+{
+  "source": "cases/acceptance/knife/feeder.dss",
+  "source_sha256": "c224379134e00d127b7aa556ad519eb249a531ea7f5fb6d9eafab62906650aeb",
+  "format": "dss",
+  "errors": [],
+  "warnings": [],
+  "mappings": [
+    {
+      "from": "Line.knife",
+      "to": "switch:knife",
+      "kind": "disconnector"
+    },
+    {
+      "from": "Line.span",
+      "to": "line:span",
+      "r1_ohm": 0.05,
+      "x1_ohm": 0.1,
+      "length_m": 200.0
+    },
+    {
+      "from": "Load.load",
+      "to": "load:load",
+      "kw": 200.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Vsource.source",
+      "to": "source",
+      "r_ohm": 0.02,
+      "x_ohm": 0.08
+    }
+  ],
+  "approximations": [
+    "Последовательные r1/x1 переведены в диагональную фазную матрицу без взаимоиндукции. Z0 не измерялся и не подставлялся отдельным значением: он совпал с Z1 только из-за нулевой взаимности.",
+    "Line.knife: импеданс switch=yes опущен, аппарат топологический"
+  ],
+  "assumptions": [
+    "diagonal_from_positive_sequence"
+  ],
+  "sidecar_sha256": "644f541fd96638a6e0c0c514b1e8584d69530c73a5c371e6ce9530d7c612795d"
+}

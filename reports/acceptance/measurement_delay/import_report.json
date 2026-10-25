@@ -1,0 +1,81 @@
+{
+  "source": "cases/acceptance/feeder_north/feeder.dss",
+  "source_sha256": "7e0bec4201d051afb59e6786f44fb17715713fa505ab7a3bd923116221ee134d",
+  "format": "dss",
+  "errors": [],
+  "warnings": [],
+  "mappings": [
+    {
+      "from": "Line.sw_head",
+      "to": "switch:sw_head",
+      "kind": "breaker"
+    },
+    {
+      "from": "Line.main",
+      "to": "line:main",
+      "r1_ohm": 0.08,
+      "x1_ohm": 0.2,
+      "length_m": 1000.0
+    },
+    {
+      "from": "Load.load_local",
+      "to": "load:load_local",
+      "kw": 300.0,
+      "kvar": 40.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Line.sw_up",
+      "to": "switch:sw_up",
+      "kind": "breaker"
+    },
+    {
+      "from": "Line.damaged",
+      "to": "line:damaged",
+      "r1_ohm": 0.15,
+      "x1_ohm": 0.3,
+      "length_m": 500.0
+    },
+    {
+      "from": "Line.sw_down",
+      "to": "switch:sw_down",
+      "kind": "breaker"
+    },
+    {
+      "from": "Load.load_far",
+      "to": "load:load_far",
+      "kw": 250.0,
+      "kvar": 30.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Line.tie_line",
+      "to": "line:tie_line",
+      "r1_ohm": 0.12,
+      "x1_ohm": 0.25,
+      "length_m": 600.0
+    },
+    {
+      "from": "Line.sw_tie",
+      "to": "switch:sw_tie",
+      "kind": "breaker"
+    },
+    {
+      "from": "Vsource.source",
+      "to": "source",
+      "r_ohm": 0.02,
+      "x_ohm": 0.08
+    }
+  ],
+  "approximations": [
+    "Последовательные r1/x1 переведены в диагональную фазную матрицу без взаимоиндукции. Z0 не измерялся и не подставлялся отдельным значением: он совпал с Z1 только из-за нулевой взаимности.",
+    "Line.sw_head: импеданс switch=yes опущен, аппарат топологический",
+    "Line.sw_up: импеданс switch=yes опущен, аппарат топологический",
+    "Line.sw_down: импеданс switch=yes опущен, аппарат топологический",
+    "Line.sw_tie: импеданс switch=yes опущен, аппарат топологический"
+  ],
+  "assumptions": [
+    "diagonal_from_positive_sequence"
+  ],
+  "sidecar_sha256": "007e43f4194b7f845953fd38d2acbdbde05cf2f92ece0c86cdc1ee427871901b"
+}

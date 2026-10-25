@@ -1,0 +1,71 @@
+{
+  "version": "0.1.0",
+  "checks": [
+    {
+      "id": "conventions_power_and_bases",
+      "passed": true,
+      "detail": "S, базы и прямая последовательность"
+    },
+    {
+      "id": "two_bus_pq_closed_form",
+      "passed": true,
+      "detail": "dV=2.668e-07 pu"
+    },
+    {
+      "id": "unbalanced_constant_z_mna",
+      "passed": true,
+      "detail": "max dV=1.693e-06 pu"
+    },
+    {
+      "id": "kcl_and_balance",
+      "passed": true,
+      "detail": "KCL 1.544e-12 pu, баланс -1.175e-03 Вт"
+    },
+    {
+      "id": "zip_formula",
+      "passed": true,
+      "detail": "ZIP совпал с определением"
+    },
+    {
+      "id": "dyn11_phase_shift",
+      "passed": true,
+      "detail": "Dyn11: НН опережает ВН на 30°"
+    },
+    {
+      "id": "delta_blocks_zero_sequence",
+      "passed": true,
+      "detail": "сумма линейных токов треугольника ~ 0"
+    },
+    {
+      "id": "open_phase",
+      "passed": true,
+      "detail": "фаза C на приёмном конце отсутствует"
+    },
+    {
+      "id": "island_without_source",
+      "passed": true,
+      "detail": "deenergized_no_source"
+    },
+    {
+      "id": "false_convergence_is_not_collapse",
+      "passed": true,
+      "detail": "numerically_not_converged, collapse=false"
+    },
+    {
+      "id": "three_phase_fault_thevenin",
+      "passed": true,
+      "detail": "dV=2.087e-11 pu"
+    },
+    {
+      "id": "storage_soc_and_inverter_limit",
+      "passed": true,
+      "detail": "предел S, SoC и cold-load"
+    },
+    {
+      "id": "kron_matches_explicit_neutral",
+      "passed": true,
+      "detail": "Крон совпал с явной заземлённой нейтралью в пределах 5e-4 pu"
+    }
+  ],
+  "passed": true
+}

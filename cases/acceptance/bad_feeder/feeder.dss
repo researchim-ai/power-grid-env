@@ -1,0 +1,6 @@
+Clear
+New Circuit.bad_feeder basekv=12.47 pu=1 phases=3 bus1=sourcebus
+Edit Vsource.source r1=0.02 x1=0.08
+New Line.main bus1=sourcebus bus2=n1 phases=3 length=1 units=km r1=0.1 x1=0.2
+New Load.mystery bus1=n1 phases=3 conn=wye kv=12.47 kw=100 kvar=10
+Set voltagebases=[12.47]

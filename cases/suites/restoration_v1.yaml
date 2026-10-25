@@ -1,0 +1,192 @@
+id: restoration_v1
+title: Пакет восстановления распределительного фидера
+task: restoration
+applicability: >
+  Квазистационарная несимметричная сеть 12,47 кВ, известный повреждённый участок,
+  явные выключатели и разъединитель. Cold-load pickup не задан и не моделируется.
+  RMS, EMT и быстродействующая защита вне области: такие вопросы получают out_of_scope.
+scenarios:
+  - id: normal_fault
+    model: cases/acceptance/feeder_north
+    timeout_s: 5
+    baseline: {command: ["python3", "examples/controllers/noop_controller.py"]}
+    candidate: {command: ["python3", "examples/controllers/heuristic_controller.py"]}
+    scenario:
+      id: normal_fault
+      seed: 11
+      horizon_s: 240
+      control_interval_s: 60
+      settle_s: 60
+      fault_line_id: damaged
+      fault_kind: "3ph"
+      fault_phases: ["A", "B", "C"]
+      fault_r_ohm: 1.0
+      fault_disclosed: true
+      hidden_canary: "CANARY-normal-fault"
+      description: Одиночное повреждение участка с допустимой резервной связью
+      difficulty: nominal
+  - id: overload_backfeed
+    model: cases/acceptance/feeder_tight
+    timeout_s: 5
+    baseline: {command: ["python3", "examples/controllers/heuristic_controller.py"]}
+    candidate: {command: ["python3", "examples/controllers/aggressive_controller.py"]}
+    scenario:
+      id: overload_backfeed
+      seed: 12
+      horizon_s: 240
+      control_interval_s: 60
+      settle_s: 60
+      fault_line_id: damaged
+      fault_kind: "3ph"
+      fault_phases: ["A", "B", "C"]
+      fault_r_ohm: 1.0
+      fault_disclosed: true
+      hidden_canary: "CANARY-overload"
+      description: Восстановление перегружает резервную связь
+      difficulty: constraint
+  - id: locked_tie
+    model: cases/acceptance/feeder_locked
+    timeout_s: 5
+    baseline: {command: ["python3", "examples/controllers/noop_controller.py"]}
+    candidate: {command: ["python3", "examples/controllers/heuristic_controller.py"]}
+    scenario:
+      id: locked_tie
+      seed: 13
+      horizon_s: 180
+      control_interval_s: 60
+      settle_s: 60
+      fault_line_id: damaged
+      fault_kind: "3ph"
+      fault_phases: ["A", "B", "C"]
+      fault_r_ohm: 1.0
+      fault_disclosed: true
+      hidden_canary: "CANARY-locked"
+      description: Резервная связь заблокирована
+      difficulty: unavailable_switch
+  - id: phase_voltage
+    model: cases/acceptance/phase_drop
+    timeout_s: 5
+    baseline: {command: ["python3", "examples/controllers/noop_controller.py"]}
+    candidate: {command: ["python3", "examples/controllers/noop_controller.py"]}
+    scenario:
+      id: phase_voltage
+      seed: 14
+      horizon_s: 60
+      control_interval_s: 60
+      settle_s: 600
+      fault_disclosed: false
+      hidden_canary: "CANARY-phase"
+      description: Фазное нарушение напряжения без переключения
+      difficulty: voltage
+  - id: measurement_delay
+    model: cases/acceptance/feeder_north
+    timeout_s: 5
+    baseline: {command: ["python3", "examples/controllers/noop_controller.py"]}
+    candidate: {command: ["python3", "examples/controllers/heuristic_controller.py"]}
+    scenario:
+      id: measurement_delay
+      seed: 15
+      horizon_s: 180
+      control_interval_s: 60
+      settle_s: 60
+      fault_line_id: damaged
+      fault_kind: "3ph"
+      fault_phases: ["A", "B", "C"]
+      fault_r_ohm: 1.0
+      fault_disclosed: true
+      meter_delay_s: {meter_n1: 120, meter_n4: 120}
+      hidden_canary: "CANARY-delay"
+      description: Измерения запаздывают относительно физики
+      difficulty: observability
+  - id: measurement_drop
+    model: cases/acceptance/feeder_north
+    timeout_s: 5
+    baseline: {command: ["python3", "examples/controllers/noop_controller.py"]}
+    candidate: {command: ["python3", "examples/controllers/heuristic_controller.py"]}
+    scenario:
+      id: measurement_drop
+      seed: 16
+      horizon_s: 180
+      control_interval_s: 60
+      settle_s: 60
+      fault_line_id: damaged
+      fault_kind: "3ph"
+      fault_phases: ["A", "B", "C"]
+      fault_r_ohm: 1.0
+      fault_disclosed: true
+      drop_probability: 1.0
+      hidden_canary: "CANARY-drop"
+      description: Полный пропуск измерений
+      difficulty: observability
+  - id: controller_timeout
+    model: cases/acceptance/feeder_north
+    timeout_s: 1
+    baseline: {command: ["python3", "examples/controllers/noop_controller.py"]}
+    candidate: {command: ["python3", "examples/controllers/timeout_controller.py"]}
+    scenario:
+      id: controller_timeout
+      seed: 17
+      horizon_s: 120
+      control_interval_s: 60
+      settle_s: 600
+      fault_line_id: damaged
+      fault_kind: "3ph"
+      fault_phases: ["A", "B", "C"]
+      fault_r_ohm: 1.0
+      fault_disclosed: true
+      hidden_canary: "CANARY-timeout"
+      description: Контроллер не ответил в срок
+      difficulty: timeout
+  - id: controller_crash
+    model: cases/acceptance/feeder_north
+    timeout_s: 5
+    baseline: {command: ["python3", "examples/controllers/noop_controller.py"]}
+    candidate: {command: ["python3", "examples/controllers/crash_controller.py"]}
+    scenario:
+      id: controller_crash
+      seed: 18
+      horizon_s: 120
+      control_interval_s: 60
+      settle_s: 600
+      fault_line_id: damaged
+      fault_kind: "3ph"
+      fault_phases: ["A", "B", "C"]
+      fault_r_ohm: 1.0
+      fault_disclosed: true
+      hidden_canary: "CANARY-crash"
+      description: Процесс контроллера завершился
+      difficulty: crash
+  - id: invalid_action
+    model: cases/acceptance/feeder_north
+    timeout_s: 5
+    baseline: {command: ["python3", "examples/controllers/noop_controller.py"]}
+    candidate: {command: ["python3", "examples/controllers/invalid_controller.py"]}
+    scenario:
+      id: invalid_action
+      seed: 19
+      horizon_s: 60
+      control_interval_s: 60
+      settle_s: 600
+      fault_line_id: damaged
+      fault_kind: "3ph"
+      fault_phases: ["A", "B", "C"]
+      fault_r_ohm: 1.0
+      fault_disclosed: true
+      hidden_canary: "CANARY-invalid"
+      description: Ответ контроллера не соответствует схеме действия
+      difficulty: invalid
+  - id: disconnector_interlock
+    model: cases/acceptance/knife
+    timeout_s: 5
+    baseline: {command: ["python3", "examples/controllers/noop_controller.py"]}
+    candidate: {command: ["python3", "examples/controllers/knife_controller.py"]}
+    scenario:
+      id: disconnector_interlock
+      seed: 20
+      horizon_s: 60
+      control_interval_s: 60
+      settle_s: 600
+      fault_disclosed: false
+      hidden_canary: "CANARY-knife"
+      description: Попытка отключить разъединитель под током
+      difficulty: interlock

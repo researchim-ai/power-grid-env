@@ -1,0 +1,10 @@
+{
+  "ok": true,
+  "problems": [],
+  "summary_verdict": "completed_with_recorded_regressions",
+  "worse": [
+    "overload_backfeed",
+    "invalid_action",
+    "disconnector_interlock"
+  ]
+}
