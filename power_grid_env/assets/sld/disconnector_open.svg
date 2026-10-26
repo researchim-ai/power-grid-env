@@ -1,0 +1,7 @@
+<symbol id="sld-disconnector-open" viewBox="-32 -32 64 64">
+  <line x1="-30" y1="0" x2="-8" y2="0" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+  <circle cx="-8" cy="0" r="3.3" fill="#fffdf8" stroke="currentColor" stroke-width="2"/>
+  <line x1="-6" y1="-1.5" x2="12" y2="-16" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="16" cy="0" r="3.3" fill="#fffdf8" stroke="currentColor" stroke-width="2"/>
+  <line x1="19" y1="0" x2="30" y2="0" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+</symbol>

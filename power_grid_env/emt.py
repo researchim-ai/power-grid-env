@@ -87,6 +87,20 @@ def switching_buck_average(
     return float(sum(tail) / len(tail))
 
 
+def rlc_step_difference(
+    voltage: float,
+    resistance: float,
+    inductance: float,
+    capacitance: float,
+    dt_s: float,
+    steps: int,
+) -> float:
+    """Максимальная разница тока между шагом dt и dt/2 на общих моментах."""
+    coarse = rlc_trapezoidal(voltage, resistance, inductance, capacitance, dt_s, steps)
+    fine = rlc_trapezoidal(voltage, resistance, inductance, capacitance, dt_s / 2.0, steps * 2)
+    return float(max(abs(coarse[index] - fine[2 * index]) for index in range(steps + 1)))
+
+
 def cosim_rl_energy(
     vrms: float,
     resistance: float,

@@ -31,7 +31,7 @@ power-grid = "power_grid_env.cli:main"
 include = ["power_grid_env*"]
 
 [tool.setuptools.package-data]
-power_grid_env = ["py.typed"]
+power_grid_env = ["py.typed", "assets/sld/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

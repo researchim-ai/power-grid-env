@@ -1,0 +1,6 @@
+<symbol id="sld-pv" viewBox="-32 -32 64 64">
+  <line x1="0" y1="-30" x2="0" y2="-12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+  <rect x="-16" y="-10" width="32" height="26" rx="2" fill="#fffdf8" stroke="currentColor" stroke-width="2.2"/>
+  <circle cx="0" cy="3" r="5" fill="none" stroke="currentColor" stroke-width="1.7"/>
+  <path d="M0 -5 V-2 M0 8 V11 M-8 3 H-5 M5 3 H8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+</symbol>

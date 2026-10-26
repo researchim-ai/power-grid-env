@@ -1,0 +1,5 @@
+<symbol id="sld-capacitor" viewBox="-32 -32 64 64">
+  <line x1="0" y1="-30" x2="0" y2="-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+  <line x1="-13" y1="-5" x2="13" y2="-5" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
+  <line x1="-13" y1="5" x2="13" y2="5" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
+</symbol>

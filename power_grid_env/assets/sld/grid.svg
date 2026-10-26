@@ -1,0 +1,6 @@
+<symbol id="sld-grid" viewBox="-32 -32 64 64">
+  <line x1="0" y1="-30" x2="0" y2="-12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+  <circle cx="0" cy="6" r="16" fill="#fffdf8" stroke="currentColor" stroke-width="2.3"/>
+  <path d="M-9 2 C-6 7 -3 7 0 2 C3 -3 6 -3 9 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M-9 8 C-6 13 -3 13 0 8 C3 3 6 3 9 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+</symbol>

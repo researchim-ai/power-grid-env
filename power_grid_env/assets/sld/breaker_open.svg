@@ -1,0 +1,5 @@
+<symbol id="sld-breaker-open" viewBox="-32 -32 64 64">
+  <line x1="-30" y1="0" x2="-13" y2="0" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+  <rect x="-11" y="-11" width="22" height="22" rx="2" fill="#fffdf8" stroke="currentColor" stroke-width="2.4"/>
+  <line x1="13" y1="0" x2="30" y2="0" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+</symbol>

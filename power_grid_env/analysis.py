@@ -194,6 +194,75 @@ def math_cos(value: float) -> float:
     return math.cos(value)
 
 
+def ac_opf_network(
+    *,
+    load_p: float,
+    load_q: float,
+    x_pu: float,
+    flow_limit: float,
+    pmax: float,
+    cost: float = 1.0,
+    vmax: float = 1.05,
+) -> dict[str, Any]:
+    """Двухшинный AC OPF с пределом перетока. Локальный SLSQP, не глобальный оптимум."""
+
+    def received(z: np.ndarray) -> tuple[float, float]:
+        voltage, theta = float(z[2]), float(z[3])
+        active = voltage * math_sin(theta) / x_pu
+        reactive = (voltage * math_cos(theta) - voltage * voltage) / x_pu
+        return active, reactive
+
+    constraints = [
+        {"type": "eq", "fun": lambda z: received(z)[0] - load_p},
+        {"type": "eq", "fun": lambda z: received(z)[1] - load_q},
+        {"type": "eq", "fun": lambda z: z[0] - load_p},
+        {"type": "ineq", "fun": lambda z: flow_limit - received(z)[0]},
+        {"type": "ineq", "fun": lambda z: flow_limit + received(z)[0]},
+    ]
+    bounds = [(0.0, pmax), (-2.0, 2.0), (0.9, vmax), (0.0, 0.6)]
+    theta0 = min(0.5, x_pu * max(load_p, 1e-6))
+    solved = minimize(
+        lambda z: cost * z[0],
+        np.array([min(load_p, pmax), load_q, 1.0, theta0]),
+        bounds=bounds,
+        constraints=constraints,
+        method="SLSQP",
+        tol=1e-12,
+    )
+    generation = None if solved.x is None else float(solved.x[0])
+    within_flow = generation is not None and abs(load_p) <= flow_limit + 1e-6
+    feasible = bool(solved.success) and generation is not None and abs(generation - load_p) <= 1e-4 and within_flow
+    return {
+        "success": feasible,
+        "status": "optimal" if feasible else "infeasible",
+        "pg_pu": generation,
+        "message": str(solved.message),
+        "global_optimum_claimed": False,
+    }
+
+
+def n1_transformer_outages(network: Network, solve=solve_network) -> list[dict[str, Any]]:
+    """Отключение каждого трансформатора остаётся в отчёте, в том числе без решения."""
+    reports = []
+    for transformer in network.transformers:
+        trial = network.model_copy(deep=True)
+        trial.transformers = [item for item in trial.transformers if item.id != transformer.id]
+        trial.terminals = [item for item in trial.terminals if item.equipment_id != transformer.id]
+        try:
+            result = solve(trial)
+            reports.append(
+                {
+                    "outage": transformer.id,
+                    "status": result.status,
+                    "converged": result.converged,
+                    "collapse": False,
+                }
+            )
+        except Exception as exc:
+            reports.append({"outage": transformer.id, "status": "unsolved", "error": str(exc), "collapse": False})
+    return reports
+
+
 def n1_line_outages(network: Network, solve=solve_network) -> list[dict[str, Any]]:
     reports = []
     for line in network.lines:

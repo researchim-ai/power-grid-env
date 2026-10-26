@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from power_grid_env.model import Network
@@ -33,6 +34,14 @@ def preflight(network: Network, *, task: str = "restoration", solve_initial: boo
         warnings.append(f"{load.id}: cold-load pickup включён с явными параметрами")
     if any(line.kron_reduction == "allowed_solid_neutral" for line in network.lines):
         warnings.append("запрошена редукция Крона; она выполнится только при твёрдой нейтрали на обоих концах")
+    for line in network.lines:
+        for label, matrix in ("r_ohm", line.r_ohm), ("x_ohm", line.x_ohm), ("b_siemens", line.b_siemens):
+            for row in matrix:
+                if any(not math.isfinite(value) for value in row):
+                    errors.append(f"{line.id}: матрица {label} содержит нечисловое значение")
+        for index, row in enumerate(line.r_ohm):
+            if row[index] < -1e-8:
+                errors.append(f"{line.id}: отрицательное продольное сопротивление")
     for switch in network.switches:
         if switch.kind == "disconnector" and switch.interrupt_current_a != 0:
             errors.append(f"{switch.id}: разъединитель получил ток отключения")

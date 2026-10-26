@@ -1,0 +1,4 @@
+<symbol id="sld-load" viewBox="-32 -32 64 64">
+  <line x1="0" y1="-30" x2="0" y2="-4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M-12 -2 L0 16 L12 -2" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"/>
+</symbol>

@@ -8,13 +8,28 @@ from power_grid_env.model import Network
 from power_grid_env.simulation import Engine
 
 TOOL_SCHEMAS = [
-    {"name": "get_observation", "parameters": {}},
-    {"name": "inspect_equipment", "parameters": {"equipment_id": "string"}},
-    {"name": "query_allowed_history", "parameters": {}},
-    {"name": "read_procedure", "parameters": {}},
-    {"name": "simulate_plan", "parameters": {"commands": "list"}},
-    {"name": "submit_plan", "parameters": {"action": "object"}},
+    {"name": "get_observation", "parameters": {}, "required": []},
+    {"name": "inspect_equipment", "parameters": {"equipment_id": "string"}, "required": ["equipment_id"]},
+    {"name": "query_allowed_history", "parameters": {}, "required": []},
+    {"name": "read_procedure", "parameters": {}, "required": []},
+    {"name": "simulate_plan", "parameters": {"commands": "list"}, "required": ["commands"]},
+    {"name": "submit_plan", "parameters": {"action": "object"}, "required": ["action"]},
 ]
+
+
+def validate_tool_call(name: str, arguments: dict | None) -> dict:
+    arguments = arguments or {}
+    schema = next((item for item in TOOL_SCHEMAS if item["name"] == name), None)
+    if schema is None:
+        return {"ok": False, "error": "unknown_tool"}
+    missing = [key for key in schema["required"] if key not in arguments]
+    if missing:
+        return {"ok": False, "error": "missing", "fields": missing}
+    if name == "simulate_plan" and not isinstance(arguments.get("commands"), list):
+        return {"ok": False, "error": "commands_must_be_list"}
+    if name == "submit_plan" and not isinstance(arguments.get("action"), dict):
+        return {"ok": False, "error": "action_must_be_object"}
+    return {"ok": True}
 
 
 class ToolSession:

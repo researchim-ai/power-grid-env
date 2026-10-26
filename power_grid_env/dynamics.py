@@ -119,6 +119,65 @@ def simulate_two_machine(
     return {"delta": trace[:, 0], "equilibrium_residual": residual}
 
 
+def simulate_smib_with_controls(
+    *,
+    pm: float,
+    e_pu: float,
+    v_pu: float,
+    x_pu: float,
+    inertia_s: float,
+    exciter_s: float = 0.2,
+    governor_s: float = 0.5,
+    droop: float = 0.05,
+    ke: float = 1.0,
+    frequency_hz: float = 50.0,
+    dt_s: float = 0.01,
+    t_end_s: float = 0.2,
+    voltage_scale: float = 1.0,
+) -> dict[str, np.ndarray]:
+    """Классическая машина, ЭДС первого порядка и статизм мощности.
+
+    Это учебный контур SMIB, не модель AVR/PSS промышленного генератора.
+    """
+    omega_s = 2.0 * math.pi * frequency_hz
+    vref = v_pu + e_pu / ke
+    pref = pm
+    delta0 = math.asin(pm * x_pu / (e_pu * v_pu))
+    state0 = np.array([delta0, omega_s, e_pu, pm], dtype=float)
+
+    def deriv(state: np.ndarray, voltage: float) -> np.ndarray:
+        delta, omega, field, mech = (float(item) for item in state)
+        electrical = field * voltage / x_pu * math.sin(delta)
+        return np.array(
+            [
+                omega - omega_s,
+                (omega_s / (2.0 * inertia_s)) * (mech - electrical),
+                ((vref - voltage) * ke - field) / exciter_s,
+                (pref - (omega - omega_s) / omega_s / droop - mech) / governor_s,
+            ]
+        )
+
+    steps = int(round(t_end_s / dt_s))
+    trace = np.zeros((steps + 1, 4))
+    trace[0] = state0
+    residual = deriv(state0, v_pu)
+    for index in range(steps):
+        voltage = v_pu * voltage_scale
+        previous = deriv(trace[index], voltage if index else v_pu)
+        guess = trace[index] + dt_s * previous
+        for _ in range(10):
+            upcoming = deriv(guess, voltage)
+            mismatch = guess - trace[index] - 0.5 * dt_s * (previous + upcoming)
+            jacobian = np.eye(4)
+            for column in range(4):
+                bumped = guess.copy()
+                bumped[column] += 1e-6
+                jacobian[:, column] += 0.5 * dt_s * (deriv(bumped, voltage) - upcoming) / 1e-6
+            guess = guess - np.linalg.solve(jacobian, mismatch)
+        trace[index + 1] = guess
+    return {"field": trace[:, 2], "mechanical": trace[:, 3], "equilibrium_residual": residual}
+
+
 def _numerical_jacobian(state, pm, e_pu, v_pu, x_pu, inertia, damping, omega_s, dt) -> np.ndarray:
     base = derivative(state, pm, e_pu, v_pu, x_pu, inertia, damping, omega_s)
     matrix = np.eye(2)

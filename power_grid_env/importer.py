@@ -15,6 +15,7 @@ from typing import Any
 
 import yaml
 
+from power_grid_env.dss_devices import attach_profile, loadshapes, try_device
 from power_grid_env.model import (
     ConnectivityNode,
     GroundingSpec,
@@ -76,7 +77,13 @@ def import_network(source: Path, sidecar: Path | None = None) -> tuple[Network |
     report["sidecar_sha256"] = file_sha256(side_path)
     side = yaml.safe_load(side_path.read_text(encoding="utf-8")) or {}
     try:
-        network = _from_dss(source.read_text(encoding="utf-8"), side, report)
+        text, sources = _read_dss_tree(source, [])
+    except Exception as exc:
+        report["errors"].append(str(exc))
+        text, sources = source.read_text(encoding="utf-8"), []
+    report["sources"] = sources
+    try:
+        network = _from_dss(text, side, report)
     except Exception as exc:
         report["errors"].append(str(exc))
         return None, report
@@ -102,16 +109,18 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
     if s_base <= 0:
         raise ValueError("sidecar.s_base_va обязателен")
     interpretation = side.get("impedance_interpretation")
-    if interpretation != "diagonal_from_positive_sequence":
-        raise ValueError(
-            "r1/x1 не определяют фазную матрицу. В sidecar нужно явно указать "
-            "impedance_interpretation: diagonal_from_positive_sequence"
+    if interpretation == "diagonal_from_positive_sequence":
+        report["approximations"].append(
+            "Последовательные r1/x1 переведены в диагональную фазную матрицу без взаимоиндукции. "
+            "Z0 не измерялся и не подставлялся отдельным значением: он совпал с Z1 только из-за нулевой взаимности."
         )
-    report["approximations"].append(
-        "Последовательные r1/x1 переведены в диагональную фазную матрицу без взаимоиндукции. "
-        "Z0 не измерялся и не подставлялся отдельным значением: он совпал с Z1 только из-за нулевой взаимности."
-    )
-    report["assumptions"].append("diagonal_from_positive_sequence")
+        report["assumptions"].append("diagonal_from_positive_sequence")
+    elif interpretation == "explicit_phase_matrix":
+        report["assumptions"].append("explicit_phase_matrix")
+    else:
+        raise ValueError(
+            "sidecar.impedance_interpretation должен быть diagonal_from_positive_sequence или explicit_phase_matrix"
+        )
     nodes: dict[str, ConnectivityNode] = {}
     levels: dict[str, VoltageLevel] = {}
     coordinates = side.get("coordinates") or {}
@@ -159,6 +168,12 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
     switches: list[Switch] = []
     loads: list[Load] = []
     transformers: list[Transformer] = []
+    generators: list = []
+    shunts: list = []
+    storages: list = []
+    inverters: list = []
+    extra_sources: list[VoltageSource] = []
+    shapes = loadshapes(commands)
     open_names = {item["name"].split(".", 1)[-1] for item in commands if item["kind"] == "open"}
     grounding = side.get("grounding") or {}
     switch_side = side.get("switches") or {}
@@ -175,6 +190,26 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
         args = command["args"]
         if klass.lower() == "linecode":
             continue
+        if try_device(
+            klass,
+            name,
+            args,
+            command.get("raw") or "",
+            {
+                "ensure_node": ensure_node,
+                "grounding": grounding,
+                "side": side,
+                "report": report,
+                "terminals": terminals,
+                "shunts": shunts,
+                "generators": generators,
+                "storages": storages,
+                "inverters": inverters,
+                "sources": extra_sources,
+                "transformers": transformers,
+            },
+        ):
+            continue
         if klass.lower() == "transformer":
             spec = transformer_side.get(f"Transformer.{name}") or {}
             vector_group = spec.get("vector_group")
@@ -182,12 +217,16 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
                 raise ValueError(f"Transformer.{name}: в sidecar нет vector_group и заземлений")
             parsed_windings = _windings(command.get("raw") or "")
             grounds = spec.get("grounding") or []
-            if len(parsed_windings) != 2 or len(grounds) != 2:
-                raise ValueError(f"Transformer.{name}: нужны две обмотки и два явных заземления")
+            if len(parsed_windings) not in (2, 3) or len(grounds) != len(parsed_windings):
+                raise ValueError(f"Transformer.{name}: нужны две или три обмотки и столько же явных заземлений")
             xhl = float(args.get("xhl", "nan"))
             load_loss = float(args.get("loadloss", "nan"))
             if not math.isfinite(xhl) or not math.isfinite(load_loss):
                 raise ValueError(f"Transformer.{name}: нужны xhl и %loadloss")
+            xht = float(args["xht"]) if "xht" in args else None
+            xlt = float(args["xlt"]) if "xlt" in args else None
+            if len(parsed_windings) == 3 and (xht is None or xlt is None or not math.isfinite(xht) or not math.isfinite(xlt)):
+                raise ValueError(f"Transformer.{name}: для трёх обмоток нужны xht и xlt")
             built: list[Winding] = []
             for index, winding_args in enumerate(parsed_windings):
                 bus = ensure_node(winding_args["bus"], float(winding_args["kv"]))
@@ -222,6 +261,8 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
                     windings=built,
                     vector_group=vector_group,
                     x_hl_pct=xhl,
+                    x_ht_pct=xht,
+                    x_lt_pct=xlt,
                     load_loss_pct=load_loss,
                     no_load_loss_pct=0.0,
                     imag_pct=0.0,
@@ -247,9 +288,10 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
                     nodes[bus2].voltage_level_id = nodes[bus1].voltage_level_id
                 else:
                     raise ValueError(f"Line.{name}: линия соединяет {level1} В и {level2} В")
-            phases = int(float(args.get("phases", "3")))
-            if phases != 3:
-                raise ValueError(f"{name}: импортёр первой поставки принимает трёхфазные линии DSS, получено {phases}")
+            phase_count = int(float(args.get("phases", "3")))
+            selected = _line_phases(args, phase_count, name)
+            _widen_neutral(nodes[bus1], selected)
+            _widen_neutral(nodes[bus2], selected)
             length, unit = float(args.get("length", "1")), args.get("units", "km")
             length_m = length * (1000.0 if unit == "km" else 1.0 if unit == "m" else None)
             if length_m is None:
@@ -267,8 +309,8 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
                 right = f"{name}:{bus2}"
                 terminals.extend(
                     [
-                        Terminal(id=left, equipment_id=name, connectivity_node_id=bus1, phases=["A", "B", "C"]),
-                        Terminal(id=right, equipment_id=name, connectivity_node_id=bus2, phases=["A", "B", "C"]),
+                        Terminal(id=left, equipment_id=name, connectivity_node_id=bus1, phases=selected),
+                        Terminal(id=right, equipment_id=name, connectivity_node_id=bus2, phases=selected),
                     ]
                 )
                 switches.append(
@@ -277,7 +319,7 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
                         kind=kind,
                         terminal_from=left,
                         terminal_to=right,
-                        phases=["A", "B", "C"],
+                        phases=selected,
                         closed=name not in open_names and str(meta.get("normally_closed", "true")).lower() != "false",
                         rated_current_a=float(meta.get("rated_current_a", 400)),
                         interrupt_current_a=float(interrupt),
@@ -293,34 +335,24 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
             meta = line_side.get(key) or {}
             if "rating_a" not in meta:
                 raise ValueError(f"{key}: в sidecar нет rating_a")
-            code_name = args.get("linecode")
-            if code_name and ("r1" in args or "x1" in args):
-                raise ValueError(f"{key}: заданы и linecode, и r1/x1; оставьте один источник импеданса")
-            if code_name:
-                code = linecodes.get(code_name.lower())
-                if code is None:
-                    raise ValueError(f"{key}: LineCode.{code_name} не объявлен")
-                span = _length_in(length, unit, code["units"])
-                r1 = code["r1"] * span
-                x1 = code["x1"] * span
-                impedance_note = (
-                    f"LineCode.{code_name}: r1/x1 на {code['units']} умножены на длину {span:g}; "
-                    "взаимные нули — явная аппроксимация прямой последовательности"
-                )
-            else:
-                r1 = float(args.get("r1", "nan"))
-                x1 = float(args.get("x1", "nan"))
-                impedance_note = "диагональ из r1/x1; длина не умножается, значения взяты как полные омы"
-            if not math.isfinite(r1) or not math.isfinite(x1):
-                raise ValueError(f"{key}: нужны r1 и x1 или linecode")
-            matrix_r = [[r1 if i == j else 0.0 for j in range(3)] for i in range(3)]
-            matrix_x = [[x1 if i == j else 0.0 for j in range(3)] for i in range(3)]
+            raw = command.get("raw") or ""
+            matrix_r, matrix_x, matrix_b, impedance_note = _line_impedance(
+                key,
+                args,
+                raw,
+                length,
+                unit,
+                selected,
+                linecodes,
+                interpretation,
+                frequency,
+            )
             left = f"{name}:{bus1}"
             right = f"{name}:{bus2}"
             terminals.extend(
                 [
-                    Terminal(id=left, equipment_id=name, connectivity_node_id=bus1, phases=["A", "B", "C"]),
-                    Terminal(id=right, equipment_id=name, connectivity_node_id=bus2, phases=["A", "B", "C"]),
+                    Terminal(id=left, equipment_id=name, connectivity_node_id=bus1, phases=selected),
+                    Terminal(id=right, equipment_id=name, connectivity_node_id=bus2, phases=selected),
                 ]
             )
             lines.append(
@@ -328,18 +360,27 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
                     id=name,
                     terminal_from=left,
                     terminal_to=right,
-                    phases=["A", "B", "C"],
+                    phases=selected,
                     length_m=length_m,
                     r_ohm=matrix_r,
                     x_ohm=matrix_x,
-                    b_siemens=[[0.0, 0.0, 0.0] for _ in range(3)],
+                    b_siemens=matrix_b,
                     rating_a=float(meta["rating_a"]),
                     emergency_rating_a=meta.get("emergency_rating_a"),
                     emergency_duration_s=meta.get("emergency_duration_s"),
                     provenance=Provenance(source=key, quality="derived", note=impedance_note),
                 )
             )
-            report["mappings"].append({"from": key, "to": f"line:{name}", "r1_ohm": r1, "x1_ohm": x1, "length_m": length_m})
+            report["mappings"].append(
+                {
+                    "from": key,
+                    "to": f"line:{name}",
+                    "r_ohm": matrix_r[0][0],
+                    "x_ohm": matrix_x[0][0],
+                    "length_m": length_m,
+                    "note": impedance_note,
+                }
+            )
         elif klass.lower() == "load":
             bus = ensure_node(args["bus1"])
             conn = args.get("conn", "")
@@ -386,6 +427,7 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
                 )
             )
             report["mappings"].append({"from": f"Load.{name}", "to": f"load:{name}", "kw": kw, "kvar": kvar, "grounding": ground.kind})
+            attach_profile(name, args, shapes, report)
     source_terminal = "source:import"
     terminals.append(Terminal(id=source_terminal, equipment_id="source", connectivity_node_id=source_bus, phases=["A", "B", "C"]))
     source = VoltageSource(
@@ -414,11 +456,144 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
         switches=switches,
         loads=loads,
         transformers=transformers,
-        sources=[source],
+        sources=[source, *extra_sources],
+        generators=generators,
+        inverters=inverters,
+        storages=storages,
+        shunts=shunts,
         meters=meters,
         assumptions=list(report["assumptions"]),
         provenance=Provenance(source=str(report["source"]), quality="derived"),
     )
+
+
+def _read_dss_tree(path: Path, stack: list[Path]) -> tuple[str, list[dict[str, str]]]:
+    resolved = path.resolve()
+    if resolved in stack:
+        raise ValueError(f"цикл Redirect: {resolved.name}")
+    if not resolved.exists():
+        raise ValueError(f"файл DSS не найден: {resolved}")
+    sources = [{"path": str(resolved), "sha256": file_sha256(resolved)}]
+    pieces: list[str] = []
+    for raw in resolved.read_text(encoding="utf-8").splitlines():
+        code = raw.split("!")[0].split("//")[0].strip()
+        if code.lower().startswith("redirect "):
+            target = code.split(None, 1)[1].strip().strip('"')
+            child_text, child_sources = _read_dss_tree(resolved.parent / target, stack + [resolved])
+            pieces.append(child_text)
+            sources.extend(child_sources)
+            continue
+        pieces.append(raw)
+    return "\n".join(pieces), sources
+
+
+def _line_phases(args: dict[str, str], count: int, name: str) -> list[str]:
+    if count == 3:
+        return ["A", "B", "C"]
+    if count == 4:
+        return ["A", "B", "C", "N"]
+    if count == 1:
+        mapping = {"1": "A", "2": "B", "3": "C", "4": "N"}
+        left = args["bus1"].split(".")[1:]
+        right = args["bus2"].split(".")[1:]
+        if len(left) != 1 or left != right or left[0] not in mapping:
+            raise ValueError(f"Line.{name}: однофазная линия требует одинаковые bus.1 … bus.4 на обоих концах")
+        return [mapping[left[0]]]
+    raise ValueError(f"Line.{name}: поддержаны 1, 3 или 4 фазы, получено {count}")
+
+
+def _widen_neutral(node: ConnectivityNode, phases: list[str]) -> None:
+    if "N" not in phases or "N" in node.phases:
+        return
+    node.phases = [phase for phase in ("A", "B", "C", "N") if phase in set(node.phases) | {"N"}]
+
+
+def _line_impedance(
+    key: str,
+    args: dict[str, str],
+    raw: str,
+    length: float,
+    unit: str,
+    selected: list[str],
+    linecodes: dict[str, dict[str, float | str]],
+    interpretation: str,
+    frequency: float,
+) -> tuple[list[list[float]], list[list[float]], list[list[float]], str]:
+    r_matrix = _triangle(raw, "rmatrix")
+    x_matrix = _triangle(raw, "xmatrix")
+    if r_matrix is not None or x_matrix is not None:
+        if interpretation != "explicit_phase_matrix":
+            raise ValueError(f"{key}: rmatrix требует impedance_interpretation: explicit_phase_matrix")
+        if r_matrix is None or x_matrix is None:
+            raise ValueError(f"{key}: rmatrix и xmatrix задаются вместе")
+        if args.get("linecode") or "r1" in args or "x1" in args:
+            raise ValueError(f"{key}: rmatrix не смешивается с r1/x1 или linecode")
+        matrix_r = _scale_matrix(r_matrix, length)
+        matrix_x = _scale_matrix(x_matrix, length)
+        if len(matrix_r) != len(selected) or len(matrix_x) != len(selected):
+            raise ValueError(f"{key}: размер матрицы не равен числу фаз")
+        c_matrix = _triangle(raw, "cmatrix")
+        if c_matrix is None:
+            matrix_b = [[0.0 for _ in selected] for _ in selected]
+        else:
+            if len(c_matrix) != len(selected):
+                raise ValueError(f"{key}: cmatrix не совпадает с числом фаз")
+            omega = 2.0 * math.pi * frequency
+            matrix_b = _scale_matrix(c_matrix, length * 1e-9 * omega)
+        return matrix_r, matrix_x, matrix_b, "rmatrix/xmatrix умножены на длину в единицах линии"
+    if interpretation != "diagonal_from_positive_sequence":
+        raise ValueError(f"{key}: r1/x1 требуют diagonal_from_positive_sequence")
+    code_name = args.get("linecode")
+    if code_name and ("r1" in args or "x1" in args):
+        raise ValueError(f"{key}: заданы и linecode, и r1/x1; оставьте один источник импеданса")
+    if code_name:
+        code = linecodes.get(code_name.lower())
+        if code is None:
+            raise ValueError(f"{key}: LineCode.{code_name} не объявлен")
+        if len(selected) != 3:
+            raise ValueError(f"{key}: linecode r1/x1 поддержан для трёх фаз")
+        span = _length_in(length, unit, str(code["units"]))
+        r1 = float(code["r1"]) * span
+        x1 = float(code["x1"]) * span
+        note = (
+            f"LineCode.{code_name}: r1/x1 на {code['units']} умножены на длину {span:g}; "
+            "взаимные нули — явная аппроксимация прямой последовательности"
+        )
+    else:
+        r1 = float(args.get("r1", "nan"))
+        x1 = float(args.get("x1", "nan"))
+        note = "диагональ из r1/x1; длина не умножается, значения взяты как полные омы"
+    if not math.isfinite(r1) or not math.isfinite(x1):
+        raise ValueError(f"{key}: нужны r1 и x1, linecode или rmatrix")
+    size = len(selected)
+    matrix_r = [[r1 if i == j else 0.0 for j in range(size)] for i in range(size)]
+    matrix_x = [[x1 if i == j else 0.0 for j in range(size)] for i in range(size)]
+    matrix_b = [[0.0 for _ in range(size)] for _ in range(size)]
+    return matrix_r, matrix_x, matrix_b, note
+
+
+def _triangle(raw: str, key: str) -> list[list[float]] | None:
+    match = re.search(rf"(?i)\b{key}\s*=\s*[\[(]([^\]\)]+)[\]\)]", raw)
+    if not match:
+        return None
+    rows = []
+    for part in match.group(1).split("|"):
+        values = [float(item) for item in part.split() if item]
+        if values:
+            rows.append(values)
+    size = len(rows)
+    matrix = [[0.0 for _ in range(size)] for _ in range(size)]
+    for index, row in enumerate(rows):
+        if len(row) != index + 1:
+            raise ValueError(f"{key}: ожидается нижний треугольник")
+        for column, value in enumerate(row):
+            matrix[index][column] = value
+            matrix[column][index] = value
+    return matrix
+
+
+def _scale_matrix(matrix: list[list[float]], factor: float) -> list[list[float]]:
+    return [[value * factor for value in row] for row in matrix]
 
 
 def _linecodes(commands: list[dict[str, Any]]) -> dict[str, dict[str, float | str]]:
@@ -469,7 +644,8 @@ def _command_ledger(commands: list[dict[str, Any]]) -> list[dict[str, str]]:
             rows.append({"command": name, "status": "transferred"})
         elif kind == "new":
             klass = name.split(".", 1)[0].lower()
-            rows.append({"command": name, "status": "transferred" if klass in {"line", "load", "transformer", "linecode"} else "unsupported"})
+            supported = {"line", "load", "transformer", "linecode", "capacitor", "generator", "storage", "pvsystem", "vsource", "regcontrol", "loadshape"}
+            rows.append({"command": name, "status": "transferred" if klass in supported else "unsupported"})
         elif kind == "edit":
             rows.append({"command": name, "status": "unsupported"})
         else:

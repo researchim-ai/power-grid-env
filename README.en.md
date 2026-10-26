@@ -17,11 +17,11 @@ Statuses live in `power_grid_env/capabilities.py`.
 Checked numerically on authored cases, without field recordings:
 
 - phase-domain power flow through OpenDSSDirect / DSS-Extensions: lines, `Dyn11` and `YNd11` transformers, ZIP loads, faults, an island with no source, and Kron reduction only when the neutral is explicitly solidly grounded;
-- DSS import of a 110/10/0.4 kV transformer chain and LineCode when the sidecar states grounding, vector group, and the meaning of r1/x1;
-- a symmetric Newton AC power flow for an explicit positive-sequence equivalent;
-- a classical machine on an infinite bus and two machines on a shared reactance;
-- a classical machine on an infinite bus, integrated with the implicit trapezoidal rule;
-- RL/RLC transients compared with closed-form solutions;
+- DSS import of the 110/10/0.4 kV plant: two infeeds, LineCode, capacitor, generator, storage, PV, a load profile, and Redirect;
+- the positive-sequence ladder of that plant matches phase-domain OpenDSS to better than 1e-5 pu in magnitude;
+- symmetric Newton AC power flow and a local AC OPF with a branch-flow limit;
+- a classical machine, two machines, a first-order field voltage, and governor droop;
+- RL/RLC transients and a dt versus dt/2 step check;
 - DC power flow, PTDF, and linear WLS on small cases.
 
 Implemented and exercised by scenarios, without a `validated_for_declared_scope` claim: restoration, interlocks, Gymnasium, LLM tools, a VLM canvas, and a local AC OPF. Distance and differential protection, full EMT, and hardware-in-the-loop stay outside this release.
@@ -49,6 +49,8 @@ power-grid suite cases/suites/restoration_v1.yaml --out reports/acceptance
 
 power-grid validate
 power-grid accept
+power-grid schemas --out /tmp/pge-schemas
+power-grid pilot cases/industrial/plant --out /tmp/pilot.json
 ```
 
 `validate` writes `reports/validation`. `accept` repeats the section 16–20 acceptance path: an external DSS case, rejection of an incomplete file, subprocess controllers, the suite, HTML, checksums, the viewer, replay, numerical checks, and a short Gymnasium rollout.

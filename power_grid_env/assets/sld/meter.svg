@@ -1,0 +1,5 @@
+<symbol id="sld-meter" viewBox="-32 -32 64 64">
+  <line x1="0" y1="-22" x2="0" y2="-8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="0" cy="8" r="13" fill="#fffdf8" stroke="currentColor" stroke-width="2.1"/>
+  <text x="0" y="12" text-anchor="middle" font-size="13" font-family="sans-serif" fill="currentColor">M</text>
+</symbol>

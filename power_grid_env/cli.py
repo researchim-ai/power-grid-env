@@ -43,6 +43,13 @@ def main(argv: list[str] | None = None) -> int:
     view.add_argument("--network", required=True)
     view.add_argument("--out", required=True)
 
+    schemas = sub.add_parser("schemas", help="выгрузить JSON Schema сети и сценария")
+    schemas.add_argument("--out", required=True)
+
+    pilot = sub.add_parser("pilot", help="один шаг пилота по каталогу модели")
+    pilot.add_argument("model")
+    pilot.add_argument("--out", required=True)
+
     args = parser.parse_args(argv)
     if args.command == "import":
         network, report = import_network(Path(args.source), Path(args.sidecar) if args.sidecar else None)
@@ -80,6 +87,26 @@ def main(argv: list[str] | None = None) -> int:
         write_viewer(Path(args.out), viewer_bundle(network.model_dump(mode="json"), trace, 0.95, 1.05))
         print(args.out)
         return 0
+    if args.command == "schemas":
+        from power_grid_env.schema_export import export_schemas
+
+        export_schemas(Path(args.out))
+        print(args.out)
+        return 0
+    if args.command == "pilot":
+        from power_grid_env.runner import _load_model
+        from power_grid_env.study import run_pilot
+
+        network, report = _load_model(Path(args.model))
+        if network is None:
+            write_json(Path(args.out), {"ok": False, "import": report})
+            return 2
+        payload = run_pilot(network)
+        payload.pop("trace", None)
+        payload["ok"] = payload["solve_status"] in {"converged", "deenergized_no_source"} and payload["time_s"] == payload["resumed_time_s"]
+        write_json(Path(args.out), payload)
+        print(json.dumps({"ok": payload["ok"], "status": payload["solve_status"]}, ensure_ascii=False))
+        return 0 if payload["ok"] else 1
     return 2
 
 
