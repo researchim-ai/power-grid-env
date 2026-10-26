@@ -143,6 +143,56 @@ def _line_pu(network: Network, line, node_id: str, s_base: float) -> complex:
     return ohms / (level.nominal_ll_v**2 / s_base)
 
 
+def run_restoration(network: Network, *, steps: int = 6) -> dict[str, Any]:
+    """Эвристика изолирует кабель и включает резервный ввод. Это авторский пилот, не чужая сеть."""
+    from power_grid_env.heuristic import choose_action
+    from power_grid_env.scenarios import Scenario
+    from power_grid_env.simulation import Engine, agent_model
+
+    scenario = Scenario(
+        id="plant-restore",
+        horizon_s=60.0 * steps,
+        control_interval_s=60.0,
+        settle_s=30.0,
+        fault_line_id="cable",
+        fault_disclosed=True,
+        fault_r_ohm=1.0,
+        v_min_pu=0.9,
+        v_max_pu=1.1,
+        description="изолировать кабель 10 кВ и запитать сборку от резерва",
+    )
+    engine = Engine(network, scenario)
+    engine.reset(seed=1)
+    public = agent_model(network, scenario).model_dump(mode="json")
+    actions = []
+    for _ in range(steps):
+        if engine.terminated:
+            break
+        action = choose_action(engine.observation(), public, respect_rating=True)
+        actions.append(action)
+        engine.step_control(action, origin="controller")
+    closed = {switch.id: switch.closed for switch in engine.net.switches}
+    return {
+        "actions": actions,
+        "closed": closed,
+        "mcc_pu": _node_pu(engine, "mcc"),
+        "solve_status": None if engine.last_result is None else engine.last_result.status,
+        "trace_steps": len(engine.trace),
+    }
+
+
+def _node_pu(engine: Any, node_id: str) -> float | None:
+    result = engine.last_result
+    if result is None:
+        return None
+    topology = compile_topology(engine.net)
+    bus_id = topology.node_to_bus.get(node_id)
+    for voltage in result.voltages:
+        if voltage.bus_id == bus_id and voltage.phase == "A" and voltage.energized and voltage.v_base_ln_v:
+            return abs(voltage.complex) / voltage.v_base_ln_v
+    return None
+
+
 def _watts(network: Network, equipment_id: str) -> float:
     for generator in network.generators:
         if generator.id == equipment_id:

@@ -9,15 +9,20 @@ import numpy as np
 import pytest
 
 from power_grid_env.analysis import ac_opf_network, n1_transformer_outages
+from power_grid_env.backend_opendss import solve_network
 from power_grid_env.benchmarks import time_radial
-from power_grid_env.dynamics import simulate_smib_with_controls
+from power_grid_env.build import NetBuilder
+from power_grid_env.conventions import ll_to_ln
+from power_grid_env.dynamics import induction_torque, simulate_induction, simulate_smib, simulate_smib_with_controls
+from power_grid_env.model import StudyFault
+from power_grid_env.reference import thevenin_fault_current
 from power_grid_env.emt import rlc_exact_underdamped, rlc_step_difference, rlc_trapezoidal
 from power_grid_env.heuristic import choose_action
 from power_grid_env.importer import import_network
 from power_grid_env.llm_tools import validate_tool_call
 from power_grid_env.preflight import preflight
 from power_grid_env.schema_export import export_schemas
-from power_grid_env.study import compare_main_path, run_pilot
+from power_grid_env.study import compare_main_path, run_pilot, run_restoration
 from power_grid_env.tasks import task_ids
 from power_grid_env.viewer import viewer_bundle, write_viewer
 
@@ -192,3 +197,71 @@ def test_opf_dynamics_emt_tasks_and_timing(tmp_path):
     export_schemas(tmp_path)
     schema = json.loads((tmp_path / "scenario.schema.json").read_text(encoding="utf-8"))
     assert "horizon_s" in schema["properties"]
+
+
+def test_restoration_limits_reverse_flow_fault_and_scale():
+    network, _report = _plant()
+    restored = run_restoration(network)
+    assert restored["closed"]["sw_cable_a"] is False
+    assert restored["closed"]["sw_cable_b"] is False
+    assert restored["closed"]["ats"] is True
+    assert restored["mcc_pu"] is not None and restored["mcc_pu"] > 0.9
+
+    limited = NetBuilder("pv-limit", "PV", 10.0, s_base_va=1e6)
+    limited.node("src", 10)
+    limited.node("gen", 10)
+    limited.source("src", 0.3, 1.2)
+    limited.line_z1("src", "gen", 0.05 + 0.15j, line_id="line")
+    limited.load("gen", 20e3, 250e3, load_id="load")
+    limited.generator("gen", 50e3, mode="pv", v_set_pu=1.02, q_min_var=-20e3, q_max_var=40e3, generator_id="pv")
+    pv_result = solve_network(limited.build())
+    assert pv_result.status == "converged"
+    assert "pv" in pv_result.limited_generators
+
+    export = NetBuilder("export", "обратный переток", 10.0, s_base_va=1e6)
+    export.node("src", 10)
+    export.node("ld", 10)
+    export.source("src", 0.05, 0.2)
+    export.line_z1("src", "ld", 0.08 + 0.12j, line_id="line")
+    export.load("ld", 80e3, 10e3, load_id="load")
+    export.generator("ld", 300e3, q_var=0.0, generator_id="gen")
+    exported = solve_network(export.build())
+    assert exported.status == "converged"
+    source_power = sum(
+        flow.p_into_w for flow in exported.flows if flow.equipment_id == "source" and flow.phase in "ABC"
+    )
+    assert source_power > 1_000.0
+
+    faulted = NetBuilder("ll", "LL", 12.47)
+    faulted.node("src")
+    faulted.source("src", 0.1, 1.0)
+    fault_network = faulted.build()
+    fault_network.study_faults.append(StudyFault(id="ll", bus_id="src", kind="ll", phases=["A", "B"], r_ohm=2.0))
+    fault_result = solve_network(fault_network)
+    assert fault_result.status == "converged"
+    expected = thevenin_fault_current(ll_to_ln(12_470), 0.1 + 1j, 0.1 + 1j, 0.1 + 1j, 2 + 0j, "ll")
+    actual = sum(flow.current for flow in fault_result.flows if flow.equipment_id == "ll" and flow.phase == "A")
+    assert abs(abs(actual) - abs(expected)) / max(1.0, abs(expected)) < 0.02
+
+    def voltage_at(time_s: float) -> float:
+        return 0.25 if 0.2 <= time_s < 0.45 else 1.0
+
+    swing = simulate_smib(
+        pm=0.4,
+        e_pu=1.1,
+        v_pu=1.0,
+        x_pu=0.35,
+        inertia_s=5.0,
+        damping=3.0,
+        dt_s=0.01,
+        t_end_s=4.0,
+        v_profile=voltage_at,
+    )
+    settled = abs(float(swing["delta"][-1]) - float(swing["delta"][0]))
+    assert settled < 0.2
+    motor = simulate_induction(voltage=1.0, rotor_r=0.02, reactance=0.2, load_torque=0.8, inertia=2.0, t_end_s=4.0)
+    assert abs(motor["slip"] - motor["equilibrium_slip"]) < 1e-3
+    assert induction_torque(motor["equilibrium_slip"], 1.0, 0.02, 0.2) == pytest.approx(0.8, rel=1e-6)
+    hundred = time_radial(100, repeats=1)
+    assert hundred["converged"] == 1.0
+    assert hundred["p50_s"] > 0

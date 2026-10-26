@@ -24,6 +24,16 @@ switches:
     interrupt_current_a: 16000
     operate_time_s: 0
     normally_closed: false
+  Line.sw_cable_a:
+    kind: breaker
+    rated_current_a: 400
+    interrupt_current_a: 16000
+    operate_time_s: 0
+  Line.sw_cable_b:
+    kind: breaker
+    rated_current_a: 400
+    interrupt_current_a: 16000
+    operate_time_s: 0
 lines:
   Line.cable:
     rating_a: 400
@@ -46,9 +56,11 @@ meters:
 coordinates:
   grid: [80, 160]
   bus110: [320, 160]
-  bus10: [580, 160]
-  section: [840, 160]
-  lv: [1100, 160]
-  mcc: [1360, 160]
-  reserve10: [840, 420]
+  bus10: [560, 160]
+  cable_a: [760, 160]
+  cable_b: [1040, 160]
+  section: [1240, 160]
+  lv: [1480, 160]
+  mcc: [1720, 160]
+  reserve10: [1240, 420]
 assumptions: []

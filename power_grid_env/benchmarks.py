@@ -8,8 +8,12 @@ from power_grid_env.backend_opendss import solve_network
 from power_grid_env.build import NetBuilder
 
 
-def time_radial(buses: int, repeats: int = 1) -> dict[str, float]:
-    """Замер лучевой схемы. Число шин — размер этого прогона, не обещание 10 000 узлов."""
+def time_radial(buses: int, repeats: int = 1) -> dict[str, float | str]:
+    """Замер лучевой схемы с одной нагрузкой на конце.
+
+    На этой машине 100 и 1000 шин сходились. 10 000 шин за один прогон не сошлись:
+    это измерение, а не обещание размера.
+    """
     if buses < 2:
         raise ValueError("нужно хотя бы две шины")
     builder = NetBuilder(f"radial-{buses}", "radial", 10.0, s_base_va=10e6)
@@ -33,6 +37,7 @@ def time_radial(buses: int, repeats: int = 1) -> dict[str, float]:
         "repeats": float(repeats),
         "p50_s": ordered[len(ordered) // 2],
         "converged": 1.0 if status == "converged" else 0.0,
+        "status": status,
     }
 
 

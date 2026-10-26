@@ -178,6 +178,51 @@ def simulate_smib_with_controls(
     return {"field": trace[:, 2], "mechanical": trace[:, 3], "equilibrium_residual": residual}
 
 
+def induction_torque(slip: float, voltage: float, rotor_r: float, reactance: float) -> float:
+    """Момент одноконтурной схемы замещения. Напряжение — фазное, момент — на фазу."""
+    if abs(slip) < 1e-9:
+        return 0.0
+    resistance = rotor_r / slip
+    return voltage * voltage * resistance / (resistance * resistance + reactance * reactance)
+
+
+def induction_equilibrium_slip(voltage: float, rotor_r: float, reactance: float, load_torque: float) -> float:
+    """Меньший положительный корень Te(s) = Tнагр. Годится ниже опрокидывания."""
+    if load_torque <= 0:
+        raise ValueError("нужен положительный момент нагрузки")
+    # V^2 * (R/s) = T * ((R/s)^2 + X^2)
+    # T R^2 + T X^2 s^2 - V^2 R s = 0
+    a = load_torque * reactance * reactance
+    b = -voltage * voltage * rotor_r
+    c = load_torque * rotor_r * rotor_r
+    discriminant = b * b - 4 * a * c
+    if discriminant < 0:
+        raise ValueError("момент выше опрокидывающего")
+    root = (-b - math.sqrt(discriminant)) / (2 * a)
+    return root
+
+
+def simulate_induction(
+    *,
+    voltage: float,
+    rotor_r: float,
+    reactance: float,
+    load_torque: float,
+    inertia: float,
+    slip0: float = 0.02,
+    dt_s: float = 0.002,
+    t_end_s: float = 1.0,
+) -> dict[str, float]:
+    """Скольжение асинхронной машины. Инерция в тех же единицах, что момент и время."""
+    slip = slip0
+    steps = int(round(t_end_s / dt_s))
+    for _ in range(steps):
+        torque = induction_torque(slip, voltage, rotor_r, reactance)
+        slip = slip + dt_s * (load_torque - torque) / inertia
+    target = induction_equilibrium_slip(voltage, rotor_r, reactance, load_torque)
+    return {"slip": slip, "equilibrium_slip": target}
+
+
 def _numerical_jacobian(state, pm, e_pu, v_pu, x_pu, inertia, damping, omega_s, dt) -> np.ndarray:
     base = derivative(state, pm, e_pu, v_pu, x_pu, inertia, damping, omega_s)
     matrix = np.eye(2)
