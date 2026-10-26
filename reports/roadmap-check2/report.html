@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><title>Отчёт испытания</title>
+<style>
+body { font-family: sans-serif; margin: 24px; color: #1b1b1b; }
+table { border-collapse: collapse; width: 100%; }
+td, th { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+.banner { background: #13322b; color: white; padding: 12px 16px; }
+.note { background: #f4f1ea; padding: 12px; }
+</style></head><body>
+<div class="banner">Отчёт сравнения с baseline. Это не сертификат и не допуск к управлению сетью.</div>
+<p>Пакет восстановления распределительного фидера</p>
+<div class="note"><b>Область применимости.</b> Квазистационарная несимметричная сеть 12,47 кВ, известный повреждённый участок, явные выключатели и разъединитель. Cold-load pickup не задан и не моделируется. RMS, EMT и быстродействующая защита вне области: такие вопросы получают out_of_scope.
+</div>
+<h2>Парные результаты</h2>
+<table><tr><th>Сценарий</th><th>Baseline, недоотпуск кВт·ч</th><th>Кандидат</th><th>Где кандидат хуже</th><th>Статус</th></tr>
+<tr><td>normal_fault</td><td>36.6667</td><td>8.3333</td><td>—</td><td>compared</td></tr><tr><td>overload_backfeed</td><td>16.6667</td><td>8.3333</td><td>overload_duration_s</td><td>compared</td></tr>
+</table>
+<h2>Сбои</h2><ul><li>нет</li></ul>
+<h2>Неоценённые случаи</h2><ul><li>нет</li></ul>
+<h2>Допущения</h2><ul><li>Line.sw_down: импеданс switch=yes опущен, аппарат топологический</li><li>Line.sw_head: импеданс switch=yes опущен, аппарат топологический</li><li>Line.sw_tie: импеданс switch=yes опущен, аппарат топологический</li><li>Line.sw_up: импеданс switch=yes опущен, аппарат топологический</li><li>diagonal_from_positive_sequence</li><li>Последовательные r1/x1 переведены в диагональную фазную матрицу без взаимоиндукции. Z0 не измерялся и не подставлялся отдельным значением: он совпал с Z1 только из-за нулевой взаимности.</li></ul>
+<p>Вердикт набора: <b>completed_with_recorded_regressions</b>. Пороги suite фиксированы до прогона. Несходимость решателя не названа коллапсом.</p>
+</body></html>

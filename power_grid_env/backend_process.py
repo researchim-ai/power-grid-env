@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import select
 import subprocess
 import sys
 from typing import Any
@@ -12,7 +13,8 @@ from power_grid_env.results import SolveOptions, SolveResult
 
 
 class ProcessBackend:
-    def __init__(self) -> None:
+    def __init__(self, timeout_s: float = 120.0) -> None:
+        self.timeout_s = timeout_s
         self.process = subprocess.Popen(
             [sys.executable, "-m", "power_grid_env.backend_worker"],
             stdin=subprocess.PIPE,
@@ -30,6 +32,10 @@ class ProcessBackend:
         assert self.process.stdin is not None and self.process.stdout is not None
         self.process.stdin.write(json.dumps(payload) + "\n")
         self.process.stdin.flush()
+        ready, _, _ = select.select([self.process.stdout], [], [], self.timeout_s)
+        if not ready:
+            self.process.kill()
+            raise TimeoutError(f"backend не ответил за {self.timeout_s} с")
         line = self.process.stdout.readline()
         if not line:
             error = ""

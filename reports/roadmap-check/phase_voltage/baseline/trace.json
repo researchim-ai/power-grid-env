@@ -1,0 +1,176 @@
+[
+  {
+    "time_s": 60.0,
+    "dt_s": 60.0,
+    "action": {
+      "kind": "hold"
+    },
+    "acceptance": {
+      "accepted": true,
+      "reason": "hold",
+      "origin": "controller",
+      "time_s": 0.0
+    },
+    "origin": "controller",
+    "solve_status": "converged",
+    "observation": {
+      "schema_version": "power-grid-env.observation/v1",
+      "time_s": 60.0,
+      "source": "observation",
+      "switches": [
+        {
+          "id": "sw_head",
+          "kind": "breaker",
+          "closed": true,
+          "operable": true,
+          "locked": false,
+          "tagged_for_maintenance": false
+        }
+      ],
+      "voltages": [
+        {
+          "meter_id": "meter_n1",
+          "node_id": "n1",
+          "phase": "A",
+          "v_pu": 0.9482434127803896,
+          "angle_rad": -0.07705617162407324,
+          "available_s": 60.0
+        },
+        {
+          "meter_id": "meter_n1",
+          "node_id": "n1",
+          "phase": "B",
+          "v_pu": 0.9966244331351786,
+          "angle_rad": -2.0951836032628224,
+          "available_s": 60.0
+        },
+        {
+          "meter_id": "meter_n1",
+          "node_id": "n1",
+          "phase": "C",
+          "v_pu": 1.0023736584204832,
+          "angle_rad": 2.091867901738243,
+          "available_s": 60.0
+        }
+      ],
+      "known_fault_section": null,
+      "action_mask": [
+        {
+          "equipment_id": "sw_head",
+          "command": "open",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_head",
+          "command": "close",
+          "allowed": true,
+          "reason": "accepted"
+        }
+      ],
+      "limits": {
+        "v_min_pu": 0.95,
+        "v_max_pu": 1.05
+      },
+      "public_scenario_id": "phase_voltage"
+    },
+    "privileged": {
+      "source": "privileged",
+      "solve_status": "converged",
+      "node_of_bus": {
+        "bus_68a2c55252d00f17": [
+          "n0",
+          "sourcebus"
+        ],
+        "bus_676b8bb84ce7267d": [
+          "n1"
+        ]
+      },
+      "voltages": [
+        {
+          "bus_id": "bus_68a2c55252d00f17",
+          "phase": "A",
+          "v_pu": 0.9969764294734904,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_68a2c55252d00f17",
+          "phase": "B",
+          "v_pu": 0.9966231732500322,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_68a2c55252d00f17",
+          "phase": "C",
+          "v_pu": 1.0023723753990477,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_676b8bb84ce7267d",
+          "phase": "A",
+          "v_pu": 0.9482434127803896,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_676b8bb84ce7267d",
+          "phase": "B",
+          "v_pu": 0.9966244331351786,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_676b8bb84ce7267d",
+          "phase": "C",
+          "v_pu": 1.0023736584204832,
+          "energized": true
+        }
+      ],
+      "currents": [
+        {
+          "equipment_id": "lateral",
+          "current_a": 221.66112469639012,
+          "rating_a": 400.0
+        }
+      ]
+    },
+    "violations": [
+      {
+        "kind": "voltage",
+        "time_s": 0.0,
+        "equipment_id": "heavy_a",
+        "value": 0.9482434127803896,
+        "limit": 0.95,
+        "unit": "pu",
+        "preceding_action": {
+          "kind": "hold"
+        },
+        "causal_claim": false
+      }
+    ],
+    "restorable_ok": false,
+    "ok_since_s": null,
+    "interlock_attempts": 0,
+    "rejected_actions": 0,
+    "operations": 0,
+    "timeouts": 0,
+    "energy_not_served_wh": 25000.0,
+    "critical_served_wh": 0.0,
+    "critical_demand_wh": 25000.0,
+    "voltage_violation_s": 60.0,
+    "voltage_violation_pu_s": 0.1053952331766217,
+    "overload_s": 0.0,
+    "overload_pu_s": 0.0,
+    "service_rows": [
+      {
+        "dt_s": 60.0,
+        "demand_w": 1500000.0,
+        "phase_pu": [
+          0.9482434127803896
+        ],
+        "energized": true,
+        "v_min_pu": 0.95,
+        "load_id": "heavy_a"
+      }
+    ],
+    "reward": -26.05395233176622
+  }
+]

@@ -1,0 +1,114 @@
+{
+  "schema_version": "power-grid-env.evidence/v1",
+  "files": [
+    {
+      "path": "index.sqlite",
+      "sha256": "5c7330052811623e12ba2605b69207d2db1be3ec83784eac9bdedd647ada1e0f"
+    },
+    {
+      "path": "normal_fault/baseline/fingerprint.json",
+      "sha256": "05f1a4f7945a7421ad5474426d3c6e1fc2c8340af089d9d47d56487900e493e0"
+    },
+    {
+      "path": "normal_fault/baseline/metrics.json",
+      "sha256": "f76f914c41852c306523536926836e25317edf1301b37083551bcdadd48d0953"
+    },
+    {
+      "path": "normal_fault/baseline/trace.json",
+      "sha256": "de2fba589e7bc82121c626051cc5a1b467ed5b39c8e657369bce4633defaff86"
+    },
+    {
+      "path": "normal_fault/candidate/fingerprint.json",
+      "sha256": "d33e113c51d5ffbd99cc369fd339a3661e3d11fc881ffec955a1a18c8e26ca3b"
+    },
+    {
+      "path": "normal_fault/candidate/metrics.json",
+      "sha256": "b8d4ebcb43c35b7812e37cf1591dd8e1f3d6ff1bf7f5787c4bc53ac89a6e22de"
+    },
+    {
+      "path": "normal_fault/candidate/trace.json",
+      "sha256": "2b8ac6fe10cfc14ef8f34c8da3893710342d337364dd828ce0b491e354cf095f"
+    },
+    {
+      "path": "normal_fault/comparison.json",
+      "sha256": "75d2c3871bc200c47bb72e47d3b6cfab7288a2962a65e475a672d3afcd87c198"
+    },
+    {
+      "path": "normal_fault/import_report.json",
+      "sha256": "cf4c2ad2dbacd1df149d9242cbdeaaa479d3393f75a5f6151d14aea75cd5e129"
+    },
+    {
+      "path": "normal_fault/network_hash.json",
+      "sha256": "01654ff127f4254dc09a5519d1e1e932546508d3a1e2650b6e0fda2808322688"
+    },
+    {
+      "path": "normal_fault/preflight.json",
+      "sha256": "3d5e199f81717bad5cf53c9015fcd98f720ec2630c58f0c06ffa52df95e9d890"
+    },
+    {
+      "path": "normal_fault/status.json",
+      "sha256": "c0accb61a1907936518ce693911b58cb462bf89be8e4c8bb393b10d4daab1f37"
+    },
+    {
+      "path": "normal_fault/viewer.html",
+      "sha256": "cc06d06a5ca96313caad0c6761456f3c2225090ff37372b182378ef038562157"
+    },
+    {
+      "path": "overload_backfeed/baseline/fingerprint.json",
+      "sha256": "7536b38a40b57d4cecb907d453444adbaa965deccef0f2d1c96cf93c08e1c0d3"
+    },
+    {
+      "path": "overload_backfeed/baseline/metrics.json",
+      "sha256": "cadadbdfc33273924b47dca84f5fdfdcddaefd38d523b59352374a20017dc764"
+    },
+    {
+      "path": "overload_backfeed/baseline/trace.json",
+      "sha256": "49c830a5d61e8b4ec1b494726a66d0b9ab6cbbd3529340d3e6e31ef3db176796"
+    },
+    {
+      "path": "overload_backfeed/candidate/fingerprint.json",
+      "sha256": "fca112aa50f19955e80a468d2fef2cb8cbd0bf322f88454c32bab1cbea9c3b7b"
+    },
+    {
+      "path": "overload_backfeed/candidate/metrics.json",
+      "sha256": "2329d8a157115ff285e5b7646d18f91e518a517e80d41062755f5377ffa795d0"
+    },
+    {
+      "path": "overload_backfeed/candidate/trace.json",
+      "sha256": "5a491f9a5701b8c478c716317ebfbaafa362e9a02e026a347aa043837966e9fc"
+    },
+    {
+      "path": "overload_backfeed/comparison.json",
+      "sha256": "ffe9a787dda6df4db0dec48d77372d1a0620f8485ca69482c3aa61ab09a514ae"
+    },
+    {
+      "path": "overload_backfeed/import_report.json",
+      "sha256": "5f76224bbe9936e437c6f43e38a690099c101ea2096ca502d935f65e4d944fd1"
+    },
+    {
+      "path": "overload_backfeed/network_hash.json",
+      "sha256": "7642125114e1159a365f6319643d64335e70a4af22587a0a3c8fbe56733ebf89"
+    },
+    {
+      "path": "overload_backfeed/preflight.json",
+      "sha256": "3d5e199f81717bad5cf53c9015fcd98f720ec2630c58f0c06ffa52df95e9d890"
+    },
+    {
+      "path": "overload_backfeed/status.json",
+      "sha256": "c0accb61a1907936518ce693911b58cb462bf89be8e4c8bb393b10d4daab1f37"
+    },
+    {
+      "path": "overload_backfeed/viewer.html",
+      "sha256": "6f173caae0ee5dfacb80c640eaeab92f3a20defa4b632dae4faa0930c0b8c070"
+    },
+    {
+      "path": "report.html",
+      "sha256": "c6ace4dc799fcd1ede8f6931d748df0671e70229ccd7119497045a73925323fb"
+    },
+    {
+      "path": "summary.json",
+      "sha256": "ccf30659c77f888f6900591be2e59799ed0e458f1a136e820b61166b5a95e43d"
+    }
+  ],
+  "note": "Платформа не выдаёт отраслевой сертификат и не гарантирует управление реальной сетью."
+}

@@ -1,0 +1,20 @@
+{
+  "ok": true,
+  "task": "restoration",
+  "errors": [],
+  "warnings": [],
+  "islands": [
+    {
+      "id": "island_d80e48e3ddb34c6d",
+      "energized": true,
+      "reason": "grid_forming_source",
+      "buses": 2,
+      "sources": [
+        "source"
+      ]
+    }
+  ],
+  "assumptions": [
+    "diagonal_from_positive_sequence"
+  ]
+}

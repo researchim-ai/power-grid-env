@@ -8,7 +8,17 @@ from __future__ import annotations
 
 from typing import Any
 
-from power_grid_env.metrics import summarize_episode
+from power_grid_env.metrics import summarize_episode, unserved_fraction
+
+
+def energy_from_service_log(trace: list[dict[str, Any]]) -> float:
+    """Недоотпуск заново из пофазных интервалов, без готового поля ENS."""
+    total = 0.0
+    for step in trace:
+        for row in step.get("service_rows") or []:
+            fraction = 1.0 if not row["energized"] else unserved_fraction(row["phase_pu"], row["v_min_pu"])
+            total += float(row["demand_w"]) * fraction * float(row["dt_s"]) / 3600.0
+    return total
 
 
 def evaluate_trace(trace: list[dict[str, Any]], horizon_s: float, controller_outcome: str) -> dict[str, Any]:
@@ -28,6 +38,8 @@ def evaluate_trace(trace: list[dict[str, Any]], horizon_s: float, controller_out
         category = "incomplete"
     else:
         category = "completed_episode"
+    recomputed = energy_from_service_log(trace)
+    reported = float(physical.get("energy_not_served_wh") or 0.0)
     return {
         **physical,
         "controller_outcome": controller_outcome,
@@ -36,4 +48,6 @@ def evaluate_trace(trace: list[dict[str, Any]], horizon_s: float, controller_out
         "solve_failure_times_s": solve_failures,
         "violation_count": len(physical_violations),
         "controller_self_report_ignored": True,
+        "energy_not_served_recomputed_wh": recomputed,
+        "energy_log_matches_report": abs(recomputed - reported) <= 1e-6,
     }

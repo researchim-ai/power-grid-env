@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><title>Просмотр испытания</title>
+<style>
+body { margin: 0; font-family: sans-serif; color: #17211c; background: #f6f4ef; }
+header { background: #16342c; color: white; padding: 12px 16px; display: flex; justify-content: space-between; }
+.banner { font-weight: 700; }
+main { display: grid; grid-template-columns: 280px 1fr 320px; gap: 12px; padding: 12px; }
+section { background: white; border: 1px solid #ddd; padding: 8px; min-height: 240px; }
+svg { width: 100%; height: 420px; background: #fbfaf7; }
+.bad { color: #8c1d18; font-weight: 700; }
+button { margin: 2px 0; display: block; }
+.selected { outline: 3px solid #b45309; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+td, th { border-bottom: 1px solid #eee; padding: 4px; text-align: left; }
+</style></head><body>
+<header>
+  <div class="banner" id="banner">привилегированный вид оценки</div>
+  <div>
+    <button id="priv" type="button">привилегированный вид</button>
+    <button id="obs" type="button">только observation</button>
+  </div>
+</header>
+<main>
+  <section><h3>Время и действия</h3><div id="timeline"></div></section>
+  <section><h3>Схема</h3><svg id="diagram"></svg></section>
+  <section><h3>Величины и нарушения</h3><div id="detail"></div></section>
+</main>
+<script>
+const data = {"nodes": [{"id": "sourcebus", "x": 40.0, "y": 80.0}, {"id": "n1", "x": 160.0, "y": 80.0}, {"id": "n2", "x": 300.0, "y": 80.0}], "lines": [{"id": "span", "from": "n1", "to": "n2"}], "switches": [{"id": "knife", "from": "sourcebus", "to": "n1", "initially_closed": true}], "steps": [{"time_s": 60.0, "action": {"kind": "switch", "equipment_id": "knife", "command": "open"}, "acceptance": {"accepted": false, "reason": "disconnector_cannot_interrupt", "interlock": true, "origin": "controller", "time_s": 0.0}, "origin": "controller", "operations": 0, "solve_status": "converged", "violations": [], "observation": {"schema_version": "power-grid-env.observation/v1", "time_s": 60.0, "source": "observation", "switches": [{"id": "knife", "kind": "disconnector", "closed": true, "operable": true, "locked": false, "tagged_for_maintenance": false}], "voltages": [{"meter_id": "meter_n2", "node_id": "n2", "phase": "A", "v_pu": 0.999886918651414, "angle_rad": -0.00022257963532747803, "available_s": 60.0}, {"meter_id": "meter_n2", "node_id": "n2", "phase": "B", "v_pu": 0.9998869186514153, "angle_rad": -2.094617682141197, "available_s": 60.0}, {"meter_id": "meter_n2", "node_id": "n2", "phase": "C", "v_pu": 0.9998869186514163, "angle_rad": 2.0941725225325247, "available_s": 60.0}], "known_fault_section": null, "action_mask": [{"equipment_id": "knife", "command": "open", "allowed": true, "reason": "accepted"}, {"equipment_id": "knife", "command": "close", "allowed": true, "reason": "accepted"}], "limits": {"v_min_pu": 0.95, "v_max_pu": 1.05}, "public_scenario_id": "disconnector_interlock"}, "privileged": {"source": "privileged", "solve_status": "converged", "node_of_bus": {"bus_54769a317d93d9dc": ["n1", "sourcebus"], "bus_0480a93d2e9b094b": ["n2"]}, "voltages": [{"bus_id": "bus_54769a317d93d9dc", "phase": "A", "v_pu": 0.9999640514191158, "energized": true}, {"bus_id": "bus_54769a317d93d9dc", "phase": "B", "v_pu": 0.999964051419117, "energized": true}, {"bus_id": "bus_54769a317d93d9dc", "phase": "C", "v_pu": 0.999964051419118, "energized": true}, {"bus_id": "bus_0480a93d2e9b094b", "phase": "A", "v_pu": 0.999886918651414, "energized": true}, {"bus_id": "bus_0480a93d2e9b094b", "phase": "B", "v_pu": 0.9998869186514153, "energized": true}, {"bus_id": "bus_0480a93d2e9b094b", "phase": "C", "v_pu": 0.9998869186514163, "energized": true}], "currents": [{"equipment_id": "span", "current_a": 9.306301852593702, "rating_a": 400.0}]}, "switches": {"knife": true}}], "v_min_pu": 0.95, "v_max_pu": 1.05};
+let mode = "privileged";
+let index = data.steps.length ? data.steps.length - 1 : 0;
+const banner = document.getElementById("banner");
+function step() { return data.steps[index]; }
+function layout() {
+  const nodes = data.nodes;
+  if (!nodes.length) return {};
+  const placed = {};
+  nodes.forEach((node, i) => {
+    placed[node.id] = { x: node.x == null ? 80 + (i % 4) * 140 : node.x, y: node.y == null ? 60 + Math.floor(i / 4) * 90 : node.y };
+  });
+  return placed;
+}
+function render() {
+  const current = step();
+  banner.textContent = mode === "privileged"
+    ? "привилегированный вид оценки — эти величины не передаются контроллеру"
+    : "observation — только то, что получил контроллер";
+  const positions = layout();
+  const svg = document.getElementById("diagram");
+  const lines = data.lines.map(line => {
+    const a = positions[line["from"]]; const b = positions[line["to"]];
+    if (!a || !b) return "";
+    return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#355" stroke-width="2"/>`;
+  }).join("");
+  const switches = data.switches.map(sw => {
+    const a = positions[sw.from]; const b = positions[sw.to];
+    if (!a || !b) return "";
+    const closed = current && current.switches ? current.switches[sw.id] : sw.initially_closed;
+    const mx = (a.x + b.x) / 2; const my = (a.y + b.y) / 2;
+    return `<rect class="sw" data-id="${sw.id}" x="${mx-8}" y="${my-8}" width="16" height="16" fill="${closed ? "#16342c" : "#fff"}" stroke="#16342c"/>`;
+  }).join("");
+  const circles = Object.entries(positions).map(([id, p]) => `<circle cx="${p.x}" cy="${p.y}" r="7" fill="#4c6b52"/><text x="${p.x+10}" y="${p.y-10}" font-size="11">${id}</text>`).join("");
+  svg.innerHTML = lines + switches + circles;
+  const timeline = document.getElementById("timeline");
+  timeline.innerHTML = data.steps.map((item, i) => {
+    const action = item.action || {};
+    const label = action.kind === "switch" ? `${action.command} ${action.equipment_id}` : action.kind;
+    return `<button type="button" data-i="${i}">t=${item.time_s}s ${label} [${item.origin}]</button>`;
+  }).join("");
+  timeline.querySelectorAll("button").forEach(button => button.addEventListener("click", () => { index = Number(button.dataset.i); render(); }));
+  const detail = document.getElementById("detail");
+  if (!current) { detail.textContent = "нет шагов"; return; }
+  const rows = [];
+  if (mode === "privileged") {
+    (current.privileged.voltages || []).filter(v => v.phase === "A").forEach(v => {
+      const bad = v.energized && (v.v_pu < data.v_min_pu || v.v_pu > data.v_max_pu);
+      rows.push(`<tr class="${bad ? "bad" : ""}"><td>${v.bus_id} A</td><td>${v.v_pu.toFixed(4)} о.е.</td><td>${data.v_min_pu}…${data.v_max_pu}</td></tr>`);
+    });
+    (current.privileged.currents || []).forEach(v => {
+      const bad = v.current_a > v.rating_a;
+      rows.push(`<tr class="${bad ? "bad" : ""}"><td>${v.equipment_id}</td><td>${v.current_a.toFixed(2)} А</td><td>${v.rating_a} А</td></tr>`);
+    });
+  } else {
+    (current.observation.voltages || []).filter(v => v.phase === "A").forEach(v => {
+      rows.push(`<tr><td>${v.node_id} A</td><td>${Number(v.v_pu).toFixed(4)} о.е.</td><td>измерение</td></tr>`);
+    });
+  }
+  const violations = (current.violations || []).map(v => `<li><button type="button" data-eq="${v.equipment_id}">${v.kind}: ${v.equipment_id} = ${Number(v.value).toFixed(3)} ${v.unit}, предел ${v.limit}</button></li>`).join("");
+  detail.innerHTML = `<p>Шаг t=${current.time_s}s, статус расчёта ${current.solve_status}.</p>
+  <table><tr><th>Объект</th><th>Значение</th><th>Предел</th></tr>${rows.join("")}</table>
+  <h4>Нарушения</h4><ul>${violations || "<li>нет</li>"}</ul>
+  <p>Предложено: ${JSON.stringify(current.action)}. Принято: ${current.acceptance && current.acceptance.accepted}. Исполненные операции шага: ${current.operations}.</p>`;
+  detail.querySelectorAll("button[data-eq]").forEach(button => button.addEventListener("click", () => {
+    const id = button.dataset.eq;
+    document.querySelectorAll(".selected").forEach(node => node.classList.remove("selected"));
+    const target = document.querySelector(`[data-id="${id}"]`);
+    if (target) target.classList.add("selected");
+  }));
+}
+document.getElementById("priv").addEventListener("click", () => { mode = "privileged"; render(); });
+document.getElementById("obs").addEventListener("click", () => { mode = "observation"; render(); });
+render();
+</script></body></html>

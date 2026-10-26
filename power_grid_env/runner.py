@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import sqlite3
 import uuid
 from datetime import datetime, timezone
@@ -26,6 +28,26 @@ from power_grid_env.report import write_html_report, write_json, write_manifest
 from power_grid_env.scenarios import Scenario
 from power_grid_env.simulation import Engine, agent_model
 from power_grid_env.viewer import viewer_bundle, write_viewer
+
+
+def experiment_fingerprint(scenario: Scenario, command: dict[str, Any], network: Network) -> str:
+    payload = json.dumps(
+        {
+            "scenario": scenario.model_dump(mode="json"),
+            "command": command,
+            "network": canonical_hash(network),
+        },
+        sort_keys=True,
+        ensure_ascii=False,
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _same_fingerprint(directory: Path, fingerprint: str) -> bool:
+    path = directory / "fingerprint.json"
+    if not path.exists():
+        return False
+    return json.loads(path.read_text(encoding="utf-8")).get("fingerprint") == fingerprint
 
 
 def load_suite(path: Path) -> dict[str, Any]:
@@ -76,7 +98,8 @@ def run_suite(
             public_network = agent_model(network, scenario).model_dump(mode="json")
             roles = {}
             for role, command in (("baseline", scenario_spec["baseline"]), ("candidate", scenario_spec["candidate"])):
-                if resume and _completed(index, suite["id"], scenario.id, role):
+                fingerprint = experiment_fingerprint(scenario, command, network)
+                if resume and _same_fingerprint(out_dir / scenario.id / role, fingerprint) and _completed(index, suite["id"], scenario.id, role):
                     roles[role] = _read_previous(out_dir / scenario.id / role)
                     continue
                 attempt = str(uuid.uuid4())
@@ -91,7 +114,7 @@ def run_suite(
                         float(scenario_spec.get("timeout_s", 2.0)),
                     )
                     metrics = evaluate_trace(trace, scenario.horizon_s, outcome)
-                    roles[role] = {"trace": trace, "metrics": metrics, "outcome": outcome}
+                    roles[role] = {"trace": trace, "metrics": metrics, "outcome": outcome, "fingerprint": fingerprint}
                     _finish(index, attempt, metrics["episode_outcome"])
                 except Exception as exc:
                     failures.append(f"{scenario.id}/{role}: {exc}")
@@ -123,7 +146,10 @@ def run_suite(
             "Квазистационарная несимметричная сеть, известный повреждённый участок, "
             "коммутация. RMS, EMT и быстродействующая релейная защита вне области.",
         ),
-        "verdict": _verdict(comparisons, failures),
+        "verdict": _verdict(comparisons, failures, unassessed),
+        "candidate_status": "rejected" if any(
+            item.get("candidate_worse_on") or item.get("candidate_has_violation_baseline_does_not") for item in comparisons
+        ) or bool(failures or unassessed) else "accepted",
         "verdict_reason": "Пороги suite фиксированы до прогона. Несходимость решателя не названа коллапсом.",
     }
     write_json(out_dir / "summary.json", summary)
@@ -238,6 +264,8 @@ def _save_case(directory, import_report, preflight_report, roles, pair, status, 
             role_dir.mkdir(exist_ok=True)
             write_json(role_dir / "trace.json", payload["trace"])
             write_json(role_dir / "metrics.json", payload["metrics"])
+            if payload.get("fingerprint"):
+                write_json(role_dir / "fingerprint.json", {"fingerprint": payload["fingerprint"]})
         if pair and roles.get("candidate"):
             steps = roles["candidate"]["trace"]
             if network is not None and scenario is not None and steps:
@@ -249,13 +277,18 @@ def _save_case(directory, import_report, preflight_report, roles, pair, status, 
         write_json(directory / "comparison.json", pair)
 
 
-def _verdict(comparisons: list[dict[str, Any]], failures: list[str]) -> str:
-    if not comparisons and failures:
-        return "fail"
+def _verdict(comparisons: list[dict[str, Any]], failures: list[str], unassessed: list[str] | None = None) -> str:
+    unassessed = list(unassessed or [])
+    if not comparisons and not failures and not unassessed:
+        return "incomplete"
+    if unassessed and not comparisons:
+        return "incomplete"
     if any(item.get("candidate_worse_on") or item.get("candidate_has_violation_baseline_does_not") for item in comparisons):
-        return "completed_with_recorded_regressions"
-    if failures:
+        return "completed_with_recorded_regressions" if not failures and not unassessed else "completed_with_failures"
+    if failures or unassessed:
         return "completed_with_failures"
+    if not comparisons:
+        return "incomplete"
     return "pass"
 
 

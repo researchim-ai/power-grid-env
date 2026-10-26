@@ -1,0 +1,143 @@
+{
+  "source": "cases/acceptance/feeder_tight/feeder.dss",
+  "source_sha256": "794778d293eb6a2bf4f9a1be137e96a5ebb8c7fce7b967a8464526c211952d30",
+  "format": "dss",
+  "errors": [],
+  "warnings": [],
+  "mappings": [
+    {
+      "from": "Line.sw_head",
+      "to": "switch:sw_head",
+      "kind": "breaker"
+    },
+    {
+      "from": "Line.main",
+      "to": "line:main",
+      "r1_ohm": 0.08,
+      "x1_ohm": 0.2,
+      "length_m": 1000.0
+    },
+    {
+      "from": "Load.load_local",
+      "to": "load:load_local",
+      "kw": 300.0,
+      "kvar": 40.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Line.sw_up",
+      "to": "switch:sw_up",
+      "kind": "breaker"
+    },
+    {
+      "from": "Line.damaged",
+      "to": "line:damaged",
+      "r1_ohm": 0.15,
+      "x1_ohm": 0.3,
+      "length_m": 500.0
+    },
+    {
+      "from": "Line.sw_down",
+      "to": "switch:sw_down",
+      "kind": "breaker"
+    },
+    {
+      "from": "Load.load_far",
+      "to": "load:load_far",
+      "kw": 250.0,
+      "kvar": 30.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Line.tie_line",
+      "to": "line:tie_line",
+      "r1_ohm": 0.12,
+      "x1_ohm": 0.25,
+      "length_m": 600.0
+    },
+    {
+      "from": "Line.sw_tie",
+      "to": "switch:sw_tie",
+      "kind": "breaker"
+    },
+    {
+      "from": "Vsource.source",
+      "to": "source",
+      "r_ohm": 0.02,
+      "x_ohm": 0.08
+    }
+  ],
+  "approximations": [
+    "Последовательные r1/x1 переведены в диагональную фазную матрицу без взаимоиндукции. Z0 не измерялся и не подставлялся отдельным значением: он совпал с Z1 только из-за нулевой взаимности.",
+    "Line.sw_head: импеданс switch=yes опущен, аппарат топологический",
+    "Line.sw_up: импеданс switch=yes опущен, аппарат топологический",
+    "Line.sw_down: импеданс switch=yes опущен, аппарат топологический",
+    "Line.sw_tie: импеданс switch=yes опущен, аппарат топологический"
+  ],
+  "assumptions": [
+    "diagonal_from_positive_sequence"
+  ],
+  "sidecar_sha256": "9b6554634f54d89b378ee10ddcf8acfd2ff18be9a0342dea18cf177e9b14ad04",
+  "commands": [
+    {
+      "command": "Clear",
+      "status": "directive"
+    },
+    {
+      "command": "Circuit.feeder_tight",
+      "status": "transferred"
+    },
+    {
+      "command": "Vsource.source",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.sw_head",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.main",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_local",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.sw_up",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.damaged",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.sw_down",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_far",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.tie_line",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.sw_tie",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.sw_tie",
+      "status": "transferred"
+    },
+    {
+      "command": "Set voltagebases=[12.47]",
+      "status": "directive"
+    },
+    {
+      "command": "Calcvoltagebases",
+      "status": "directive"
+    }
+  ]
+}

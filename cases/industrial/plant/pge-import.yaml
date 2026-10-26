@@ -1,0 +1,41 @@
+schema_version: power-grid-env.import/v1
+network_id: plant_110_10_04
+name: Площадка 110/10/0.4
+s_base_va: 100000000
+frequency_hz: 50
+impedance_interpretation: diagonal_from_positive_sequence
+grounding:
+  Load.plant: solid
+switches:
+  Line.q110:
+    kind: breaker
+    rated_current_a: 800
+    interrupt_current_a: 20000
+    operate_time_s: 0
+lines:
+  Line.cable:
+    rating_a: 400
+  Line.mcc_feeder:
+    rating_a: 800
+transformers:
+  Transformer.t110:
+    vector_group: YNyn0
+    grounding: [solid, solid]
+  Transformer.t04:
+    vector_group: Dyn11
+    grounding: [not_applicable, solid]
+loads:
+  Load.plant:
+    critical: true
+    priority: 5
+meters:
+  - {id: meter_mcc, node: mcc}
+  - {id: meter_10, node: bus10}
+coordinates:
+  grid: [40, 80]
+  bus110: [160, 80]
+  bus10: [320, 80]
+  section: [480, 80]
+  lv: [640, 80]
+  mcc: [800, 80]
+assumptions: []

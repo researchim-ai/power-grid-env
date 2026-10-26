@@ -6,6 +6,8 @@
 
 An engineering testbed for distribution-grid control algorithms. The first release is a quasi-static unbalanced feeder: import, preflight, an external controller, a restoration suite, comparison with a baseline, a report, and replay.
 
+The simulator runs locally. A cluster, Kubernetes, and control of a real network are outside this project.
+
 A simulation run is not permission to operate a real network, a real-time guarantee, or a full EMT study.
 
 ## What is numerically checked, and what is only implemented
@@ -15,6 +17,9 @@ Statuses live in `power_grid_env/capabilities.py`.
 Checked numerically on authored cases, without field recordings:
 
 - phase-domain power flow through OpenDSSDirect / DSS-Extensions: lines, `Dyn11` and `YNd11` transformers, ZIP loads, faults, an island with no source, and Kron reduction only when the neutral is explicitly solidly grounded;
+- DSS import of a 110/10/0.4 kV transformer chain and LineCode when the sidecar states grounding, vector group, and the meaning of r1/x1;
+- a symmetric Newton AC power flow for an explicit positive-sequence equivalent;
+- a classical machine on an infinite bus and two machines on a shared reactance;
 - a classical machine on an infinite bus, integrated with the implicit trapezoidal rule;
 - RL/RLC transients compared with closed-form solutions;
 - DC power flow, PTDF, and linear WLS on small cases.

@@ -24,22 +24,27 @@ def observation_svg(observation: dict[str, Any], width: int = 480, height: int =
     )
 
 
-def pixels_only_html(width: int = 480, height: int = 220) -> str:
-    """Холст без идентификаторов оборудования. Попадание разрешает внешний runner."""
+def pixels_only_html(points: list[dict[str, float]] | None = None, width: int = 480, height: int = 220) -> str:
+    """Холст без идентификаторов. Соответствие координат и оборудования остаётся снаружи."""
+    drawn = points or []
+    coords = ", ".join(f"[{float(point['x']):.1f}, {float(point['y']):.1f}]" for point in drawn)
     return f"""<!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8"><title>pixels</title></head>
 <body style="margin:0;background:#111">
 <canvas id="c" width="{width}" height="{height}"></canvas>
 <p id="hit"></p>
 <script>
+const points = [{coords}];
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
 ctx.fillStyle = "#123";
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 ctx.strokeStyle = "#ddd";
-ctx.beginPath(); ctx.moveTo(40, 120); ctx.lineTo(220, 80); ctx.lineTo(400, 140); ctx.stroke();
 ctx.fillStyle = "#6cf";
-[[40,120],[220,80],[400,140]].forEach(([x,y]) => {{ ctx.beginPath(); ctx.arc(x,y,8,0,6.3); ctx.fill(); }});
+points.forEach(([x, y], index) => {{
+  if (index) {{ ctx.beginPath(); ctx.moveTo(points[index - 1][0], points[index - 1][1]); ctx.lineTo(x, y); ctx.stroke(); }}
+  ctx.beginPath(); ctx.arc(x, y, 8, 0, 6.3); ctx.fill();
+}});
 canvas.addEventListener("click", (event) => {{
   const rect = canvas.getBoundingClientRect();
   document.getElementById("hit").textContent = (event.clientX - rect.left).toFixed(1) + "," + (event.clientY - rect.top).toFixed(1);
@@ -48,9 +53,8 @@ canvas.addEventListener("click", (event) => {{
 """
 
 
-def hit_test(x: float, y: float) -> str | None:
-    points = {"source": (40, 120), "mid": (220, 80), "load": (400, 140)}
-    for name, (px, py) in points.items():
-        if (x - px) ** 2 + (y - py) ** 2 <= 12**2:
-            return name
+def hit_test(x: float, y: float, points: list[dict[str, Any]] | None = None) -> str | None:
+    for point in points or []:
+        if (x - float(point["x"])) ** 2 + (y - float(point["y"])) ** 2 <= 12**2:
+            return str(point["id"])
     return None

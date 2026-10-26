@@ -77,6 +77,48 @@ def simulate_smib(
     return {"t": time, "delta": state[:, 0], "omega": state[:, 1], "equilibrium_residual": residual0}
 
 
+def simulate_two_machine(
+    *,
+    pm: float,
+    emf: float,
+    reactance: float,
+    inertia_s: float,
+    frequency_hz: float = 50.0,
+    dt_s: float = 0.01,
+    t_end_s: float = 0.2,
+    disturbance_rad: float = 0.0,
+) -> dict[str, np.ndarray]:
+    """Две классические машины на общей реактивности. Pm второй равна −Pm первой."""
+    omega_s = 2.0 * math.pi * frequency_hz
+    angle = math.asin(pm * reactance / (emf * emf))
+    state = np.array([angle / 2.0 + disturbance_rad, omega_s, -angle / 2.0, omega_s], dtype=float)
+
+    def deriv(value: np.ndarray) -> np.ndarray:
+        electrical = emf * emf / reactance * math.sin(value[0] - value[2])
+        d_omega_1 = (omega_s / (2.0 * inertia_s)) * (pm - electrical)
+        d_omega_2 = (omega_s / (2.0 * inertia_s)) * (-pm + electrical)
+        return np.array([value[1] - omega_s, d_omega_1, value[3] - omega_s, d_omega_2])
+
+    steps = int(round(t_end_s / dt_s))
+    trace = np.zeros((steps + 1, 4))
+    trace[0] = state
+    residual = deriv(state)
+    for index in range(steps):
+        previous = deriv(trace[index])
+        guess = trace[index] + dt_s * previous
+        for _ in range(8):
+            upcoming = deriv(guess)
+            mismatch = guess - trace[index] - 0.5 * dt_s * (previous + upcoming)
+            jacobian = np.eye(4)
+            for column in range(4):
+                bumped = guess.copy()
+                bumped[column] += 1e-6
+                jacobian[:, column] += 0.5 * dt_s * (deriv(bumped) - upcoming) / 1e-6
+            guess = guess - np.linalg.solve(jacobian, mismatch)
+        trace[index + 1] = guess
+    return {"delta": trace[:, 0], "equilibrium_residual": residual}
+
+
 def _numerical_jacobian(state, pm, e_pu, v_pu, x_pu, inertia, damping, omega_s, dt) -> np.ndarray:
     base = derivative(state, pm, e_pu, v_pu, x_pu, inertia, damping, omega_s)
     matrix = np.eye(2)

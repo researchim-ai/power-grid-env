@@ -25,6 +25,8 @@ class RestorationEnv(Env):
             {
                 "switch_closed": spaces.MultiBinary(max(1, len(self.switch_ids))),
                 "voltage_pu": spaces.Box(-1.0, 2.0, shape=(8,), dtype=np.float32),
+                "measurement_age_s": spaces.Box(0.0, 1.0e9, shape=(8,), dtype=np.float32),
+                "action_mask": spaces.MultiBinary(self.action_space.n),
                 "time_s": spaces.Box(0.0, 1.0e9, shape=(1,), dtype=np.float32),
             }
         )
@@ -59,10 +61,23 @@ class RestorationEnv(Env):
         if flags.shape[0] < self.observation_space["switch_closed"].shape[0]:
             flags = np.pad(flags, (0, self.observation_space["switch_closed"].shape[0] - flags.shape[0]))
         volts = np.zeros(8, dtype=np.float32)
+        ages = np.zeros(8, dtype=np.float32)
+        now = float(observation.get("time_s", 0.0))
         for index, reading in enumerate(observation.get("voltages", [])[:8]):
             volts[index] = float(reading["v_pu"])
+            ages[index] = max(0.0, now - float(reading.get("available_s", now)))
+        mask_lookup = {(item["equipment_id"], item["command"]): item["allowed"] for item in observation.get("action_mask", [])}
+        mask = np.zeros(self.action_space.n, dtype=np.int8)
+        mask[0] = 1
+        for index, switch_id in enumerate(self.switch_ids):
+            if mask_lookup.get((switch_id, "open"), False):
+                mask[1 + 2 * index] = 1
+            if mask_lookup.get((switch_id, "close"), False):
+                mask[2 + 2 * index] = 1
         return {
             "switch_closed": flags[: self.observation_space["switch_closed"].shape[0]],
             "voltage_pu": volts,
-            "time_s": np.array([observation.get("time_s", 0.0)], dtype=np.float32),
+            "measurement_age_s": ages,
+            "action_mask": mask,
+            "time_s": np.array([now], dtype=np.float32),
         }

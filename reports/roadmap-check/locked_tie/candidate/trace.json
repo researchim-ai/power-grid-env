@@ -1,0 +1,1166 @@
+[
+  {
+    "time_s": 60.0,
+    "dt_s": 60.0,
+    "action": {
+      "kind": "switch",
+      "equipment_id": "sw_up",
+      "command": "open"
+    },
+    "acceptance": {
+      "accepted": true,
+      "reason": "accepted",
+      "origin": "controller",
+      "time_s": 0.0
+    },
+    "origin": "controller",
+    "solve_status": "converged",
+    "observation": {
+      "schema_version": "power-grid-env.observation/v1",
+      "time_s": 60.0,
+      "source": "observation",
+      "switches": [
+        {
+          "id": "sw_head",
+          "kind": "breaker",
+          "closed": true,
+          "operable": true,
+          "locked": false,
+          "tagged_for_maintenance": false
+        },
+        {
+          "id": "sw_up",
+          "kind": "breaker",
+          "closed": false,
+          "operable": true,
+          "locked": false,
+          "tagged_for_maintenance": false
+        },
+        {
+          "id": "sw_down",
+          "kind": "breaker",
+          "closed": true,
+          "operable": true,
+          "locked": false,
+          "tagged_for_maintenance": false
+        },
+        {
+          "id": "sw_tie",
+          "kind": "breaker",
+          "closed": false,
+          "operable": true,
+          "locked": true,
+          "tagged_for_maintenance": false
+        }
+      ],
+      "voltages": [
+        {
+          "meter_id": "meter_n1",
+          "node_id": "n1",
+          "phase": "A",
+          "v_pu": 0.9997351247970326,
+          "angle_rad": -0.0005146878543498932,
+          "available_s": 60.0
+        },
+        {
+          "meter_id": "meter_n1",
+          "node_id": "n1",
+          "phase": "B",
+          "v_pu": 0.9997351247970341,
+          "angle_rad": -2.0949097903602207,
+          "available_s": 60.0
+        },
+        {
+          "meter_id": "meter_n1",
+          "node_id": "n1",
+          "phase": "C",
+          "v_pu": 0.9997351247970363,
+          "angle_rad": 2.093880414313502,
+          "available_s": 60.0
+        },
+        {
+          "meter_id": "meter_n4",
+          "node_id": "n4",
+          "phase": "A",
+          "v_pu": 0.0,
+          "angle_rad": 0.0,
+          "available_s": 60.0
+        },
+        {
+          "meter_id": "meter_n4",
+          "node_id": "n4",
+          "phase": "B",
+          "v_pu": 0.0,
+          "angle_rad": 0.0,
+          "available_s": 60.0
+        },
+        {
+          "meter_id": "meter_n4",
+          "node_id": "n4",
+          "phase": "C",
+          "v_pu": 0.0,
+          "angle_rad": 0.0,
+          "available_s": 60.0
+        }
+      ],
+      "known_fault_section": "damaged",
+      "action_mask": [
+        {
+          "equipment_id": "sw_head",
+          "command": "open",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_head",
+          "command": "close",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_up",
+          "command": "open",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_up",
+          "command": "close",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_down",
+          "command": "open",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_down",
+          "command": "close",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_tie",
+          "command": "open",
+          "allowed": false,
+          "reason": "locked"
+        },
+        {
+          "equipment_id": "sw_tie",
+          "command": "close",
+          "allowed": false,
+          "reason": "locked"
+        }
+      ],
+      "limits": {
+        "v_min_pu": 0.95,
+        "v_max_pu": 1.05
+      },
+      "public_scenario_id": "locked_tie"
+    },
+    "privileged": {
+      "source": "privileged",
+      "solve_status": "converged",
+      "node_of_bus": {
+        "bus_68a2c55252d00f17": [
+          "n0",
+          "sourcebus"
+        ],
+        "bus_676b8bb84ce7267d": [
+          "n1"
+        ],
+        "bus_0480a93d2e9b094b": [
+          "n2"
+        ],
+        "bus_16eec991b7da9598": [
+          "n3",
+          "n4"
+        ],
+        "bus_4a8456f10e376897": [
+          "n5"
+        ],
+        "bus_e6e571d854cde626": [
+          "damaged__fault_node"
+        ]
+      },
+      "voltages": [
+        {
+          "bus_id": "bus_68a2c55252d00f17",
+          "phase": "A",
+          "v_pu": 0.9999409258900853,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_68a2c55252d00f17",
+          "phase": "B",
+          "v_pu": 0.999940925890087,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_68a2c55252d00f17",
+          "phase": "C",
+          "v_pu": 0.999940925890089,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_676b8bb84ce7267d",
+          "phase": "A",
+          "v_pu": 0.9997351247970326,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_676b8bb84ce7267d",
+          "phase": "B",
+          "v_pu": 0.9997351247970341,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_676b8bb84ce7267d",
+          "phase": "C",
+          "v_pu": 0.9997351247970363,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_0480a93d2e9b094b",
+          "phase": "A",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_0480a93d2e9b094b",
+          "phase": "B",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_0480a93d2e9b094b",
+          "phase": "C",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_16eec991b7da9598",
+          "phase": "A",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_16eec991b7da9598",
+          "phase": "B",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_16eec991b7da9598",
+          "phase": "C",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_4a8456f10e376897",
+          "phase": "A",
+          "v_pu": 0.9999410593999014,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_4a8456f10e376897",
+          "phase": "B",
+          "v_pu": 0.9999410593999031,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_4a8456f10e376897",
+          "phase": "C",
+          "v_pu": 0.9999410593999051,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_e6e571d854cde626",
+          "phase": "A",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_e6e571d854cde626",
+          "phase": "B",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_e6e571d854cde626",
+          "phase": "C",
+          "v_pu": 0.0,
+          "energized": false
+        }
+      ],
+      "currents": [
+        {
+          "equipment_id": "main",
+          "current_a": 14.015359380197278,
+          "rating_a": 400.0
+        },
+        {
+          "equipment_id": "tie_line",
+          "current_a": 0.0076896927732519995,
+          "rating_a": 200.0
+        },
+        {
+          "equipment_id": "damaged__a",
+          "current_a": 0.0,
+          "rating_a": 400.0
+        },
+        {
+          "equipment_id": "damaged__b",
+          "current_a": 0.0,
+          "rating_a": 400.0
+        }
+      ]
+    },
+    "violations": [
+      {
+        "kind": "outage",
+        "time_s": 0.0,
+        "equipment_id": "load_far",
+        "value": 0.0,
+        "limit": 0.95,
+        "unit": "pu",
+        "preceding_action": {
+          "kind": "switch",
+          "equipment_id": "sw_up",
+          "command": "open"
+        },
+        "causal_claim": false
+      }
+    ],
+    "restorable_ok": false,
+    "ok_since_s": null,
+    "interlock_attempts": 0,
+    "rejected_actions": 0,
+    "operations": 1,
+    "timeouts": 0,
+    "energy_not_served_wh": 4166.666666666667,
+    "critical_served_wh": 0.0,
+    "critical_demand_wh": 4166.666666666667,
+    "voltage_violation_s": 0.0,
+    "voltage_violation_pu_s": 0.0,
+    "overload_s": 0.0,
+    "overload_pu_s": 0.0,
+    "service_rows": [
+      {
+        "dt_s": 60.0,
+        "demand_w": 300000.0,
+        "phase_pu": [
+          0.9997351247970326,
+          0.9997351247970341,
+          0.9997351247970363
+        ],
+        "energized": true,
+        "v_min_pu": 0.95,
+        "load_id": "load_local"
+      },
+      {
+        "dt_s": 60.0,
+        "demand_w": 250000.0,
+        "phase_pu": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "energized": false,
+        "v_min_pu": 0.95,
+        "load_id": "load_far"
+      }
+    ],
+    "reward": -4.176666666666667
+  },
+  {
+    "time_s": 120.0,
+    "dt_s": 60.0,
+    "action": {
+      "kind": "switch",
+      "equipment_id": "sw_down",
+      "command": "open"
+    },
+    "acceptance": {
+      "accepted": true,
+      "reason": "accepted",
+      "origin": "controller",
+      "time_s": 60.0
+    },
+    "origin": "controller",
+    "solve_status": "converged",
+    "observation": {
+      "schema_version": "power-grid-env.observation/v1",
+      "time_s": 120.0,
+      "source": "observation",
+      "switches": [
+        {
+          "id": "sw_head",
+          "kind": "breaker",
+          "closed": true,
+          "operable": true,
+          "locked": false,
+          "tagged_for_maintenance": false
+        },
+        {
+          "id": "sw_up",
+          "kind": "breaker",
+          "closed": false,
+          "operable": true,
+          "locked": false,
+          "tagged_for_maintenance": false
+        },
+        {
+          "id": "sw_down",
+          "kind": "breaker",
+          "closed": false,
+          "operable": true,
+          "locked": false,
+          "tagged_for_maintenance": false
+        },
+        {
+          "id": "sw_tie",
+          "kind": "breaker",
+          "closed": false,
+          "operable": true,
+          "locked": true,
+          "tagged_for_maintenance": false
+        }
+      ],
+      "voltages": [
+        {
+          "meter_id": "meter_n1",
+          "node_id": "n1",
+          "phase": "A",
+          "v_pu": 0.9997351247970326,
+          "angle_rad": -0.0005146878543498932,
+          "available_s": 120.0
+        },
+        {
+          "meter_id": "meter_n1",
+          "node_id": "n1",
+          "phase": "B",
+          "v_pu": 0.9997351247970341,
+          "angle_rad": -2.0949097903602207,
+          "available_s": 120.0
+        },
+        {
+          "meter_id": "meter_n1",
+          "node_id": "n1",
+          "phase": "C",
+          "v_pu": 0.9997351247970363,
+          "angle_rad": 2.093880414313502,
+          "available_s": 120.0
+        },
+        {
+          "meter_id": "meter_n4",
+          "node_id": "n4",
+          "phase": "A",
+          "v_pu": 0.0,
+          "angle_rad": 0.0,
+          "available_s": 120.0
+        },
+        {
+          "meter_id": "meter_n4",
+          "node_id": "n4",
+          "phase": "B",
+          "v_pu": 0.0,
+          "angle_rad": 0.0,
+          "available_s": 120.0
+        },
+        {
+          "meter_id": "meter_n4",
+          "node_id": "n4",
+          "phase": "C",
+          "v_pu": 0.0,
+          "angle_rad": 0.0,
+          "available_s": 120.0
+        }
+      ],
+      "known_fault_section": "damaged",
+      "action_mask": [
+        {
+          "equipment_id": "sw_head",
+          "command": "open",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_head",
+          "command": "close",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_up",
+          "command": "open",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_up",
+          "command": "close",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_down",
+          "command": "open",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_down",
+          "command": "close",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_tie",
+          "command": "open",
+          "allowed": false,
+          "reason": "locked"
+        },
+        {
+          "equipment_id": "sw_tie",
+          "command": "close",
+          "allowed": false,
+          "reason": "locked"
+        }
+      ],
+      "limits": {
+        "v_min_pu": 0.95,
+        "v_max_pu": 1.05
+      },
+      "public_scenario_id": "locked_tie"
+    },
+    "privileged": {
+      "source": "privileged",
+      "solve_status": "converged",
+      "node_of_bus": {
+        "bus_68a2c55252d00f17": [
+          "n0",
+          "sourcebus"
+        ],
+        "bus_676b8bb84ce7267d": [
+          "n1"
+        ],
+        "bus_0480a93d2e9b094b": [
+          "n2"
+        ],
+        "bus_8721d664ef60096a": [
+          "n3"
+        ],
+        "bus_88450b082ec4df2f": [
+          "n4"
+        ],
+        "bus_4a8456f10e376897": [
+          "n5"
+        ],
+        "bus_e6e571d854cde626": [
+          "damaged__fault_node"
+        ]
+      },
+      "voltages": [
+        {
+          "bus_id": "bus_68a2c55252d00f17",
+          "phase": "A",
+          "v_pu": 0.9999409258900853,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_68a2c55252d00f17",
+          "phase": "B",
+          "v_pu": 0.999940925890087,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_68a2c55252d00f17",
+          "phase": "C",
+          "v_pu": 0.999940925890089,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_676b8bb84ce7267d",
+          "phase": "A",
+          "v_pu": 0.9997351247970326,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_676b8bb84ce7267d",
+          "phase": "B",
+          "v_pu": 0.9997351247970341,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_676b8bb84ce7267d",
+          "phase": "C",
+          "v_pu": 0.9997351247970363,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_0480a93d2e9b094b",
+          "phase": "A",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_0480a93d2e9b094b",
+          "phase": "B",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_0480a93d2e9b094b",
+          "phase": "C",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_8721d664ef60096a",
+          "phase": "A",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_8721d664ef60096a",
+          "phase": "B",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_8721d664ef60096a",
+          "phase": "C",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_88450b082ec4df2f",
+          "phase": "A",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_88450b082ec4df2f",
+          "phase": "B",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_88450b082ec4df2f",
+          "phase": "C",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_4a8456f10e376897",
+          "phase": "A",
+          "v_pu": 0.9999410593999014,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_4a8456f10e376897",
+          "phase": "B",
+          "v_pu": 0.9999410593999031,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_4a8456f10e376897",
+          "phase": "C",
+          "v_pu": 0.9999410593999051,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_e6e571d854cde626",
+          "phase": "A",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_e6e571d854cde626",
+          "phase": "B",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_e6e571d854cde626",
+          "phase": "C",
+          "v_pu": 0.0,
+          "energized": false
+        }
+      ],
+      "currents": [
+        {
+          "equipment_id": "main",
+          "current_a": 14.015359380197278,
+          "rating_a": 400.0
+        },
+        {
+          "equipment_id": "tie_line",
+          "current_a": 0.0076896927732519995,
+          "rating_a": 200.0
+        },
+        {
+          "equipment_id": "damaged__a",
+          "current_a": 0.0,
+          "rating_a": 400.0
+        },
+        {
+          "equipment_id": "damaged__b",
+          "current_a": 0.0,
+          "rating_a": 400.0
+        }
+      ]
+    },
+    "violations": [
+      {
+        "kind": "outage",
+        "time_s": 60.0,
+        "equipment_id": "load_far",
+        "value": 0.0,
+        "limit": 0.95,
+        "unit": "pu",
+        "preceding_action": {
+          "kind": "switch",
+          "equipment_id": "sw_down",
+          "command": "open"
+        },
+        "causal_claim": false
+      }
+    ],
+    "restorable_ok": false,
+    "ok_since_s": null,
+    "interlock_attempts": 0,
+    "rejected_actions": 0,
+    "operations": 1,
+    "timeouts": 0,
+    "energy_not_served_wh": 4166.666666666667,
+    "critical_served_wh": 0.0,
+    "critical_demand_wh": 4166.666666666667,
+    "voltage_violation_s": 0.0,
+    "voltage_violation_pu_s": 0.0,
+    "overload_s": 0.0,
+    "overload_pu_s": 0.0,
+    "service_rows": [
+      {
+        "dt_s": 60.0,
+        "demand_w": 300000.0,
+        "phase_pu": [
+          0.9997351247970326,
+          0.9997351247970341,
+          0.9997351247970363
+        ],
+        "energized": true,
+        "v_min_pu": 0.95,
+        "load_id": "load_local"
+      },
+      {
+        "dt_s": 60.0,
+        "demand_w": 250000.0,
+        "phase_pu": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "energized": false,
+        "v_min_pu": 0.95,
+        "load_id": "load_far"
+      }
+    ],
+    "reward": -4.176666666666667
+  },
+  {
+    "time_s": 180.0,
+    "dt_s": 60.0,
+    "action": {
+      "kind": "hold"
+    },
+    "acceptance": {
+      "accepted": true,
+      "reason": "hold",
+      "origin": "controller",
+      "time_s": 120.0
+    },
+    "origin": "controller",
+    "solve_status": "converged",
+    "observation": {
+      "schema_version": "power-grid-env.observation/v1",
+      "time_s": 180.0,
+      "source": "observation",
+      "switches": [
+        {
+          "id": "sw_head",
+          "kind": "breaker",
+          "closed": true,
+          "operable": true,
+          "locked": false,
+          "tagged_for_maintenance": false
+        },
+        {
+          "id": "sw_up",
+          "kind": "breaker",
+          "closed": false,
+          "operable": true,
+          "locked": false,
+          "tagged_for_maintenance": false
+        },
+        {
+          "id": "sw_down",
+          "kind": "breaker",
+          "closed": false,
+          "operable": true,
+          "locked": false,
+          "tagged_for_maintenance": false
+        },
+        {
+          "id": "sw_tie",
+          "kind": "breaker",
+          "closed": false,
+          "operable": true,
+          "locked": true,
+          "tagged_for_maintenance": false
+        }
+      ],
+      "voltages": [
+        {
+          "meter_id": "meter_n1",
+          "node_id": "n1",
+          "phase": "A",
+          "v_pu": 0.9997351247970326,
+          "angle_rad": -0.0005146878543498932,
+          "available_s": 180.0
+        },
+        {
+          "meter_id": "meter_n1",
+          "node_id": "n1",
+          "phase": "B",
+          "v_pu": 0.9997351247970341,
+          "angle_rad": -2.0949097903602207,
+          "available_s": 180.0
+        },
+        {
+          "meter_id": "meter_n1",
+          "node_id": "n1",
+          "phase": "C",
+          "v_pu": 0.9997351247970363,
+          "angle_rad": 2.093880414313502,
+          "available_s": 180.0
+        },
+        {
+          "meter_id": "meter_n4",
+          "node_id": "n4",
+          "phase": "A",
+          "v_pu": 0.0,
+          "angle_rad": 0.0,
+          "available_s": 180.0
+        },
+        {
+          "meter_id": "meter_n4",
+          "node_id": "n4",
+          "phase": "B",
+          "v_pu": 0.0,
+          "angle_rad": 0.0,
+          "available_s": 180.0
+        },
+        {
+          "meter_id": "meter_n4",
+          "node_id": "n4",
+          "phase": "C",
+          "v_pu": 0.0,
+          "angle_rad": 0.0,
+          "available_s": 180.0
+        }
+      ],
+      "known_fault_section": "damaged",
+      "action_mask": [
+        {
+          "equipment_id": "sw_head",
+          "command": "open",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_head",
+          "command": "close",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_up",
+          "command": "open",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_up",
+          "command": "close",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_down",
+          "command": "open",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_down",
+          "command": "close",
+          "allowed": true,
+          "reason": "accepted"
+        },
+        {
+          "equipment_id": "sw_tie",
+          "command": "open",
+          "allowed": false,
+          "reason": "locked"
+        },
+        {
+          "equipment_id": "sw_tie",
+          "command": "close",
+          "allowed": false,
+          "reason": "locked"
+        }
+      ],
+      "limits": {
+        "v_min_pu": 0.95,
+        "v_max_pu": 1.05
+      },
+      "public_scenario_id": "locked_tie"
+    },
+    "privileged": {
+      "source": "privileged",
+      "solve_status": "converged",
+      "node_of_bus": {
+        "bus_68a2c55252d00f17": [
+          "n0",
+          "sourcebus"
+        ],
+        "bus_676b8bb84ce7267d": [
+          "n1"
+        ],
+        "bus_0480a93d2e9b094b": [
+          "n2"
+        ],
+        "bus_8721d664ef60096a": [
+          "n3"
+        ],
+        "bus_88450b082ec4df2f": [
+          "n4"
+        ],
+        "bus_4a8456f10e376897": [
+          "n5"
+        ],
+        "bus_e6e571d854cde626": [
+          "damaged__fault_node"
+        ]
+      },
+      "voltages": [
+        {
+          "bus_id": "bus_68a2c55252d00f17",
+          "phase": "A",
+          "v_pu": 0.9999409258900853,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_68a2c55252d00f17",
+          "phase": "B",
+          "v_pu": 0.999940925890087,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_68a2c55252d00f17",
+          "phase": "C",
+          "v_pu": 0.999940925890089,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_676b8bb84ce7267d",
+          "phase": "A",
+          "v_pu": 0.9997351247970326,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_676b8bb84ce7267d",
+          "phase": "B",
+          "v_pu": 0.9997351247970341,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_676b8bb84ce7267d",
+          "phase": "C",
+          "v_pu": 0.9997351247970363,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_0480a93d2e9b094b",
+          "phase": "A",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_0480a93d2e9b094b",
+          "phase": "B",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_0480a93d2e9b094b",
+          "phase": "C",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_8721d664ef60096a",
+          "phase": "A",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_8721d664ef60096a",
+          "phase": "B",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_8721d664ef60096a",
+          "phase": "C",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_88450b082ec4df2f",
+          "phase": "A",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_88450b082ec4df2f",
+          "phase": "B",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_88450b082ec4df2f",
+          "phase": "C",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_4a8456f10e376897",
+          "phase": "A",
+          "v_pu": 0.9999410593999014,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_4a8456f10e376897",
+          "phase": "B",
+          "v_pu": 0.9999410593999031,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_4a8456f10e376897",
+          "phase": "C",
+          "v_pu": 0.9999410593999051,
+          "energized": true
+        },
+        {
+          "bus_id": "bus_e6e571d854cde626",
+          "phase": "A",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_e6e571d854cde626",
+          "phase": "B",
+          "v_pu": 0.0,
+          "energized": false
+        },
+        {
+          "bus_id": "bus_e6e571d854cde626",
+          "phase": "C",
+          "v_pu": 0.0,
+          "energized": false
+        }
+      ],
+      "currents": [
+        {
+          "equipment_id": "main",
+          "current_a": 14.015359380197278,
+          "rating_a": 400.0
+        },
+        {
+          "equipment_id": "tie_line",
+          "current_a": 0.0076896927732519995,
+          "rating_a": 200.0
+        },
+        {
+          "equipment_id": "damaged__a",
+          "current_a": 0.0,
+          "rating_a": 400.0
+        },
+        {
+          "equipment_id": "damaged__b",
+          "current_a": 0.0,
+          "rating_a": 400.0
+        }
+      ]
+    },
+    "violations": [
+      {
+        "kind": "outage",
+        "time_s": 120.0,
+        "equipment_id": "load_far",
+        "value": 0.0,
+        "limit": 0.95,
+        "unit": "pu",
+        "preceding_action": {
+          "kind": "hold"
+        },
+        "causal_claim": false
+      }
+    ],
+    "restorable_ok": false,
+    "ok_since_s": null,
+    "interlock_attempts": 0,
+    "rejected_actions": 0,
+    "operations": 0,
+    "timeouts": 0,
+    "energy_not_served_wh": 4166.666666666667,
+    "critical_served_wh": 0.0,
+    "critical_demand_wh": 4166.666666666667,
+    "voltage_violation_s": 0.0,
+    "voltage_violation_pu_s": 0.0,
+    "overload_s": 0.0,
+    "overload_pu_s": 0.0,
+    "service_rows": [
+      {
+        "dt_s": 60.0,
+        "demand_w": 300000.0,
+        "phase_pu": [
+          0.9997351247970326,
+          0.9997351247970341,
+          0.9997351247970363
+        ],
+        "energized": true,
+        "v_min_pu": 0.95,
+        "load_id": "load_local"
+      },
+      {
+        "dt_s": 60.0,
+        "demand_w": 250000.0,
+        "phase_pu": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "energized": false,
+        "v_min_pu": 0.95,
+        "load_id": "load_far"
+      }
+    ],
+    "reward": -4.166666666666667
+  }
+]

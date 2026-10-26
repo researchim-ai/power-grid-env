@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class Scenario(BaseModel):
@@ -28,6 +28,7 @@ class Scenario(BaseModel):
     unrestorable_load_ids: list[str] = Field(default_factory=list)
     meter_delay_s: dict[str, float] = Field(default_factory=dict)
     drop_probability: float = 0.0
+    measurement_period_s: float | None = None
     protection: list[dict[str, Any]] = Field(default_factory=list)
     load_profile: dict[str, list[list[float]]] = Field(default_factory=dict)
     what_if_quota: int = 4
@@ -35,6 +36,22 @@ class Scenario(BaseModel):
     model_mismatch_scale: dict[str, float] | None = None
     description: str = ""
     difficulty: str = "nominal"
+
+    @model_validator(mode="after")
+    def _bounds(self) -> "Scenario":
+        if self.control_interval_s <= 0:
+            raise ValueError("control_interval_s должен быть положительным")
+        if self.horizon_s <= 0:
+            raise ValueError("horizon_s должен быть положительным")
+        if self.settle_s < 0:
+            raise ValueError("settle_s не может быть отрицательным")
+        if not 0.0 <= self.drop_probability <= 1.0:
+            raise ValueError("drop_probability вне [0, 1]")
+        if self.measurement_period_s is not None and self.measurement_period_s <= 0:
+            raise ValueError("measurement_period_s должен быть положительным")
+        if self.fault_r_ohm < 0:
+            raise ValueError("fault_r_ohm не может быть отрицательным")
+        return self
 
     def public_config(self, network_dump: dict[str, Any]) -> dict[str, Any]:
         return {

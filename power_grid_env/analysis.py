@@ -68,29 +68,117 @@ def dc_opf(costs: np.ndarray, pmin: np.ndarray, pmax: np.ndarray, load_pu: float
 
 
 def ac_opf_two_bus(load_p: float, load_q: float, x_pu: float, cost: float, pmax: float, vmax: float = 1.05) -> dict[str, Any]:
-    """Локальная AC-постановка двух узлов. Не глобальный оптимум."""
+    """Локальный AC OPF двух узлов. Pg связан с перетоком и нагрузкой.
+
+    Узел 1 — опора, V=1∠0. Узел 2 — нагрузка, напряжение V∠−theta.
+    Потери активной мощности на чистом x равны нулю, поэтому Pg = Pнагр.
+    Это локальный SLSQP, не доказанный глобальный оптимум.
+    """
+
+    def received(z: np.ndarray) -> tuple[float, float]:
+        _pg, _qg, voltage, theta = z
+        active = voltage * math_sin(theta) / x_pu
+        reactive = (voltage * math_cos(theta) - voltage * voltage) / x_pu
+        return active, reactive
 
     def objective(z: np.ndarray) -> float:
         return cost * z[0]
 
-    def power(z: np.ndarray) -> tuple[float, float]:
-        pg, qg, v, theta = z
-        p = v * math_sin(theta) / x_pu
-        q = (v * v - v * math_cos(theta)) / x_pu
-        return p, q
-
     constraints = [
-        {"type": "eq", "fun": lambda z: power(z)[0] - load_p},
-        {"type": "eq", "fun": lambda z: power(z)[1] - load_q},
+        {"type": "eq", "fun": lambda z: received(z)[0] - load_p},
+        {"type": "eq", "fun": lambda z: received(z)[1] - load_q},
+        {"type": "eq", "fun": lambda z: z[0] - load_p},
     ]
-    bounds = [(0.0, pmax), (-2.0, 2.0), (0.95, vmax), (-0.5, 0.5)]
-    solved = minimize(objective, np.array([load_p, load_q, 1.0, 0.05]), bounds=bounds, constraints=constraints, method="SLSQP")
+    bounds = [(0.0, pmax), (-2.0, 2.0), (0.9, vmax), (0.0, 0.6)]
+    theta0 = min(0.5, x_pu * max(load_p, 1e-6))
+    solved = minimize(
+        objective,
+        np.array([load_p, load_q, 1.0, theta0]),
+        bounds=bounds,
+        constraints=constraints,
+        method="SLSQP",
+        tol=1e-12,
+    )
+    generation = None if solved.x is None else float(solved.x[0])
+    feasible = bool(solved.success) and generation is not None and abs(generation - load_p) <= 1e-4
     return {
-        "success": bool(solved.success),
+        "success": feasible,
         "x": None if solved.x is None else solved.x.tolist(),
-        "cost": None if solved.fun is None else float(solved.fun),
-        "message": solved.message,
+        "cost": None if not feasible or solved.fun is None else float(solved.fun),
+        "message": str(solved.message),
         "global_optimum_claimed": False,
+        "pg_pu": generation,
+    }
+
+
+def dc_opf_network(
+    *,
+    n_bus: int,
+    slack: int,
+    lines: list[tuple[int, int, float, float]],
+    generators: list[dict[str, float]],
+    loads: dict[int, float],
+) -> dict[str, Any]:
+    """Сетевой DC OPF: углы, балансы узлов, пределы ветвей и Pmin/Pmax.
+
+    lines: (from, to, x_pu, flow_limit_pu). generators: bus, cost, pmin, pmax.
+    """
+    free = [bus for bus in range(n_bus) if bus != slack]
+    theta_index = {bus: index for index, bus in enumerate(free)}
+    n_theta = len(free)
+    n_gen = len(generators)
+
+    def theta_coeff(bus: int, row: np.ndarray, scale: float) -> None:
+        if bus == slack:
+            return
+        row[theta_index[bus]] += scale
+
+    rows_eq = []
+    rhs = []
+    for bus in range(n_bus):
+        row = np.zeros(n_theta + n_gen)
+        for src, dst, reactance, _limit in lines:
+            if bus == src:
+                theta_coeff(src, row, -1.0 / reactance)
+                theta_coeff(dst, row, 1.0 / reactance)
+            elif bus == dst:
+                theta_coeff(src, row, 1.0 / reactance)
+                theta_coeff(dst, row, -1.0 / reactance)
+        for index, generator in enumerate(generators):
+            if int(generator["bus"]) == bus:
+                row[n_theta + index] += 1.0
+        rows_eq.append(row)
+        rhs.append(float(loads.get(bus, 0.0)))
+    ineq = []
+    ineq_rhs = []
+    for src, dst, reactance, limit in lines:
+        upper = np.zeros(n_theta + n_gen)
+        theta_coeff(src, upper, 1.0 / reactance)
+        theta_coeff(dst, upper, -1.0 / reactance)
+        ineq.append(upper)
+        ineq_rhs.append(limit)
+        ineq.append(-upper)
+        ineq_rhs.append(limit)
+    bounds = [(None, None)] * n_theta + [(float(item["pmin"]), float(item["pmax"])) for item in generators]
+    cost = np.zeros(n_theta + n_gen)
+    for index, generator in enumerate(generators):
+        cost[n_theta + index] = float(generator["cost"])
+    result = linprog(
+        cost,
+        A_ub=np.vstack(ineq) if ineq else None,
+        b_ub=np.array(ineq_rhs) if ineq else None,
+        A_eq=np.vstack(rows_eq),
+        b_eq=np.array(rhs),
+        bounds=bounds,
+        method="highs",
+    )
+    generation = None if result.x is None else result.x[n_theta:]
+    return {
+        "success": bool(result.success),
+        "status": "optimal" if result.success else "infeasible",
+        "generation_pu": None if generation is None else generation.tolist(),
+        "cost": None if result.fun is None or not result.success else float(result.fun),
+        "message": str(result.message),
     }
 
 

@@ -104,10 +104,13 @@ function render() {
     });
   }
   const violations = (current.violations || []).map(v => `<li><button type="button" data-eq="${v.equipment_id}">${v.kind}: ${v.equipment_id} = ${Number(v.value).toFixed(3)} ${v.unit}, предел ${v.limit}</button></li>`).join("");
+  const accepted = current.acceptance ? current.acceptance.accepted : false;
+  const reason = current.acceptance ? (current.acceptance.reason || "") : "";
+  const executed = current.acceptance && current.acceptance.executed_value != null ? current.acceptance.executed_value : "—";
   detail.innerHTML = `<p>Шаг t=${current.time_s}s, статус расчёта ${current.solve_status}.</p>
   <table><tr><th>Объект</th><th>Значение</th><th>Предел</th></tr>${rows.join("")}</table>
   <h4>Нарушения</h4><ul>${violations || "<li>нет</li>"}</ul>
-  <p>Предложено: ${JSON.stringify(current.action)}. Принято: ${current.acceptance && current.acceptance.accepted}. Исполненные операции шага: ${current.operations}.</p>`;
+  <p>Предложено: ${JSON.stringify(current.action)}. Принято: ${accepted}. Причина: ${reason}. Исполнено: ${executed}. Операций за шаг: ${current.operations}.</p>`;
   detail.querySelectorAll("button[data-eq]").forEach(button => button.addEventListener("click", () => {
     const id = button.dataset.eq;
     document.querySelectorAll(".selected").forEach(node => node.classList.remove("selected"));

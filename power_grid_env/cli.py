@@ -64,7 +64,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "suite":
         summary = run_suite(Path(args.path), Path(args.out), use_process_backend=not args.in_process, resume=args.resume)
         print(summary["verdict"])
-        return 0
+        return 0 if summary["verdict"] in {"pass", "completed_with_recorded_regressions"} else 1
     if args.command == "validate":
         return _validate()
     if args.command == "accept":

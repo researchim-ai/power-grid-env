@@ -8,7 +8,7 @@ from power_grid_env.model import Network
 from power_grid_env.topology import compile_topology
 
 
-def preflight(network: Network, *, task: str = "restoration") -> dict[str, Any]:
+def preflight(network: Network, *, task: str = "restoration", solve_initial: bool = True) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
     topology = compile_topology(network)
@@ -36,11 +36,24 @@ def preflight(network: Network, *, task: str = "restoration") -> dict[str, Any]:
     for switch in network.switches:
         if switch.kind == "disconnector" and switch.interrupt_current_a != 0:
             errors.append(f"{switch.id}: разъединитель получил ток отключения")
+    initial_solve: dict[str, Any] | None = None
+    if solve_initial and not errors:
+        from power_grid_env.backend_opendss import solve_network
+
+        try:
+            solved = solve_network(network)
+        except Exception as exc:
+            warnings.append(f"начальный расчёт не выполнен: {exc}")
+        else:
+            initial_solve = {"status": solved.status, "iterations": solved.iterations, "collapse": False}
+            if solved.status not in {"converged", "deenergized_no_source"}:
+                warnings.append(f"начальный режим: {solved.status}. Это не коллапс и не скрытый успех.")
     return {
         "ok": not errors,
         "task": task,
         "errors": errors,
         "warnings": warnings,
+        "initial_solve": initial_solve,
         "islands": [
             {
                 "id": island.id,

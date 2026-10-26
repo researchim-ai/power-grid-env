@@ -16,7 +16,7 @@ from typing import Any, Callable
 
 from power_grid_env.backend_opendss import solve_network
 from power_grid_env.conventions import ll_to_ln
-from power_grid_env.der import apply_ramp, clip_storage_power, cold_load_multiplier, update_soc
+from power_grid_env.der import apparent_limit, apply_ramp, clip_storage_power, cold_load_multiplier, update_soc
 from power_grid_env.metrics import phase_voltage_pu, step_reward, unserved_fraction
 from power_grid_env.model import Line, Load, Network, Provenance, StudyFault, Terminal
 from power_grid_env.protection import RelayState, advance_relay
@@ -168,6 +168,7 @@ class Engine:
         self.relays = [_relay_from_dict(item) for item in getattr(scenario, "protection", [])]
         self.last_result = None
         self._resolve()
+        self._schedule_clocks()
         return self.observation()
 
     def submit(self, action: dict[str, Any], *, origin: str = "controller") -> dict[str, Any]:
@@ -182,7 +183,17 @@ class Engine:
             else:
                 acceptance["note"] = "уже в запрошенном положении"
         elif acceptance["accepted"] and action.get("kind") == "setpoint":
-            self._apply_setpoint(action)
+            self._push(
+                self.time_s,
+                1,
+                "setpoint",
+                {
+                    "equipment_id": action["equipment_id"],
+                    "value": float(action["value"]),
+                    "unit": action.get("unit"),
+                    "acceptance": acceptance,
+                },
+            )
         self.history.append({"time_s": self.time_s, "action": action, "acceptance": acceptance})
         return acceptance
 
@@ -230,7 +241,7 @@ class Engine:
             "network": self.net.model_dump(mode="json"),
             "queue": [asdict(event) for event in self.queue],
             "seq": self._seq,
-            "rng": self.rng.getstate(),
+            "rng": _export_rng(self.rng),
             "relays": [asdict(relay) for relay in self.relays],
             "measurements": list(self.measurements),
             "soc": dict(self.soc),
@@ -239,11 +250,12 @@ class Engine:
             "storage_p": dict(self.storage_p),
             "cold_started": dict(self.cold_started),
             "overload_seconds": dict(self.overload_seconds),
-        "ok_since": self._ok_since,
-        "pending": dict(self._pending),
-        "operations_since_record": self._operations_since_record,
-        "what_if_used": self.what_if_used,
+            "ok_since": self._ok_since,
+            "pending": dict(self._pending),
+            "operations_since_record": self._operations_since_record,
+            "what_if_used": self.what_if_used,
             "history": list(self.history),
+            "trace": list(self.trace),
             "terminated": self.terminated,
             "truncated": self.truncated,
             "last_result": None if self.last_result is None else self.last_result.model_dump(mode="json"),
@@ -255,7 +267,7 @@ class Engine:
         self.queue = [_Event(**event) for event in snapshot["queue"]]
         heapq.heapify(self.queue)
         self._seq = int(snapshot["seq"])
-        self.rng.setstate(snapshot["rng"])
+        self.rng.setstate(_import_rng(snapshot["rng"]))
         self.relays = [RelayState(**item) for item in snapshot["relays"]]
         self.measurements = list(snapshot["measurements"])
         self.soc = dict(snapshot["soc"])
@@ -269,6 +281,7 @@ class Engine:
         self._operations_since_record = int(snapshot["operations_since_record"])
         self.what_if_used = int(snapshot["what_if_used"])
         self.history = list(snapshot["history"])
+        self.trace = list(snapshot.get("trace") or [])
         self.terminated = bool(snapshot["terminated"])
         self.truncated = bool(snapshot["truncated"])
         self.last_result = None if snapshot["last_result"] is None else SolveResult.model_validate(snapshot["last_result"])
@@ -278,25 +291,31 @@ class Engine:
         if self.what_if_used >= quota:
             return {"accepted": False, "reason": "what_if_quota", "quota": quota}
         self.what_if_used += 1
-        trial = (model or self.base_network).model_copy(deep=True)
+        trial = (model if model is not None else agent_model(self.base_network, self.scenario)).model_copy(deep=True)
+        visible = {item.id: item.closed for item in self.net.switches if item.telemetered}
         for switch in trial.switches:
-            current = self._switch(switch.id)
-            switch.closed = current.closed
+            if switch.id in visible:
+                switch.closed = visible[switch.id]
         for command in commands:
-            if command.get("kind") != "switch":
-                continue
-            match = next((item for item in trial.switches if item.id == command["equipment_id"]), None)
-            if match is None:
-                return {"accepted": False, "reason": "unknown_equipment"}
-            match.closed = command.get("command") == "close"
-        if self.scenario.fault_line_id and any(item.id == self.scenario.fault_line_id for item in trial.lines):
-            trial = split_line_fault(
-                trial,
-                self.scenario.fault_line_id,
-                kind=self.scenario.fault_kind,
-                phases=list(self.scenario.fault_phases),
-                r_ohm=self.scenario.fault_r_ohm,
-            )
+            kind = command.get("kind")
+            if kind == "switch":
+                match = next((item for item in trial.switches if item.id == command.get("equipment_id")), None)
+                if match is None:
+                    return {"accepted": False, "reason": "unknown_equipment", "remaining_quota": quota - self.what_if_used}
+                match.closed = command.get("command") == "close"
+            elif kind == "hypothesize_fault":
+                if "r_ohm" not in command or "line_id" not in command:
+                    return {"accepted": False, "reason": "hypothesis_incomplete", "remaining_quota": quota - self.what_if_used}
+                if not any(item.id == command["line_id"] for item in trial.lines):
+                    return {"accepted": False, "reason": "unknown_equipment", "remaining_quota": quota - self.what_if_used}
+                trial = split_line_fault(
+                    trial,
+                    command["line_id"],
+                    kind=command.get("fault_kind", "3ph"),
+                    phases=list(command.get("phases") or ["A", "B", "C"]),
+                    r_ohm=float(command["r_ohm"]),
+                    x_ohm=float(command.get("x_ohm", 0.0)),
+                )
         result = self.solve(trial)
         public_nodes = {meter.connectivity_node_id for meter in trial.meters if meter.available}
         topology = compile_topology(trial)
@@ -317,7 +336,7 @@ class Engine:
         return {
             "accepted": True,
             "status": result.status,
-            "assumptions": ["what-if использует разрешённую модель и текущие положения аппаратов"],
+            "assumptions": ["what-if считает только переданную модель, телеизмеренные положения и явные гипотезы"],
             "voltages": voltages,
             "remaining_quota": quota - self.what_if_used,
         }
@@ -332,7 +351,19 @@ class Engine:
             equipment = action.get("equipment_id")
             if not any(item.id == equipment for item in (*self.net.storages, *self.net.inverters, *self.net.generators)):
                 return {"accepted": False, "reason": "unknown_equipment", "interlock": False}
-            return {"accepted": True, "reason": "setpoint"}
+            value = action.get("value")
+            unit = action.get("unit")
+            if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(float(value)):
+                return {"accepted": False, "reason": "invalid_value", "interlock": False}
+            if unit not in {"W", "var"}:
+                return {"accepted": False, "reason": "invalid_unit", "interlock": False}
+            return {
+                "accepted": True,
+                "reason": "setpoint",
+                "requested_value": float(value),
+                "requested_unit": unit,
+                "executed_value": None,
+            }
         switch = next((item for item in self.net.switches if item.id == action.get("equipment_id")), None)
         if switch is None:
             return {"accepted": False, "reason": "unknown_equipment", "interlock": False}
@@ -385,6 +416,7 @@ class Engine:
             "voltage_violation_pu_s": pending["voltage_violation_pu_s"],
             "overload_s": pending["overload_s"],
             "overload_pu_s": pending["overload_pu_s"],
+            "service_rows": pending.get("service_rows") or [],
         }
         record["reward"] = step_reward(
             energy_not_served_wh=record["energy_not_served_wh"],
@@ -406,6 +438,7 @@ class Engine:
         overload_s = 0.0
         overload_pu_s = 0.0
         violations: list[dict[str, Any]] = []
+        service_rows: list[dict[str, Any]] = []
         restorable_ok = True
         if result is None or dt_s <= 0:
             return {
@@ -417,6 +450,7 @@ class Engine:
                 "overload_s": 0.0,
                 "overload_pu_s": 0.0,
                 "violations": violations,
+                "service_rows": [],
                 "restorable_ok": False,
             }
         topology = compile_topology(self.net)
@@ -446,10 +480,20 @@ class Engine:
                         )
             served = demand * (1.0 - fraction)
             ens_w += demand * fraction
+            service_rows.append(
+                {
+                    "dt_s": dt_s,
+                    "demand_w": demand,
+                    "phase_pu": phase_pu,
+                    "energized": energized,
+                    "v_min_pu": v_min,
+                    "load_id": load.id,
+                }
+            )
             if load.critical:
                 critical_demand_w += demand
                 critical_served_w += served
-            if load.id not in unrestorable and fraction > 0:
+            if load.id not in unrestorable and (fraction > 0 or any(value > v_max for value in phase_pu)):
                 restorable_ok = False
         for line in self.net.lines:
             current = _equipment_current(result, line.id)
@@ -465,6 +509,8 @@ class Engine:
                     violations.append(self._violation("emergency_overload", line.id, current, limit, "A"))
                 elif duration is not None and self.overload_seconds.get(line.id, 0.0) > duration:
                     violations.append(self._violation("overload_duration", line.id, self.overload_seconds[line.id], duration, "s"))
+        if overload_s > 0:
+            restorable_ok = False
         hours = dt_s / 3600.0
         return {
             "energy_not_served_wh": ens_w * hours,
@@ -475,6 +521,7 @@ class Engine:
             "overload_s": overload_s,
             "overload_pu_s": overload_pu_s,
             "violations": violations,
+            "service_rows": service_rows,
             "restorable_ok": restorable_ok and result.status == "converged",
         }
 
@@ -542,7 +589,7 @@ class Engine:
         for meter in self.net.meters:
             if not meter.available:
                 continue
-            if drop > 0 and self.rng.random() < drop:
+            if drop and _drop_measurement(self.scenario.seed, meter.id, self.time_s, drop):
                 continue
             bus_id = topology.node_to_bus[meter.connectivity_node_id]
             readings = []
@@ -601,6 +648,7 @@ class Engine:
         ):
             self._pending[key] += piece[key]
         self._pending["violations"].extend(piece["violations"])
+        self._pending["service_rows"].extend(piece.get("service_rows") or [])
         if piece["restorable_ok"]:
             if self._ok_since is None:
                 self._ok_since = self.time_s
@@ -670,7 +718,11 @@ class Engine:
         if self.last_result is None:
             return 0.0
         if relay.kind == "overcurrent":
-            return _equipment_current(self.last_result, relay.equipment_id)
+            switch = next((item for item in self.net.switches if item.id == relay.equipment_id), None)
+            if switch is not None:
+                return self._switch_current_a(switch)
+            measured = getattr(relay, "measured_equipment_id", None) or relay.equipment_id
+            return _equipment_current(self.last_result, measured)
         voltages = [
             abs(voltage.complex) / voltage.v_base_ln_v
             for voltage in self.last_result.voltages
@@ -681,6 +733,10 @@ class Engine:
         return min(voltages) if relay.kind == "undervoltage" else max(voltages)
 
     def _apply_event(self, event: _Event) -> bool:
+        if event.kind in {"sample", "profile"}:
+            return True
+        if event.kind == "setpoint":
+            return self._execute_setpoint(event.payload)
         if event.kind != "switch":
             return False
         switch = self._switch(event.payload["id"])
@@ -712,6 +768,82 @@ class Engine:
         heapq.heappush(self.queue, _Event(time_s, priority, self._seq, kind, payload))
         self._seq += 1
 
+    def _schedule_clocks(self) -> None:
+        horizon = float(self.scenario.horizon_s)
+        period = getattr(self.scenario, "measurement_period_s", None)
+        if period is None:
+            period = float(self.scenario.control_interval_s)
+        stamp = float(period)
+        while stamp <= horizon + 1e-9:
+            self._push(stamp, 4, "sample", {})
+            stamp += float(period)
+        profiles = getattr(self.scenario, "load_profile", {}) or {}
+        seen: set[float] = set()
+        for points in profiles.values():
+            for point in points:
+                when = float(point[0])
+                if when > 0 and when not in seen:
+                    seen.add(when)
+                    self._push(when, 0, "profile", {})
+
+    def _execute_setpoint(self, payload: dict[str, Any]) -> bool:
+        equipment = payload["equipment_id"]
+        value = float(payload["value"])
+        unit = payload.get("unit")
+        executed: float | None = None
+        for generator in self.net.generators:
+            if generator.id == equipment and unit == "W":
+                generator.p_w = value
+                executed = value
+        for inverter in self.net.inverters:
+            if inverter.id == equipment and unit == "W":
+                active, _reactive = apparent_limit(value, inverter.q_var, inverter.s_rated_va, inverter.priority)
+                inverter.p_w = active
+                executed = active
+            elif inverter.id == equipment and unit == "var":
+                _active, reactive = apparent_limit(inverter.p_w, value, inverter.s_rated_va, inverter.priority)
+                inverter.q_var = reactive
+                executed = reactive
+        for storage in self.net.storages:
+            if storage.id == equipment and unit == "W":
+                self.storage_p[equipment] = apply_ramp(
+                    self.storage_p.get(equipment, storage.p_w),
+                    value,
+                    storage.ramp_w_per_s,
+                    float(self.scenario.control_interval_s),
+                )
+                executed = self.storage_p[equipment]
+        acceptance = payload.get("acceptance")
+        if isinstance(acceptance, dict):
+            acceptance["executed_value"] = executed
+            acceptance["executed_unit"] = unit if executed is not None else None
+        return executed is not None
+
+    def _switch_current_a(self, switch) -> float:
+        if self.last_result is None or not switch.closed:
+            return 0.0
+        node_from, node_to = _switch_nodes(self.net, switch)
+        downstream = _reachable_nodes(self.net, node_to, ignore_switch=switch.id)
+        if node_from in downstream:
+            return self._incident_current(switch)
+        terminals = {item.id: item for item in self.net.terminals}
+        totals = {"A": 0j, "B": 0j, "C": 0j}
+        for line in self.net.lines:
+            ends = (
+                (0, terminals[line.terminal_from].connectivity_node_id),
+                (1, terminals[line.terminal_to].connectivity_node_id),
+            )
+            for index, node in ends:
+                other = ends[1 - index][1]
+                if node != node_to or other not in downstream:
+                    continue
+                for flow in self.last_result.flows:
+                    if flow.equipment_id == line.id and flow.terminal_index == index and flow.phase in totals:
+                        totals[flow.phase] += flow.current
+        if max(abs(value) for value in totals.values()) > 0:
+            return max(abs(value) for value in totals.values())
+        return self._incident_current(switch)
+
     def _switch(self, switch_id: str):
         return next(item for item in self.net.switches if item.id == switch_id)
 
@@ -734,6 +866,57 @@ class Engine:
         return current
 
 
+def _export_rng(rng: random.Random) -> dict[str, Any]:
+    version, sequence, gauss = rng.getstate()
+    return {"version": version, "state": list(sequence), "gauss": gauss}
+
+
+def _import_rng(payload: Any) -> tuple:
+    if isinstance(payload, dict):
+        return (payload["version"], tuple(payload["state"]), payload["gauss"])
+    version, sequence, gauss = payload
+    return (version, tuple(sequence), gauss)
+
+
+def _drop_measurement(seed: int, meter_id: str, produced_s: float, probability: float) -> bool:
+    if probability <= 0:
+        return False
+    if probability >= 1:
+        return True
+    return random.Random(f"{seed}|{meter_id}|{round(produced_s, 6)}").random() < probability
+
+
+def _reachable_nodes(network: Network, start: str, ignore_switch: str | None) -> set[str]:
+    terminals = {item.id: item for item in network.terminals}
+    adjacent: dict[str, set[str]] = {}
+
+    def link(left: str, right: str) -> None:
+        adjacent.setdefault(left, set()).add(right)
+        adjacent.setdefault(right, set()).add(left)
+
+    for switch in network.switches:
+        if not switch.closed or switch.id == ignore_switch:
+            continue
+        link(*_switch_nodes(network, switch))
+    for line in network.lines:
+        link(terminals[line.terminal_from].connectivity_node_id, terminals[line.terminal_to].connectivity_node_id)
+    for transformer in network.transformers:
+        nodes = [terminals[winding.terminal_id].connectivity_node_id for winding in transformer.windings]
+        for left in nodes:
+            for right in nodes:
+                if left != right:
+                    link(left, right)
+    seen = {start}
+    stack = [start]
+    while stack:
+        current = stack.pop()
+        for nxt in adjacent.get(current, ()):
+            if nxt not in seen:
+                seen.add(nxt)
+                stack.append(nxt)
+    return seen
+
+
 def _empty_pending() -> dict[str, Any]:
     return {
         "energy_not_served_wh": 0.0,
@@ -744,6 +927,7 @@ def _empty_pending() -> dict[str, Any]:
         "overload_s": 0.0,
         "overload_pu_s": 0.0,
         "violations": [],
+        "service_rows": [],
     }
 
 

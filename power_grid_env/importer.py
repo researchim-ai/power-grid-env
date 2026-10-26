@@ -25,8 +25,10 @@ from power_grid_env.model import (
     Provenance,
     Switch,
     Terminal,
+    Transformer,
     VoltageLevel,
     VoltageSource,
+    Winding,
 )
 
 _TOKEN = re.compile(r"([A-Za-z0-9_.]+)=(.*)")
@@ -83,6 +85,12 @@ def import_network(source: Path, sidecar: Path | None = None) -> tuple[Network |
 
 def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Network:
     commands = _parse_commands(text)
+    report["commands"] = _command_ledger(commands)
+    unsupported = [row for row in report["commands"] if row["status"] == "unsupported"]
+    if unsupported:
+        raise ValueError(
+            "не перенесены команды: " + "; ".join(row["command"] for row in unsupported)
+        )
     circuit = next((item for item in commands if item["kind"] == "circuit"), None)
     if circuit is None:
         raise ValueError("в DSS нет New Circuit")
@@ -105,20 +113,36 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
     )
     report["assumptions"].append("diagonal_from_positive_sequence")
     nodes: dict[str, ConnectivityNode] = {}
-    level = VoltageLevel(id="vl_import", nominal_ll_v=base_kv * 1000.0)
+    levels: dict[str, VoltageLevel] = {}
     coordinates = side.get("coordinates") or {}
 
-    def ensure_node(name: str) -> str:
+    def level_for(volts: float) -> str:
+        key = f"vl_{round(volts, 3)}"
+        if key not in levels:
+            levels[key] = VoltageLevel(id=key, nominal_ll_v=volts)
+        return key
+
+    def ensure_node(name: str, kv_ll: float | None = None) -> str:
         plain = name.split(".")[0]
-        if plain not in nodes:
-            xy = coordinates.get(plain) or [None, None]
-            nodes[plain] = ConnectivityNode(
-                id=plain,
-                voltage_level_id=level.id,
-                phases=["A", "B", "C"],
-                x=None if xy[0] is None else float(xy[0]),
-                y=None if xy[1] is None else float(xy[1]),
-            )
+        if plain in nodes:
+            if kv_ll is not None:
+                volts = float(kv_ll) * 1000.0
+                current = levels[nodes[plain].voltage_level_id].nominal_ll_v
+                if abs(current - volts) > 1.0:
+                    if abs(current - base_kv * 1000.0) <= 1.0:
+                        nodes[plain].voltage_level_id = level_for(volts)
+                    else:
+                        raise ValueError(f"{plain}: конфликт номиналов {current} В и {volts} В")
+            return plain
+        volts = base_kv * 1000.0 if kv_ll is None else float(kv_ll) * 1000.0
+        xy = coordinates.get(plain) or [None, None]
+        nodes[plain] = ConnectivityNode(
+            id=plain,
+            voltage_level_id=level_for(volts),
+            phases=["A", "B", "C"],
+            x=None if xy[0] is None else float(xy[0]),
+            y=None if xy[1] is None else float(xy[1]),
+        )
         return plain
 
     source_bus = ensure_node(circuit["args"].get("bus1", "sourcebus"))
@@ -134,19 +158,95 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
     lines: list[Line] = []
     switches: list[Switch] = []
     loads: list[Load] = []
+    transformers: list[Transformer] = []
     open_names = {item["name"].split(".", 1)[-1] for item in commands if item["kind"] == "open"}
     grounding = side.get("grounding") or {}
     switch_side = side.get("switches") or {}
     line_side = side.get("lines") or {}
     load_side = side.get("loads") or {}
-    for command in commands:
-        if command["kind"] != "new":
-            continue
+    transformer_side = side.get("transformers") or {}
+    linecodes = _linecodes(commands)
+    ordered = sorted(
+        [command for command in commands if command["kind"] == "new"],
+        key=lambda command: 0 if command["name"].lower().startswith("transformer.") else 1,
+    )
+    for command in ordered:
         klass, _, name = command["name"].partition(".")
         args = command["args"]
+        if klass.lower() == "linecode":
+            continue
+        if klass.lower() == "transformer":
+            spec = transformer_side.get(f"Transformer.{name}") or {}
+            vector_group = spec.get("vector_group")
+            if not vector_group:
+                raise ValueError(f"Transformer.{name}: в sidecar нет vector_group и заземлений")
+            parsed_windings = _windings(command.get("raw") or "")
+            grounds = spec.get("grounding") or []
+            if len(parsed_windings) != 2 or len(grounds) != 2:
+                raise ValueError(f"Transformer.{name}: нужны две обмотки и два явных заземления")
+            xhl = float(args.get("xhl", "nan"))
+            load_loss = float(args.get("loadloss", "nan"))
+            if not math.isfinite(xhl) or not math.isfinite(load_loss):
+                raise ValueError(f"Transformer.{name}: нужны xhl и %loadloss")
+            built: list[Winding] = []
+            for index, winding_args in enumerate(parsed_windings):
+                bus = ensure_node(winding_args["bus"], float(winding_args["kv"]))
+                connection_name = winding_args.get("conn", "").lower()
+                if connection_name in {"wye", "y", "ln"}:
+                    connection = "wye"
+                elif connection_name in {"delta", "d", "ll"}:
+                    connection = "delta"
+                else:
+                    raise ValueError(f"Transformer.{name}: соединение обмотки {index} не задано")
+                ground_kind = grounds[index]
+                if connection == "delta" and ground_kind != "not_applicable":
+                    raise ValueError(f"Transformer.{name}: у треугольника заземление должно быть not_applicable")
+                if connection == "wye" and ground_kind not in {"solid", "ungrounded", "impedance"}:
+                    raise ValueError(f"Transformer.{name}: заземление звезды не задано")
+                terminal_id = f"{name}:w{index}:{bus}"
+                terminals.append(
+                    Terminal(id=terminal_id, equipment_id=name, connectivity_node_id=bus, phases=["A", "B", "C"])
+                )
+                built.append(
+                    Winding(
+                        terminal_id=terminal_id,
+                        connection=connection,  # type: ignore[arg-type]
+                        grounding=GroundingSpec(kind=ground_kind),
+                        nominal_ll_v=float(winding_args["kv"]) * 1000.0,
+                        rated_va=float(winding_args["kva"]) * 1000.0,
+                    )
+                )
+            transformers.append(
+                Transformer(
+                    id=name,
+                    windings=built,
+                    vector_group=vector_group,
+                    x_hl_pct=xhl,
+                    load_loss_pct=load_loss,
+                    no_load_loss_pct=0.0,
+                    imag_pct=0.0,
+                    provenance=Provenance(
+                        source=f"Transformer.{name}",
+                        quality="derived",
+                        note="намагничивание явно обнулено; группа взята из sidecar",
+                    ),
+                )
+            )
+            report["mappings"].append({"from": f"Transformer.{name}", "to": f"transformer:{name}", "vector_group": vector_group})
+            continue
         if klass.lower() == "line":
             bus1 = ensure_node(args["bus1"])
             bus2 = ensure_node(args["bus2"])
+            level1 = levels[nodes[bus1].voltage_level_id].nominal_ll_v
+            level2 = levels[nodes[bus2].voltage_level_id].nominal_ll_v
+            if abs(level1 - level2) > 1.0:
+                default = base_kv * 1000.0
+                if abs(level1 - default) <= 1.0 and abs(level2 - default) > 1.0:
+                    nodes[bus1].voltage_level_id = nodes[bus2].voltage_level_id
+                elif abs(level2 - default) <= 1.0 and abs(level1 - default) > 1.0:
+                    nodes[bus2].voltage_level_id = nodes[bus1].voltage_level_id
+                else:
+                    raise ValueError(f"Line.{name}: линия соединяет {level1} В и {level2} В")
             phases = int(float(args.get("phases", "3")))
             if phases != 3:
                 raise ValueError(f"{name}: импортёр первой поставки принимает трёхфазные линии DSS, получено {phases}")
@@ -193,10 +293,26 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
             meta = line_side.get(key) or {}
             if "rating_a" not in meta:
                 raise ValueError(f"{key}: в sidecar нет rating_a")
-            r1 = float(args.get("r1", "nan"))
-            x1 = float(args.get("x1", "nan"))
+            code_name = args.get("linecode")
+            if code_name and ("r1" in args or "x1" in args):
+                raise ValueError(f"{key}: заданы и linecode, и r1/x1; оставьте один источник импеданса")
+            if code_name:
+                code = linecodes.get(code_name.lower())
+                if code is None:
+                    raise ValueError(f"{key}: LineCode.{code_name} не объявлен")
+                span = _length_in(length, unit, code["units"])
+                r1 = code["r1"] * span
+                x1 = code["x1"] * span
+                impedance_note = (
+                    f"LineCode.{code_name}: r1/x1 на {code['units']} умножены на длину {span:g}; "
+                    "взаимные нули — явная аппроксимация прямой последовательности"
+                )
+            else:
+                r1 = float(args.get("r1", "nan"))
+                x1 = float(args.get("x1", "nan"))
+                impedance_note = "диагональ из r1/x1; длина не умножается, значения взяты как полные омы"
             if not math.isfinite(r1) or not math.isfinite(x1):
-                raise ValueError(f"{key}: нужны r1 и x1")
+                raise ValueError(f"{key}: нужны r1 и x1 или linecode")
             matrix_r = [[r1 if i == j else 0.0 for j in range(3)] for i in range(3)]
             matrix_x = [[x1 if i == j else 0.0 for j in range(3)] for i in range(3)]
             left = f"{name}:{bus1}"
@@ -220,7 +336,7 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
                     rating_a=float(meta["rating_a"]),
                     emergency_rating_a=meta.get("emergency_rating_a"),
                     emergency_duration_s=meta.get("emergency_duration_s"),
-                    provenance=Provenance(source=key, quality="derived", note="диагональ из r1/x1"),
+                    provenance=Provenance(source=key, quality="derived", note=impedance_note),
                 )
             )
             report["mappings"].append({"from": key, "to": f"line:{name}", "r1_ohm": r1, "x1_ohm": x1, "length_m": length_m})
@@ -291,17 +407,74 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
         name=side.get("name", circuit["name"].split(".", 1)[-1]),
         s_base_va=s_base,
         frequency_hz=frequency,
-        voltage_levels=[level],
+        voltage_levels=list(levels.values()),
         connectivity_nodes=list(nodes.values()),
         terminals=terminals,
         lines=lines,
         switches=switches,
         loads=loads,
+        transformers=transformers,
         sources=[source],
         meters=meters,
         assumptions=list(report["assumptions"]),
         provenance=Provenance(source=str(report["source"]), quality="derived"),
     )
+
+
+def _linecodes(commands: list[dict[str, Any]]) -> dict[str, dict[str, float | str]]:
+    found: dict[str, dict[str, float | str]] = {}
+    for command in commands:
+        if command["kind"] != "new":
+            continue
+        klass, _, name = command["name"].partition(".")
+        if klass.lower() != "linecode":
+            continue
+        args = command["args"]
+        unit = args.get("units", "km")
+        if unit not in {"km", "m"}:
+            raise ValueError(f"LineCode.{name}: единица {unit} не поддержана, нужны km или m")
+        phases = int(float(args.get("nphases", "3")))
+        if phases != 3:
+            raise ValueError(f"LineCode.{name}: поддержаны только три фазы, получено {phases}")
+        r1 = float(args.get("r1", "nan"))
+        x1 = float(args.get("x1", "nan"))
+        if not math.isfinite(r1) or not math.isfinite(x1):
+            raise ValueError(f"LineCode.{name}: нужны r1 и x1")
+        found[name.lower()] = {"r1": r1, "x1": x1, "units": unit}
+    return found
+
+
+def _length_in(length: float, unit: str, target: str) -> float:
+    if unit == "km":
+        meters = length * 1000.0
+    elif unit == "m":
+        meters = length
+    else:
+        raise ValueError(f"единица длины {unit} не поддержана")
+    if target == "km":
+        return meters / 1000.0
+    if target == "m":
+        return meters
+    raise ValueError(f"единица длины {target} не поддержана")
+
+
+def _command_ledger(commands: list[dict[str, Any]]) -> list[dict[str, str]]:
+    rows = []
+    for command in commands:
+        name = command["name"]
+        kind = command["kind"]
+        if kind == "directive":
+            rows.append({"command": name, "status": "directive"})
+        elif kind == "circuit" or (kind == "edit" and name.lower() == "vsource.source") or kind == "open":
+            rows.append({"command": name, "status": "transferred"})
+        elif kind == "new":
+            klass = name.split(".", 1)[0].lower()
+            rows.append({"command": name, "status": "transferred" if klass in {"line", "load", "transformer", "linecode"} else "unsupported"})
+        elif kind == "edit":
+            rows.append({"command": name, "status": "unsupported"})
+        else:
+            rows.append({"command": name, "status": "unsupported"})
+    return rows
 
 
 def _parse_commands(text: str) -> list[dict[str, Any]]:
@@ -326,22 +499,26 @@ def _parse_commands(text: str) -> list[dict[str, Any]]:
         if head == "new" and len(parts) > 1 and parts[1].lower().startswith("circuit"):
             commands.append({"kind": "circuit", "name": parts[1], "args": _args(parts[2:])})
         elif head == "new":
-            commands.append({"kind": "new", "name": parts[1], "args": _args(parts[2:])})
+            commands.append({"kind": "new", "name": parts[1], "args": _args(parts[2:]), "raw": line})
         elif head == "edit":
             commands.append({"kind": "edit", "name": parts[1], "args": _args(parts[2:])})
         elif head == "open":
             commands.append({"kind": "open", "name": parts[1], "args": {}})
         elif head in {"clear", "set", "calcvoltagebases", "solve"}:
-            continue
+            commands.append({"kind": "directive", "name": line, "args": {}})
         else:
-            commands.append({"kind": "ignored", "name": line, "args": {}})
+            commands.append({"kind": "unsupported", "name": line, "args": {}})
     return commands
 
 
-def _args(tokens: list[str]) -> dict[str, str]:
-    text = " ".join(tokens)
+def _args(tokens: list[str] | str) -> dict[str, str]:
+    text = tokens if isinstance(tokens, str) else " ".join(tokens)
     found = {}
-    # значения без пробелов
-    for match in re.finditer(r"([A-Za-z0-9_]+)=\s*([^\s]+)", text):
-        found[match.group(1).lower()] = match.group(2).strip("[]")
+    for match in re.finditer(r"([%A-Za-z0-9_]+)=\s*([^\s]+)", text):
+        found[match.group(1).lower().lstrip("%")] = match.group(2).strip("[]")
     return found
+
+
+def _windings(raw: str) -> list[dict[str, str]]:
+    parts = re.split(r"(?i)\bwdg=", raw)
+    return [_args("wdg=" + part) for part in parts[1:]]

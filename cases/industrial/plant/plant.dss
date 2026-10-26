@@ -1,0 +1,16 @@
+Clear
+New Circuit.plant basekv=110 pu=1 phases=3 bus1=grid
+Edit Vsource.source r1=0.5 x1=2.0 basekv=110 pu=1 angle=0
+New Line.q110 bus1=grid bus2=bus110 phases=3 switch=yes length=1 units=m r1=0.0001 x1=0.0001
+New Transformer.t110 phases=3 windings=2 xhl=12 %loadloss=0.6
+~ wdg=1 bus=bus110 conn=wye kv=110 kva=25000
+~ wdg=2 bus=bus10 conn=wye kv=10 kva=25000
+New LineCode.mv nphases=3 r1=0.2 x1=0.3 units=km
+New Line.cable bus1=bus10 bus2=section phases=3 length=1 units=km linecode=mv
+New Transformer.t04 phases=3 windings=2 xhl=6 %loadloss=1
+~ wdg=1 bus=section conn=delta kv=10 kva=1600
+~ wdg=2 bus=lv conn=wye kv=0.4 kva=1600
+New Line.mcc_feeder bus1=lv bus2=mcc phases=3 length=0.05 units=km r1=0.02 x1=0.03
+New Load.plant bus1=mcc phases=3 conn=wye kv=0.4 kw=400 kvar=120
+Set voltagebases=[110 10 0.4]
+Calcvoltagebases

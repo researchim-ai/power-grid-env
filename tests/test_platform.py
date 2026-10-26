@@ -122,9 +122,10 @@ def test_snapshot_and_no_leak():
     assert "HIDDEN-CANARY" not in str(tools.call("get_observation"))
     svg = observation_svg(observation)
     assert "HIDDEN-CANARY" not in svg
-    page = pixels_only_html()
+    page = pixels_only_html([{"id": "source", "x": 40, "y": 120}])
     assert "equipment_id" not in page
-    assert hit_test(40, 120) == "source"
+    assert "source" not in page
+    assert hit_test(40, 120, [{"id": "source", "x": 40, "y": 120}]) == "source"
 
 
 def test_reference_cases_are_data():
