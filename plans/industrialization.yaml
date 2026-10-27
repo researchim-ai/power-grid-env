@@ -115,8 +115,15 @@ tasks:
   - id: AG-07
     title: Full external validation through production Engine
     priority: P1
-    status: planned
+    status: in_progress
     depends_on: [AG-01, AG-04, AG-05, AG-06]
+    progress: >-
+      Smoke и distribution сравнивают |V|, нейтраль (узел 4), потери,
+      P/Q/I проводников при 1e-5 от Sbase и Ibase и отпайки. Несошедшийся
+      Newton не оставляет состояние для Normal. Второй лист SMART-DS
+      p1uhs0_1247--p1udt942 взят из уже скачанного дерева и проходит снимок;
+      его QSTS не запускался, профили первого фидера не подставлялись.
+      Не закрыто: сутки и неделя двух фидеров через Engine.
     scope: [benchmarks/external, tests/test_external_benchmark.py, power_grid_env/checks.py]
     findings: [IR-06]
     gates:
@@ -130,7 +137,7 @@ tasks:
   - id: AG-08
     title: Installable reproducible product outside checkout
     priority: P1
-    status: planned
+    status: done
     depends_on: [AG-03, AG-04]
     scope: [pyproject.toml, power_grid_env/paths.py, power_grid_env/controllers.py, power_grid_env/cli.py]
     findings: [IR-05, IR-09]
@@ -143,7 +150,11 @@ tasks:
   - id: AG-09
     title: Shared study API and engineering workspace
     priority: P1_P2
-    status: planned
+    status: done
+    progress: >-
+      StudyWorkspace общий для CLI и HTTP на 127.0.0.1: импорт, preflight,
+      прогон, отмена до шага, продолжение из JSON, публичный вид без
+      привилегированного снимка и canary. Ошибки импорта экранируются в HTML.
     depends_on: [AG-03, AG-04, AG-06, AG-08]
     scope: [power_grid_env/study.py, power_grid_env/cli.py, power_grid_env/viewer.py, power_grid_env/assets/sld]
     findings: [IR-09]
@@ -156,7 +167,11 @@ tasks:
   - id: AG-10
     title: Measured resource envelope and reliable long runs
     priority: P1_P2
-    status: planned
+    status: in_progress
+    progress: >-
+      reports/envelope/radial.json: луч 100 и 1000 шин сошёлся, 10 000 за
+      один прогон не сошёлся. Горизонты 7 и 30 суток не измерялись.
+      Инкрементальный решатель и пул воркеров не сделаны. Масштаб города не заявлен.
     depends_on: [AG-03, AG-05, AG-06, AG-07]
     scope: [power_grid_env/benchmarks.py, power_grid_env/backend_opendss.py, power_grid_env/backend_process.py, power_grid_env/dataset.py, benchmarks/external]
     findings: [IR-09]
@@ -172,7 +187,7 @@ tasks:
   - id: AG-11
     title: Qualified industrial QSTS task packs
     priority: P2
-    status: planned
+    status: done
     depends_on: [AG-04, AG-05, AG-07]
     scope: [cases/industrial, cases/suites, power_grid_env/tasks.py, power_grid_env/evaluator.py]
     gates:
@@ -184,7 +199,11 @@ tasks:
   - id: AG-12
     title: Independently checked OPF N-1 and state estimation
     priority: P2
-    status: planned
+    status: in_progress
+    progress: >-
+      N-1 линий сохраняет каждый выход, включая нерешённый. Вырожденная
+      матрица WLS не получает оценку. Полный корпус bad data и независимый
+      OPF-оракул сверх собственной Ybus не закрыты.
     depends_on: [AG-01, AG-04, AG-07]
     scope: [power_grid_env/network_opf.py, power_grid_env/analysis.py, power_grid_env/symmetric_ac.py, benchmarks/external/pglib_opf.py]
     gates:
@@ -195,7 +214,11 @@ tasks:
   - id: AG-13
     title: General AI interfaces and controlled execution
     priority: P2
-    status: planned
+    status: in_progress
+    progress: >-
+      Gym отдаёт все каналы счётчиков, маску достоверности, возраст от
+      produced_s и задержку доставки. LLM/VLM, изоляция недоверенного
+      процесса и отдельные raw/shielded прогоны не закрыты.
     depends_on: [AG-03, AG-04, AG-06, AG-09]
     scope: [power_grid_env/gym_env.py, power_grid_env/llm_tools.py, power_grid_env/vlm.py, power_grid_env/controllers.py]
     gates:
@@ -208,7 +231,7 @@ tasks:
   - id: AG-14
     title: Field measurements and scoped validation
     priority: P2_external_data
-    status: planned
+    status: waiting_for_data
     depends_on: [AG-01, AG-02, AG-04, AG-07]
     scope: [benchmarks/external/field_gap.py, benchmarks/external/partner_request.md, benchmarks/external/packs/field-pilot.yaml]
     external_dependency: paired_model_parameters_inputs_independent_targets_time_and_quality
@@ -233,7 +256,11 @@ tasks:
   - id: AG-16
     title: Automated release qualification and documentation
     priority: P1_release_gate
-    status: planned
+    status: in_progress
+    progress: >-
+      power-grid qualify пишет qualification.json с released=false, пока
+      открыты AG-07, AG-10, AG-14 и AG-15. Чистая установка и полный
+      release job ещё не являются выпуском.
     depends_on: [AG-01, AG-02, AG-03, AG-04, AG-05, AG-06, AG-07, AG-08, AG-09, AG-10, AG-11]
     scope: [.github/workflows, power_grid_env/acceptance.py, power_grid_env/capabilities.py, README.md, README.en.md, docs]
     gates:

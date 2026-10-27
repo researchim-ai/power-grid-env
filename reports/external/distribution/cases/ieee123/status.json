@@ -5,7 +5,11 @@
   "verdict": "pass",
   "native_converged": true,
   "import_status": "converged",
-  "max_voltage_error_pu": 3.101656345094739e-07,
+  "max_voltage_error_pu": 2.0650148258027912e-14,
+  "loss_error_w": 2.978459815494716e-05,
+  "max_power_error_w": 0.0022440735483542085,
+  "max_current_error_a": 9.5367431640625e-07,
+  "max_tap_error": 0.0,
   "coverage": {
     "counts": {
       "directive": 3,

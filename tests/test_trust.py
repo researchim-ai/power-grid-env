@@ -504,6 +504,101 @@ def test_linecode_impedance_scales_with_length(tmp_path):
     assert network.lines[0].r_ohm[0][1] == 0.0
 
 
+def _delayed_ltc_network():
+    from power_grid_env.model import LTCSpec
+
+    builder = NetBuilder("ltc", "РПН", 20.0)
+    builder.node("hv", 20.0)
+    builder.node("lv", 0.4)
+    builder.source("hv", 0.05, 0.2)
+    builder.transformer(
+        "hv",
+        "lv",
+        vector_group="Dyn11",
+        kva=160,
+        hv_kv=20,
+        lv_kv=0.4,
+        x_pct=4,
+        r_pct=1,
+        hv_ground="not_applicable",
+        lv_ground="solid",
+        transformer_id="t",
+    )
+    builder.load("lv", 20_000, 5_000, load_id="load")
+    network = builder.build()
+    network.transformers[0].ltc = LTCSpec(
+        controlled_winding=1,
+        v_target_pu=1.2,
+        deadband_pu=0.01,
+        tap_min_pu=0.9,
+        tap_max_pu=1.1,
+        tap_step_pu=0.01,
+        delay_s=5.0,
+    )
+    return network
+
+
+def test_direct_and_process_backends_share_the_tap_timeline():
+    from power_grid_env.backend_process import ProcessBackend
+
+    scenario = Scenario(id="parity", horizon_s=30, settle_s=600, control_interval_s=30)
+    direct = Engine(_delayed_ltc_network(), scenario)
+    direct.reset()
+    backend = ProcessBackend(timeout_s=60)
+    try:
+        process = Engine(_delayed_ltc_network(), scenario, solve=backend.solve)
+        process.reset()
+        assert direct.net.transformers[0].windings[1].tap_pu == pytest.approx(1.0)
+        assert process.net.transformers[0].windings[1].tap_pu == pytest.approx(1.0)
+        direct.advance_to(5.0)
+        process.advance_to(5.0)
+        assert process.net.transformers[0].windings[1].tap_pu == pytest.approx(
+            direct.net.transformers[0].windings[1].tap_pu
+        )
+        assert process.net.transformers[0].windings[1].tap_pu == pytest.approx(1.01)
+    finally:
+        backend.close()
+
+
+def test_parallel_infeed_is_rejected_and_storage_respects_energy():
+    from power_grid_env.industrial import build_industrial_plant
+
+    engine = Engine(build_industrial_plant(), Scenario(id="ats", horizon_s=60, settle_s=600))
+    engine.reset()
+    refused = engine.submit({"kind": "switch", "equipment_id": "ats", "command": "close"})
+    assert refused["accepted"] is False
+    assert refused["reason"] == "parallel_infeed"
+    engine.net.switches[0].closed = False
+    engine._resolve()
+    transferred = engine.submit({"kind": "switch", "equipment_id": "ats", "command": "close"})
+    assert transferred["accepted"] is True
+    builder = NetBuilder("bess", "Накопитель", 0.4)
+    builder.node("src", 0.4)
+    builder.source("src", 0.01, 0.04)
+    builder.storage("src", e_j=1_000_000, soc=0.5, p_w=0.0, s_rated_va=10_000, storage_id="storage")
+    stored = Engine(builder.build(), Scenario(id="bess", horizon_s=60, settle_s=600, control_interval_s=60))
+    stored.reset()
+    stored.step_control({"kind": "setpoint", "equipment_id": "storage", "value": 1_000_000_000, "unit": "W"})
+    # Запрошен 1 ГВт. За минуту можно отдать только (0.5−0.1)·1 МДж с учётом КПД, SoC садится на пол.
+    assert stored.soc["storage"] == pytest.approx(stored.net.storages[0].soc_min)
+    assert stored.net.storages[0].p_w <= stored.net.storages[0].s_rated_va
+
+
+def test_installed_case_does_not_search_for_a_repository(tmp_path, monkeypatch):
+    from power_grid_env.paths import project_dir
+    from power_grid_env.workflow import run_case
+
+    monkeypatch.setenv("POWER_GRID_PROJECT", str(tmp_path))
+    monkeypatch.chdir(tmp_path)
+    assert project_dir() == tmp_path.resolve()
+    model = tmp_path / "model.json"
+    model.write_text(_feeder().build().model_dump_json(), encoding="utf-8")
+    result = run_case(model, tmp_path / "out")
+    assert result["ok"] is True
+    assert result["resumed_time_s"] == result["time_s"]
+    assert "power-grid-env не найден" not in str(result)
+
+
 def test_fingerprint_tracks_the_controller_command(tmp_path: Path):
     network = _feeder().build()
     scenario = Scenario(id="fingerprint", horizon_s=60, settle_s=600)
@@ -517,6 +612,13 @@ def test_fingerprint_tracks_the_controller_command(tmp_path: Path):
     script.write_text("print(2)\n", encoding="utf-8")
     after = experiment_fingerprint(scenario, {"command": ["python3", str(script)]}, network)
     assert before != after
+    helper = tmp_path / "helper.py"
+    helper.write_text("VALUE = 1\n", encoding="utf-8")
+    script.write_text("import helper\n", encoding="utf-8")
+    with_helper = experiment_fingerprint(scenario, {"command": ["python3", str(script)]}, network)
+    helper.write_text("VALUE = 2\n", encoding="utf-8")
+    changed_helper = experiment_fingerprint(scenario, {"command": ["python3", str(script)]}, network)
+    assert with_helper != changed_helper
 
 
 def test_attempts_stay_immutable_and_idempotency_does_not_duplicate(tmp_path: Path):

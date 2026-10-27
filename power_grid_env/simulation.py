@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import heapq
+import inspect
 import math
 import random
 from dataclasses import asdict, dataclass, field
@@ -391,6 +392,8 @@ class Engine:
             return {"accepted": False, "reason": "operation_limit", "interlock": True}
         if command == "close" and bool(getattr(self.scenario, "radiality", True)) and self._would_loop(switch):
             return {"accepted": False, "reason": "creates_loop", "interlock": True}
+        if command == "close" and self._joins_two_slacks(switch):
+            return {"accepted": False, "reason": "parallel_infeed", "interlock": True}
         if command == "open" and switch.kind == "disconnector" and enforce_hidden_current:
             if self._incident_current(switch) > switch.interrupt_current_a + 1e-6:
                 return {"accepted": False, "reason": "disconnector_cannot_interrupt", "interlock": True}
@@ -555,12 +558,16 @@ class Engine:
         }
 
     def _call_solve(self) -> SolveResult:
-        delayed = any(item.ltc is not None and item.ltc.delay_s > 0 for item in self.net.transformers)
-        if delayed and self.solve is solve_network:
-            from power_grid_env.results import SolveOptions
+        """Один контракт для прямого вызова, обёртки и процессного backend."""
+        from power_grid_env.results import SolveOptions
 
-            return solve_network(self.net, SolveOptions(apply_regulators=False))
-        return self.solve(self.net)
+        delayed = any(item.ltc is not None and item.ltc.delay_s > 0 for item in self.net.transformers)
+        options = SolveOptions(apply_regulators=not delayed)
+        solver = self.solve
+        names = inspect.signature(solver).parameters
+        if "options" in names:
+            return solver(self.net, options)
+        return solver(self.net)
 
     def _persist_taps(self) -> None:
         result = self.last_result
@@ -645,6 +652,8 @@ class Engine:
             return False, "operation_limit"
         if closed and bool(getattr(self.scenario, "radiality", True)) and self._would_loop(switch):
             return False, "creates_loop"
+        if closed and self._joins_two_slacks(switch):
+            return False, "parallel_infeed"
         if not closed and switch.kind == "disconnector" and self._incident_current(switch) > switch.interrupt_current_a + 1e-6:
             return False, "disconnector_cannot_interrupt"
         return True, "accepted"
@@ -985,6 +994,25 @@ class Engine:
     def _would_loop(self, switch) -> bool:
         return _nodes_connected(self.net, _switch_nodes(self.net, switch), ignore_switch=switch.id)
 
+    def _joins_two_slacks(self, switch) -> bool:
+        """Два питающих источника нельзя соединять молча. Это не кольцо линий."""
+        topology = compile_topology(self.net)
+        left_node, right_node = _switch_nodes(self.net, switch)
+        left = topology.node_to_bus.get(left_node)
+        right = topology.node_to_bus.get(right_node)
+        if left is None or right is None:
+            return False
+        left_island = topology.bus_island[left]
+        right_island = topology.bus_island[right]
+        if left_island == right_island:
+            return False
+
+        def slacks(island_id: str) -> int:
+            island = next(item for item in topology.islands if item.id == island_id)
+            return sum(1 for source in self.net.sources if source.id in island.source_ids and source.is_slack)
+
+        return slacks(left_island) > 0 and slacks(right_island) > 0
+
     def _incident_current(self, switch) -> float:
         if self.last_result is None:
             return 0.0
@@ -1220,6 +1248,7 @@ def build_observation(engine: Engine) -> dict[str, Any]:
                     "phase": reading["phase"],
                     "v_pu": reading["v_pu"],
                     "angle_rad": reading["angle_rad"],
+                    "produced_s": sample["produced_s"],
                     "available_s": sample["available_s"],
                 }
             )

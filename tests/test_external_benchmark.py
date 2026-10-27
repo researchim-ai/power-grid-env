@@ -8,6 +8,68 @@ from benchmarks.external.compare import VOLTAGE_PU, compare_buses
 from power_grid_env.importer import import_network
 
 
+def test_loss_gate_uses_the_declared_relative_floor():
+    from benchmarks.external.compare import compare_losses
+
+    close = compare_losses(100_000.0, 20_000.0, 100_000.5, 20_000.1)
+    assert close["verdict"] == "pass"
+    far = compare_losses(100_000.0, 20_000.0, 100_000.0, 20_000.0 + 1e-5 * 20_000.0 + 1.0)
+    assert far["verdict"] == "fail"
+    assert far["reasons"] == ["q_var"]
+    assert compare_losses(None, 1.0, 1.0, 1.0)["verdict"] == "fail"
+
+
+def test_power_comparison_rejects_empty_and_nan():
+    from benchmarks.external.compare import compare_power
+
+    good = compare_power(
+        [{"equipment": "line", "phase": "A", "p_w": 1000.0, "q_var": 100.0}],
+        [{"equipment": "line", "phase": "A", "p_w": 1000.2, "q_var": 100.1}],
+    )
+    assert good["verdict"] == "pass"
+    empty = compare_power([], [{"equipment": "line", "phase": "A", "p_w": 1.0, "q_var": 0.0}])
+    assert empty["verdict"] == "fail"
+    nan = compare_power(
+        [{"equipment": "line", "phase": "A", "p_w": 1.0, "q_var": 0.0}],
+        [{"equipment": "line", "phase": "A", "p_w": float("nan"), "q_var": 0.0}],
+    )
+    assert nan["verdict"] == "fail"
+
+
+def test_terminal_and_tap_gates_reject_a_miss():
+    from benchmarks.external.compare import compare_taps, compare_terminals
+
+    native = [{"class": "line", "equipment": "L1", "terminal": 0, "conductor": 0, "phase": "A", "p_w": 1000.0, "q_var": 100.0, "i_real_a": 10.0, "i_imag_a": -1.0, "ll_v": 400.0}]
+    close = compare_terminals(native, [{**native[0], "p_w": 1000.001, "i_real_a": 10.00001}], s_base_va=1_000_000.0, default_ll_v=400.0)
+    assert close["verdict"] == "pass"
+    assert close["power_tolerance_w"] == 10.0
+    power = compare_terminals(native, [{**native[0], "p_w": 1000.0 + 10.0 + 0.1}], s_base_va=1_000_000.0, default_ll_v=400.0)
+    assert power["verdict"] == "fail"
+    assert "power" in power["reasons"]
+    missing_neutral = compare_terminals(
+        [{**native[0], "phase": "N"}],
+        [],
+        s_base_va=1_000_000.0,
+        default_ll_v=400.0,
+    )
+    assert missing_neutral["verdict"] == "fail"
+    taps = compare_taps([{"equipment": "reg", "tap": 1.0125}], [{"equipment": "reg", "tap": 1.0125}])
+    assert taps["verdict"] == "pass"
+    stepped = compare_taps([{"equipment": "reg", "tap": 1.0125}], [{"equipment": "reg", "tap": 1.01875}])
+    assert stepped["verdict"] == "fail"
+    assert compare_taps([], [])["verdict"] == "pass"
+
+
+def test_missing_neutral_node_fails_the_voltage_gate():
+    native = {
+        "converged": True,
+        "buses": [{"name": "b", "phases": [{"node": 1, "pu": 1.0, "angle_deg": 0.0}, {"node": 4, "pu": 0.01, "angle_deg": 1.0}]}],
+    }
+    dropped = compare_buses(native, [{"bus": "b", "node": 1, "pu": 1.0, "angle_deg": 0.0}])
+    assert dropped["verdict"] == "fail"
+    assert dropped["counts"]["missing_required"] == 1
+
+
 def test_voltage_gate_stays_strict():
     native = {
         "converged": True,
@@ -170,6 +232,8 @@ def test_smoke_pack_records_ieee_and_enwl_without_a_false_pass():
     assert by_id["ieee13"]["import_status"] == "converged"
     assert by_id["ieee13"]["verdict"] == "pass"
     assert by_id["ieee13"]["max_voltage_error_pu"] < 1e-5
+    assert by_id["ieee13"]["loss_error_w"] is not None
+    assert abs(by_id["ieee13"]["loss_error_w"]) <= max(1e-3, 1e-5 * 200_000)
     assert by_id["enwl-network23-feeder3"]["import_status"] == "converged"
     assert by_id["enwl-network23-feeder3"]["verdict"] == "pass"
     assert by_id["enwl-network23-feeder3"]["max_voltage_error_pu"] < 1e-5
@@ -278,6 +342,20 @@ def test_derived_operating_points_keep_the_same_gate(tmp_path: Path):
     assert payload["verdict"] == "pass"
 
 
+def test_second_smart_ds_leaf_snapshot_uses_the_same_gate(tmp_path: Path):
+    from benchmarks.external.smart_ds_qsts import second_leaf, snapshot_second_leaf
+
+    master = second_leaf()
+    if master is None or not master.exists():
+        pytest.skip("второй лист SMART-DS локально отсутствует")
+    assert master.parent.name != "p1uhs0_1247--p1udt104"
+    payload = snapshot_second_leaf(tmp_path)
+    assert payload["qsts"] == "not_run"
+    assert payload["verdict"] == "pass"
+    assert payload["max_voltage_error_pu"] < 1e-5
+    assert payload["max_tap_error"] == 0.0 or payload["max_tap_error"] < 1e-6
+
+
 def test_smart_ds_qsts_replay_matches_the_continuous_run(tmp_path: Path):
     master = Path(
         "data/external/raw/smart-ds/v1.0/2018/SFO/P1U/opendss/"
@@ -303,6 +381,60 @@ def test_smart_ds_qsts_replay_matches_the_continuous_run(tmp_path: Path):
         payload["profile_sha256"],
     )
     assert rejected["verdict"] == "fail"
+
+
+def test_imported_ieee13_qsts_uses_the_engine_checkpoint(tmp_path: Path):
+    master = Path("data/external/raw/ieee-pes/13Bus/IEEE13Nodeckt.dss")
+    if not master.exists():
+        pytest.skip("локальный IEEE13 отсутствует")
+    import json
+
+    from power_grid_env.scenarios import Scenario
+    from power_grid_env.simulation import Engine
+
+    network, report = import_network(master)
+    assert not report["errors"]
+    load_id = network.loads[0].id
+    scenario = Scenario(
+        id="ieee13-engine",
+        horizon_s=120,
+        control_interval_s=60,
+        settle_s=10_000,
+        load_profile={load_id: [[0.0, 1.0], [60.0, 1.2]]},
+    )
+    continuous = Engine(network, scenario)
+    continuous.reset()
+    continuous.step_control({"kind": "hold"})
+    raw = json.loads(json.dumps(continuous.snapshot()))
+    (tmp_path / "checkpoint.json").write_text(json.dumps(raw), encoding="utf-8")
+    restored = Engine(network.model_copy(deep=True), scenario)
+    restored.restore(json.loads((tmp_path / "checkpoint.json").read_text(encoding="utf-8")))
+    restored.step_control({"kind": "hold"})
+    continuous.step_control({"kind": "hold"})
+    assert restored.time_s == pytest.approx(continuous.time_s)
+    assert restored.last_result is not None and restored.last_result.status == "converged"
+    assert continuous.last_result is not None and continuous.last_result.status == "converged"
+    left = {
+        (item.bus_id, item.phase): abs(item.complex) / item.v_base_ln_v
+        for item in restored.last_result.voltages
+        if item.v_base_ln_v
+    }
+    right = {
+        (item.bus_id, item.phase): abs(item.complex) / item.v_base_ln_v
+        for item in continuous.last_result.voltages
+        if item.v_base_ln_v
+    }
+    assert left.keys() == right.keys()
+    assert max(abs(left[key] - right[key]) for key in left) < 1e-5
+    assert restored.net.loads[0].p_w == continuous.net.loads[0].p_w
+    nameplate = network.loads[0].p_w
+    assert any(abs(value - nameplate[phase] * 1.2) < 1e-6 for phase, value in restored.net.loads[0].p_w.items())
+    assert restored.last_result.diagnostics.get("solved_taps") == continuous.last_result.diagnostics.get("solved_taps")
+    restored_i = {(flow.equipment_id, flow.terminal_index, flow.phase): flow.current for flow in restored.last_result.flows}
+    continuous_i = {(flow.equipment_id, flow.terminal_index, flow.phase): flow.current for flow in continuous.last_result.flows}
+    assert restored_i.keys() == continuous_i.keys()
+    assert max(abs(restored_i[key] - continuous_i[key]) for key in restored_i) < 1e-4
+    assert restored.trace[-1]["energy_not_served_wh"] == pytest.approx(continuous.trace[-1]["energy_not_served_wh"])
 
 
 def test_field_pack_does_not_score_missing_measurements(tmp_path: Path):

@@ -6,6 +6,10 @@
   "native_converged": true,
   "import_status": "converged",
   "max_voltage_error_pu": 8.547829111194005e-12,
+  "loss_error_w": 8.747383617446758e-08,
+  "max_power_error_w": 1.072496161214076e-05,
+  "max_current_error_a": 4.2408788259072575e-08,
+  "max_tap_error": 0.0,
   "coverage": {
     "counts": {
       "transferred": 1027,

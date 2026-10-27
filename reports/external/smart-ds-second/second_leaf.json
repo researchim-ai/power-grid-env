@@ -1,0 +1,25 @@
+{
+  "id": "p1uhs0_1247--p1udt942",
+  "verdict": "pass",
+  "native_converged": true,
+  "import_status": "converged",
+  "max_voltage_error_pu": 1.3693335354503233e-10,
+  "loss_error_w": 0.006413172603060957,
+  "max_power_error_w": 0.0309273051971104,
+  "max_current_error_a": 5.373764505419843e-06,
+  "max_tap_error": 0.0,
+  "coverage": {
+    "counts": {
+      "directive": 5,
+      "transferred": 146,
+      "ignored_non_electrical": 7
+    },
+    "unsupported": [],
+    "errors": []
+  },
+  "evidence": "conversion_consistency",
+  "qsts": "not_run",
+  "reasons": [],
+  "selection_rule": "второй по размеру Master.dss лист opendss_no_loadshapes, при равенстве по пути; первый лист исключён. Правило до просмотра ошибки.",
+  "qsts_reason": "CSV профилей этого фидера в кэше нет, профили первого фидера не подставлялись"
+}

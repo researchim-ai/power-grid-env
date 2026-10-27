@@ -23,7 +23,7 @@ from power_grid_env.ipc import (
     read_frame,
     write_frame,
 )
-from power_grid_env.paths import repo_root
+from power_grid_env.paths import package_dir, project_dir
 
 
 ACTION_SCHEMA = {
@@ -73,14 +73,16 @@ class SubprocessController:
         self.timeout_s = timeout_s
         self.sent: list[dict[str, Any]] = []
         env = os.environ.copy()
-        root = str(repo_root())
-        env["PYTHONPATH"] = root + os.pathsep + env.get("PYTHONPATH", "")
+        work = str(project_dir())
+        installed = str(package_dir().parent)
+        env["PYTHONPATH"] = installed + os.pathsep + env.get("PYTHONPATH", "")
+        env["POWER_GRID_PROJECT"] = work
         self.process = subprocess.Popen(
             command,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            cwd=root,
+            cwd=work,
             env=env,
             start_new_session=True,
         )

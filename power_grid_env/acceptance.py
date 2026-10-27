@@ -103,8 +103,10 @@ def run_acceptance(root: Path | None = None) -> int:
         _observation, _reward, _terminated, _truncated, info = env.step(0)
         if "solve_status" not in info:
             problems.append("Gymnasium rollout не вернул статус расчёта")
-        if observation["voltage_pu"].shape != (8,):
+        if observation["voltage_pu"].shape != (len(env.channels),):
             problems.append("форма наблюдения Gymnasium")
+        if observation["voltage_valid"].shape != observation["voltage_pu"].shape:
+            problems.append("маска достоверности напряжения не совпала с каналами")
     checks = run_numerical_suite()
     if not all(item["passed"] for item in checks):
         problems.append("численная приёмка: " + ", ".join(item["id"] for item in checks if not item["passed"]))

@@ -10,6 +10,10 @@
       "native_converged": true,
       "import_status": "converged",
       "max_voltage_error_pu": 8.778033855350031e-10,
+      "loss_error_w": 0.0005651546962326393,
+      "max_power_error_w": 0.012057110376190394,
+      "max_current_error_a": 5.066048715303371e-06,
+      "max_tap_error": 0.0,
       "coverage": {
         "counts": {
           "directive": 5,
@@ -28,6 +32,10 @@
       "native_converged": true,
       "import_status": "converged",
       "max_voltage_error_pu": 4.526379271396763e-13,
+      "loss_error_w": 1.9321366728775047e-10,
+      "max_power_error_w": 3.1315512039929114e-06,
+      "max_current_error_a": 2.4383521948240303e-08,
+      "max_tap_error": 0.0,
       "coverage": {
         "counts": {
           "transferred": 66,

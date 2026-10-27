@@ -155,6 +155,7 @@ class Transformer(BaseModel):
     load_loss_pct: float
     no_load_loss_pct: float | None = None
     imag_pct: float | None = None
+    ppm_antifloat: float = Field(default=1.0, ge=0.0)
     ltc: LTCSpec | None = None
     provenance: Provenance
 

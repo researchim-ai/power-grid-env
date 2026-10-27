@@ -1,0 +1,107 @@
+schema_version: power-grid-env.development-strategy/v1
+prepared_on: '2026-10-27'
+baseline_commit: 67f4dbf033fffe08bee714929a9c511bcd7f6f87
+specification: docs/OPEN_SOURCE_ADVANTAGE_PLAN_RU.md
+implementation_backlog: plans/industrialization.yaml
+assessment: reports/development-review-67f4dbf/assessment.json
+status: in_progress
+competitive_superiority_proven: false
+economics: excluded
+first_release: Industrial_QSTS_v1
+followups:
+  - id: NS-01
+    priority: P0
+    status: done
+    scope: backend_options_and_timed_controls
+    gate: direct_wrapped_and_process_taps_events_and_replay_match
+    evidence: reports/development-review-67f4dbf/probes.json
+  - id: NS-02
+    priority: P1
+    status: done
+    scope: transitive_controller_and_actual_runtime_identity
+    gate: controller_helper_dependency_or_engine_change_invalidates_resume
+    evidence: reports/development-review-67f4dbf/probes.json
+milestones:
+  - id: M0
+    title: Common physical execution contract
+    status: done
+    depends_on: []
+    tasks: [NS-01, NS-02]
+    qualification: direct_process_replay_and_runtime_negative_cases
+  - id: M1
+    title: Installable reproducible baseline
+    status: planned
+    depends_on: [M0]
+    tasks: [AG-08, AG-16]
+    qualification: clean_install_full_workflow_outside_checkout
+  - id: M2
+    title: External production Engine validation
+    status: planned
+    depends_on: [M0]
+    tasks: [AG-07]
+    qualification: full_V_I_P_Q_losses_controls_and_stateful_replay
+  - id: M3
+    title: Industrial task packs
+    status: planned
+    depends_on: [M2]
+    tasks: [AG-11]
+    qualification: positive_negative_and_near_limit_independent_oracles
+  - id: M4
+    title: Engineering workspace
+    status: planned
+    depends_on: [M1, M3]
+    tasks: [AG-09]
+    qualification: import_run_violation_compare_and_replay_via_API_and_UI
+  - id: M5
+    title: Reproducible open-source comparison
+    status: planned
+    depends_on: [M1, M2, M3, M4]
+    qualification: fair_common_scope_correctness_first_report_with_all_results
+  - id: M6
+    title: Profiled acceleration and robust scenarios
+    status: planned
+    depends_on: [M5]
+    tasks: [AG-10, AG-14]
+    qualification: numerical_equivalence_bounded_resources_and_paired_comparison
+    unavailable_field_data: mark_waiting_for_data_continue_software_qualification
+  - id: M7
+    title: Additional analysis AI and RMS
+    status: planned
+    depends_on: [M2, M3]
+    tasks: [AG-12, AG-13, AG-15]
+    qualification: separate_reference_and_scope_gate_for_each_new_domain
+baseline_candidates:
+  - id: direct-dss
+    common_scope: supported_phase_domain_networks
+    comparison_run: not_performed
+  - id: pydss-disco
+    common_scope: QSTS_controls_scenarios_and_reports
+    comparison_run: not_performed
+  - id: pandapower
+    common_scope: matched_equivalent_circuit_and_analysis_subset
+    comparison_run: partial_simbench_voltage_only
+    note: три снимка SimBench по |V| внутри 1e-4; углы и QSTS не сравнивались
+  - id: power-grid-model
+    common_scope: matched_distribution_PF_SE_SC_subset
+    comparison_run: not_performed
+  - id: grid2op
+    common_scope: compatible_controller_tasks_only
+    comparison_run: not_performed
+  - id: andes
+    common_scope: future_RMS_release_only
+    comparison_run: not_performed
+advantage_axes:
+  - transparent_model_transfer_and_defect_diagnostics
+  - industrial_device_and_command_execution
+  - violation_explanation_evidence_and_replay
+  - robust_controller_evaluation_under_uncertainty
+  - full_workflow_performance_at_equal_accuracy
+claim_policy:
+  documentation_comparison_is_not_performance_evidence: true
+  same_engine_agreement_is_not_independent_solver_validation: true
+  unsupported_not_silently_simplified: true
+  default_and_custom_glue_baselines_separate: true
+  no_composite_score_without_justification: true
+  failed_required_case_blocks_qualification: true
+  no_measured_advantage_outcome: no_advantage_yet
+  timing_and_accuracy_budgets_frozen_before_final_comparison: true

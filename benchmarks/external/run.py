@@ -10,7 +10,7 @@ from typing import Any
 import yaml
 
 from benchmarks.external._common import PROCESSED, RAW, environment, write_json
-from benchmarks.external.compare import compare_buses
+from benchmarks.external.compare import compare_buses, compare_losses, compare_taps, compare_terminals
 from benchmarks.external.extract_native_reference import extract_master
 from benchmarks.external.fetch import fetch_source
 
@@ -106,9 +106,25 @@ def _run_case(case: dict[str, Any], out: Path, *, offline: bool) -> dict[str, An
     solved = solve_network(imported)
     rows = _imported_rows(imported, solved)
     comparison = compare_buses(native, rows)
+    losses = _loss_comparison(imported, solved, native)
+    source_ll = imported.sources[0].ll_v if imported.sources else 0.0
+    terminals = compare_terminals(
+        native.get("terminals") or [],
+        _our_terminals(imported, solved),
+        s_base_va=imported.s_base_va,
+        default_ll_v=source_ll,
+    )
+    taps = compare_taps(native.get("taps") or [], _our_taps(solved))
     if solved.status != "converged":
         comparison["verdict"] = "fail"
         comparison.setdefault("reasons", []).append("import_solver_not_converged")
+    for label, item in (("losses", losses), ("terminals", terminals), ("taps", taps)):
+        if item["verdict"] != "pass":
+            comparison["verdict"] = "fail"
+            comparison.setdefault("reasons", []).append(label)
+    comparison["losses"] = losses
+    comparison["terminals"] = terminals
+    comparison["taps"] = taps
     write_json(case_dir / "comparison.json", comparison)
     result = {
         "id": case["id"],
@@ -118,8 +134,78 @@ def _run_case(case: dict[str, Any], out: Path, *, offline: bool) -> dict[str, An
         "native_converged": True,
         "import_status": solved.status,
         "max_voltage_error_pu": comparison["max_voltage_error_pu"],
+        "loss_error_w": None if losses.get("p_w") is None else losses["p_w"]["error"],
+        "max_power_error_w": terminals.get("max_power_error_w"),
+        "max_current_error_a": terminals.get("max_current_error_a"),
+        "max_tap_error": taps.get("max_abs"),
         "coverage": coverage,
         "evidence": "conversion_consistency",
+    }
+    write_json(case_dir / "status.json", result)
+    return result
+
+
+def qualify_local_master(master: Path, out: Path, *, case_id: str, evidence: str) -> dict[str, Any]:
+    """Снимок уже лежащего на диске мастера. Ничего не скачивает."""
+    case_dir = out / "cases" / case_id
+    case_dir.mkdir(parents=True, exist_ok=True)
+    native = extract_master(master, case_dir / "reference_raw.json", evidence=evidence)
+    imported, report = _import_case(master)
+    coverage = _coverage(report)
+    write_json(case_dir / "import_report.json", report)
+    if imported is None or not native.get("converged"):
+        result = {
+            "id": case_id,
+            "verdict": "fail" if imported is not None else "unsupported",
+            "native_converged": native.get("converged"),
+            "native_error": native.get("error"),
+            "import_errors": report.get("errors"),
+            "coverage": coverage,
+            "evidence": evidence,
+            "qsts": "not_run",
+        }
+        write_json(case_dir / "status.json", result)
+        return result
+    from power_grid_env.backend_opendss import solve_network
+
+    solved = solve_network(imported)
+    case = {"id": case_id, "source": "local", "required": True, "evidence": evidence}
+    rows = _imported_rows(imported, solved)
+    comparison = compare_buses(native, rows)
+    losses = _loss_comparison(imported, solved, native)
+    source_ll = imported.sources[0].ll_v if imported.sources else 0.0
+    terminals = compare_terminals(
+        native.get("terminals") or [],
+        _our_terminals(imported, solved),
+        s_base_va=imported.s_base_va,
+        default_ll_v=source_ll,
+    )
+    taps = compare_taps(native.get("taps") or [], _our_taps(solved))
+    if solved.status != "converged":
+        comparison["verdict"] = "fail"
+        comparison.setdefault("reasons", []).append("import_solver_not_converged")
+    for label, item in (("losses", losses), ("terminals", terminals), ("taps", taps)):
+        if item["verdict"] != "pass":
+            comparison["verdict"] = "fail"
+            comparison.setdefault("reasons", []).append(label)
+    comparison["losses"] = losses
+    comparison["terminals"] = terminals
+    comparison["taps"] = taps
+    write_json(case_dir / "comparison.json", comparison)
+    result = {
+        "id": case["id"],
+        "verdict": comparison["verdict"],
+        "native_converged": True,
+        "import_status": solved.status,
+        "max_voltage_error_pu": comparison["max_voltage_error_pu"],
+        "loss_error_w": None if losses.get("p_w") is None else losses["p_w"]["error"],
+        "max_power_error_w": terminals.get("max_power_error_w"),
+        "max_current_error_a": terminals.get("max_current_error_a"),
+        "max_tap_error": taps.get("max_abs"),
+        "coverage": coverage,
+        "evidence": evidence,
+        "qsts": "not_run",
+        "reasons": comparison.get("reasons"),
     }
     write_json(case_dir / "status.json", result)
     return result
@@ -174,6 +260,65 @@ def _coverage(report: dict[str, Any]) -> dict[str, Any]:
         if row.get("status") == "unsupported":
             unsupported.append(row.get("command"))
     return {"counts": counts, "unsupported": unsupported[:80], "errors": report.get("errors") or []}
+
+
+def _loss_comparison(network: Any, solved: Any, native: dict[str, Any]) -> dict[str, Any]:
+    equipment = {item.id for item in network.lines} | {item.id for item in network.transformers}
+    active = 0.0
+    reactive = 0.0
+    for flow in solved.flows:
+        if flow.equipment_id not in equipment or flow.phase not in {"A", "B", "C"}:
+            continue
+        active += flow.p_into_w
+        reactive += flow.q_into_var
+    return compare_losses(native.get("losses_w"), native.get("losses_var"), active, reactive)
+
+
+def _our_terminals(network: Any, solved: Any) -> list[dict[str, Any]]:
+    classes: dict[str, str] = {}
+    for item in network.lines:
+        classes[item.id.lower()] = "line"
+    for item in network.transformers:
+        classes[item.id.lower()] = "transformer"
+    for item in network.loads:
+        classes[item.id.lower()] = "load"
+    for item in network.shunts:
+        classes[item.id.lower()] = "capacitor"
+    for item in network.sources:
+        classes[item.id.lower()] = "vsource"
+    for item in network.neutral_grounds:
+        classes[item.id.lower()] = "reactor"
+    from power_grid_env.topology import compile_topology
+
+    nominal = {bus_id: bus.nominal_ll_v for bus_id, bus in compile_topology(network).buses.items()}
+    rows = []
+    seen: dict[tuple[str, int], int] = {}
+    for flow in solved.flows:
+        kind = classes.get(flow.equipment_id.lower())
+        if kind is None:
+            continue
+        key = (flow.equipment_id.lower(), flow.terminal_index)
+        local = seen.get(key, 0)
+        seen[key] = local + 1
+        rows.append(
+            {
+                "class": kind,
+                "equipment": flow.equipment_id,
+                "terminal": flow.terminal_index,
+                "conductor": local,
+                "phase": flow.phase,
+                "ll_v": nominal.get(flow.bus_id),
+                "p_w": flow.p_into_w,
+                "q_var": flow.q_into_var,
+                "i_real_a": flow.i_into_real_a,
+                "i_imag_a": flow.i_into_imag_a,
+            }
+        )
+    return rows
+
+
+def _our_taps(solved: Any) -> list[dict[str, Any]]:
+    return [{"equipment": name, "tap": value} for name, value in (solved.diagnostics.get("solved_taps") or {}).items()]
 
 
 def _imported_rows(network: Any, solved: Any) -> list[dict[str, Any]]:

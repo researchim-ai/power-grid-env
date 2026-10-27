@@ -23,6 +23,7 @@ from benchmarks.external.run import _imported_rows
 FEEDER = RAW / (
     "smart-ds/v1.0/2018/SFO/P1U/opendss/p1uhs0_1247/p1uhs0_1247--p1udt104"
 )
+FIRST_LEAF = "p1uhs0_1247--p1udt104"
 DAY_STEPS = 96
 WEEK_STEPS = 7 * DAY_STEPS
 
@@ -101,6 +102,54 @@ def run(out: Path, *, steps: int) -> dict[str, Any]:
     }
     write_json(out / f"qsts_{steps}.json", payload)
     return payload
+
+
+def second_leaf() -> Path | None:
+    """Второй лист уже скачанного дерева: меньший Master.dss, при равенстве по пути.
+
+    Первый лист p1uhs0_1247--p1udt104 исключён. Каталоги подстанций без «--» не листья.
+    Профили этого листа не подменяются профилями первого фидера.
+    """
+    root = RAW / "smart-ds/v1.0/2018/SFO/P1U/opendss_no_loadshapes"
+    if not root.exists():
+        return None
+    leaves = []
+    for master in root.rglob("Master.dss"):
+        if "--" not in master.parent.name or master.parent.name == FIRST_LEAF:
+            continue
+        leaves.append((master.stat().st_size, str(master.parent), master))
+    if not leaves:
+        return None
+    leaves.sort()
+    return leaves[0][2]
+
+
+def snapshot_second_leaf(out: Path) -> dict[str, Any]:
+    from benchmarks.external.run import qualify_local_master
+
+    master = second_leaf()
+    if master is None:
+        payload = {
+            "verdict": "not_run",
+            "qsts": "not_run",
+            "reason": "в локальном дереве нет второго листа SMART-DS",
+        }
+        write_json(out / "second_leaf.json", payload)
+        return payload
+    qualified = qualify_local_master(
+        master,
+        out,
+        case_id=master.parent.name,
+        evidence="conversion_consistency",
+    )
+    qualified["selection_rule"] = (
+        "второй по размеру Master.dss лист opendss_no_loadshapes, при равенстве по пути; "
+        "первый лист исключён. Правило до просмотра ошибки."
+    )
+    qualified["qsts"] = "not_run"
+    qualified["qsts_reason"] = "CSV профилей этого фидера в кэше нет, профили первого фидера не подставлялись"
+    write_json(out / "second_leaf.json", qualified)
+    return qualified
 
 
 def _required_profiles(path: Path) -> dict[str, Path]:

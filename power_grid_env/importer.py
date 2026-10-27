@@ -166,7 +166,8 @@ def _add_transformer(name, args, raw, spec, ensure_node, nodes, terminals, trans
             x_lt_pct=xlt,
             load_loss_pct=load_loss,
             no_load_loss_pct=float(args["noloadloss"]) if "noloadloss" in args else 0.0,
-            imag_pct=0.0,
+            imag_pct=float(args["imag"]) if "imag" in args else 0.0,
+            ppm_antifloat=float(args["ppm"]) if "ppm" in args else float(args.get("ppm_antifloat", "1")),
             provenance=Provenance(source=f"Transformer.{name}", quality="derived", note="группа и нейтраль взяты из conn DSS либо sidecar"),
         )
     )
@@ -714,11 +715,23 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
             if is_switch and phase_count != 1 and args.get("linecode"):
                 # Switch=yes оставляет флаг симметричных составляющих. На сборке Y
                 # OpenDSS заменяет матрицу на r1=x1=r0=x0=1 и length=0.001.
+                # CalcVoltageBases затем ставит ёмкость C1=1.1 нФ и C0=1.0 нФ
+                # на эту длину, а не ёмкость linecode.
                 size = len(selected)
                 matrix_r = [[0.001 if i == j else 0.0 for j in range(size)] for i in range(size)]
                 matrix_x = [[0.001 if i == j else 0.0 for j in range(size)] for i in range(size)]
-                matrix_b = [[0.0 for _ in range(size)] for _ in range(size)]
-                impedance_note = "Switch=yes: Z1=Z0=0.001+j0.001 Ом, как подставляет OpenDSS вместо linecode"
+                c1 = 1.1 * 0.001
+                c0 = 1.0 * 0.001
+                c_self, c_mutual = _sequence_to_phase(complex(0.0, c1), complex(0.0, c0))
+                omega = 2.0 * math.pi * frequency
+                matrix_b = [
+                    [((c_self.imag if i == j else c_mutual.imag) * 1e-9 * omega) for j in range(size)]
+                    for i in range(size)
+                ]
+                impedance_note = (
+                    "Switch=yes: Z1=Z0=0.001+j0.001 Ом. После CalcVoltageBases "
+                    "ёмкость C1=1.1 нФ и C0=1.0 нФ на длине 0.001, linecode C не используется"
+                )
             else:
                 matrix_r, matrix_x, matrix_b, impedance_note = _line_impedance(
                 key,

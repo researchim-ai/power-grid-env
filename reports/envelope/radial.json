@@ -1,0 +1,35 @@
+{
+  "workloads": [
+    {
+      "buses": 100.0,
+      "repeats": 1.0,
+      "p50_s": 0.24877621999621624,
+      "converged": 1.0,
+      "status": "converged",
+      "rss_kb": 128916.0,
+      "claimed_as_supported_city": false
+    },
+    {
+      "buses": 1000.0,
+      "repeats": 1.0,
+      "p50_s": 0.12721095400047489,
+      "converged": 1.0,
+      "status": "converged",
+      "rss_kb": 159540.0,
+      "claimed_as_supported_city": false
+    }
+  ],
+  "buses_10000": {
+    "buses": 10000.0,
+    "repeats": 1.0,
+    "p50_s": 8.625690237997333,
+    "converged": 0.0,
+    "status": "numerically_not_converged",
+    "claimed_as_supported_city": false
+  },
+  "horizons_days": {
+    "7": "not_measured",
+    "30": "not_measured"
+  },
+  "size_claim": false
+}

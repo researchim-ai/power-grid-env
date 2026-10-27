@@ -1,0 +1,15 @@
+{
+  "ltc_backend_parity": {
+    "time_s": 0,
+    "direct_tap": 1.0,
+    "process_tap": 1.1,
+    "expected_before_delay": 1.0
+  },
+  "transitive_controller_identity": {
+    "helper_changed_fingerprint": false
+  },
+  "strict_comparator_fixed": {
+    "empty": "fail",
+    "nan": "fail"
+  }
+}

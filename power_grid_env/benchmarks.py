@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import resource
+import subprocess
+import sys
 import time
+from typing import Any
 
 from power_grid_env.backend_opendss import solve_network
 from power_grid_env.build import NetBuilder
@@ -62,3 +66,34 @@ def time_two_bus(repeats: int = 5) -> dict[str, float]:
         "p50_s": ordered[len(ordered) // 2],
         "max_s": ordered[-1],
     }
+
+
+def measure_envelope(sizes: tuple[int, ...] = (100, 1000), *, probe_10000: bool = False, timeout_s: float = 20.0) -> dict[str, Any]:
+    """Замер объявленных длин луча. 10 000 шин и 7/30 суток в масштаб не входят, пока прогон не сошёлся."""
+    rows = []
+    for buses in sizes:
+        measured = time_radial(buses, repeats=1)
+        measured["rss_kb"] = float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+        measured["claimed_as_supported_city"] = False
+        rows.append(measured)
+    return {
+        "workloads": rows,
+        "buses_10000": _probe_10000(timeout_s) if probe_10000 else {"buses": 10000, "status": "not_probed", "claimed_as_supported_city": False},
+        "horizons_days": {"7": "not_measured", "30": "not_measured"},
+        "size_claim": False,
+    }
+
+
+def _probe_10000(timeout_s: float) -> dict[str, Any]:
+    code = "from power_grid_env.benchmarks import time_radial; import json; print(json.dumps(time_radial(10000)))"
+    try:
+        completed = subprocess.run([sys.executable, "-c", code], check=False, capture_output=True, text=True, timeout=timeout_s)
+    except subprocess.TimeoutExpired:
+        return {"buses": 10000, "status": "timeout", "claimed_as_supported_city": False, "timeout_s": timeout_s}
+    if completed.returncode != 0:
+        return {"buses": 10000, "status": "failed", "claimed_as_supported_city": False, "returncode": completed.returncode}
+    import json
+
+    payload = json.loads(completed.stdout)
+    payload["claimed_as_supported_city"] = False
+    return payload

@@ -1,0 +1,1805 @@
+{
+  "source": "/home/user/workspace/power-grid-env/data/external/raw/smart-ds/v1.0/2018/SFO/P1U/opendss_no_loadshapes/p1uhs0_1247/p1uhs0_1247--p1udt942/Master.dss",
+  "source_sha256": "b2dfcc1bbecace7d6b5cf9a08e165d716022f4acf0e8a4262d67d70d9f990a40",
+  "format": "dss",
+  "errors": [],
+  "warnings": [],
+  "mappings": [
+    {
+      "from": "Transformer.tr(r:p1udt881-p1udt881lv)",
+      "to": "transformer:tr(r:p1udt881-p1udt881lv)",
+      "vector_group": "YNyn0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt882-p1udt882lv)",
+      "to": "transformer:tr(r:p1udt882-p1udt882lv)",
+      "vector_group": "Iii0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt883-p1udt883lv)",
+      "to": "transformer:tr(r:p1udt883-p1udt883lv)",
+      "vector_group": "Iii0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt884-p1udt884lv)",
+      "to": "transformer:tr(r:p1udt884-p1udt884lv)",
+      "vector_group": "Iii0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt892-p1udt892lv)",
+      "to": "transformer:tr(r:p1udt892-p1udt892lv)",
+      "vector_group": "YNyn0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt893-p1udt893lv)",
+      "to": "transformer:tr(r:p1udt893-p1udt893lv)",
+      "vector_group": "Iii0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt894-p1udt894lv)",
+      "to": "transformer:tr(r:p1udt894-p1udt894lv)",
+      "vector_group": "Iii0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt895-p1udt895lv)",
+      "to": "transformer:tr(r:p1udt895-p1udt895lv)",
+      "vector_group": "Iii0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt896-p1udt896lv)",
+      "to": "transformer:tr(r:p1udt896-p1udt896lv)",
+      "vector_group": "Iii0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt907-p1udt907lv)",
+      "to": "transformer:tr(r:p1udt907-p1udt907lv)",
+      "vector_group": "YNyn0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt908-p1udt908lv)",
+      "to": "transformer:tr(r:p1udt908-p1udt908lv)",
+      "vector_group": "YNyn0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt909-p1udt909lv)",
+      "to": "transformer:tr(r:p1udt909-p1udt909lv)",
+      "vector_group": "Iii0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt938-p1udt938lv)",
+      "to": "transformer:tr(r:p1udt938-p1udt938lv)",
+      "vector_group": "YNyn0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt939-p1udt939lv)",
+      "to": "transformer:tr(r:p1udt939-p1udt939lv)",
+      "vector_group": "YNyn0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt942-p1udt942lv)",
+      "to": "transformer:tr(r:p1udt942-p1udt942lv)",
+      "vector_group": "Iii0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt943-p1udt943lv)",
+      "to": "transformer:tr(r:p1udt943-p1udt943lv)",
+      "vector_group": "Iii0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt1425-p1udt1425lv)",
+      "to": "transformer:tr(r:p1udt1425-p1udt1425lv)",
+      "vector_group": "YNyn0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt1431-p1udt1431lv)",
+      "to": "transformer:tr(r:p1udt1431-p1udt1431lv)",
+      "vector_group": "Iii0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt1432-p1udt1432lv)",
+      "to": "transformer:tr(r:p1udt1432-p1udt1432lv)",
+      "vector_group": "Iii0"
+    },
+    {
+      "from": "Transformer.tr(r:p1udt1433-p1udt1433lv)",
+      "to": "transformer:tr(r:p1udt1433-p1udt1433lv)",
+      "vector_group": "Iii0"
+    },
+    {
+      "from": "Line.l(r:p1udt882lv-p1ulv4109)",
+      "to": "line:l(r:p1udt882lv-p1ulv4109)",
+      "r_ohm": 0.007818971309999999,
+      "x_ohm": 0.0031513738500000004,
+      "length_m": 10.9107,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.0109107 km"
+    },
+    {
+      "from": "Line.l(r:p1udm3853-p1ulv4110)",
+      "to": "line:l(r:p1udm3853-p1ulv4110)",
+      "r_ohm": 0.0055748483593333325,
+      "x_ohm": 0.0022468980433333332,
+      "length_m": 7.77922,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.00777922 km"
+    },
+    {
+      "from": "Line.l(r:p1udm3853-p1udt883lv)",
+      "to": "line:l(r:p1udm3853-p1udt883lv)",
+      "r_ohm": 0.01761090585,
+      "x_ohm": 0.007097934750000001,
+      "length_m": 24.574500000000004,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.0245745 km"
+    },
+    {
+      "from": "Line.l(r:p1udm3854-p1ulv4111)",
+      "to": "line:l(r:p1udm3854-p1ulv4111)",
+      "r_ohm": 0.006006949593999999,
+      "x_ohm": 0.00242105299,
+      "length_m": 8.38218,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.00838218 km"
+    },
+    {
+      "from": "Line.l(r:p1udm3854-p1udt883lv)",
+      "to": "line:l(r:p1udm3854-p1udt883lv)",
+      "r_ohm": 0.01045797356,
+      "x_ohm": 0.004215002600000001,
+      "length_m": 14.593200000000003,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.0145932 km"
+    },
+    {
+      "from": "Line.l(r:p1udt884lv-p1ulv4112)",
+      "to": "line:l(r:p1udt884lv-p1ulv4112)",
+      "r_ohm": 0.005782478535000001,
+      "x_ohm": 0.0023305817250000005,
+      "length_m": 8.068950000000001,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.00806895 km"
+    },
+    {
+      "from": "Line.l(r:p1udm3856-p1ulv4113)",
+      "to": "line:l(r:p1udm3856-p1ulv4113)",
+      "r_ohm": 0.007716707733333333,
+      "x_ohm": 0.0031101573333333337,
+      "length_m": 10.768,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.010768 km"
+    },
+    {
+      "from": "Line.l(r:p1udm3856-p1udt884lv)",
+      "to": "line:l(r:p1udm3856-p1udt884lv)",
+      "r_ohm": 0.011890236939999998,
+      "x_ohm": 0.0047922649,
+      "length_m": 16.5918,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.0165918 km"
+    },
+    {
+      "from": "Line.l(r:p1udt893lv-p1ulv4136)",
+      "to": "line:l(r:p1udt893lv-p1ulv4136)",
+      "r_ohm": 0.006789584857333332,
+      "x_ohm": 0.0027364878733333333,
+      "length_m": 9.47428,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.00947428 km"
+    },
+    {
+      "from": "Line.l(r:p1udm3883-p1ulv4137)",
+      "to": "line:l(r:p1udm3883-p1ulv4137)",
+      "r_ohm": 0.003320456053,
+      "x_ohm": 0.0013382832550000003,
+      "length_m": 4.633410000000001,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.00463341 km"
+    },
+    {
+      "from": "Line.l(r:p1udm3883-p1udt894lv)",
+      "to": "line:l(r:p1udm3883-p1udt894lv)",
+      "r_ohm": 0.008168616713333332,
+      "x_ohm": 0.0032922956333333335,
+      "length_m": 11.3986,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.0113986 km"
+    },
+    {
+      "from": "Line.l(r:p1udm3884-p1ulv4138)",
+      "to": "line:l(r:p1udm3884-p1ulv4138)",
+      "r_ohm": 0.006473879208666666,
+      "x_ohm": 0.002609245236666667,
+      "length_m": 9.03374,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.00903374 km"
+    },
+    {
+      "from": "Line.l(r:p1udm3884-p1udt894lv)",
+      "to": "line:l(r:p1udm3884-p1udt894lv)",
+      "r_ohm": 0.008168616713333332,
+      "x_ohm": 0.0032922956333333335,
+      "length_m": 11.3986,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.0113986 km"
+    },
+    {
+      "from": "Line.l(r:p1udt895lv-p1ulv7543)",
+      "to": "line:l(r:p1udt895lv-p1ulv7543)",
+      "r_ohm": 0.005021560963231,
+      "x_ohm": 0.0027358576319999996,
+      "length_m": 9.193069999999999,
+      "note": "LineCode.1P_UG_AL_4/0_Sweetbriar_2: явная матрица умножена на длину 0.00919307 km"
+    },
+    {
+      "from": "Line.l(r:p1udm3885-p1ulv4139)",
+      "to": "line:l(r:p1udm3885-p1ulv4139)",
+      "r_ohm": 0.01035172754,
+      "x_ohm": 0.00562637380382,
+      "length_m": 11.314599999999999,
+      "note": "LineCode.1P_UG_AL_1/0_Brenau_2: явная матрица умножена на длину 0.0113146 km"
+    },
+    {
+      "from": "Line.l(r:p1udm3885-p1udt895lv)",
+      "to": "line:l(r:p1udm3885-p1udt895lv)",
+      "r_ohm": 0.008212654744,
+      "x_ohm": 0.004463744368552,
+      "length_m": 8.97656,
+      "note": "LineCode.1P_UG_AL_1/0_Brenau_2: явная матрица умножена на длину 0.00897656 km"
+    },
+    {
+      "from": "Line.l(r:p1udm3887-p1ulv4140)",
+      "to": "line:l(r:p1udm3887-p1ulv4140)",
+      "r_ohm": 0.009056453749999999,
+      "x_ohm": 0.00365013125,
+      "length_m": 12.6375,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.0126375 km"
+    },
+    {
+      "from": "Line.l(r:p1udm3889-p1ulv7633)",
+      "to": "line:l(r:p1udm3889-p1ulv7633)",
+      "r_ohm": 0.007100116413333333,
+      "x_ohm": 0.0028616451333333334,
+      "length_m": 9.9076,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.0099076 km"
+    },
+    {
+      "from": "Line.l(r:p1udm3887-p1udm3889)",
+      "to": "line:l(r:p1udm3887-p1udm3889)",
+      "r_ohm": 0.045423361679999996,
+      "x_ohm": 0.020514809286666668,
+      "length_m": 96.0731,
+      "note": "LineCode.1P_OH_AL_4/0_Zuzara_2: явная матрица умножена на длину 0.0960731 km"
+    },
+    {
+      "from": "Line.l(r:p1udm3887-p1udt896lv)",
+      "to": "line:l(r:p1udm3887-p1udt896lv)",
+      "r_ohm": 0.02525990736,
+      "x_ohm": 0.011408274573333335,
+      "length_m": 53.4262,
+      "note": "LineCode.1P_OH_AL_4/0_Zuzara_2: явная матрица умножена на длину 0.0534262 km"
+    },
+    {
+      "from": "Line.l(r:p1udm3888-p1ulv4197)",
+      "to": "line:l(r:p1udm3888-p1ulv4197)",
+      "r_ohm": 0.008996543203333334,
+      "x_ohm": 0.0036259847833333336,
+      "length_m": 12.553900000000002,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.0125539 km"
+    },
+    {
+      "from": "Line.l(r:p1udm3888-p1udt896lv)",
+      "to": "line:l(r:p1udm3888-p1udt896lv)",
+      "r_ohm": 0.017676334473333333,
+      "x_ohm": 0.007124305233333334,
+      "length_m": 24.6658,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.0246658 km"
+    },
+    {
+      "from": "Line.l(r:p1udt909lv-p1ulv4155)",
+      "to": "line:l(r:p1udt909lv-p1ulv4155)",
+      "r_ohm": 0.008177789619999999,
+      "x_ohm": 0.0032959927,
+      "length_m": 11.4114,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.0114114 km"
+    },
+    {
+      "from": "Line.l(r:p1udt942lv-p1ulv4193)",
+      "to": "line:l(r:p1udt942lv-p1ulv4193)",
+      "r_ohm": 0.007923599776666665,
+      "x_ohm": 0.0031935435166666666,
+      "length_m": 11.0567,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.0110567 km"
+    },
+    {
+      "from": "Line.l(r:p1udt943lv-p1ulv4196)",
+      "to": "line:l(r:p1udt943lv-p1ulv4196)",
+      "r_ohm": 0.008979487329999999,
+      "x_ohm": 0.00361911055,
+      "length_m": 12.530100000000001,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.0125301 km"
+    },
+    {
+      "from": "Line.l(r:p1udt1431lv-p1ulv7544)",
+      "to": "line:l(r:p1udt1431lv-p1ulv7544)",
+      "r_ohm": 0.009718336296666664,
+      "x_ohm": 0.003916897716666667,
+      "length_m": 13.5611,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.0135611 km"
+    },
+    {
+      "from": "Line.l(r:p1udt1432lv-p1ulv7546)",
+      "to": "line:l(r:p1udt1432lv-p1ulv7546)",
+      "r_ohm": 0.0045738764183333325,
+      "x_ohm": 0.0018434643083333332,
+      "length_m": 6.3824499999999995,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.00638245 km"
+    },
+    {
+      "from": "Line.l(r:p1udt1433lv-p1ulv7547)",
+      "to": "line:l(r:p1udt1433lv-p1ulv7547)",
+      "r_ohm": 0.013697227889999998,
+      "x_ohm": 0.0055205581499999995,
+      "length_m": 19.1133,
+      "note": "LineCode.1P_OH_AL_2/0_Rucina_2: явная матрица умножена на длину 0.0191133 km"
+    },
+    {
+      "from": "Line.l(r:p1udt908-p1udt909)",
+      "to": "line:l(r:p1udt908-p1udt909)",
+      "r_ohm": 0.0184391314,
+      "x_ohm": 0.01350703565,
+      "length_m": 17.7095,
+      "note": "LineCode.1P_OH_AL_ACSR_#2_Sparrow_1: явная матрица умножена на длину 0.0177095 km"
+    },
+    {
+      "from": "Line.l(r:p1udt1433-p1udt882)",
+      "to": "line:l(r:p1udt1433-p1udt882)",
+      "r_ohm": 0.166024546,
+      "x_ohm": 0.12161632850000002,
+      "length_m": 159.455,
+      "note": "LineCode.1P_OH_AL_ACSR_#2_Sparrow_1: явная матрица умножена на длину 0.159455 km"
+    },
+    {
+      "from": "Line.l(r:p1udt1432-p1udt881)",
+      "to": "line:l(r:p1udt1432-p1udt881)",
+      "r_ohm": 0.10117392459999999,
+      "x_ohm": 0.07411194035000002,
+      "length_m": 97.1705,
+      "note": "LineCode.1P_OH_AL_ACSR_#2_Sparrow_1: явная матрица умножена на длину 0.0971705 km"
+    },
+    {
+      "from": "Line.l(r:p1udt896-p1udt938)",
+      "to": "line:l(r:p1udt896-p1udt938)",
+      "r_ohm": 0.025682030959999998,
+      "x_ohm": 0.018812605660000002,
+      "length_m": 24.6658,
+      "note": "LineCode.1P_OH_AL_ACSR_#2_Sparrow_1: явная матрица умножена на длину 0.0246658 km"
+    },
+    {
+      "from": "Line.l(r:p1udt942-p1uhs0_1247)",
+      "to": "line:l(r:p1udt942-p1uhs0_1247)",
+      "r_ohm": 0.0416905570557,
+      "x_ohm": 0.0732212520443,
+      "length_m": 114.67099999999999,
+      "note": "LineCode.3P_OH_AL_ACSR_4/0_Penguin_3: явная матрица умножена на длину 0.114671 km"
+    },
+    {
+      "from": "Line.l(r:p1udt907lv-p1ulv4153)",
+      "to": "line:l(r:p1udt907lv-p1ulv4153)",
+      "r_ohm": 0.00498537300373,
+      "x_ohm": 0.007541319939999999,
+      "length_m": 14.7119,
+      "note": "LineCode.3P_UG_AL_350kcmil_3_2: явная матрица умножена на длину 0.0147119 km"
+    },
+    {
+      "from": "Line.l(r:p1udt908lv-p1ulv4154)",
+      "to": "line:l(r:p1udt908lv-p1ulv4154)",
+      "r_ohm": 0.004041358150870001,
+      "x_ohm": 0.0061133188599999996,
+      "length_m": 11.9261,
+      "note": "LineCode.3P_UG_AL_350kcmil_3_2: явная матрица умножена на длину 0.0119261 km"
+    },
+    {
+      "from": "Line.l(r:p1udt907-p1udt908)",
+      "to": "line:l(r:p1udt907-p1udt908)",
+      "r_ohm": 0.012877132590630003,
+      "x_ohm": 0.02261614709937,
+      "length_m": 35.4189,
+      "note": "LineCode.3P_OH_AL_ACSR_4/0_Penguin_3: явная матрица умножена на длину 0.0354189 km"
+    },
+    {
+      "from": "Line.l(r:p1udt893-p1udt907)",
+      "to": "line:l(r:p1udt893-p1udt907)",
+      "r_ohm": 0.01587063172842,
+      "x_ohm": 0.027873638731579997,
+      "length_m": 43.6526,
+      "note": "LineCode.3P_OH_AL_ACSR_4/0_Penguin_3: явная матрица умножена на длину 0.0436526 km"
+    },
+    {
+      "from": "Line.l(r:p1udt893-p1udt894)",
+      "to": "line:l(r:p1udt893-p1udt894)",
+      "r_ohm": 0.08702041677840001,
+      "x_ohm": 0.1528342224216,
+      "length_m": 239.352,
+      "note": "LineCode.3P_OH_AL_ACSR_4/0_Penguin_3: явная матрица умножена на длину 0.239352 km"
+    },
+    {
+      "from": "Line.l(r:p1udt1425lv-p1ulv7531)",
+      "to": "line:l(r:p1udt1425lv-p1ulv7531)",
+      "r_ohm": 0.0030925822208750006,
+      "x_ohm": 0.00467811575,
+      "length_m": 9.12625,
+      "note": "LineCode.3P_UG_AL_350kcmil_3_2: явная матрица умножена на длину 0.00912625 km"
+    },
+    {
+      "from": "Line.l(r:p1udt881lv-p1ulv4108)",
+      "to": "line:l(r:p1udt881lv-p1ulv4108)",
+      "r_ohm": 0.0019563099082659996,
+      "x_ohm": 0.0046008108,
+      "length_m": 8.520019999999999,
+      "note": "LineCode.3P_UG_AL_750kcmil_3_1: явная матрица умножена на длину 0.00852002 km"
+    },
+    {
+      "from": "Line.l(r:p1udt1425-p1udt881)",
+      "to": "line:l(r:p1udt1425-p1udt881)",
+      "r_ohm": 0.057177771342300024,
+      "x_ohm": 0.10042149355770003,
+      "length_m": 157.26900000000003,
+      "note": "LineCode.3P_OH_AL_ACSR_4/0_Penguin_3: явная матрица умножена на длину 0.157269 km"
+    },
+    {
+      "from": "Line.l(r:p1udt1425-p1udt1433)",
+      "to": "line:l(r:p1udt1425-p1udt1433)",
+      "r_ohm": 0.036606803889600005,
+      "x_ohm": 0.0642926409104,
+      "length_m": 100.688,
+      "note": "LineCode.3P_OH_AL_ACSR_4/0_Penguin_3: явная матрица умножена на длину 0.100688 km"
+    },
+    {
+      "from": "Line.l(r:p1udt1433-p1udt883)",
+      "to": "line:l(r:p1udt1433-p1udt883)",
+      "r_ohm": 0.050493233996100007,
+      "x_ohm": 0.0886814203039,
+      "length_m": 138.883,
+      "note": "LineCode.3P_OH_AL_ACSR_4/0_Penguin_3: явная матрица умножена на длину 0.138883 km"
+    },
+    {
+      "from": "Line.l(r:p1udt883-p1udt884)",
+      "to": "line:l(r:p1udt883-p1udt884)",
+      "r_ohm": 0.02268718014339,
+      "x_ohm": 0.03984556342661,
+      "length_m": 62.4017,
+      "note": "LineCode.3P_OH_AL_ACSR_4/0_Penguin_3: явная матрица умножена на длину 0.0624017 km"
+    },
+    {
+      "from": "Line.l(r:p1udt1431-p1udt884)",
+      "to": "line:l(r:p1udt1431-p1udt884)",
+      "r_ohm": 0.0439130402928,
+      "x_ohm": 0.0771246061072,
+      "length_m": 120.784,
+      "note": "LineCode.3P_OH_AL_ACSR_4/0_Penguin_3: явная матрица умножена на длину 0.120784 km"
+    },
+    {
+      "from": "Line.l(r:p1udt1431-p1udt895)",
+      "to": "line:l(r:p1udt1431-p1udt895)",
+      "r_ohm": 0.11124341173260002,
+      "x_ohm": 0.1953771420674,
+      "length_m": 305.978,
+      "note": "LineCode.3P_OH_AL_ACSR_4/0_Penguin_3: явная матрица умножена на длину 0.305978 km"
+    },
+    {
+      "from": "Line.l(r:p1udt894-p1udt895)",
+      "to": "line:l(r:p1udt894-p1udt895)",
+      "r_ohm": 0.040875440514300004,
+      "x_ohm": 0.07178966038569999,
+      "length_m": 112.429,
+      "note": "LineCode.3P_OH_AL_ACSR_4/0_Penguin_3: явная матрица умножена на длину 0.112429 km"
+    },
+    {
+      "from": "Line.l(r:p1udt894-p1udt942)",
+      "to": "line:l(r:p1udt894-p1udt942)",
+      "r_ohm": 0.0829593767394,
+      "x_ohm": 0.1457018054606,
+      "length_m": 228.182,
+      "note": "LineCode.3P_OH_AL_ACSR_4/0_Penguin_3: явная матрица умножена на длину 0.228182 km"
+    },
+    {
+      "from": "Line.l(r:p1udt939lv-p1ulv4189)",
+      "to": "line:l(r:p1udt939lv-p1ulv4189)",
+      "r_ohm": 0.005596044683800001,
+      "x_ohm": 0.0084650764,
+      "length_m": 16.514,
+      "note": "LineCode.3P_UG_AL_350kcmil_3_2: явная матрица умножена на длину 0.016514 km"
+    },
+    {
+      "from": "Line.l(r:p1udt938lv-p1ulv4188)",
+      "to": "line:l(r:p1udt938lv-p1ulv4188)",
+      "r_ohm": 0.00500655217248,
+      "x_ohm": 0.007573357439999999,
+      "length_m": 14.7744,
+      "note": "LineCode.3P_UG_AL_350kcmil_3_2: явная матрица умножена на длину 0.0147744 km"
+    },
+    {
+      "from": "Line.l(r:p1udt892lv-p1ulv4132)",
+      "to": "line:l(r:p1udt892lv-p1ulv4132)",
+      "r_ohm": 0.006060054856110001,
+      "x_ohm": 0.00916697958,
+      "length_m": 17.883300000000002,
+      "note": "LineCode.3P_UG_AL_350kcmil_3_2: явная матрица умножена на длину 0.0178833 km"
+    },
+    {
+      "from": "Line.l(r:p1udt892-p1udt938)",
+      "to": "line:l(r:p1udt892-p1udt938)",
+      "r_ohm": 0.0115530590259,
+      "x_ohm": 0.020290672674099997,
+      "length_m": 31.777,
+      "note": "LineCode.3P_OH_AL_ACSR_4/0_Penguin_3: явная матрица умножена на длину 0.031777 km"
+    },
+    {
+      "from": "Line.l(r:p1udt938-p1udt943)",
+      "to": "line:l(r:p1udt938-p1udt943)",
+      "r_ohm": 0.00666734064129,
+      "x_ohm": 0.01170987062871,
+      "length_m": 18.3387,
+      "note": "LineCode.3P_OH_AL_ACSR_4/0_Penguin_3: явная матрица умножена на длину 0.0183387 km"
+    },
+    {
+      "from": "Line.l(r:p1udt939-p1udt943)",
+      "to": "line:l(r:p1udt939-p1udt943)",
+      "r_ohm": 0.012873787776990001,
+      "x_ohm": 0.02261027259301,
+      "length_m": 35.4097,
+      "note": "LineCode.3P_OH_AL_ACSR_4/0_Penguin_3: явная матрица умножена на длину 0.0354097 km"
+    },
+    {
+      "from": "Line.l(r:p1udt939-p1udt942)",
+      "to": "line:l(r:p1udt939-p1udt942)",
+      "r_ohm": 0.0836683318044,
+      "x_ohm": 0.1469469453956,
+      "length_m": 230.132,
+      "note": "LineCode.3P_OH_AL_ACSR_4/0_Penguin_3: явная матрица умножена на длину 0.230132 km"
+    },
+    {
+      "from": "Line.fuse(r:p1udt1432-p1udt881)p1u_12081",
+      "to": "line:fuse(r:p1udt1432-p1udt881)p1u_12081",
+      "r_ohm": 1e-06,
+      "x_ohm": 1e-06,
+      "length_m": 1.0,
+      "note": "LineCode.fuse_1_3: явная матрица умножена на длину 0.001 km"
+    },
+    {
+      "from": "Fuse.Fuse_fuse(r:p1udt1432-p1udt881)p1u_12081",
+      "status": "ignored_non_electrical",
+      "power_flow": "not_in_admittance",
+      "protection": "unsupported"
+    },
+    {
+      "from": "Line.fuse(r:p1udt908-p1udt909)p1u_12084",
+      "to": "line:fuse(r:p1udt908-p1udt909)p1u_12084",
+      "r_ohm": 1e-06,
+      "x_ohm": 1e-06,
+      "length_m": 1.0,
+      "note": "LineCode.fuse_1_3: явная матрица умножена на длину 0.001 km"
+    },
+    {
+      "from": "Fuse.Fuse_fuse(r:p1udt908-p1udt909)p1u_12084",
+      "status": "ignored_non_electrical",
+      "power_flow": "not_in_admittance",
+      "protection": "unsupported"
+    },
+    {
+      "from": "Line.fuse(r:p1udt896-p1udt938)p1u_12096",
+      "to": "line:fuse(r:p1udt896-p1udt938)p1u_12096",
+      "r_ohm": 1e-06,
+      "x_ohm": 1e-06,
+      "length_m": 1.0,
+      "note": "LineCode.fuse_1: явная матрица умножена на длину 0.001 km"
+    },
+    {
+      "from": "Fuse.Fuse_fuse(r:p1udt896-p1udt938)p1u_12096",
+      "status": "ignored_non_electrical",
+      "power_flow": "not_in_admittance",
+      "protection": "unsupported"
+    },
+    {
+      "from": "Line.fuse(r:p1udt1433-p1udt882)p1u_12161",
+      "to": "line:fuse(r:p1udt1433-p1udt882)p1u_12161",
+      "r_ohm": 1e-06,
+      "x_ohm": 1e-06,
+      "length_m": 1.0,
+      "note": "LineCode.fuse_1: явная матрица умножена на длину 0.001 km"
+    },
+    {
+      "from": "Fuse.Fuse_fuse(r:p1udt1433-p1udt882)p1u_12161",
+      "status": "ignored_non_electrical",
+      "power_flow": "not_in_admittance",
+      "protection": "unsupported"
+    },
+    {
+      "from": "Line.goab_disswitch(r:p1udt894-p1udt895)p1u_12238",
+      "to": "line:goab_disswitch(r:p1udt894-p1udt895)p1u_12238",
+      "r_ohm": 0.001,
+      "x_ohm": 0.001,
+      "length_m": 1.0,
+      "note": "Switch=yes: Z1=Z0=0.001+j0.001 Ом. После CalcVoltageBases ёмкость C1=1.1 нФ и C0=1.0 нФ на длине 0.001, linecode C не используется"
+    },
+    {
+      "from": "Line.recloser_disswitch(r:p1udt894-p1udt942)p1u_12266",
+      "to": "line:recloser_disswitch(r:p1udt894-p1udt942)p1u_12266",
+      "r_ohm": 1e-06,
+      "x_ohm": 1e-06,
+      "length_m": 1.0,
+      "note": "LineCode.recloser_3: явная матрица умножена на длину 0.001 km"
+    },
+    {
+      "from": "Line.goab_disswitch(r:p1udt1425-p1udt881)p1u_12301",
+      "to": "line:goab_disswitch(r:p1udt1425-p1udt881)p1u_12301",
+      "r_ohm": 0.001,
+      "x_ohm": 0.001,
+      "length_m": 1.0,
+      "note": "Switch=yes: Z1=Z0=0.001+j0.001 Ом. После CalcVoltageBases ёмкость C1=1.1 нФ и C0=1.0 нФ на длине 0.001, linecode C не используется"
+    },
+    {
+      "from": "Line.goab_disswitch(r:p1udt1431-p1udt895)p1u_12316",
+      "to": "line:goab_disswitch(r:p1udt1431-p1udt895)p1u_12316",
+      "r_ohm": 0.001,
+      "x_ohm": 0.001,
+      "length_m": 1.0,
+      "note": "Switch=yes: Z1=Z0=0.001+j0.001 Ом. После CalcVoltageBases ёмкость C1=1.1 нФ и C0=1.0 нФ на длине 0.001, linecode C не используется"
+    },
+    {
+      "from": "Load.load_p1ulv4108",
+      "to": "load:load_p1ulv4108",
+      "kw": 102.32309780468681,
+      "kvar": 30.51753755494881,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4109_1",
+      "to": "load:load_p1ulv4109_1",
+      "kw": 9.983153119194652,
+      "kvar": 0.5836935568795978,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4109_2",
+      "to": "load:load_p1ulv4109_2",
+      "kw": 9.983153119194652,
+      "kvar": 0.5836935568795978,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4110_1",
+      "to": "load:load_p1ulv4110_1",
+      "kw": 3.773946842839208,
+      "kvar": 0.7251264687550403,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4110_2",
+      "to": "load:load_p1ulv4110_2",
+      "kw": 3.773946842839208,
+      "kvar": 0.7251264687550403,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4111_1",
+      "to": "load:load_p1ulv4111_1",
+      "kw": 5.444113011485115,
+      "kvar": 0.3215198007733667,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4111_2",
+      "to": "load:load_p1ulv4111_2",
+      "kw": 5.444113011485115,
+      "kvar": 0.3215198007733667,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4112_1",
+      "to": "load:load_p1ulv4112_1",
+      "kw": 2.1661051467831762,
+      "kvar": 0.6317161905393411,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4112_2",
+      "to": "load:load_p1ulv4112_2",
+      "kw": 2.1661051467831762,
+      "kvar": 0.6317161905393411,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4113_1",
+      "to": "load:load_p1ulv4113_1",
+      "kw": 1.7306146078932911,
+      "kvar": 0.42683788590794824,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4113_2",
+      "to": "load:load_p1ulv4113_2",
+      "kw": 1.7306146078932911,
+      "kvar": 0.42683788590794824,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4132",
+      "to": "load:load_p1ulv4132",
+      "kw": 42.1639939441446,
+      "kvar": 16.117963631323974,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4136_1",
+      "to": "load:load_p1ulv4136_1",
+      "kw": 3.2224429351013395,
+      "kvar": 0.6126885357762705,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4136_2",
+      "to": "load:load_p1ulv4136_2",
+      "kw": 3.2224429351013395,
+      "kvar": 0.6126885357762705,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4137_1",
+      "to": "load:load_p1ulv4137_1",
+      "kw": 6.682749749530249,
+      "kvar": 0.47367537750742583,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4137_2",
+      "to": "load:load_p1ulv4137_2",
+      "kw": 6.682749749530249,
+      "kvar": 0.47367537750742583,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4138_1",
+      "to": "load:load_p1ulv4138_1",
+      "kw": 3.344567479254364,
+      "kvar": 0.6658816257517379,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4138_2",
+      "to": "load:load_p1ulv4138_2",
+      "kw": 3.344567479254364,
+      "kvar": 0.6658816257517379,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4139_1",
+      "to": "load:load_p1ulv4139_1",
+      "kw": 2.499057743464556,
+      "kvar": 0.3373788699823939,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4139_2",
+      "to": "load:load_p1ulv4139_2",
+      "kw": 2.499057743464556,
+      "kvar": 0.3373788699823939,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4140_1",
+      "to": "load:load_p1ulv4140_1",
+      "kw": 3.443583112785006,
+      "kvar": 0.2576306570382033,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4140_2",
+      "to": "load:load_p1ulv4140_2",
+      "kw": 3.443583112785006,
+      "kvar": 0.2576306570382033,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4153",
+      "to": "load:load_p1ulv4153",
+      "kw": 37.77927658224151,
+      "kvar": 14.741436716447627,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4154",
+      "to": "load:load_p1ulv4154",
+      "kw": 30.881851111116433,
+      "kvar": 2.033018178239681,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4155_1",
+      "to": "load:load_p1ulv4155_1",
+      "kw": 3.70841077844954,
+      "kvar": 0.8038893784383768,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4155_2",
+      "to": "load:load_p1ulv4155_2",
+      "kw": 3.70841077844954,
+      "kvar": 0.8038893784383768,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4188",
+      "to": "load:load_p1ulv4188",
+      "kw": 36.309542768201176,
+      "kvar": 8.071176758766494,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4189",
+      "to": "load:load_p1ulv4189",
+      "kw": 58.30661586898077,
+      "kvar": 12.048874916471265,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4193_1",
+      "to": "load:load_p1ulv4193_1",
+      "kw": 5.556531893537684,
+      "kvar": 0.8587471882435823,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4193_2",
+      "to": "load:load_p1ulv4193_2",
+      "kw": 5.556531893537684,
+      "kvar": 0.8587471882435823,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4194_1",
+      "to": "load:load_p1ulv4194_1",
+      "kw": 2.1603354468169496,
+      "kvar": 0.7593773040340845,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4194_2",
+      "to": "load:load_p1ulv4194_2",
+      "kw": 2.1603354468169496,
+      "kvar": 0.7593773040340845,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4195_1",
+      "to": "load:load_p1ulv4195_1",
+      "kw": 4.846665189498872,
+      "kvar": 0.9556635772669749,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4195_2",
+      "to": "load:load_p1ulv4195_2",
+      "kw": 4.846665189498872,
+      "kvar": 0.9556635772669749,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4196_1",
+      "to": "load:load_p1ulv4196_1",
+      "kw": 3.910162003174362,
+      "kvar": 1.20994253536225,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4196_2",
+      "to": "load:load_p1ulv4196_2",
+      "kw": 3.910162003174362,
+      "kvar": 1.20994253536225,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4197_1",
+      "to": "load:load_p1ulv4197_1",
+      "kw": 2.6235553783487733,
+      "kvar": 0.5310486968636198,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv4197_2",
+      "to": "load:load_p1ulv4197_2",
+      "kw": 2.6235553783487733,
+      "kvar": 0.5310486968636198,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv7531",
+      "to": "load:load_p1ulv7531",
+      "kw": 169.44450567015514,
+      "kvar": 21.807002037326956,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv7543_1",
+      "to": "load:load_p1ulv7543_1",
+      "kw": 8.89906201085982,
+      "kvar": 2.2525253157140996,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv7543_2",
+      "to": "load:load_p1ulv7543_2",
+      "kw": 8.89906201085982,
+      "kvar": 2.2525253157140996,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv7544_1",
+      "to": "load:load_p1ulv7544_1",
+      "kw": 6.318792642776981,
+      "kvar": 1.3922760826289116,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv7544_2",
+      "to": "load:load_p1ulv7544_2",
+      "kw": 6.318792642776981,
+      "kvar": 1.3922760826289116,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv7546_1",
+      "to": "load:load_p1ulv7546_1",
+      "kw": 4.468052952254411,
+      "kvar": 1.1680462060722665,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv7546_2",
+      "to": "load:load_p1ulv7546_2",
+      "kw": 4.468052952254411,
+      "kvar": 1.1680462060722665,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv7547_1",
+      "to": "load:load_p1ulv7547_1",
+      "kw": 4.279334729071533,
+      "kvar": 0.018922139033990728,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv7547_2",
+      "to": "load:load_p1ulv7547_2",
+      "kw": 4.279334729071533,
+      "kvar": 0.018922139033990728,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv7633_1",
+      "to": "load:load_p1ulv7633_1",
+      "kw": 2.606959916668558,
+      "kvar": 0.5550307077474157,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.load_p1ulv7633_2",
+      "to": "load:load_p1ulv7633_2",
+      "kw": 2.606959916668558,
+      "kvar": 0.5550307077474157,
+      "grounding": "solid"
+    },
+    {
+      "from": "Vsource.source",
+      "to": "source",
+      "r_ohm": 1e-05,
+      "x_ohm": 1e-05
+    },
+    {
+      "from": "BusCoords Buscoords.dss",
+      "to": "node.x,y"
+    }
+  ],
+  "approximations": [
+    "sidecar нет: conn=wye в OpenDSS без узла нейтрали записывается как solid и попадает в отчёт",
+    "частота в DSS не задана: оставлен встроенный OpenDSS 60 Гц",
+    "s_base_va=10 МВА — только отчётная база, омы линий не масштабируются",
+    "Transformer.tr(r:p1udt881-p1udt881lv): обмотка 0 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.tr(r:p1udt881-p1udt881lv): обмотка 1 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.tr(r:p1udt882-p1udt882lv): трёхобмоточный однофазный аппарат со средней точкой записан как Iii0",
+    "Transformer.tr(r:p1udt883-p1udt883lv): трёхобмоточный однофазный аппарат со средней точкой записан как Iii0",
+    "Transformer.tr(r:p1udt884-p1udt884lv): трёхобмоточный однофазный аппарат со средней точкой записан как Iii0",
+    "Transformer.tr(r:p1udt892-p1udt892lv): обмотка 0 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.tr(r:p1udt892-p1udt892lv): обмотка 1 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.tr(r:p1udt893-p1udt893lv): трёхобмоточный однофазный аппарат со средней точкой записан как Iii0",
+    "Transformer.tr(r:p1udt894-p1udt894lv): трёхобмоточный однофазный аппарат со средней точкой записан как Iii0",
+    "Transformer.tr(r:p1udt895-p1udt895lv): трёхобмоточный однофазный аппарат со средней точкой записан как Iii0",
+    "Transformer.tr(r:p1udt896-p1udt896lv): трёхобмоточный однофазный аппарат со средней точкой записан как Iii0",
+    "Transformer.tr(r:p1udt907-p1udt907lv): обмотка 0 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.tr(r:p1udt907-p1udt907lv): обмотка 1 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.tr(r:p1udt908-p1udt908lv): обмотка 0 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.tr(r:p1udt908-p1udt908lv): обмотка 1 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.tr(r:p1udt909-p1udt909lv): трёхобмоточный однофазный аппарат со средней точкой записан как Iii0",
+    "Transformer.tr(r:p1udt938-p1udt938lv): обмотка 0 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.tr(r:p1udt938-p1udt938lv): обмотка 1 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.tr(r:p1udt939-p1udt939lv): обмотка 0 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.tr(r:p1udt939-p1udt939lv): обмотка 1 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.tr(r:p1udt942-p1udt942lv): трёхобмоточный однофазный аппарат со средней точкой записан как Iii0",
+    "Transformer.tr(r:p1udt943-p1udt943lv): трёхобмоточный однофазный аппарат со средней точкой записан как Iii0",
+    "Transformer.tr(r:p1udt1425-p1udt1425lv): обмотка 0 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.tr(r:p1udt1425-p1udt1425lv): обмотка 1 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.tr(r:p1udt1431-p1udt1431lv): трёхобмоточный однофазный аппарат со средней точкой записан как Iii0",
+    "Transformer.tr(r:p1udt1432-p1udt1432lv): трёхобмоточный однофазный аппарат со средней точкой записан как Iii0",
+    "Transformer.tr(r:p1udt1433-p1udt1433lv): трёхобмоточный однофазный аппарат со средней точкой записан как Iii0",
+    "Line.l(r:p1udt882lv-p1ulv4109): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udm3853-p1ulv4110): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udm3853-p1udt883lv): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udm3854-p1ulv4111): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udm3854-p1udt883lv): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt884lv-p1ulv4112): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udm3856-p1ulv4113): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udm3856-p1udt884lv): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt893lv-p1ulv4136): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udm3883-p1ulv4137): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udm3883-p1udt894lv): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udm3884-p1ulv4138): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udm3884-p1udt894lv): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt895lv-p1ulv7543): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udm3885-p1ulv4139): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udm3885-p1udt895lv): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udm3887-p1ulv4140): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udm3889-p1ulv7633): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udm3887-p1udm3889): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udm3887-p1udt896lv): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udm3888-p1ulv4197): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udm3888-p1udt896lv): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt909lv-p1ulv4155): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt942lv-p1ulv4193): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt943lv-p1ulv4196): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt1431lv-p1ulv7544): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt1432lv-p1ulv7546): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt1433lv-p1ulv7547): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt908-p1udt909): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt1433-p1udt882): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt1432-p1udt881): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt896-p1udt938): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt942-p1uhs0_1247): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt907lv-p1ulv4153): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt908lv-p1ulv4154): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt907-p1udt908): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt893-p1udt907): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt893-p1udt894): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt1425lv-p1ulv7531): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt881lv-p1ulv4108): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt1425-p1udt881): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt1425-p1udt1433): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt1433-p1udt883): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt883-p1udt884): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt1431-p1udt884): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt1431-p1udt895): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt894-p1udt895): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt894-p1udt942): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt939lv-p1ulv4189): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt938lv-p1ulv4188): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt892lv-p1ulv4132): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt892-p1udt938): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt938-p1udt943): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt939-p1udt943): rating_a не задан, для проверки режима взят 400 А",
+    "Line.l(r:p1udt939-p1udt942): rating_a не задан, для проверки режима взят 400 А",
+    "Line.fuse(r:p1udt1432-p1udt881)p1u_12081: rating_a не задан, для проверки режима взят 400 А",
+    "Fuse.Fuse_fuse(r:p1udt1432-p1udt881)p1u_12081: Контроллер предохранителя не входит в матрицу проводимости. Наблюдаемый объект Line.fuse(r:p1udt1432-p1udt881)p1u_12081 остаётся в схеме. Для защиты и восстановления это не модель плавления.",
+    "Line.fuse(r:p1udt908-p1udt909)p1u_12084: rating_a не задан, для проверки режима взят 400 А",
+    "Fuse.Fuse_fuse(r:p1udt908-p1udt909)p1u_12084: Контроллер предохранителя не входит в матрицу проводимости. Наблюдаемый объект Line.fuse(r:p1udt908-p1udt909)p1u_12084 остаётся в схеме. Для защиты и восстановления это не модель плавления.",
+    "Line.fuse(r:p1udt896-p1udt938)p1u_12096: rating_a не задан, для проверки режима взят 400 А",
+    "Fuse.Fuse_fuse(r:p1udt896-p1udt938)p1u_12096: Контроллер предохранителя не входит в матрицу проводимости. Наблюдаемый объект Line.fuse(r:p1udt896-p1udt938)p1u_12096 остаётся в схеме. Для защиты и восстановления это не модель плавления.",
+    "Line.fuse(r:p1udt1433-p1udt882)p1u_12161: rating_a не задан, для проверки режима взят 400 А",
+    "Fuse.Fuse_fuse(r:p1udt1433-p1udt882)p1u_12161: Контроллер предохранителя не входит в матрицу проводимости. Наблюдаемый объект Line.fuse(r:p1udt1433-p1udt882)p1u_12161 остаётся в схеме. Для защиты и восстановления это не модель плавления.",
+    "Line.goab_disswitch(r:p1udt894-p1udt895)p1u_12238: rating_a не задан, для проверки режима взят 400 А",
+    "Line.recloser_disswitch(r:p1udt894-p1udt942)p1u_12266: rating_a не задан, для проверки режима взят 400 А",
+    "Line.goab_disswitch(r:p1udt1425-p1udt881)p1u_12301: rating_a не задан, для проверки режима взят 400 А",
+    "Line.goab_disswitch(r:p1udt1431-p1udt895)p1u_12316: rating_a не задан, для проверки режима взят 400 А",
+    "Load.load_p1ulv4108: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4109_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4109_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4110_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4110_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4111_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4111_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4112_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4112_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4113_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4113_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4132: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4136_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4136_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4137_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4137_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4138_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4138_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4139_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4139_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4140_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4140_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4153: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4154: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4155_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4155_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4188: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4189: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4193_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4193_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4194_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4194_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4195_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4195_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4196_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4196_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4197_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv4197_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv7531: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv7543_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv7543_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv7544_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv7544_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv7546_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv7546_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv7547_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv7547_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv7633_1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.load_p1ulv7633_2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле"
+  ],
+  "assumptions": [
+    "explicit_phase_matrix"
+  ],
+  "sources": [
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/raw/smart-ds/v1.0/2018/SFO/P1U/opendss_no_loadshapes/p1uhs0_1247/p1uhs0_1247--p1udt942/Master.dss",
+      "sha256": "b2dfcc1bbecace7d6b5cf9a08e165d716022f4acf0e8a4262d67d70d9f990a40"
+    },
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/raw/smart-ds/v1.0/2018/SFO/P1U/opendss_no_loadshapes/p1uhs0_1247/p1uhs0_1247--p1udt942/LineCodes.dss",
+      "sha256": "6ed159162d806521cc8440874b7bd81999d0d19bbb808bc0f0f653136acd52c1"
+    },
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/raw/smart-ds/v1.0/2018/SFO/P1U/opendss_no_loadshapes/p1uhs0_1247/p1uhs0_1247--p1udt942/Lines.dss",
+      "sha256": "f2799179770b10e308eb7d3c7e09fecf00c14fe57dcbc7c6e3c42409dba22153"
+    },
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/raw/smart-ds/v1.0/2018/SFO/P1U/opendss_no_loadshapes/p1uhs0_1247/p1uhs0_1247--p1udt942/Transformers.dss",
+      "sha256": "133b622fd127c1ca28bdf2f5d042e75f78b9746ca5cb26603b6a39b7be87a3c9"
+    },
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/raw/smart-ds/v1.0/2018/SFO/P1U/opendss_no_loadshapes/p1uhs0_1247/p1uhs0_1247--p1udt942/Loads.dss",
+      "sha256": "8ddb3a3907fcc0936ef331a3f545f20e1fa3d5da42c6b143fb3cdfd2c042cf0b"
+    }
+  ],
+  "commands": [
+    {
+      "command": "Clear",
+      "status": "directive"
+    },
+    {
+      "command": "Circuit.feeder_p1udt942-p1uhs0_1247x",
+      "status": "transferred"
+    },
+    {
+      "command": "Linecode.1P_OH_AL_2/0_Rucina_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Linecode.1P_UG_AL_4/0_Sweetbriar_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Linecode.1P_UG_AL_1/0_Brenau_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Linecode.1P_OH_AL_4/0_Zuzara_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Linecode.1P_OH_AL_ACSR_#2_Sparrow_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Linecode.3P_OH_AL_ACSR_4/0_Penguin_3",
+      "status": "transferred"
+    },
+    {
+      "command": "Linecode.3P_UG_AL_350kcmil_3_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Linecode.3P_UG_AL_750kcmil_3_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Linecode.fuse_1_3",
+      "status": "transferred"
+    },
+    {
+      "command": "Linecode.fuse_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Linecode.goab_disswitch_3_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Linecode.recloser_3",
+      "status": "transferred"
+    },
+    {
+      "command": "Linecode.goab_disswitch_3_3",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt882lv-p1ulv4109)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udm3853-p1ulv4110)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udm3853-p1udt883lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udm3854-p1ulv4111)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udm3854-p1udt883lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt884lv-p1ulv4112)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udm3856-p1ulv4113)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udm3856-p1udt884lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt893lv-p1ulv4136)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udm3883-p1ulv4137)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udm3883-p1udt894lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udm3884-p1ulv4138)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udm3884-p1udt894lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt895lv-p1ulv7543)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udm3885-p1ulv4139)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udm3885-p1udt895lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udm3887-p1ulv4140)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udm3889-p1ulv7633)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udm3887-p1udm3889)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udm3887-p1udt896lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udm3888-p1ulv4197)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udm3888-p1udt896lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt909lv-p1ulv4155)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt942lv-p1ulv4193)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt943lv-p1ulv4196)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt1431lv-p1ulv7544)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt1432lv-p1ulv7546)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt1433lv-p1ulv7547)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt908-p1udt909)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt1433-p1udt882)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt1432-p1udt881)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt896-p1udt938)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt942-p1uhs0_1247)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt907lv-p1ulv4153)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt908lv-p1ulv4154)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt907-p1udt908)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt893-p1udt907)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt893-p1udt894)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt1425lv-p1ulv7531)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt881lv-p1ulv4108)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt1425-p1udt881)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt1425-p1udt1433)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt1433-p1udt883)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt883-p1udt884)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt1431-p1udt884)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt1431-p1udt895)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt894-p1udt895)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt894-p1udt942)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt939lv-p1ulv4189)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt938lv-p1ulv4188)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt892lv-p1ulv4132)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt892-p1udt938)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt938-p1udt943)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt939-p1udt943)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.l(r:p1udt939-p1udt942)",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.fuse(r:p1udt1432-p1udt881)p1u_12081",
+      "status": "transferred"
+    },
+    {
+      "command": "Fuse.Fuse_fuse(r:p1udt1432-p1udt881)p1u_12081",
+      "status": "ignored_non_electrical",
+      "power_flow": "not_in_admittance",
+      "protection": "unsupported"
+    },
+    {
+      "command": "Line.fuse(r:p1udt908-p1udt909)p1u_12084",
+      "status": "transferred"
+    },
+    {
+      "command": "Fuse.Fuse_fuse(r:p1udt908-p1udt909)p1u_12084",
+      "status": "ignored_non_electrical",
+      "power_flow": "not_in_admittance",
+      "protection": "unsupported"
+    },
+    {
+      "command": "Line.fuse(r:p1udt896-p1udt938)p1u_12096",
+      "status": "transferred"
+    },
+    {
+      "command": "Fuse.Fuse_fuse(r:p1udt896-p1udt938)p1u_12096",
+      "status": "ignored_non_electrical",
+      "power_flow": "not_in_admittance",
+      "protection": "unsupported"
+    },
+    {
+      "command": "Line.fuse(r:p1udt1433-p1udt882)p1u_12161",
+      "status": "transferred"
+    },
+    {
+      "command": "Fuse.Fuse_fuse(r:p1udt1433-p1udt882)p1u_12161",
+      "status": "ignored_non_electrical",
+      "power_flow": "not_in_admittance",
+      "protection": "unsupported"
+    },
+    {
+      "command": "Line.goab_disswitch(r:p1udt894-p1udt895)p1u_12238",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.recloser_disswitch(r:p1udt894-p1udt942)p1u_12266",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.goab_disswitch(r:p1udt1425-p1udt881)p1u_12301",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.goab_disswitch(r:p1udt1431-p1udt895)p1u_12316",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt881-p1udt881lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt882-p1udt882lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt883-p1udt883lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt884-p1udt884lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt892-p1udt892lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt893-p1udt893lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt894-p1udt894lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt895-p1udt895lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt896-p1udt896lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt907-p1udt907lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt908-p1udt908lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt909-p1udt909lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt938-p1udt938lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt939-p1udt939lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt942-p1udt942lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt943-p1udt943lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt1425-p1udt1425lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt1431-p1udt1431lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt1432-p1udt1432lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.tr(r:p1udt1433-p1udt1433lv)",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4108",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4109_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4109_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4110_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4110_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4111_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4111_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4112_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4112_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4113_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4113_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4132",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4136_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4136_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4137_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4137_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4138_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4138_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4139_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4139_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4140_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4140_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4153",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4154",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4155_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4155_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4188",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4189",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4193_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4193_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4194_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4194_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4195_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4195_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4196_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4196_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4197_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv4197_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv7531",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv7543_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv7543_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv7544_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv7544_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv7546_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv7546_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv7547_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv7547_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv7633_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.load_p1ulv7633_2",
+      "status": "transferred"
+    },
+    {
+      "command": "monitor.m1",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "monitor.m2",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "energymeter.m3",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Set Voltagebases=[0.12, 0.208, 0.48, 7.2, 12.47]",
+      "status": "directive"
+    },
+    {
+      "command": "Calcvoltagebases",
+      "status": "directive"
+    },
+    {
+      "command": "Buscoords Buscoords.dss",
+      "status": "directive"
+    },
+    {
+      "command": "set maxcontroliter=50",
+      "status": "directive"
+    }
+  ]
+}

@@ -134,5 +134,38 @@
     }
   ],
   "verdict": "pass",
-  "independence": "один и тот же DSS-Extensions; это проверка адаптера, не внешний решатель"
+  "independence": "один и тот же DSS-Extensions; это проверка адаптера, не внешний решатель",
+  "losses": {
+    "verdict": "pass",
+    "reasons": [],
+    "p_w": {
+      "error": 7.110444130375981e-05,
+      "tolerance": 2.735132177998846
+    },
+    "q_var": {
+      "error": 6.879114516777918e-05,
+      "tolerance": 0.3607662295358491
+    }
+  },
+  "terminals": {
+    "verdict": "pass",
+    "reasons": [],
+    "compared": 362,
+    "missing_required": 0,
+    "missing_sample": [],
+    "max_power_error_w": 6.281351670622826e-05,
+    "max_current_error_a": 3.754281321679498e-09,
+    "s_base_va": 10000000.0,
+    "power_tolerance_w": 100.00000000000001,
+    "worst": []
+  },
+  "taps": {
+    "verdict": "pass",
+    "reasons": [],
+    "compared": 8,
+    "missing_required": 0,
+    "missing_sample": [],
+    "max_abs": 0.0,
+    "tolerance": 1e-06
+  }
 }

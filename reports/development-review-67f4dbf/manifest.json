@@ -1,0 +1,16 @@
+{
+  "files": [
+    {
+      "path": "assessment.json",
+      "sha256": "d8c8cfa745b58ea18daa714718ae45b83f6bab8114b44b490ef869931ebc0718"
+    },
+    {
+      "path": "probes.json",
+      "sha256": "1f0ca95b58ec49208df90d2ead358adc499762d014e1f519beb2391a802e1f74"
+    },
+    {
+      "path": "suite_summary.json",
+      "sha256": "ace1564a5d5c720000800a28fe1bd79f8b0b5bc733a7d723689c2562d56fa639"
+    }
+  ]
+}

@@ -1,0 +1,187 @@
+{
+  "evidence": "conversion_consistency",
+  "thresholds": {
+    "voltage_pu": 1e-05,
+    "angle_rad": 0.0001
+  },
+  "counts": {
+    "native_targets": 195,
+    "imported_targets": 252,
+    "compared": 195,
+    "missing_required": 0,
+    "nonfinite": 0,
+    "angle_skipped": 0
+  },
+  "compared": 195,
+  "missing_in_native": [
+    [
+      "p1udm3853",
+      3
+    ],
+    [
+      "p1udm3854",
+      3
+    ],
+    [
+      "p1udm3856",
+      3
+    ],
+    [
+      "p1udm3883",
+      3
+    ],
+    [
+      "p1udm3884",
+      3
+    ],
+    [
+      "p1udm3885",
+      3
+    ],
+    [
+      "p1udm3887",
+      3
+    ],
+    [
+      "p1udm3888",
+      3
+    ],
+    [
+      "p1udm3889",
+      3
+    ],
+    [
+      "p1udt1431lv",
+      3
+    ],
+    [
+      "p1udt1432",
+      1
+    ],
+    [
+      "p1udt1432",
+      3
+    ],
+    [
+      "p1udt1432-p1udt881x",
+      1
+    ],
+    [
+      "p1udt1432-p1udt881x",
+      3
+    ],
+    [
+      "p1udt1432lv",
+      3
+    ],
+    [
+      "p1udt1433-p1udt882x",
+      1
+    ],
+    [
+      "p1udt1433-p1udt882x",
+      2
+    ],
+    [
+      "p1udt1433lv",
+      3
+    ],
+    [
+      "p1udt882",
+      1
+    ],
+    [
+      "p1udt882",
+      2
+    ]
+  ],
+  "missing_in_import": [],
+  "max_voltage_error_pu": 1.3693335354503233e-10,
+  "max_angle_error_rad": 2.2970025881363654e-10,
+  "reasons": [],
+  "worst": [
+    {
+      "bus": "p1ulv4154",
+      "node": 2,
+      "voltage_pu": 1.3693335354503233e-10,
+      "angle_rad": 2.2502977259364343e-10
+    },
+    {
+      "bus": "p1udt908lv",
+      "node": 2,
+      "voltage_pu": 1.36886946222603e-10,
+      "angle_rad": 2.2500401541947213e-10
+    },
+    {
+      "bus": "p1udt908-p1udt909x",
+      "node": 2,
+      "voltage_pu": 1.3671175302931715e-10,
+      "angle_rad": 2.2245227881967367e-10
+    },
+    {
+      "bus": "p1udt908",
+      "node": 2,
+      "voltage_pu": 1.3671153098471223e-10,
+      "angle_rad": 2.2245183473046382e-10
+    },
+    {
+      "bus": "p1udt909",
+      "node": 2,
+      "voltage_pu": 1.3671153098471223e-10,
+      "angle_rad": 2.2245227881967367e-10
+    },
+    {
+      "bus": "p1ulv4155",
+      "node": 1,
+      "voltage_pu": 1.3668355336449167e-10,
+      "angle_rad": 2.233253582062389e-10
+    },
+    {
+      "bus": "p1ulv4155",
+      "node": 2,
+      "voltage_pu": 1.3667977860620795e-10,
+      "angle_rad": 5.4287241368911054e-11
+    },
+    {
+      "bus": "p1udt909lv",
+      "node": 1,
+      "voltage_pu": 1.366553536996662e-10,
+      "angle_rad": 2.233253582062389e-10
+    }
+  ],
+  "verdict": "pass",
+  "independence": "один и тот же DSS-Extensions; это проверка адаптера, не внешний решатель",
+  "losses": {
+    "verdict": "pass",
+    "reasons": [],
+    "p_w": {
+      "error": 0.006413172603060957,
+      "tolerance": 0.12518771282558683
+    },
+    "q_var": {
+      "error": 0.013654511443746742,
+      "tolerance": 0.10406036534276235
+    }
+  },
+  "terminals": {
+    "verdict": "pass",
+    "reasons": [],
+    "compared": 542,
+    "missing_required": 0,
+    "missing_sample": [],
+    "max_power_error_w": 0.0309273051971104,
+    "max_current_error_a": 5.373764505419843e-06,
+    "s_base_va": 10000000.0,
+    "power_tolerance_w": 100.00000000000001,
+    "worst": []
+  },
+  "taps": {
+    "verdict": "pass",
+    "reasons": [],
+    "compared": 20,
+    "missing_required": 0,
+    "missing_sample": [],
+    "max_abs": 0.0,
+    "tolerance": 1e-06
+  }
+}

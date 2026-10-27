@@ -78,12 +78,74 @@ def extract_master(master: Path, out: Path, *, evidence: str) -> dict[str, Any]:
         "losses_w": float(losses[0]) if losses else None,
         "losses_var": float(losses[1]) if losses and len(losses) > 1 else None,
         "buses": buses,
+        "terminals": _terminals(session),
+        "taps": _taps(session),
         "engine_note": "DSS-Extensions compile исходного файла. Тот же C-engine, что у адаптера; независимость частичная.",
         "derived_note": derived_note,
         "filesystem_note": "для IEEE13 создан alias IEEELineCodes.dss -> IEEELineCodes.DSS, содержимое не менялось",
     }
     write_json(out, payload)
     return payload
+
+
+def _terminals(session) -> list[dict[str, Any]]:
+    """Проводники линий, трансформаторов, нагрузок, конденсаторов, реакторов и источника."""
+    phase_name = {"1": "A", "2": "B", "3": "C", "4": "N", "0": "G"}
+    wanted = {"line", "transformer", "capacitor", "reactor", "load", "vsource"}
+    rows = []
+    for full_name in session.Circuit.AllElementNames():
+        kind, _, name = full_name.partition(".")
+        if kind.lower() not in wanted:
+            continue
+        session.Circuit.SetActiveElement(full_name)
+        order = [str(node) for node in session.CktElement.NodeOrder()]
+        powers = list(session.CktElement.Powers())
+        currents = list(session.CktElement.Currents())
+        bus_names = list(session.CktElement.BusNames())
+        n_terms = int(session.CktElement.NumTerminals())
+        n_cond = int(session.CktElement.NumConductors())
+        for terminal in range(n_terms):
+            bus_name = bus_names[terminal].split(".")[0] if terminal < len(bus_names) else ""
+            ll_v = None
+            if bus_name:
+                session.Circuit.SetActiveBus(bus_name)
+                kv = float(session.Bus.kVBase())
+                if kv > 0:
+                    ll_v = kv * 1000.0
+            for local in range(n_cond):
+                cursor = terminal * n_cond + local
+                if cursor >= len(order):
+                    continue
+                rows.append(
+                    {
+                        "class": kind.lower(),
+                        "equipment": name,
+                        "terminal": terminal,
+                        "conductor": local,
+                        "phase": phase_name.get(order[cursor], order[cursor]),
+                        "ll_v": ll_v,
+                        "p_w": float(powers[2 * cursor]) * 1000.0 if 2 * cursor < len(powers) else 0.0,
+                        "q_var": float(powers[2 * cursor + 1]) * 1000.0 if 2 * cursor + 1 < len(powers) else 0.0,
+                        "i_real_a": float(currents[2 * cursor]) if 2 * cursor < len(currents) else 0.0,
+                        "i_imag_a": float(currents[2 * cursor + 1]) if 2 * cursor + 1 < len(currents) else 0.0,
+                    }
+                )
+    return rows
+
+
+def _taps(session) -> list[dict[str, Any]]:
+    if not int(session.Transformers.Count()):
+        return []
+    rows = []
+    session.Transformers.First()
+    while True:
+        name = session.Transformers.Name()
+        session.Text.Command(f"Transformer.{name}.wdg=2")
+        session.Text.Command(f"? Transformer.{name}.tap")
+        rows.append({"equipment": name, "tap": float(str(session.Text.Result()).strip())})
+        if not session.Transformers.Next():
+            break
+    return rows
 
 
 def _solve_tight(session) -> None:

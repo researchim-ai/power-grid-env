@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import platform
@@ -33,20 +34,22 @@ from power_grid_env.simulation import Engine, agent_model
 from power_grid_env.viewer import viewer_bundle, write_viewer
 
 
-SOLVER_IDENTITY = {"tolerance": 1e-10, "max_iterations": 80, "apply_regulators": True}
 METRICS_IDENTITY = {"schema": "power-grid-env.metrics/v1", "voltage_service_pu": 0.95}
 
 
 def experiment_fingerprint(scenario: Scenario, command: dict[str, Any], network: Network) -> str:
+    from power_grid_env.results import SolveOptions
+
     payload = json.dumps(
         {
             "scenario": scenario.model_dump(mode="json"),
             "command": command,
             "controller_files": _controller_files(command),
             "network": canonical_hash(network),
-            "solver": SOLVER_IDENTITY,
+            "solver": SolveOptions().model_dump(mode="json"),
             "thresholds": METRICS_IDENTITY,
             "runtime": _runtime_identity(),
+            "engine": _engine_identity(),
         },
         sort_keys=True,
         ensure_ascii=False,
@@ -59,14 +62,48 @@ def _controller_files(command: dict[str, Any]) -> dict[str, str]:
     for token in command.get("command") or []:
         path = Path(str(token))
         if path.suffix == ".py" and path.is_file():
-            found[str(path.resolve())] = hashlib.sha256(path.read_bytes()).hexdigest()
+            _hash_local_module(path.resolve(), found)
     policy = command.get("policy")
     if policy in {"heuristic", "aggressive"}:
         path = Path(__file__).resolve().parent / "heuristic.py"
-        found[str(path)] = hashlib.sha256(path.read_bytes()).hexdigest()
+        _hash_local_module(path, found)
     if policy == "hold":
         found["policy:hold"] = "hold"
     return found
+
+
+def _hash_local_module(path: Path, found: dict[str, str]) -> None:
+    """Хеш файла и локальных import рядом с ним. Стандартную библиотеку не обходит."""
+    path = path.resolve()
+    key = str(path)
+    if key in found or not path.is_file():
+        return
+    data = path.read_bytes()
+    found[key] = hashlib.sha256(data).hexdigest()
+    try:
+        tree = ast.parse(data.decode("utf-8"))
+    except (SyntaxError, UnicodeError):
+        return
+    root = path.parent
+    modules: list[str] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            modules.extend(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
+            modules.append(node.module)
+    for name in modules:
+        candidate = root / f"{name.split('.')[0]}.py"
+        if candidate.is_file():
+            _hash_local_module(candidate, found)
+
+
+def _engine_identity() -> str:
+    root = Path(__file__).resolve().parent
+    digest = hashlib.sha256()
+    for path in sorted(root.glob("*.py")):
+        digest.update(path.name.encode("utf-8"))
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
 
 
 def _runtime_identity() -> dict[str, Any]:

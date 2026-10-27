@@ -651,8 +651,9 @@ def _transformer_commands(transformer: Transformer, topology, bus_token, warning
     name = _token("t", transformer.id)
     imag = 0.0 if transformer.imag_pct is None else transformer.imag_pct
     noload = 0.0 if transformer.no_load_loss_pct is None else transformer.no_load_loss_pct
+    ppm = transformer.ppm_antifloat
     warnings.append(
-        f"{transformer.id}: ppm_antifloat=1 — численный антифлоат OpenDSS, не ток холостого хода. "
+        f"{transformer.id}: ppm_antifloat={ppm:.12g} — численный антифлоат OpenDSS, не ток холостого хода. "
         "Магничивание берётся только из imag_pct и no_load_loss_pct."
     )
     if transformer.imag_pct is None or transformer.no_load_loss_pct is None:
@@ -664,7 +665,7 @@ def _transformer_commands(transformer: Transformer, topology, bus_token, warning
     header = (
         f"New Transformer.{name} phases={transformer.phases} windings={len(transformer.windings)} "
         f"xhl={transformer.x_hl_pct:.12g} %loadloss={transformer.load_loss_pct:.12g} "
-        f"%imag={imag:.12g} %noloadloss={noload:.12g} ppm_antifloat=1"
+        f"%imag={imag:.12g} %noloadloss={noload:.12g} ppm_antifloat={ppm:.12g}"
     )
     if leadlag:
         header += f" leadlag={leadlag}"
@@ -931,14 +932,14 @@ def _execute(script: list[str], options: SolveOptions):
 
     session = OpenDSSDirect().NewContext()
     notes = []
-    for command in script:
-        if command == "Solve":
-            break
-        session.Text.Command(command)
     algorithm = "newton"
     iterations = 0
     converged = False
+    body = [command for command in script if command != "Solve"]
     for candidate in ("newton", "normal"):
+        # Несошедшийся Newton не оставляет отпайки и начальное состояние для Normal.
+        for command in body:
+            session.Text.Command(command)
         session.Text.Command(f"Set algorithm={candidate}")
         session.Text.Command("Solve")
         converged = bool(session.Solution.Converged())

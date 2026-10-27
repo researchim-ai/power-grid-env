@@ -50,6 +50,21 @@ def main(argv: list[str] | None = None) -> int:
     pilot.add_argument("model")
     pilot.add_argument("--out", required=True)
 
+    study = sub.add_parser("study", help="импорт, прогон и публичный вид одного исследования")
+    study_commands = study.add_subparsers(dest="study_command", required=True)
+    study_import = study_commands.add_parser("import")
+    study_import.add_argument("--source", required=True)
+    study_import.add_argument("--sidecar")
+    study_import.add_argument("--dir", required=True)
+    study_run = study_commands.add_parser("run")
+    study_run.add_argument("--dir", required=True)
+    study_run.add_argument("--steps", type=int, default=1)
+    study_public = study_commands.add_parser("public")
+    study_public.add_argument("--dir", required=True)
+
+    qualify = sub.add_parser("qualify", help="снимок готовности без заявления о выпуске")
+    qualify.add_argument("--out", required=True)
+
     args = parser.parse_args(argv)
     if args.command == "import":
         network, report = import_network(Path(args.source), Path(args.sidecar) if args.sidecar else None)
@@ -107,6 +122,27 @@ def main(argv: list[str] | None = None) -> int:
         write_json(Path(args.out), payload)
         print(json.dumps({"ok": payload["ok"], "status": payload["solve_status"]}, ensure_ascii=False))
         return 0 if payload["ok"] else 1
+    if args.command == "study":
+        from power_grid_env.workspace import StudyWorkspace
+
+        workspace = StudyWorkspace(Path(args.dir))
+        if args.study_command == "import":
+            payload = workspace.import_source(Path(args.source), Path(args.sidecar) if args.sidecar else None)
+            print(json.dumps({"ok": payload["ok"]}, ensure_ascii=False))
+            return 0 if payload["ok"] else 2
+        if args.study_command == "run":
+            payload = workspace.run(steps=args.steps)
+            print(json.dumps({"ok": payload["ok"], "status": payload["status"], "time_s": payload["time_s"]}, ensure_ascii=False))
+            return 0 if payload["ok"] else 1
+        payload = workspace.public_view()
+        print(json.dumps({"time_s": payload["time_s"], "steps": len(payload["steps"])}, ensure_ascii=False))
+        return 0
+    if args.command == "qualify":
+        from power_grid_env.qualify import write_qualification
+
+        payload = write_qualification(Path(args.out))
+        print(json.dumps({"released": payload["released"]}, ensure_ascii=False))
+        return 0
     return 2
 
 

@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-27",
+  "commit": "67f4dbf033fffe08bee714929a9c511bcd7f6f87",
+  "pytest": {
+    "command": "python3 -m pytest -q",
+    "passed": 50,
+    "skipped": 0,
+    "exit_code": 0
+  },
+  "backlog_claimed_done": [
+    "AG-01",
+    "AG-02",
+    "AG-03",
+    "AG-04",
+    "AG-05",
+    "AG-06"
+  ],
+  "audit_limits": [
+    "Полный многосуточный SMART-DS повторно не запускался",
+    "Сравнительные прогоны конкурирующих платформ не выполнялись; изучена первичная документация",
+    "Натурные измерения не получены"
+  ],
+  "new_findings": [
+    "ProcessBackend меняет delayed LTC tap в t=0 в отличие от direct backend",
+    "Изменение импортируемого helper.py контроллера не меняет fingerprint"
+  ],
+  "fresh_suite": {
+    "pairs": 10,
+    "failures": 0,
+    "unassessed": 0,
+    "verdict": "completed_with_recorded_regressions"
+  }
+}

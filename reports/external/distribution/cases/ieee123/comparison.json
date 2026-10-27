@@ -96,59 +96,92 @@
     ]
   ],
   "missing_in_import": [],
-  "max_voltage_error_pu": 3.101656345094739e-07,
-  "max_angle_error_rad": 1.7438617394560652e-07,
+  "max_voltage_error_pu": 2.0650148258027912e-14,
+  "max_angle_error_rad": 1.1502532260010412e-10,
   "reasons": [],
   "worst": [
     {
-      "bus": "83",
+      "bus": "93",
       "node": 1,
-      "voltage_pu": 3.101656345094739e-07,
-      "angle_rad": 9.648134158268817e-08
+      "voltage_pu": 2.0650148258027912e-14,
+      "angle_rad": 3.716138508025324e-12
     },
     {
-      "bus": "82",
+      "bus": "91",
       "node": 1,
-      "voltage_pu": 3.0965545172456643e-07,
-      "angle_rad": 9.643498088962588e-08
-    },
-    {
-      "bus": "81",
-      "node": 1,
-      "voltage_pu": 3.0905280801185597e-07,
-      "angle_rad": 9.653900034933827e-08
-    },
-    {
-      "bus": "80",
-      "node": 1,
-      "voltage_pu": 3.0866460876133317e-07,
-      "angle_rad": 9.662650901631764e-08
+      "voltage_pu": 2.042810365310288e-14,
+      "angle_rad": 3.710365348297273e-12
     },
     {
       "bus": "94",
       "node": 1,
-      "voltage_pu": 3.082857575886777e-07,
-      "angle_rad": 9.5839487013194e-08
-    },
-    {
-      "bus": "88",
-      "node": 1,
-      "voltage_pu": 3.081734953891413e-07,
-      "angle_rad": 9.611431739386944e-08
-    },
-    {
-      "bus": "93",
-      "node": 1,
-      "voltage_pu": 3.080789130471828e-07,
-      "angle_rad": 9.59751296214506e-08
+      "voltage_pu": 2.042810365310288e-14,
+      "angle_rad": 3.728573005901126e-12
     },
     {
       "bus": "95",
       "node": 1,
-      "voltage_pu": 3.080674597644162e-07,
-      "angle_rad": 9.604122119810654e-08
+      "voltage_pu": 1.9984014443252818e-14,
+      "angle_rad": 3.707700813038173e-12
+    },
+    {
+      "bus": "89",
+      "node": 1,
+      "voltage_pu": 1.9761969838327786e-14,
+      "angle_rad": 3.7125857943465235e-12
+    },
+    {
+      "bus": "88",
+      "node": 1,
+      "voltage_pu": 1.9539925233402755e-14,
+      "angle_rad": 3.746780663504978e-12
+    },
+    {
+      "bus": "87",
+      "node": 1,
+      "voltage_pu": 1.9317880628477724e-14,
+      "angle_rad": 3.717914864864724e-12
+    },
+    {
+      "bus": "113",
+      "node": 1,
+      "voltage_pu": 1.887379141862766e-14,
+      "angle_rad": 3.870681553053146e-12
     }
   ],
   "verdict": "pass",
-  "independence": "один и тот же DSS-Extensions; это проверка адаптера, не внешний решатель"
+  "independence": "один и тот же DSS-Extensions; это проверка адаптера, не внешний решатель",
+  "losses": {
+    "verdict": "pass",
+    "reasons": [],
+    "p_w": {
+      "error": 2.978459815494716e-05,
+      "tolerance": 0.9597773665622981
+    },
+    "q_var": {
+      "error": 1.0039046173915267e-05,
+      "tolerance": 1.925056632505582
+    }
+  },
+  "terminals": {
+    "verdict": "pass",
+    "reasons": [],
+    "compared": 770,
+    "missing_required": 0,
+    "missing_sample": [],
+    "max_power_error_w": 0.0022440735483542085,
+    "max_current_error_a": 9.5367431640625e-07,
+    "s_base_va": 10000000.0,
+    "power_tolerance_w": 100.00000000000001,
+    "worst": []
+  },
+  "taps": {
+    "verdict": "pass",
+    "reasons": [],
+    "compared": 8,
+    "missing_required": 0,
+    "missing_sample": [],
+    "max_abs": 0.0,
+    "tolerance": 1e-06
+  }
 }
