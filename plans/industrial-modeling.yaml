@@ -1,0 +1,233 @@
+schema: power-grid-env.modeling-roadmap/v1
+date: '2026-10-27'
+baseline:
+  commit: 93eb7e6
+  working_tree_contains_changes: true
+  assessment: reports/modeling-next-stage-93eb7e6/assessment.json
+document: docs/INDUSTRIAL_MODELING_STAGES_RU.md
+status: planned
+supersedes: Последовательность дальнейшего физического моделирования; AG-статусы сохраняются
+competitive_superiority_demonstrated: false
+agent_rules:
+- Не изменять существующие dirty правки без проверки
+- Equation/model note → schema → adapter → independent oracle → negative cases → qualification
+- Same-engine сравнение не является независимой верификацией физики
+- Не понижать допуски после просмотра результата
+- Missing field data блокируют field claim, а не независимую synthetic qualification
+phases:
+- id: PM-00
+  title: Численная квалификация
+  status: done
+  progress: >-
+    Якобиан неявной трапеции равен I - h/2·df/dx. Несошедшийся шаг вызывает
+    ошибку. Порядок шага около 2. Разрывы напряжения стоят на узлах сетки.
+    Direct, process, инкрементальная правка нагрузки и checkpoint дают одно
+    напряжение внутри 1e-5 о.е. Луч за носом кривой остаётся несходимостью, не пределом числа узлов.
+  depends_on: []
+  gate: Якобиан residual, отказ по несходимости, сходимость по шагу, runtime parity
+  evidence_required:
+  - versioned_case_and_parameters
+  - replay_command
+  - reference_and_scope
+  - metrics_and_failures
+  definition_of_done: Пройдены gates соответствующего раздела документа; результаты
+    вычислены из evidence
+- id: PM-01
+  title: Контракты оборудования
+  status: done
+  progress: >-
+    compile_scope не подставляет спектр, инерцию машины и r0/x0 источника.
+    Топологический аппарат явно без импеданса. Roundtrip сохраняет матрицы линии
+    и качество provenance. R(T) в стационарный режим не подмешивается.
+  depends_on:
+  - PM-00
+  gate: Единицы, bases, conductor mapping, provenance и явный unsupported scope
+  evidence_required:
+  - versioned_case_and_parameters
+  - replay_command
+  - reference_and_scope
+  - metrics_and_failures
+  definition_of_done: Пройдены gates соответствующего раздела документа; результаты
+    вычислены из evidence
+- id: PM-02
+  title: Стационарная фазная сеть
+  status: in_progress
+  progress: >-
+    Независимая MNA несимметричной четырёхпроводной схемы с импедансом
+    нейтрали совпадает с фазным расчётом по V, углу, току, P/Q, потерям,
+    фаза-нейтраль, линейным напряжениям и симметричным составляющим внутри
+    прежних порогов. Mesh, пределы PV и ZIP как независимый oracle ещё не закрыты.
+  depends_on:
+  - PM-01
+  gate: Независимые V/I/P/Q/losses, нейтраль, группы трансформаторов, KCL
+  evidence_required:
+  - versioned_case_and_parameters
+  - replay_command
+  - reference_and_scope
+  - metrics_and_failures
+  definition_of_done: Пройдены gates соответствующего раздела документа; результаты
+    вычислены из evidence
+- id: PM-03
+  title: QSTS и тепловое состояние
+  status: planned
+  depends_on:
+  - PM-02
+  gate: Энергобаланс, event replay, thermal oracle, production Engine 7/30 суток
+  evidence_required:
+  - versioned_case_and_parameters
+  - replay_command
+  - reference_and_scope
+  - metrics_and_failures
+  definition_of_done: Пройдены gates соответствующего раздела документа; результаты
+    вычислены из evidence
+- id: PM-04
+  title: Короткие замыкания
+  status: planned
+  depends_on:
+  - PM-02
+  gate: Раздельные faulted operating point и standard-method SC, независимый oracle
+  evidence_required:
+  - versioned_case_and_parameters
+  - replay_command
+  - reference_and_scope
+  - metrics_and_failures
+  definition_of_done: Пройдены gates соответствующего раздела документа; результаты
+    вычислены из evidence
+- id: PM-05
+  title: Защиты и АВР
+  status: planned
+  depends_on:
+  - PM-03
+  - PM-04
+  gate: Селективность, CT/VT, времена отключений, отрицательные сценарии
+  evidence_required:
+  - versioned_case_and_parameters
+  - replay_command
+  - reference_and_scope
+  - metrics_and_failures
+  definition_of_done: Пройдены gates соответствующего раздела документа; результаты
+    вычислены из evidence
+- id: PM-06
+  title: Многомашинная RMS динамика
+  status: planned
+  depends_on:
+  - PM-00
+  - PM-01
+  - PM-02
+  gate: DAE initialization, generators/controllers, reference trajectories
+  evidence_required:
+  - versioned_case_and_parameters
+  - replay_command
+  - reference_and_scope
+  - metrics_and_failures
+  definition_of_done: Пройдены gates соответствующего раздела документа; результаты
+    вычислены из evidence
+- id: PM-07
+  title: Двигатели и преобразователи
+  status: planned
+  depends_on:
+  - PM-06
+  gate: Network-coupled start/stall/restart, current limits, island transitions
+  evidence_required:
+  - versioned_case_and_parameters
+  - replay_command
+  - reference_and_scope
+  - metrics_and_failures
+  definition_of_done: Пройдены gates соответствующего раздела документа; результаты
+    вычислены из evidence
+- id: PM-08
+  title: Гармоники и качество
+  status: planned
+  depends_on:
+  - PM-02
+  gate: Спектры, резонансы, neutral currents и независимые frequency cases
+  evidence_required:
+  - versioned_case_and_parameters
+  - replay_command
+  - reference_and_scope
+  - metrics_and_failures
+  definition_of_done: Пройдены gates соответствующего раздела документа; результаты
+    вычислены из evidence
+- id: PM-09
+  title: Оценка состояния и анализ
+  status: planned
+  depends_on:
+  - PM-02
+  - PM-03
+  gate: Наблюдаемость, bad data, N-1 и независимая feasibility OPF
+  evidence_required:
+  - versioned_case_and_parameters
+  - replay_command
+  - reference_and_scope
+  - metrics_and_failures
+  definition_of_done: Пройдены gates соответствующего раздела документа; результаты
+    вычислены из evidence
+- id: PM-10
+  title: Связь уровней физики
+  status: planned
+  depends_on:
+  - PM-03
+  - PM-06
+  gate: State/base/time/energy handoff; отдельный field-data track
+  evidence_required:
+  - versioned_case_and_parameters
+  - replay_command
+  - reference_and_scope
+  - metrics_and_failures
+  definition_of_done: Пройдены gates соответствующего раздела документа; результаты
+    вычислены из evidence
+- id: PM-11
+  title: Масштаб и сравнение
+  status: planned
+  depends_on:
+  - PM-02
+  - PM-03
+  gate: Accuracy first, realistic scale, raw repeated performance, executable qualification
+  evidence_required:
+  - versioned_case_and_parameters
+  - replay_command
+  - reference_and_scope
+  - metrics_and_failures
+  definition_of_done: Пройдены gates соответствующего раздела документа; результаты
+    вычислены из evidence
+release_profiles:
+- id: industrial-network-studies
+  required_phases:
+  - PM-00
+  - PM-01
+  - PM-02
+  - PM-03
+  - PM-04
+  - PM-05
+  - PM-11
+  allow_narrower_pf_qsts_profile: true
+- id: industrial-dynamic-studies
+  inherits: industrial-network-studies
+  required_phases:
+  - PM-06
+  - PM-07
+  own_dynamic_qualification_required: true
+- id: advanced-pq-coupled-studies
+  required_phases:
+  - PM-08
+  - PM-09
+  - PM-10
+  - PM-11
+  scope_specific_qualification_required: true
+field_validation:
+  status: waiting_for_data
+  independent_track: true
+  synthetic_data_must_not_be_labelled_field: true
+performance_policy:
+  profiling_may_start_before_dependencies: true
+  comparison_requires_accuracy_gates: true
+  node_counts_are_test_sizes_not_support_claims:
+  - 100
+  - 1000
+  - 10000
+comparative_tasks:
+- faulted_cable_ats_unbalanced_load
+- motor_group_restart_after_sag
+- pv_bess_tap_capacitor_controls
+- harmonic_resonance_and_neutral
+- multi_infeed_protection_coordination

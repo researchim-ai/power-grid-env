@@ -1,6 +1,13 @@
 # План развития: промышленный моделер и проверяемое преимущество
 
-Дата: 27 октября 2026 года. Проверенный commit: `67f4dbf`.
+Актуализация следующей очереди: **27 октября 2026, `93eb7e6` + dirty workspace**.
+Подробная проверка физики и новые gates:
+[INDUSTRIAL_MODELING_STAGES_RU.md](INDUSTRIAL_MODELING_STAGES_RU.md),
+машинная очередь — [industrial-modeling.yaml](../plans/industrial-modeling.yaml).
+Разделы 1–5 и 7–9 ниже сохраняют предыдущую оценку `67f4dbf` как историю;
+актуальный порядок следующих работ задан новым документом и разделом 6.
+
+Дата предыдущей оценки: 27 октября 2026 года. Проверенный commit: `67f4dbf`.
 Статус: технический план, а не заявление о превосходстве или выполнении работ.
 Экономическая часть исключена. Исполнитель доработок — агент.
 
@@ -211,101 +218,38 @@ accuracy-qualified benchmark. Не использовать разные control
 
 ## 6. Конкретная последовательность развития
 
-### M0. Единый вычислительный контракт
+Очередь переписана после проверки `93eb7e6` и незакоммиченной работы.
+Полные постановки, эталоны и критерии:
+[следующие этапы промышленного моделирования](INDUSTRIAL_MODELING_STAGES_RU.md).
+Существующие AG-статусы не обнуляются; новый список PM описывает следующие gates.
 
-Исправить NS-01 и NS-02; унифицировать backend options/state/diagnostics,
-controller artifact и persisted identity. Дополнить transport tests на лишние
-frames, неподдержанную версию/ID, бесконечный stderr и процессные ошибки.
+1. **PM-00 — численная основа.** Исправить знак якобиана неявной трапеции,
+   ввести контроль residual и отказ по несходимости, проверить шаг и runtime parity.
+2. **PM-01/02 — оборудование и фазная сеть.** Общая identity и units/bases
+   для PF/SC/RMS/PQ; нейтраль, группы трансформаторов, несколько источников,
+   полная сверка V/I/P/Q/losses с независимой физически эквивалентной моделью.
+3. **PM-03 — длительные режимы.** QSTS, события, регуляторы, энергия и SOC,
+   тепловые состояния; production Engine 7/30 суток с bounded output и replay.
+4. **PM-04/05 — КЗ, защиты и АВР.** Отдельный расчёт standard-method SC,
+   вклад источников, координация и времена отключений, безопасное восстановление.
+5. **PM-06/07 — промышленная динамика.** Зрелый многомашинный RMS backend,
+   согласованная инициализация, AVR/governor/PSS, двигатели и преобразователи,
+   самозапуск и переходы остров/сеть с собственной qualification.
+6. **PM-08/09/10 — расширенная физика и анализ.** Гармоники/резонансы,
+   оценка состояния, N-1/OPF feasibility, согласование PF/QSTS/RMS и локального EMT.
+   Натурные данные идут отдельным track; отсутствие данных не заменять синтетикой.
+7. **PM-11 — сквозная квалификация.** Profiling начать рано; сравнивать скорость
+   после accuracy gates на одинаковой физике, версиях, hardware и output scope.
+   Публиковать raw samples, failures и replay. `qualify` должен вычислять readiness.
 
-Сохранить пройденные AG-01…06, но уточнить их покрытие и обязательные follow-ups.
-Gate: одинаковая физика direct/process/replay и отрицательные runtime tests.
+Первый выпуск: **Industrial Network Studies**, затем отдельно
+**Industrial Dynamic Studies** и **Advanced Power Quality / Coupled Studies**.
+Для каждого опубликован точный equipment/task/backend subset. Более узкий PF/QSTS
+выпуск допустим, но не означает готовности КЗ, RMS или гармоник.
 
-### M1. Завершить устанавливаемый Industrial QSTS baseline
-
-Закрыть AG-08 и release infrastructure из AG-16: dependency lock, чистый wheel
-вне checkout, project/data paths, supported OS, versioned packs. Включить
-mandatory external dependencies/data в release CI. Нельзя получать релизный
-pass из необязательных skips или отсутствующего cache.
-
-Gate: reproducible clean install → import → run → external controller →
-report → checkpoint/replay без editable install и поиска корня репозитория.
-
-### M2. Доказать весь production Engine на внешних моделях
-
-Закрыть AG-07: full Vcomplex/Icomplex/P/Q/neutral/losses/control states,
-energization и completeness; production Engine QSTS вместо ручной подстановки.
-Минимум два разных feeders SMART-DS и внешний multivoltage subset; одинаковые
-frozen/active controls. Existing IEEE/ENWL/SimBench cases сохранить.
-
-Gate: точные tolerance tiers, независимый phase-domain subset и replay из
-середины controls/BESS/protection; исходные данные и derived cases разделены.
-
-### M3. Промышленная полнота, а не россыпь демонстраций
-
-Закрыть AG-11 готовыми packs:
-1. Два ввода, секции, АВР, запрет опасного параллельного включения.
-2. Кабельные сети, neutral/grounding, asymmetry, two-/three-winding transformers.
-3. РПН, capacitors, Volt-VAR/Volt-Watt, reverse power и режимы ограничений.
-4. BESS dispatch/SOC/efficiency/ramp и послеаварийное восстановление.
-5. Device failure/maintenance и задержанные/ложные измерения.
-6. SC/protection в явном subset с различением network equivalent и relay model.
-
-Проверять пределы линий, трансформаторов и вводов. Для токов КЗ зафиксировать
-метод и допущения; генерацию инвертора не заменять классической машиной.
-Пуск мотора и frequency/islanding stability переводить в RMS task, если QSTS
-для ответа недостаточен. Полную модель дуги/насыщения/быстрой защиты не обещать.
-
-Gate: positive/negative/near-limit reference для каждого pack и интерпретируемый
-отчёт. Параметры не заполняются неизвестными «типовыми» числами молча.
-
-### M4. Инженерное рабочее место
-
-Закрыть AG-09: проект и версии моделей, import ledger, initial regime,
-task/controller, run history, compare, cancel/resume, схема и linked charts.
-Существующие viewer/assets переиспользовать. Схема отображает все поддержанные
-элементы и состояния, а API предоставляет те же результаты, что CLI.
-
-Добавить model diff, unit-aware edits с повторной проверкой и experiment templates.
-Отдельный view данных для policy, не только переключатель поверх truth JSON.
-
-Gate: e2e import-to-violation-to-replay на новой сети и проверка model edits,
-transformation diagnostics, export и переноса проекта.
-
-### M5. Формальный сравнительный benchmark
-
-Реализовать protocol раздела 7. Сначала сравнить с direct DSS и PyDSS;
-затем pandapower/Power Grid Model на общем equipment subset; отдельно Grid2Op
-для общей control-задачи. ANDES используется только в dynamic track.
-Публиковать обе конфигурации, adapter code и все неподдержанные функции.
-
-Gate: отчёт с измеренными результатами, raw data и повторяемыми командами.
-Только после этого формулировать «лучше X по Y на Z». Проигрыш по скорости
-или coverage не скрывать; он становится входом следующей оптимизации.
-
-### M6. Ускорение и робастность
-
-Закрыть AG-10: persistent/compiled lifecycle, bulk update/readout, topology
-invalidation, streaming output и reproducible parallel workers. Добавить
-ensemble studies с seeded uncertainties и aggregation по независимым families.
-
-Отдельно measured-data readiness: alignment, channel mapping, estimation,
-calibration/validation split и uncertainty budget. Без paired данных релиз
-остаётся model-verified с конкретным field gap, а не field-validated.
-
-Gate: long-run memory/deadline budgets, equivalence после ускорения и независимый
-robustness corpus. Размер 10 000 узлов — испытание, пока не пройден workload gate.
-
-### M7. Расширенная физика и AI
-
-AG-12: независимая проверка OPF, N−1 и observability/state estimation.
-AG-13: variable-size observations вместо 8 напряжений, timestamps/quality,
-typed tools, реальные VLM scenes, внешние политики и isolation.
-AG-15: ANDES либо другой проверенный RMS adapter, machine/AVR/governor/motor
-subset и step convergence. Backend substitution не наследует validation.
-
-Gate: новая область имеет собственные reference/limitations; AI выигрывает
-у rule и optimization baseline на held-out families, а не только у hold.
-Универсальный EMT, HIL и массовое RL-обучение не блокируют M0–M6.
+Превосходство проверяется на пяти задачах: авария кабеля + АВР, самозапуск
+двигателей, PV/BESS/РПН, гармонический резонанс и селективность при нескольких
+вводах. Статус сравнительного превосходства сейчас **не доказано**.
 
 ## 7. Как доказать «лучше open source»
 

@@ -123,7 +123,10 @@ tasks:
       Newton не оставляет состояние для Normal. Второй лист SMART-DS
       p1uhs0_1247--p1udt942 взят из уже скачанного дерева и проходит снимок;
       его QSTS не запускался, профили первого фидера не подставлялись.
-      Не закрыто: сутки и неделя двух фидеров через Engine.
+      Короткое окно первого фидера SMART-DS идёт через Engine: раздельные
+      множители P и Q, JSON-снимок после первого шага, |V| внутри 1e-5
+      против прямого solve. Сутки и неделя двух фидеров через Engine не
+      закрыты: у второго листа нет своих CSV.
     scope: [benchmarks/external, tests/test_external_benchmark.py, power_grid_env/checks.py]
     findings: [IR-06]
     gates:
@@ -169,9 +172,12 @@ tasks:
     priority: P1_P2
     status: in_progress
     progress: >-
-      reports/envelope/radial.json: луч 100 и 1000 шин сошёлся, 10 000 за
-      один прогон не сошёлся. Горизонты 7 и 30 суток не измерялись.
-      Инкрементальный решатель и пул воркеров не сделаны. Масштаб города не заявлен.
+      Инкрементальная правка kW/kvar совпадает с холодным solve внутри 1e-5
+      на двухшинной схеме. trace_limit ограничивает память журнала шагов.
+      Луч 150 кВт и 0.05+j0.08 Ом на участок доводится подъёмом нагрузки
+      до формулы на 2054 шинах внутри 1e-5 о.е. Дальше решения нет.
+      10 000 шин с тем же суммарным Z, что у луча из 1000, сходятся.
+      Горизонты 7 и 30 суток не измерялись. Пул воркеров не сделан. Масштаб города не заявлен.
     depends_on: [AG-03, AG-05, AG-06, AG-07]
     scope: [power_grid_env/benchmarks.py, power_grid_env/backend_opendss.py, power_grid_env/backend_process.py, power_grid_env/dataset.py, benchmarks/external]
     findings: [IR-09]
@@ -201,9 +207,9 @@ tasks:
     priority: P2
     status: in_progress
     progress: >-
-      N-1 линий сохраняет каждый выход, включая нерешённый. Вырожденная
-      матрица WLS не получает оценку. Полный корпус bad data и независимый
-      OPF-оракул сверх собственной Ybus не закрыты.
+      Сужение rate_a у допустимой точки case3 ловится независимым аудитом
+      перетоков. N-1 линий сохраняет каждый выход. Вырожденная WLS не
+      получает оценку. Корпус bad data шире этого примера не закрыт.
     depends_on: [AG-01, AG-04, AG-07]
     scope: [power_grid_env/network_opf.py, power_grid_env/analysis.py, power_grid_env/symmetric_ac.py, benchmarks/external/pglib_opf.py]
     gates:
@@ -216,9 +222,9 @@ tasks:
     priority: P2
     status: in_progress
     progress: >-
-      Gym отдаёт все каналы счётчиков, маску достоверности, возраст от
-      produced_s и задержку доставки. LLM/VLM, изоляция недоверенного
-      процесса и отдельные raw/shielded прогоны не закрыты.
+      Gym отдаёт все каналы счётчиков. isolated=True не передаёт секреты
+      окружения родителя и ставит пустой каталог. Ядерной песочницы нет.
+      LLM/VLM и отдельные raw/shielded семейства не закрыты.
     depends_on: [AG-03, AG-04, AG-06, AG-09]
     scope: [power_grid_env/gym_env.py, power_grid_env/llm_tools.py, power_grid_env/vlm.py, power_grid_env/controllers.py]
     gates:
@@ -246,6 +252,9 @@ tasks:
     title: RMS backend in a separate qualified release
     priority: P2_P3
     status: planned
+    progress: >-
+      Аналитический SMIB остаётся регрессией. industrial_rms_qualified и
+      andes_integrated равны false. Отдельный RMS-релиз не открыт.
     depends_on: [AG-03, AG-04, AG-05, AG-06]
     scope: [power_grid_env/dynamics.py, new_RMS_adapter, new_dynamic_reference_pack]
     gates:

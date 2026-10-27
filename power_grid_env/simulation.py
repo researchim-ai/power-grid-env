@@ -127,6 +127,7 @@ class Engine:
         self.storage_p: dict[str, float] = {}
         self.last_result: SolveResult | None = None
         self.trace: list[dict[str, Any]] = []
+        self.dropped_trace_steps = 0
         self.history: list[dict[str, Any]] = []
         self.what_if_used = 0
         self.overload_seconds: dict[str, float] = {}
@@ -157,6 +158,7 @@ class Engine:
         self.execution_log = []
         self.ltc_outside_since = {}
         self.trace = []
+        self.dropped_trace_steps = 0
         self.history = []
         self.what_if_used = 0
         self.overload_seconds = {}
@@ -266,6 +268,7 @@ class Engine:
             "what_if_used": self.what_if_used,
             "history": list(self.history),
             "trace": list(self.trace),
+            "dropped_trace_steps": self.dropped_trace_steps,
             "terminated": self.terminated,
             "truncated": self.truncated,
             "last_result": None if self.last_result is None else self.last_result.model_dump(mode="json"),
@@ -294,6 +297,7 @@ class Engine:
         self.what_if_used = int(snapshot["what_if_used"])
         self.history = list(snapshot["history"])
         self.trace = list(snapshot.get("trace") or [])
+        self.dropped_trace_steps = int(snapshot.get("dropped_trace_steps") or 0)
         self.terminated = bool(snapshot["terminated"])
         self.truncated = bool(snapshot["truncated"])
         self.last_result = None if snapshot["last_result"] is None else SolveResult.model_validate(snapshot["last_result"])
@@ -440,6 +444,12 @@ class Engine:
             operations=record["operations"],
         )
         self.trace.append(record)
+        limit = getattr(self.scenario, "trace_limit", None)
+        if limit is not None:
+            extra = len(self.trace) - int(limit)
+            if extra > 0:
+                del self.trace[:extra]
+                self.dropped_trace_steps += extra
         return record
 
     def _interval_metrics(self, dt_s: float) -> dict[str, Any]:
@@ -678,14 +688,15 @@ class Engine:
     def _apply_load_levels(self) -> None:
         profiles = getattr(self.scenario, "load_profile", {}) or {}
         for load in self.net.loads:
-            multiplier = _profile_multiplier(profiles.get(load.id, []), self.time_s)
+            multiplier, reactive = _profile_pair(profiles.get(load.id, []), self.time_s)
             if load.cold_load_multiplier and load.cold_load_tau_s and self.cold_started.get(load.id) is not None:
                 elapsed = self.time_s - float(self.cold_started[load.id])
                 multiplier *= cold_load_multiplier(elapsed, load.cold_load_multiplier, load.cold_load_tau_s)
+                reactive *= cold_load_multiplier(elapsed, load.cold_load_multiplier, load.cold_load_tau_s)
             for phase, value in self.base_p[load.id].items():
                 load.p_w[phase] = value * multiplier
             for phase, value in self.base_q[load.id].items():
-                load.q_var[phase] = value * multiplier
+                load.q_var[phase] = value * reactive
 
     def _apply_storage_limits(self) -> None:
         dt = float(self.scenario.control_interval_s)
@@ -1140,13 +1151,23 @@ def _relay_from_dict(raw: dict[str, Any]) -> RelayState:
 
 
 def _profile_multiplier(points: list[tuple[float, float]] | list[list[float]], time_s: float) -> float:
+    return _profile_pair(points, time_s)[0]
+
+
+def _profile_pair(points: list[tuple[float, float]] | list[list[float]], time_s: float) -> tuple[float, float]:
+    """Вторая координата — множитель P. Третья, если есть, — множитель Q, иначе он совпадает с P."""
     if not points:
-        return 1.0
-    ordered = sorted((float(point[0]), float(point[1])) for point in points)
-    current = ordered[0][1]
-    for stamp, value in ordered:
+        return 1.0, 1.0
+    ordered = []
+    for point in points:
+        active = float(point[1])
+        reactive = float(point[2]) if len(point) > 2 else active
+        ordered.append((float(point[0]), active, reactive))
+    ordered.sort()
+    current = (ordered[0][1], ordered[0][2])
+    for stamp, active, reactive in ordered:
         if stamp <= time_s + 1e-12:
-            current = value
+            current = (active, reactive)
         else:
             break
     return current

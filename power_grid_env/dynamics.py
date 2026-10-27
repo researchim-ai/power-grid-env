@@ -11,6 +11,11 @@ import math
 import numpy as np
 
 
+def release_status() -> dict[str, bool | str]:
+    """Промышленный RMS-релиз не открыт. SMIB остаётся аналитической регрессией."""
+    return {"industrial_rms_qualified": False, "andes_integrated": False, "analytic_smib": "regression_only"}
+
+
 def equilibrium(pm: float, e_pu: float, v_pu: float, x_pu: float, omega_s: float) -> tuple[float, float]:
     argument = pm * x_pu / (e_pu * v_pu)
     if abs(argument) > 1:
@@ -48,33 +53,31 @@ def simulate_smib(
     delta0: float | None = None,
     omega0: float | None = None,
     v_profile: callable | None = None,
+    event_times: list[float] | None = None,
+    max_newton: int = 12,
+    tolerance: float = 1e-9,
 ) -> dict[str, np.ndarray]:
-    """Неявная трапеция. v_profile(t) позволяет воспроизвести провал напряжения."""
+    """Неявная трапеция. Разрывы v_profile задаются event_times и не попадают внутрь шага."""
     omega_s = 2.0 * math.pi * frequency_hz
     if delta0 is None or omega0 is None:
         delta_eq, omega_eq = equilibrium(pm, e_pu, v_pu, x_pu, omega_s)
         delta0 = delta_eq if delta0 is None else delta0
         omega0 = omega_eq if omega0 is None else omega0
-    steps = int(round(t_end_s / dt_s))
-    time = np.linspace(0.0, steps * dt_s, steps + 1)
-    state = np.zeros((steps + 1, 2))
+    time = _time_grid(t_end_s, dt_s, event_times)
+    state = np.zeros((len(time), 2))
     state[0] = (delta0, omega0)
     residual0 = derivative(state[0], pm, e_pu, v_pu, x_pu, inertia_s, damping, omega_s)
-    for index in range(steps):
+    for index in range(len(time) - 1):
+        step_s = float(time[index + 1] - time[index])
         voltage_now = v_pu if v_profile is None else v_profile(time[index])
         voltage_next = v_pu if v_profile is None else v_profile(time[index + 1])
+
+        def deriv(value, right=voltage_next):
+            return derivative(value, pm, e_pu, right, x_pu, inertia_s, damping, omega_s)
+
         previous = derivative(state[index], pm, e_pu, voltage_now, x_pu, inertia_s, damping, omega_s)
-        guess = state[index] + dt_s * previous
-        for _ in range(12):
-            upcoming = derivative(guess, pm, e_pu, voltage_next, x_pu, inertia_s, damping, omega_s)
-            mismatch = guess - state[index] - 0.5 * dt_s * (previous + upcoming)
-            jacobian = _numerical_jacobian(guess, pm, e_pu, voltage_next, x_pu, inertia_s, damping, omega_s, dt_s)
-            step = np.linalg.solve(jacobian, mismatch)
-            guess = guess - step
-            if np.linalg.norm(step) < 1e-10:
-                break
-        state[index + 1] = guess
-    return {"t": time, "delta": state[:, 0], "omega": state[:, 1], "equilibrium_residual": residual0}
+        state[index + 1] = _implicit_trapezoid(state[index], step_s, previous, deriv, max_newton=max_newton, tolerance=tolerance)
+    return {"t": time, "delta": state[:, 0], "omega": state[:, 1], "equilibrium_residual": residual0, "converged": True}
 
 
 def simulate_two_machine(
@@ -105,18 +108,8 @@ def simulate_two_machine(
     residual = deriv(state)
     for index in range(steps):
         previous = deriv(trace[index])
-        guess = trace[index] + dt_s * previous
-        for _ in range(8):
-            upcoming = deriv(guess)
-            mismatch = guess - trace[index] - 0.5 * dt_s * (previous + upcoming)
-            jacobian = np.eye(4)
-            for column in range(4):
-                bumped = guess.copy()
-                bumped[column] += 1e-6
-                jacobian[:, column] += 0.5 * dt_s * (deriv(bumped) - upcoming) / 1e-6
-            guess = guess - np.linalg.solve(jacobian, mismatch)
-        trace[index + 1] = guess
-    return {"delta": trace[:, 0], "equilibrium_residual": residual}
+        trace[index + 1] = _implicit_trapezoid(trace[index], dt_s, previous, deriv, max_newton=8)
+    return {"delta": trace[:, 0], "equilibrium_residual": residual, "converged": True}
 
 
 def simulate_smib_with_controls(
@@ -164,18 +157,8 @@ def simulate_smib_with_controls(
     for index in range(steps):
         voltage = v_pu * voltage_scale
         previous = deriv(trace[index], voltage if index else v_pu)
-        guess = trace[index] + dt_s * previous
-        for _ in range(10):
-            upcoming = deriv(guess, voltage)
-            mismatch = guess - trace[index] - 0.5 * dt_s * (previous + upcoming)
-            jacobian = np.eye(4)
-            for column in range(4):
-                bumped = guess.copy()
-                bumped[column] += 1e-6
-                jacobian[:, column] += 0.5 * dt_s * (deriv(bumped, voltage) - upcoming) / 1e-6
-            guess = guess - np.linalg.solve(jacobian, mismatch)
-        trace[index + 1] = guess
-    return {"field": trace[:, 2], "mechanical": trace[:, 3], "equilibrium_residual": residual}
+        trace[index + 1] = _implicit_trapezoid(trace[index], dt_s, previous, lambda value: deriv(value, voltage), max_newton=10)
+    return {"field": trace[:, 2], "mechanical": trace[:, 3], "equilibrium_residual": residual, "converged": True}
 
 
 def induction_torque(slip: float, voltage: float, rotor_r: float, reactance: float) -> float:
@@ -223,12 +206,49 @@ def simulate_induction(
     return {"slip": slip, "equilibrium_slip": target}
 
 
-def _numerical_jacobian(state, pm, e_pu, v_pu, x_pu, inertia, damping, omega_s, dt) -> np.ndarray:
-    base = derivative(state, pm, e_pu, v_pu, x_pu, inertia, damping, omega_s)
-    matrix = np.eye(2)
-    for index in range(2):
-        bumped = state.copy()
-        bumped[index] += 1e-6
-        changed = derivative(bumped, pm, e_pu, v_pu, x_pu, inertia, damping, omega_s)
-        matrix[:, index] += 0.5 * dt * (changed - base) / 1e-6
+def _time_grid(t_end_s: float, dt_s: float, events: list[float] | None = None) -> np.ndarray:
+    """Сетка с обязательными моментами разрыва. Шаг не перешагивает событие."""
+    if dt_s <= 0 or t_end_s < 0:
+        raise ValueError("шаг и горизонт должны быть неотрицательными, шаг положительным")
+    times = [0.0]
+    cursor = 0.0
+    pending = sorted(float(item) for item in (events or []) if 0.0 < float(item) < t_end_s - 1e-15)
+    while cursor < t_end_s - 1e-15:
+        nxt = min(t_end_s, cursor + dt_s)
+        if pending and pending[0] <= nxt + 1e-15:
+            nxt = pending.pop(0)
+        if nxt <= cursor + 1e-15:
+            break
+        times.append(nxt)
+        cursor = nxt
+    return np.asarray(times, dtype=float)
+
+
+def _trapezoid_jacobian(guess: np.ndarray, deriv, dt_s: float, eps: float = 1e-6) -> np.ndarray:
+    """∂R/∂x для R = x - x0 - h/2·(f0+f). Это I - h/2·df/dx, не плюс."""
+    upcoming = deriv(guess)
+    matrix = np.eye(len(guess))
+    for column in range(len(guess)):
+        bumped = np.array(guess, dtype=float, copy=True)
+        bumped[column] += eps
+        matrix[:, column] -= 0.5 * dt_s * (deriv(bumped) - upcoming) / eps
     return matrix
+
+
+def _implicit_trapezoid(state: np.ndarray, dt_s: float, previous: np.ndarray, deriv, *, max_newton: int = 12, tolerance: float = 1e-9) -> np.ndarray:
+    """Один шаг. previous = f(x0). deriv(x) = f(x) на правом конце, уже с напряжением этого конца."""
+    guess = np.array(state, dtype=float, copy=True) + dt_s * previous
+    residual = guess - state
+    for _ in range(max_newton):
+        upcoming = deriv(guess)
+        residual = guess - state - 0.5 * dt_s * (previous + upcoming)
+        if np.linalg.norm(residual) <= tolerance:
+            return guess
+        jacobian = _trapezoid_jacobian(guess, deriv, dt_s)
+        step = np.linalg.solve(jacobian, residual)
+        guess = guess - step
+    upcoming = deriv(guess)
+    residual = guess - state - 0.5 * dt_s * (previous + upcoming)
+    if np.linalg.norm(residual) <= tolerance:
+        return guess
+    raise ValueError(f"шаг трапеции не сошёлся, норма остатка {np.linalg.norm(residual):.3e}")

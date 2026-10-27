@@ -25,7 +25,8 @@
     "p50_s": 8.625690237997333,
     "converged": 0.0,
     "status": "numerically_not_converged",
-    "claimed_as_supported_city": false
+    "claimed_as_supported_city": false,
+    "cause": "Запрошенные 150 кВт и 30 квар не проходят через 9999 участков по 0.05+j0.08 Ом: дискриминант уравнения конца линии отрицателен начиная с 2055 шин. OpenDSS сообщает сходимость за 2 итерации, уставка PQ не выполнена, поэтому статус numerically_not_converged. Те же 10000 шин с суммарным сопротивлением луча из 1000 шин сходятся к 0.88034 о.е."
   },
   "horizons_days": {
     "7": "not_measured",

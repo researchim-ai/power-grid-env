@@ -84,6 +84,8 @@ class Line(BaseModel):
     emergency_rating_a: float | None = None
     emergency_duration_s: float | None = None
     kron_reduction: Literal["forbidden", "allowed_solid_neutral"] = "forbidden"
+    temperature_c: float | None = None
+    resistance_alpha_per_c: float | None = None
     provenance: Provenance
 
 
@@ -107,7 +109,21 @@ class Switch(BaseModel):
     tagged_for_maintenance: bool = False
     telemetered: bool = True
     operable: bool = True
+    representation: Literal["topological", "series"] = "topological"
+    series_r_ohm: float | None = None
+    series_x_ohm: float | None = None
     provenance: Provenance
+
+    @model_validator(mode="after")
+    def _representation_is_explicit(self) -> "Switch":
+        if self.representation == "series":
+            if self.series_r_ohm is None or self.series_x_ohm is None:
+                raise ValueError(f"{self.id}: последовательный аппарат требует series_r_ohm и series_x_ohm")
+            if self.series_r_ohm < 0:
+                raise ValueError(f"{self.id}: сопротивление последовательного аппарата отрицательное")
+        elif self.series_r_ohm is not None or self.series_x_ohm is not None:
+            raise ValueError(f"{self.id}: топологический аппарат не хранит импеданс")
+        return self
 
 
 class Winding(BaseModel):
@@ -219,6 +235,8 @@ class Generator(BaseModel):
     q_max_var: float | None = None
     participation: float | None = None
     ll_v: float
+    inertia_s: float | None = None
+    x_d_pu: float | None = None
     provenance: Provenance
 
 

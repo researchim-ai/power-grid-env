@@ -11,6 +11,7 @@ import hashlib
 import math
 import threading
 from importlib.metadata import PackageNotFoundError, version
+from typing import Any
 
 import numpy as np
 
@@ -277,6 +278,13 @@ def _solve_once(network: Network, options: SolveOptions) -> SolveResult:
         )
     try:
         session, algorithm, iterations, converged, attempt_notes = _execute(script, options)
+        if not converged and network.loads:
+            continuation = _ramp_load_setpoint(session, network)
+            attempt_notes.extend(continuation)
+            converged = bool(session.Solution.Converged())
+            if continuation:
+                algorithm = "newton-continuation"
+                iterations = int(continuation[-1]["iterations"])
     except Exception as exc:  # backend boundary: любая ошибка движка остаётся диагностикой
         return SolveResult(
             status="invalid_model",
@@ -292,18 +300,26 @@ def _solve_once(network: Network, options: SolveOptions) -> SolveResult:
     if any(math.isnan(item.v_real_v) or math.isnan(item.v_imag_v) for item in voltages):
         converged = False
     pq_error = _pq_setpoint_error(network, topology, flows, voltages)
+    kcl_error = _kcl_residual(network, voltages, flows)
     if converged and pq_error > 1e-5:
         converged = False
         warnings = warnings + [
             "решатель сообщил сходимость, но уставки постоянной мощности не выполнены; "
             "режим сохранён как диагностика, а не как коллапс"
         ]
+    finite_voltage = all(math.isfinite(item.v_real_v) and math.isfinite(item.v_imag_v) for item in voltages)
+    if not converged and finite_voltage and pq_error <= 1e-5 and kcl_error <= 1e-8:
+        converged = True
+        warnings = warnings + [
+            "у носа кривой мощности OpenDSS не ставит флаг сходимости; "
+            "уставка PQ и баланс токов внутри прежних порогов 1e-5 и 1e-8 о.е."
+        ]
     status = "converged" if converged else "numerically_not_converged"
     diagnostics = {
         "attempts": attempt_notes,
         "physical_condition": "solved" if converged else "solver_did_not_converge",
         "collapse": False,
-        "kcl_residual_pu": _kcl_residual(network, voltages, flows),
+        "kcl_residual_pu": kcl_error,
         "pq_setpoint_error_pu": pq_error,
         "solved_taps": solved_taps,
         "_topology_terminal_bus": terminal_bus,
@@ -949,6 +965,132 @@ def _execute(script: list[str], options: SolveOptions):
         if converged:
             break
     return session, algorithm, iterations, converged, notes
+
+
+def _ramp_load_setpoint(session, network: Network) -> list[dict[str, Any]]:
+    """Доводит уставку с меньшего спроса. Плоский старт у носа кривой не доходит за 80 итераций."""
+    targets = []
+    for load in network.loads:
+        for element, kilowatts, kilovars in _load_setpoints(load):
+            targets.append((element.split(".", 1)[1], kilowatts, kilovars))
+    if not targets:
+        return []
+    notes = []
+    for fraction in (0.5, 0.8, 0.9, 0.96, 1.0):
+        _set_load_fraction(session, targets, fraction)
+        session.Text.Command("Set algorithm=newton")
+        session.Text.Command("Solve")
+        converged = bool(session.Solution.Converged())
+        iterations = int(session.Solution.Iterations())
+        notes.append({"continuation": fraction, "converged": converged, "iterations": iterations})
+        if fraction < 1.0 and not converged:
+            return notes
+    if not bool(session.Solution.Converged()):
+        for _ in range(8):
+            session.Text.Command("Solve")
+            converged = bool(session.Solution.Converged())
+            iterations = int(session.Solution.Iterations())
+            notes.append({"continuation": 1.0, "extra": True, "converged": converged, "iterations": iterations})
+            if converged:
+                break
+    return notes
+
+
+def _set_load_fraction(session, targets: list[tuple[str, float, float]], fraction: float) -> None:
+    for token, kilowatts, kilovars in targets:
+        session.Text.Command(f"Load.{token}.kW={kilowatts * fraction:.12g}")
+        session.Text.Command(f"Load.{token}.kvar={kilovars * fraction:.12g}")
+
+
+def solve_loads_incrementally(
+    base: Network, edited: Network, options: SolveOptions | None = None, *, _locked: bool = False
+) -> SolveResult:
+    """Одна сборка схемы, затем только kW/kvar нагрузок и повторный Solve.
+
+    Состав элементов не меняется. Если нагрузка перестала быть одним DSS-элементом,
+    нужна полная сборка. Результат сверяется с холодным solve тем же допуском снаружи.
+    """
+    if not _locked:
+        with _LOCK:
+            result = solve_loads_incrementally(base, edited, options, _locked=True)
+            result.diagnostics.pop("_topology_terminal_bus", None)
+            return result
+    if [item.id for item in base.loads] != [item.id for item in edited.loads]:
+        raise ValueError("инкрементальное обновление требует те же идентификаторы нагрузок")
+    for left, right in zip(base.loads, edited.loads, strict=True):
+        if _load_names(left) != _load_names(right):
+            raise ValueError(f"{left.id}: состав DSS-нагрузок изменился, нужна полная сборка")
+    options = options or SolveOptions()
+    topology = compile_topology(edited)
+    script, registry, warnings, terminal_bus = _render(base, topology, options)
+    from opendssdirect.OpenDSSDirect import OpenDSSDirect
+
+    notes: list[dict[str, Any]] = []
+    session = None
+    iterations = 0
+    converged = False
+    for candidate in ("newton", "normal"):
+        session = OpenDSSDirect().NewContext()
+        for command in script:
+            if command == "Solve":
+                break
+            session.Text.Command(command)
+        for load in edited.loads:
+            for element, kilowatts, kilovars in _load_setpoints(load):
+                token = element.split(".", 1)[1]
+                session.Text.Command(f"Load.{token}.kW={kilowatts:.12g}")
+                session.Text.Command(f"Load.{token}.kvar={kilovars:.12g}")
+        session.Text.Command(f"Set algorithm={candidate}")
+        session.Text.Command("Solve")
+        converged = bool(session.Solution.Converged())
+        iterations = int(session.Solution.Iterations())
+        notes.append({"algorithm": candidate, "converged": converged, "iterations": iterations})
+        if converged:
+            break
+    assert session is not None
+    voltages, flows = _read(session, topology, registry)
+    solved_taps = _transformer_taps(session, registry)
+    status = "converged" if converged else "numerically_not_converged"
+    return SolveResult(
+        status=status,
+        converged=converged,
+        iterations=iterations,
+        algorithm=notes[-1]["algorithm"] if notes else "normal",
+        tolerance=options.tolerance,
+        backend_name="opendss-dss-extensions",
+        backend_version=backend_version(),
+        voltages=voltages,
+        flows=flows,
+        islands=[
+            IslandReport(
+                id=island.id,
+                bus_ids=list(island.bus_ids),
+                source_ids=list(island.source_ids),
+                energized=island.energized,
+                reason=island.reason,
+            )
+            for island in topology.islands
+        ],
+        warnings=warnings,
+        diagnostics={
+            "attempts": notes,
+            "incremental_loads": True,
+            "solved_taps": solved_taps,
+            "_topology_terminal_bus": terminal_bus,
+        },
+        script="\n".join(script),
+        tap_positions={item.id: [winding.tap_pu for winding in item.windings] for item in edited.transformers},
+    )
+
+
+def _load_setpoints(load) -> list[tuple[str, float, float]]:
+    names = _load_names(load)
+    if len(names) == 1:
+        return [(names[0], sum(load.p_w.values()) / 1000.0, sum(load.q_var.values()) / 1000.0)]
+    return [
+        (name, load.p_w[phase] / 1000.0, load.q_var[phase] / 1000.0)
+        for phase, name in zip(load.phases, names, strict=True)
+    ]
 
 
 def _read(session, topology: Topology, registry: list[tuple[str, str]]):

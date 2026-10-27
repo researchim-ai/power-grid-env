@@ -62,6 +62,14 @@ def preflight(
     for switch in network.switches:
         if switch.kind == "disconnector" and switch.interrupt_current_a != 0:
             errors.append(f"{switch.id}: разъединитель получил ток отключения")
+    if task in {"rms", "harmonic", "short_circuit"}:
+        from power_grid_env.scope import compile_scope
+
+        scope = compile_scope(network, task)  # type: ignore[arg-type]
+        errors.extend(scope["errors"])
+        warnings.extend(scope["warnings"])
+    else:
+        scope = None
     initial_solve: dict[str, Any] | None = None
     if solve_initial and not errors:
         from power_grid_env.backend_opendss import solve_network
@@ -91,4 +99,5 @@ def preflight(
             for island in topology.islands
         ],
         "assumptions": list(network.assumptions),
+        "scope": scope,
     }

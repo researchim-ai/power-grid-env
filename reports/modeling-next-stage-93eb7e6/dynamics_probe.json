@@ -1,0 +1,59 @@
+{
+  "parameters": {
+    "pm": 0.5,
+    "e_pu": 1.1,
+    "v_pu": 1.0,
+    "x_pu": 0.3,
+    "inertia_s": 4.0,
+    "damping": 0.0,
+    "omega_s": 314.1592653589793
+  },
+  "jacobian_state": [
+    0.2,
+    314.1592653589793
+  ],
+  "dt_s": 0.01,
+  "actual_jacobian": [
+    [
+      1.0,
+      0.004999999987376214
+    ],
+    [
+      -0.7055972112368636,
+      1.0
+    ]
+  ],
+  "expected_residual_jacobian": [
+    [
+      1.0,
+      -0.0049999999873762135
+    ],
+    [
+      0.7055972112368636,
+      1.0
+    ]
+  ],
+  "max_absolute_difference": 1.4111944224737272,
+  "trajectory_residuals": [
+    {
+      "dt_s": 0.002,
+      "max_unscaled_residual_inf": 8.081504215828872e-13,
+      "finite": true
+    },
+    {
+      "dt_s": 0.01,
+      "max_unscaled_residual_inf": 1.053101703063497e-10,
+      "finite": true
+    },
+    {
+      "dt_s": 0.02,
+      "max_unscaled_residual_inf": 3.107263613078004e-10,
+      "finite": true
+    },
+    {
+      "dt_s": 0.05,
+      "max_unscaled_residual_inf": 7.867138036458943e-05,
+      "finite": true
+    }
+  ]
+}

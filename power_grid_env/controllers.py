@@ -1,7 +1,7 @@
 """Контракт контроллера и адаптеры.
 
-Subprocess не является песочницей недоверенного кода: он только отделяет
-протокол. Изоляция прав, файлов и сети для недоверенного кода сюда не входит.
+Обычный subprocess отделяет только протокол. isolated=True убирает переменные
+окружения родителя и ставит пустой рабочий каталог. Ядерной песочницы нет.
 """
 
 from __future__ import annotations
@@ -68,21 +68,38 @@ class InProcessController:
 
 
 class SubprocessController:
-    def __init__(self, command: list[str], timeout_s: float = 2.0) -> None:
+    def __init__(self, command: list[str], timeout_s: float = 2.0, *, isolated: bool = False) -> None:
         self.command = command
         self.timeout_s = timeout_s
+        self.isolated = isolated
         self.sent: list[dict[str, Any]] = []
-        env = os.environ.copy()
-        work = str(project_dir())
         installed = str(package_dir().parent)
-        env["PYTHONPATH"] = installed + os.pathsep + env.get("PYTHONPATH", "")
-        env["POWER_GRID_PROJECT"] = work
+        if isolated:
+            import tempfile
+
+            # Отдельный каталог и урезанное окружение. Это не ядерная песочница:
+            # нет отдельного сетевого пространства имён и seccomp.
+            self.scratch = tempfile.mkdtemp(prefix="pge-ctrl-")
+            env = {
+                "PATH": os.environ.get("PATH", ""),
+                "PYTHONPATH": installed,
+                "LANG": os.environ.get("LANG", "C.UTF-8"),
+                "POWER_GRID_PROJECT": self.scratch,
+            }
+            cwd = self.scratch
+        else:
+            self.scratch = None
+            env = os.environ.copy()
+            work = str(project_dir())
+            env["PYTHONPATH"] = installed + os.pathsep + env.get("PYTHONPATH", "")
+            env["POWER_GRID_PROJECT"] = work
+            cwd = work
         self.process = subprocess.Popen(
             command,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            cwd=work,
+            cwd=cwd,
             env=env,
             start_new_session=True,
         )

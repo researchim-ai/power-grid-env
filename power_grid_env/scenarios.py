@@ -31,6 +31,7 @@ class Scenario(BaseModel):
     measurement_period_s: float | None = None
     protection: list[dict[str, Any]] = Field(default_factory=list)
     load_profile: dict[str, list[list[float]]] = Field(default_factory=dict)
+    trace_limit: int | None = None
     what_if_quota: int = 4
     maintenance_switch_ids: list[str] = Field(default_factory=list)
     model_mismatch_scale: dict[str, float] | None = None
@@ -51,6 +52,8 @@ class Scenario(BaseModel):
             raise ValueError("measurement_period_s должен быть положительным")
         if self.fault_r_ohm < 0:
             raise ValueError("fault_r_ohm не может быть отрицательным")
+        if self.trace_limit is not None and self.trace_limit < 1:
+            raise ValueError("trace_limit должен быть положительным")
         return self
 
     def public_config(self, network_dump: dict[str, Any]) -> dict[str, Any]:

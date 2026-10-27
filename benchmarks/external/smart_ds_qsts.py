@@ -360,6 +360,87 @@ def _timing(samples: list[float]) -> dict[str, float]:
     return {"cold_s": samples[0], "warm_p50_s": pct(0.50), "warm_p95_s": pct(0.95), "n": float(len(samples))}
 
 
+def engine_window(steps: int = 2) -> dict[str, Any]:
+    """Те же множители P и Q, что у прямого solve, но через Engine и его JSON-снимок.
+
+    Окно короткое: полный год здесь не считается. Второй фидер без своих CSV не подключается.
+    """
+    master = FEEDER / "Master.dss"
+    if steps < 1 or not master.exists():
+        return {"verdict": "data_unavailable", "reason": "мастер фидера не скачан"}
+    profiles = _required_profiles(FEEDER / "LoadShapes.dss")
+    if any(not path.exists() for path in profiles.values()):
+        return {"verdict": "data_unavailable", "reason": "нет CSV профилей этого фидера"}
+    work = _work_copy(FEEDER)
+    from power_grid_env.backend_opendss import solve_network
+    from power_grid_env.importer import import_network
+    from power_grid_env.scenarios import Scenario
+    from power_grid_env.simulation import Engine
+
+    network, report = import_network(work / "Master.dss")
+    if network is None:
+        return {"verdict": "unsupported", "errors": report.get("errors")}
+    base_p = {load.id: dict(load.p_w) for load in network.loads}
+    base_q = {load.id: dict(load.q_var) for load in network.loads}
+    shapes = _shape_table(work / "LoadShapes.dss", work)
+    load_shape = _load_shapes(work / "Loads.dss")
+    direct = network.model_copy(deep=True)
+    direct_rows = []
+    for step in range(steps):
+        _apply(direct, base_p, base_q, load_shape, shapes, step)
+        solved = solve_network(direct)
+        if solved.status != "converged":
+            return {"verdict": "fail", "reason": f"прямой шаг {step} не сошёлся", "engine": True}
+        direct_rows.append(_imported_rows(direct, solved))
+    profile: dict[str, list[list[float]]] = {}
+    for load in network.loads:
+        shape = shapes.get(load_shape.get(load.id, ""), None)
+        if shape is None:
+            continue
+        active, reactive = shape
+        profile[load.id] = [[step * 900.0, active[step], reactive[step]] for step in range(steps)]
+    scenario = Scenario(
+        id="smart-ds-engine",
+        horizon_s=900.0 * max(steps - 1, 1),
+        control_interval_s=900.0,
+        settle_s=1.0e12,
+        load_profile=profile,
+    )
+    engine = Engine(network, scenario)
+    engine.reset()
+    gaps = [_voltage_gap(direct_rows[0], engine.net, engine.last_result)]
+    if steps >= 2:
+        snapshot = json.loads(json.dumps(engine.snapshot()))
+        restored = Engine(network.model_copy(deep=True), scenario)
+        restored.restore(snapshot)
+        restored.step_control({"kind": "hold"})
+        engine.step_control({"kind": "hold"})
+        gaps.append(_voltage_gap(direct_rows[1], engine.net, engine.last_result))
+        gaps.append(_voltage_gap(direct_rows[1], restored.net, restored.last_result))
+    for step in range(2, steps):
+        engine.step_control({"kind": "hold"})
+        gaps.append(_voltage_gap(direct_rows[step], engine.net, engine.last_result))
+    peak = max((item[0] for item in gaps), default=None)
+    verdict = "pass" if gaps and all(item[1] == "pass" and item[0] <= 1e-5 for item in gaps) else "fail"
+    return {
+        "verdict": verdict,
+        "engine": True,
+        "steps": steps,
+        "max_voltage_error_pu": peak,
+        "gate_voltage_pu": 1e-5,
+        "evidence": "conversion_consistency",
+        "q_profile": "third column of load_profile",
+    }
+
+
+def _voltage_gap(reference_rows: list[dict[str, Any]], network: Any, solved: Any) -> tuple[float, str]:
+    if solved is None or solved.status != "converged":
+        return float("inf"), "fail"
+    comparison = compare_buses(_as_native(reference_rows), _imported_rows(network, solved))
+    error = comparison.get("max_voltage_error_pu")
+    return (float("inf") if error is None else float(error)), str(comparison["verdict"])
+
+
 def main() -> None:
     import argparse
 

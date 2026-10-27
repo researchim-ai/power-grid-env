@@ -1,0 +1,102 @@
+{
+  "date": "2026-10-27",
+  "baseline_commit": "93eb7e6d775fd3bfeb83a3a4b1438511b17cfab3",
+  "dirty_source_diff_sha256": "499632d4eede23fdcb362bf2bb4df6d98da541a3ecc18182735a4db4edcb2fc4",
+  "source_sha256": {
+    "power_grid_env/__init__.py": "37a1f14fd0fba08719afb0862b1ac980794258a24a4dec9d12b57994836d6d03",
+    "power_grid_env/acceptance.py": "810c59c0ea0bc2fd861240988983ce1493d3205967143bada3c02071430228e2",
+    "power_grid_env/analysis.py": "ae1b30221f45fc27cbf232e8c841ecef380fff2b814036d7d419f64df500dc3b",
+    "power_grid_env/backend_opendss.py": "dc9353e79951d0d48cadf54e847bf730c86924697ee1f5b4ff9a6a04ffbfc7fe",
+    "power_grid_env/backend_process.py": "3a291d462c6014e0525b999d51ac3451ce2d6ab862cce3f2b03a9d666fa588ee",
+    "power_grid_env/backend_worker.py": "3482fd02f29d9820384379b622949107a849603884bca289e2db5d270debfbff",
+    "power_grid_env/benchmarks.py": "9580aaec75a2d719fe1f2059df85aa742623c5ba9dc25878368a4c08e3ccd364",
+    "power_grid_env/build.py": "7f955b4d627c5be1cec0c7b485b952ae1126aa90a9b5ba0ff6f2dba098849a41",
+    "power_grid_env/capabilities.py": "37f436d50faf065580adf6f4f4aa0b75be2c009683a3e0166558a6f28ef38955",
+    "power_grid_env/checks.py": "632c6d11aeb58ada353155d8a3322c3a6f148d89e333c911743b9a486f38ee2e",
+    "power_grid_env/cli.py": "b0f7b660ac1a7325ae19af24a17ab54e0b6b245c0e9a2d3517352766fcd8cec3",
+    "power_grid_env/controllers.py": "f4724a2e9146dbf18a373ff63dfaff999ff2da82ccb7c3edc7e0338206fdcf4f",
+    "power_grid_env/conventions.py": "316ef476cf780daf37b61e86aa68b3f157f44065a0026da522bb62a0f28ccbc6",
+    "power_grid_env/dataset.py": "c090056426acc24f94cc52e7fcdecb50a5487b98ee00f1a9ac2a1aef00368312",
+    "power_grid_env/der.py": "ab76909b15ec784e5bf65c7796df65dd88799870e42317565e286efc2e8e66f0",
+    "power_grid_env/dss_devices.py": "31b19b3f846c0880ab68030d1960fbc84efb426c90aa2892288b4fc23422ec47",
+    "power_grid_env/dynamics.py": "9d9574ba4019e486ff0789f548f45042a0938b6ef9c2587c8334c6f5ae5dd550",
+    "power_grid_env/emt.py": "d4d833ac25a38ef4031bbd2fc1dfbf7f140fa8e9a6bf1e3bc1294323d4dc87db",
+    "power_grid_env/evaluator.py": "33ae13b1de1f551c9117b1f0fb32ac6107d33f3db717adef5b46edd648e46b27",
+    "power_grid_env/gym_env.py": "5d18cfcb752b9ddd2866b15256a61b8474a72ffd2345292cd94500d2413bebca",
+    "power_grid_env/heuristic.py": "ed59a6632880e9ff61da8db4860699e992935516d52ba545cffa8614d35b61f5",
+    "power_grid_env/importer.py": "7de44bbf577dc4657f6ee28340050c2f3bda6aa126226b1073bbf5110831ef2b",
+    "power_grid_env/industrial.py": "4f8241558dcc3724b936d64e32b92b40f0ef6e1e89cebba908c7af73a68e768a",
+    "power_grid_env/ipc.py": "4e7b6cf9f9537f9d7149192a68d07c3ff47f4265a8be2254c8ef42da1afa5e15",
+    "power_grid_env/llm_tools.py": "1e77e3d2914035d53e65bce767111681fcb4eeb8993bd023f08a5499c551385b",
+    "power_grid_env/metrics.py": "c7d9104eb79fd83c39ad44011ed46882f92928a372794e955c8d44d3fba53127",
+    "power_grid_env/model.py": "708acd468d57c5dd8c87fc87b30e663535d45946bb3208c0950c0be2c03657b9",
+    "power_grid_env/network_opf.py": "b114207c014b189b56b9f40f47ac31a113167b5baa8ac9abcd8383ee816c6e69",
+    "power_grid_env/numerical_suite.py": "be5ace21c7e1bd6ee3350c516607868458fed0f12158583def9553178651171b",
+    "power_grid_env/paths.py": "41d29a1fac11212e3a56e8f94e0aba5f106769874c97981aeb24ada4188adf04",
+    "power_grid_env/preflight.py": "0f0e036d934ac1d7358505e9f9a71272173ef11a28d711c0c688b659696da27c",
+    "power_grid_env/protection.py": "cae27da989e5aced4672c6cf623e0c505dbaef89db0406f3b5d5ebf9dbd11da6",
+    "power_grid_env/qualify.py": "9cddf845f86eb9d8a4f2ef7f34add3db10964b4e5612ea54494052db21b8ac68",
+    "power_grid_env/reference.py": "6454e836266561c4f5dba789aa47067ac822033467197b93d131a1baab722b39",
+    "power_grid_env/report.py": "6bac2ccf5ee3c4456901394d33180112b396fa5039c39911c656d8348922a149",
+    "power_grid_env/results.py": "71247efe97cd494a1057f0744243693bb847e3aca2b9c3d778ee8f4964cacd36",
+    "power_grid_env/runner.py": "1284f96db5839bb643f71c04b38153289b3650b3f3c39cc732f723ffdcf118b2",
+    "power_grid_env/scenarios.py": "310f0d95490ee5f99015dddef45212ab78c53dc35d7728151619ec51d20e40d2",
+    "power_grid_env/schema_export.py": "275593ba2d0107996b074ac3efe2058c8687ebf5ed05817b97be6cb46030235c",
+    "power_grid_env/simulation.py": "7d33958b006edc390c86f5ccef22a81dc3d8d00556d8ee66c7f91181eb84bcfa",
+    "power_grid_env/study.py": "cc5be924846408e1ae2e070260a73e1368057b14e0519e3fb612bfdc5ea51872",
+    "power_grid_env/symmetric_ac.py": "59e3b2ec235be7b88e549d66cd51cd8b954728234674a7e6c88864b1be2220e5",
+    "power_grid_env/tasks.py": "8021bf5de61ff4d7f3242c2269b058b32480621344b64928237d31c99fd881ab",
+    "power_grid_env/topology.py": "821fb4e782c139c4c9854653e2727ee5d9ebff79706d344e52ccdebed6d17638",
+    "power_grid_env/viewer.py": "a281e6d93f15e0d60b1ee63839b6851c951b927bb7cfc6092ddab2ae028cf3ca",
+    "power_grid_env/vlm.py": "eea3801035484f9b03e818be2af90e6b820407e3692be6ccbba847b93ee18b08",
+    "power_grid_env/workflow.py": "566d4a44e930584799f731fa7e2fdc3b52e360eb0d35ea26cfc69dabbbecffbe",
+    "power_grid_env/workspace.py": "c35da699621a6c8f9841ffc1b4bc0ae7018709877e3d32150070faa3a2ee18f3",
+    "benchmarks/__init__.py": "6a44196b2c8d4ab443a0ccb7fb66b020602022fd4c11141673cbb9a5b842778a",
+    "benchmarks/external/__init__.py": "2461cee1151461f87c38a230203774f0143c7354fbb024f99d8df6efce35ce87",
+    "benchmarks/external/_common.py": "f2cb77b409c2cf740547ea6a14cda828abb0bd34b3fd43624f09750a5a57765e",
+    "benchmarks/external/baselines.py": "72ca778c7b33bb85dfc4cc7b0ac806c4f840ac404af758ef243633ef4720c036",
+    "benchmarks/external/compare.py": "d456d1ad535d57c813b76acf0e1aa0bfc8e1358d62316b8ac13c3ee9629ed894",
+    "benchmarks/external/derived_scenarios.py": "1671fc0216772ff500f27ddffd185051a366a3107633443ba8422e159cf1beb4",
+    "benchmarks/external/enwl_profiles.py": "b963f7b15705c4df038ad7d3af2d20c667fabed0ef7baaca0cb8f3cf97eade81",
+    "benchmarks/external/extract_native_reference.py": "14f7ab4ebbb13c83377d0cb8047fa689346cc21cfb7f3e1948c7beae26eed136",
+    "benchmarks/external/fetch.py": "d9802b3bed6ede6c190ac179e75a54ebea83e7eedfc2e4aa7fd9c2b4ad331ab1",
+    "benchmarks/external/field_gap.py": "caf9a2a422945fafdd57f1e0b5ebe4585eba82620115624d86fcca5f84ec7f0d",
+    "benchmarks/external/normalize.py": "d3b60a7fb08674bcd942c18463f4ccc94daf84c8323e847e85bd425690e90914",
+    "benchmarks/external/pglib_opf.py": "a77be76a44fe19b2ebdce82a697b68d2ab6140b6b1ba40f5267100c5bc718e23",
+    "benchmarks/external/run.py": "eb572dc2fb8003766d9b669693c3067e8c24974a4060ce33e76e1a110638cc40",
+    "benchmarks/external/simbench_network.py": "450f4f04bae96468f594cfec01d22cd6fd733def0164660e5582123c02f97dce",
+    "benchmarks/external/smart_ds_qsts.py": "ede665da345e0b4d055c383c1f010f2e221d21071021ffa44cbad0a5c1c83993"
+  },
+  "tests": {
+    "full_sandbox": {
+      "total": 73,
+      "passed": 72,
+      "failed": 1,
+      "failure": "HTTP server socket PermissionError in test_study_reload_cancel_and_public_view_hide_privileged_data"
+    },
+    "separate_unsandboxed_retry": {
+      "passed": 1,
+      "failed": 0
+    },
+    "interpretation": "73 tests verified across two runs; not one clean full run"
+  },
+  "findings": [
+    {
+      "id": "DYN-JACOBIAN-SIGN",
+      "severity": "qualification_blocker",
+      "source": "power_grid_env/dynamics.py",
+      "evidence": "dynamics_probe.json",
+      "claim": "Trapezoidal residual requires I-h/2*df/dx; implementation uses plus. Small steps can converge; not all trajectories are invalid."
+    },
+    {
+      "id": "QUALIFY-DECLARATIVE",
+      "claim": "Release flags are static declarations, not executable aggregate physical qualification."
+    },
+    {
+      "id": "SCALE-SCOPE",
+      "claim": "Long-chain PQ feasibility and node-count performance are different questions; one radial case does not establish city coverage."
+    }
+  ],
+  "competitive_superiority_demonstrated": false,
+  "core_modified_by_this_assessment": false
+}
