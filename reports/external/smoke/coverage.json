@@ -1,0 +1,26 @@
+{
+  "cases": [
+    {
+      "id": "ieee13",
+      "coverage": {
+        "counts": {
+          "directive": 5,
+          "transferred": 74
+        },
+        "unsupported": [],
+        "errors": []
+      }
+    },
+    {
+      "id": "enwl-network23-feeder3",
+      "coverage": {
+        "counts": {
+          "transferred": 66,
+          "ignored_non_electrical": 114
+        },
+        "unsupported": [],
+        "errors": []
+      }
+    }
+  ]
+}

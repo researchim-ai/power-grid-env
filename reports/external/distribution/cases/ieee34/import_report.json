@@ -1,0 +1,1813 @@
+{
+  "source": "/home/user/workspace/power-grid-env/data/external/raw/ieee-pes/34Bus/ieee34Mod1.dss",
+  "source_sha256": "f1e732b7ea61914be307dde97b0b73398038af66a09e35dda266d409e6ebf7a5",
+  "format": "dss",
+  "errors": [],
+  "warnings": [],
+  "mappings": [
+    {
+      "from": "Transformer.SubXF",
+      "to": "transformer:SubXF",
+      "vector_group": "Dyn1"
+    },
+    {
+      "from": "Transformer.XFM1",
+      "to": "transformer:XFM1",
+      "vector_group": "YNyn0"
+    },
+    {
+      "from": "Transformer.reg1a",
+      "to": "transformer:reg1a",
+      "vector_group": "Ii0"
+    },
+    {
+      "from": "Transformer.reg1b",
+      "to": "transformer:reg1b",
+      "vector_group": "Ii0"
+    },
+    {
+      "from": "Transformer.reg1c",
+      "to": "transformer:reg1c",
+      "vector_group": "Ii0"
+    },
+    {
+      "from": "Transformer.reg2a",
+      "to": "transformer:reg2a",
+      "vector_group": "Ii0"
+    },
+    {
+      "from": "Transformer.reg2b",
+      "to": "transformer:reg2b",
+      "vector_group": "Ii0"
+    },
+    {
+      "from": "Transformer.reg2c",
+      "to": "transformer:reg2c",
+      "vector_group": "Ii0"
+    },
+    {
+      "from": "Line.L1",
+      "to": "line:L1",
+      "r_ohm": 0.65320909044,
+      "x_ohm": 0.65198749914,
+      "length_m": 786.384,
+      "note": "LineCode.300: явная матрица умножена на длину 2.58 kft"
+    },
+    {
+      "from": "Line.L2",
+      "to": "line:L2",
+      "r_ohm": 0.4380045451399999,
+      "x_ohm": 0.43718541608999995,
+      "length_m": 527.304,
+      "note": "LineCode.300: явная матрица умножена на длину 1.73 kft"
+    },
+    {
+      "from": "Line.L3",
+      "to": "line:L3",
+      "r_ohm": 8.16004999414,
+      "x_ohm": 8.14478957259,
+      "length_m": 9823.704,
+      "note": "LineCode.300: явная матрица умножена на длину 32.23 kft"
+    },
+    {
+      "from": "Line.L4",
+      "to": "line:L4",
+      "r_ohm": 3.077327232,
+      "x_ohm": 1.6329263800000002,
+      "length_m": 1769.0592000000001,
+      "note": "LineCode.303: явная матрица умножена на длину 5.804 kft"
+    },
+    {
+      "from": "Line.L5",
+      "to": "line:L5",
+      "r_ohm": 9.494318175,
+      "x_ohm": 9.4765624875,
+      "length_m": 11430.0,
+      "note": "LineCode.300: явная матрица умножена на длину 37.5 kft"
+    },
+    {
+      "from": "Line.L6",
+      "to": "line:L6",
+      "r_ohm": 7.527095449139999,
+      "x_ohm": 7.51301874009,
+      "length_m": 9061.704,
+      "note": "LineCode.300: явная матрица умножена на длину 29.73 kft"
+    },
+    {
+      "from": "Line.L7",
+      "to": "line:L7",
+      "r_ohm": 0.0036553030300000003,
+      "x_ohm": 0.00267329545,
+      "length_m": 3.048,
+      "note": "LineCode.301: явная матрица умножена на длину 0.01 kft"
+    },
+    {
+      "from": "Line.L8",
+      "to": "line:L8",
+      "r_ohm": 0.9066556799999999,
+      "x_ohm": 0.48109994999999994,
+      "length_m": 521.208,
+      "note": "LineCode.302: явная матрица умножена на длину 1.71 kft"
+    },
+    {
+      "from": "Line.L9",
+      "to": "line:L9",
+      "r_ohm": 3.7320643936300004,
+      "x_ohm": 2.7294346544500003,
+      "length_m": 3112.0080000000003,
+      "note": "LineCode.301: явная матрица умножена на длину 10.21 kft"
+    },
+    {
+      "from": "Line.L10",
+      "to": "line:L10",
+      "r_ohm": 25.5295152,
+      "x_ohm": 13.54676175,
+      "length_m": 14676.12,
+      "note": "LineCode.302: явная матрица умножена на длину 48.15 kft"
+    },
+    {
+      "from": "Line.L11",
+      "to": "line:L11",
+      "r_ohm": 7.28505792,
+      "x_ohm": 3.8656803,
+      "length_m": 4187.952,
+      "note": "LineCode.302: явная матрица умножена на длину 13.74 kft"
+    },
+    {
+      "from": "Line.L12",
+      "to": "line:L12",
+      "r_ohm": 1.6065302399999999,
+      "x_ohm": 0.85247535,
+      "length_m": 923.544,
+      "note": "LineCode.303: явная матрица умножена на длину 3.03 kft"
+    },
+    {
+      "from": "Line.L13",
+      "to": "line:L13",
+      "r_ohm": 0.3070454545199999,
+      "x_ohm": 0.22455681779999997,
+      "length_m": 256.032,
+      "note": "LineCode.301: явная матрица умножена на длину 0.84 kft"
+    },
+    {
+      "from": "Line.L14",
+      "to": "line:L14",
+      "r_ohm": 7.471439393320001,
+      "x_ohm": 5.4642158998,
+      "length_m": 6230.112000000001,
+      "note": "LineCode.301: явная матрица умножена на длину 20.44 kft"
+    },
+    {
+      "from": "Line.L15",
+      "to": "line:L15",
+      "r_ohm": 0.19007575756,
+      "x_ohm": 0.1390113634,
+      "length_m": 158.496,
+      "note": "LineCode.301: явная матрица умножена на длину 0.52 kft"
+    },
+    {
+      "from": "Line.L16",
+      "to": "line:L16",
+      "r_ohm": 1.7910984847000002,
+      "x_ohm": 1.3099147705,
+      "length_m": 1493.5200000000002,
+      "note": "LineCode.301: явная матрица умножена на длину 4.9 kft"
+    },
+    {
+      "from": "Line.L17",
+      "to": "line:L17",
+      "r_ohm": 0.73837121206,
+      "x_ohm": 0.5400056809,
+      "length_m": 615.696,
+      "note": "LineCode.301: явная матрица умножена на длину 2.02 kft"
+    },
+    {
+      "from": "Line.L18",
+      "to": "line:L18",
+      "r_ohm": 0.10234848484,
+      "x_ohm": 0.0748522726,
+      "length_m": 85.34400000000001,
+      "note": "LineCode.301: явная матрица умножена на длину 0.28 kft"
+    },
+    {
+      "from": "Line.L19",
+      "to": "line:L19",
+      "r_ohm": 0.31435606057999993,
+      "x_ohm": 0.22990340869999998,
+      "length_m": 262.128,
+      "note": "LineCode.301: явная матрица умножена на длину 0.86 kft"
+    },
+    {
+      "from": "Line.L20",
+      "to": "line:L20",
+      "r_ohm": 0.10234848484,
+      "x_ohm": 0.0748522726,
+      "length_m": 85.34400000000001,
+      "note": "LineCode.301: явная матрица умножена на длину 0.28 kft"
+    },
+    {
+      "from": "Line.L21",
+      "to": "line:L21",
+      "r_ohm": 0.49346590905000004,
+      "x_ohm": 0.36089488575,
+      "length_m": 411.48,
+      "note": "LineCode.301: явная матрица умножена на длину 1.35 kft"
+    },
+    {
+      "from": "Line.L22",
+      "to": "line:L22",
+      "r_ohm": 1.33053030292,
+      "x_ohm": 0.9730795438,
+      "length_m": 1109.472,
+      "note": "LineCode.301: явная матрица умножена на длину 3.64 kft"
+    },
+    {
+      "from": "Line.L23",
+      "to": "line:L23",
+      "r_ohm": 0.19373106059,
+      "x_ohm": 0.14168465885,
+      "length_m": 161.544,
+      "note": "LineCode.301: явная матрица умножена на длину 0.53 kft"
+    },
+    {
+      "from": "Line.L24",
+      "to": "line:L24",
+      "r_ohm": 0.11331439392999999,
+      "x_ohm": 0.08287215895,
+      "length_m": 94.488,
+      "note": "LineCode.301: явная матрица умножена на длину 0.31 kft"
+    },
+    {
+      "from": "Line.L25",
+      "to": "line:L25",
+      "r_ohm": 0.0036553030300000003,
+      "x_ohm": 0.00267329545,
+      "length_m": 3.048,
+      "note": "LineCode.301: явная матрица умножена на длину 0.01 kft"
+    },
+    {
+      "from": "Line.L26",
+      "to": "line:L26",
+      "r_ohm": 12.36975264,
+      "x_ohm": 6.563778849999999,
+      "length_m": 7110.9839999999995,
+      "note": "LineCode.303: явная матрица умножена на длину 23.33 kft"
+    },
+    {
+      "from": "Line.L27",
+      "to": "line:L27",
+      "r_ohm": 13.462481059489999,
+      "x_ohm": 9.84574714235,
+      "length_m": 11225.784,
+      "note": "LineCode.301: явная матрица умножена на длину 36.83 kft"
+    },
+    {
+      "from": "Line.L28",
+      "to": "line:L28",
+      "r_ohm": 0.8589369600000001,
+      "x_ohm": 0.45577890000000004,
+      "length_m": 493.77600000000007,
+      "note": "LineCode.303: явная матрица умножена на длину 1.62 kft"
+    },
+    {
+      "from": "Line.L29",
+      "to": "line:L29",
+      "r_ohm": 2.13104166649,
+      "x_ohm": 1.55853124735,
+      "length_m": 1776.9840000000002,
+      "note": "LineCode.301: явная матрица умножена на длину 5.83 kft"
+    },
+    {
+      "from": "Line.L30",
+      "to": "line:L30",
+      "r_ohm": 0.9796212120400001,
+      "x_ohm": 0.7164431806,
+      "length_m": 816.864,
+      "note": "LineCode.301: явная матрица умножена на длину 2.68 kft"
+    },
+    {
+      "from": "Line.L31",
+      "to": "line:L31",
+      "r_ohm": 1.7688358800000001,
+      "x_ohm": 1.30815162,
+      "length_m": 1481.3280000000002,
+      "note": "LineCode.304: явная матрица умножена на длину 4.86 kft"
+    },
+    {
+      "from": "Line.L32",
+      "to": "line:L32",
+      "r_ohm": 2.6735999980800003,
+      "x_ohm": 2.6685999964800002,
+      "length_m": 3218.688,
+      "note": "LineCode.300: явная матрица умножена на длину 10.56 kft"
+    },
+    {
+      "from": "Capacitor.C844",
+      "to": "shunt:C844",
+      "kvar": 300.0
+    },
+    {
+      "from": "Capacitor.C848",
+      "to": "shunt:C848",
+      "kvar": 450.0
+    },
+    {
+      "from": "RegControl.creg1a",
+      "to": "transformer:reg1a.ltc"
+    },
+    {
+      "from": "RegControl.creg1b",
+      "to": "transformer:reg1b.ltc"
+    },
+    {
+      "from": "RegControl.creg1c",
+      "to": "transformer:reg1c.ltc"
+    },
+    {
+      "from": "RegControl.creg2a",
+      "to": "transformer:reg2a.ltc"
+    },
+    {
+      "from": "RegControl.creg2b",
+      "to": "transformer:reg2b.ltc"
+    },
+    {
+      "from": "RegControl.creg2c",
+      "to": "transformer:reg2c.ltc"
+    },
+    {
+      "from": "Load.S860",
+      "to": "load:S860",
+      "kw": 60.0,
+      "kvar": 48.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S840",
+      "to": "load:S840",
+      "kw": 27.0,
+      "kvar": 21.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S844",
+      "to": "load:S844",
+      "kw": 405.0,
+      "kvar": 315.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S848",
+      "to": "load:S848",
+      "kw": 60.0,
+      "kvar": 48.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.S830a",
+      "to": "load:S830a",
+      "kw": 10.0,
+      "kvar": 5.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.S830b",
+      "to": "load:S830b",
+      "kw": 10.0,
+      "kvar": 5.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.S830c",
+      "to": "load:S830c",
+      "kw": 25.0,
+      "kvar": 10.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.S890",
+      "to": "load:S890",
+      "kw": 450.0,
+      "kvar": 225.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D802_806sb",
+      "to": "load:D802_806sb",
+      "kw": 15.0,
+      "kvar": 7.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D802_806rb",
+      "to": "load:D802_806rb",
+      "kw": 15.0,
+      "kvar": 7.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D802_806sc",
+      "to": "load:D802_806sc",
+      "kw": 12.5,
+      "kvar": 7.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D802_806rc",
+      "to": "load:D802_806rc",
+      "kw": 12.5,
+      "kvar": 7.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D808_810sb",
+      "to": "load:D808_810sb",
+      "kw": 8.0,
+      "kvar": 4.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D808_810rb",
+      "to": "load:D808_810rb",
+      "kw": 8.0,
+      "kvar": 4.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D818_820sa",
+      "to": "load:D818_820sa",
+      "kw": 17.0,
+      "kvar": 8.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D818_820ra",
+      "to": "load:D818_820ra",
+      "kw": 17.0,
+      "kvar": 8.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D820_822sa",
+      "to": "load:D820_822sa",
+      "kw": 67.5,
+      "kvar": 35.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D820_822ra",
+      "to": "load:D820_822ra",
+      "kw": 67.5,
+      "kvar": 35.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D816_824sb",
+      "to": "load:D816_824sb",
+      "kw": 2.5,
+      "kvar": 1.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D816_824rb",
+      "to": "load:D816_824rb",
+      "kw": 2.5,
+      "kvar": 1.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D824_826sb",
+      "to": "load:D824_826sb",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D824_826rb",
+      "to": "load:D824_826rb",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D824_828sc",
+      "to": "load:D824_828sc",
+      "kw": 2.0,
+      "kvar": 1.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D824_828rc",
+      "to": "load:D824_828rc",
+      "kw": 2.0,
+      "kvar": 1.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D828_830sa",
+      "to": "load:D828_830sa",
+      "kw": 3.5,
+      "kvar": 1.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D828_830ra",
+      "to": "load:D828_830ra",
+      "kw": 3.5,
+      "kvar": 1.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D854_856sb",
+      "to": "load:D854_856sb",
+      "kw": 2.0,
+      "kvar": 1.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D854_856rb",
+      "to": "load:D854_856rb",
+      "kw": 2.0,
+      "kvar": 1.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D832_858sa",
+      "to": "load:D832_858sa",
+      "kw": 3.5,
+      "kvar": 1.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D832_858ra",
+      "to": "load:D832_858ra",
+      "kw": 3.5,
+      "kvar": 1.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D832_858sb",
+      "to": "load:D832_858sb",
+      "kw": 1.0,
+      "kvar": 0.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D832_858rb",
+      "to": "load:D832_858rb",
+      "kw": 1.0,
+      "kvar": 0.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D832_858sc",
+      "to": "load:D832_858sc",
+      "kw": 3.0,
+      "kvar": 1.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D832_858rc",
+      "to": "load:D832_858rc",
+      "kw": 3.0,
+      "kvar": 1.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D858_864sb",
+      "to": "load:D858_864sb",
+      "kw": 1.0,
+      "kvar": 0.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D858_864rb",
+      "to": "load:D858_864rb",
+      "kw": 1.0,
+      "kvar": 0.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D858_834sa",
+      "to": "load:D858_834sa",
+      "kw": 2.0,
+      "kvar": 1.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D858_834ra",
+      "to": "load:D858_834ra",
+      "kw": 2.0,
+      "kvar": 1.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D858_834sb",
+      "to": "load:D858_834sb",
+      "kw": 7.5,
+      "kvar": 4.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D858_834rb",
+      "to": "load:D858_834rb",
+      "kw": 7.5,
+      "kvar": 4.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D858_834sc",
+      "to": "load:D858_834sc",
+      "kw": 6.5,
+      "kvar": 3.5,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D858_834rc",
+      "to": "load:D858_834rc",
+      "kw": 6.5,
+      "kvar": 3.5,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D834_860sa",
+      "to": "load:D834_860sa",
+      "kw": 8.0,
+      "kvar": 4.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D834_860ra",
+      "to": "load:D834_860ra",
+      "kw": 8.0,
+      "kvar": 4.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D834_860sb",
+      "to": "load:D834_860sb",
+      "kw": 10.0,
+      "kvar": 5.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D834_860rb",
+      "to": "load:D834_860rb",
+      "kw": 10.0,
+      "kvar": 5.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D834_860sc",
+      "to": "load:D834_860sc",
+      "kw": 55.0,
+      "kvar": 27.5,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D834_860rc",
+      "to": "load:D834_860rc",
+      "kw": 55.0,
+      "kvar": 27.5,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D860_836sa",
+      "to": "load:D860_836sa",
+      "kw": 15.0,
+      "kvar": 7.5,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D860_836ra",
+      "to": "load:D860_836ra",
+      "kw": 15.0,
+      "kvar": 7.5,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D860_836sb",
+      "to": "load:D860_836sb",
+      "kw": 5.0,
+      "kvar": 3.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D860_836rb",
+      "to": "load:D860_836rb",
+      "kw": 5.0,
+      "kvar": 3.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D860_836sc",
+      "to": "load:D860_836sc",
+      "kw": 21.0,
+      "kvar": 11.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D860_836rc",
+      "to": "load:D860_836rc",
+      "kw": 21.0,
+      "kvar": 11.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D836_840sa",
+      "to": "load:D836_840sa",
+      "kw": 9.0,
+      "kvar": 4.5,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D836_840ra",
+      "to": "load:D836_840ra",
+      "kw": 9.0,
+      "kvar": 4.5,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D836_840sb",
+      "to": "load:D836_840sb",
+      "kw": 11.0,
+      "kvar": 5.5,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D836_840rb",
+      "to": "load:D836_840rb",
+      "kw": 11.0,
+      "kvar": 5.5,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.D862_838sb",
+      "to": "load:D862_838sb",
+      "kw": 14.0,
+      "kvar": 7.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D862_838rb",
+      "to": "load:D862_838rb",
+      "kw": 14.0,
+      "kvar": 7.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D842_844sa",
+      "to": "load:D842_844sa",
+      "kw": 4.5,
+      "kvar": 2.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D842_844ra",
+      "to": "load:D842_844ra",
+      "kw": 4.5,
+      "kvar": 2.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D844_846sb",
+      "to": "load:D844_846sb",
+      "kw": 12.5,
+      "kvar": 6.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D844_846rb",
+      "to": "load:D844_846rb",
+      "kw": 12.5,
+      "kvar": 6.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D844_846sc",
+      "to": "load:D844_846sc",
+      "kw": 10.0,
+      "kvar": 5.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D844_846rc",
+      "to": "load:D844_846rc",
+      "kw": 10.0,
+      "kvar": 5.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D846_848sb",
+      "to": "load:D846_848sb",
+      "kw": 11.5,
+      "kvar": 5.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.D846_848rb",
+      "to": "load:D846_848rb",
+      "kw": 11.5,
+      "kvar": 5.5,
+      "grounding": "solid"
+    },
+    {
+      "from": "Vsource.source",
+      "to": "source",
+      "r_ohm": 0.0057735605539899065,
+      "x_ohm": 0.023094242215959626
+    }
+  ],
+  "approximations": [
+    "sidecar нет: conn=wye в OpenDSS без узла нейтрали записывается как solid и попадает в отчёт",
+    "s_base_va=10 МВА — только отчётная база, омы линий не масштабируются",
+    "Vsource.source: r1/x1 получены из MVAsc3=200000 МВА и X/R=4.",
+    "Vsource.source: r0/x0 получены из MVAsc1=2100 МВА, встроенное значение OpenDSS: в файле задан только MVAsc3 и X0/R0=3 по формуле OpenDSS.",
+    "Transformer.SubXF: обмотка 1 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.SubXF: сдвиг Dyn1 — стандартный ANSI OpenDSS для смешанных обмоток, в DSS часы не написаны",
+    "Transformer.SubXF: %loadloss собран из %r обмоток",
+    "Transformer.XFM1: обмотка 0 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.XFM1: обмотка 1 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.XFM1: %loadloss собран из %r обмоток",
+    "Transformer.reg1a: однофазный аппарат записан как Ii0, без группы Dyn",
+    "Transformer.reg1a: %r и %loadloss в файле нет, оставлен встроенный OpenDSS %loadloss=0.4",
+    "Transformer.reg1b: однофазный аппарат записан как Ii0, без группы Dyn",
+    "Transformer.reg1b: %r и %loadloss в файле нет, оставлен встроенный OpenDSS %loadloss=0.4",
+    "Transformer.reg1c: однофазный аппарат записан как Ii0, без группы Dyn",
+    "Transformer.reg1c: %r и %loadloss в файле нет, оставлен встроенный OpenDSS %loadloss=0.4",
+    "Transformer.reg2a: однофазный аппарат записан как Ii0, без группы Dyn",
+    "Transformer.reg2a: %r и %loadloss в файле нет, оставлен встроенный OpenDSS %loadloss=0.4",
+    "Transformer.reg2b: однофазный аппарат записан как Ii0, без группы Dyn",
+    "Transformer.reg2b: %r и %loadloss в файле нет, оставлен встроенный OpenDSS %loadloss=0.4",
+    "Transformer.reg2c: однофазный аппарат записан как Ii0, без группы Dyn",
+    "Transformer.reg2c: %r и %loadloss в файле нет, оставлен встроенный OpenDSS %loadloss=0.4",
+    "Line.L1: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L2: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L3: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L4: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L5: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L6: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L7: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L8: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L9: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L10: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L11: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L12: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L13: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L14: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L15: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L16: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L17: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L18: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L19: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L20: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L21: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L22: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L23: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L24: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L25: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L26: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L27: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L28: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L29: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L30: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L31: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L32: rating_a не задан, для проверки режима взят 400 А",
+    "Capacitor.C844: conn не задан, принят wye как в OpenDSS по умолчанию",
+    "Capacitor.C848: conn не задан, принят wye как в OpenDSS по умолчанию",
+    "RegControl.creg1a: уставка из vreg/ptratio. Шаг отпайки 0.00625 и пределы 0.9…1.1 — стандарт OpenDSS. R/X компенсатора перенесены.",
+    "RegControl.creg1b: уставка из vreg/ptratio. Шаг отпайки 0.00625 и пределы 0.9…1.1 — стандарт OpenDSS. R/X компенсатора перенесены.",
+    "RegControl.creg1c: уставка из vreg/ptratio. Шаг отпайки 0.00625 и пределы 0.9…1.1 — стандарт OpenDSS. R/X компенсатора перенесены.",
+    "RegControl.creg2a: уставка из vreg/ptratio. Шаг отпайки 0.00625 и пределы 0.9…1.1 — стандарт OpenDSS. R/X компенсатора перенесены.",
+    "RegControl.creg2b: уставка из vreg/ptratio. Шаг отпайки 0.00625 и пределы 0.9…1.1 — стандарт OpenDSS. R/X компенсатора перенесены.",
+    "RegControl.creg2c: уставка из vreg/ptratio. Шаг отпайки 0.00625 и пределы 0.9…1.1 — стандарт OpenDSS. R/X компенсатора перенесены.",
+    "Load.S860: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S840: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S844: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D802_806sb: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D802_806rb: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D802_806sc: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D802_806rc: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D808_810sb: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D808_810rb: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D818_820sa: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D818_820ra: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D820_822sa: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D820_822ra: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D824_826sb: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D824_826rb: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D824_828sc: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D824_828rc: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D828_830sa: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D828_830ra: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D854_856sb: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D854_856rb: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D832_858sa: delta с одним узлом в OpenDSS включён между этой фазой и землёй, записан как wye с тем же kV",
+    "Load.D832_858sa: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D832_858ra: delta с одним узлом в OpenDSS включён между этой фазой и землёй, записан как wye с тем же kV",
+    "Load.D832_858ra: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D832_858sb: delta с одним узлом в OpenDSS включён между этой фазой и землёй, записан как wye с тем же kV",
+    "Load.D832_858sb: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D832_858rb: delta с одним узлом в OpenDSS включён между этой фазой и землёй, записан как wye с тем же kV",
+    "Load.D832_858rb: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D832_858sc: delta с одним узлом в OpenDSS включён между этой фазой и землёй, записан как wye с тем же kV",
+    "Load.D832_858sc: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D832_858rc: delta с одним узлом в OpenDSS включён между этой фазой и землёй, записан как wye с тем же kV",
+    "Load.D832_858rc: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D858_864sb: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D858_864rb: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D862_838sb: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D862_838rb: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D842_844sa: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D842_844ra: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D844_846sb: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D844_846rb: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D844_846sc: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D844_846rc: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D846_848sb: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.D846_848rb: звезда без sidecar записана как solid, нейтраль OpenDSS на земле"
+  ],
+  "assumptions": [
+    "explicit_phase_matrix"
+  ],
+  "sources": [
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/raw/ieee-pes/34Bus/ieee34Mod1.dss",
+      "sha256": "f1e732b7ea61914be307dde97b0b73398038af66a09e35dda266d409e6ebf7a5"
+    },
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/raw/ieee-pes/34Bus/IEEELineCodes.DSS",
+      "sha256": "b54774e50861c034b35836d8f93fba29b8d25d9562c216162f0c6c46a8ab9dff"
+    }
+  ],
+  "commands": [
+    {
+      "command": "Clear",
+      "status": "directive"
+    },
+    {
+      "command": "circuit.ieee34-1",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.SubXF",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.1",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.2",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.3",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.4",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.5",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.6",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.7",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.8",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.9",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.10",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.11",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.12",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.300",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.301",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.302",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.303",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.304",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.400",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.601",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.602",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.603",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.604",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.605",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.606",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.607",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.721",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.722",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.723",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.724",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L1",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L2",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L3",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L4",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L5",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L6",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L7",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L8",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L9",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L10",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L11",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L12",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L13",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L14",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L15",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L16",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L17",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L18",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L19",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L20",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L21",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L22",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L23",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L24",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L25",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.XFM1",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L26",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L27",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L28",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L29",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L30",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L31",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L32",
+      "status": "transferred"
+    },
+    {
+      "command": "Capacitor.C844",
+      "status": "transferred"
+    },
+    {
+      "command": "Capacitor.C848",
+      "status": "transferred"
+    },
+    {
+      "command": "transformer.reg1a",
+      "status": "transferred"
+    },
+    {
+      "command": "regcontrol.creg1a",
+      "status": "transferred"
+    },
+    {
+      "command": "transformer.reg1b",
+      "status": "transferred"
+    },
+    {
+      "command": "regcontrol.creg1b",
+      "status": "transferred"
+    },
+    {
+      "command": "transformer.reg1c",
+      "status": "transferred"
+    },
+    {
+      "command": "regcontrol.creg1c",
+      "status": "transferred"
+    },
+    {
+      "command": "transformer.reg2a",
+      "status": "transferred"
+    },
+    {
+      "command": "regcontrol.creg2a",
+      "status": "transferred"
+    },
+    {
+      "command": "transformer.reg2b",
+      "status": "transferred"
+    },
+    {
+      "command": "regcontrol.creg2b",
+      "status": "transferred"
+    },
+    {
+      "command": "transformer.reg2c",
+      "status": "transferred"
+    },
+    {
+      "command": "regcontrol.creg2c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S860",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S840",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S844",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S848",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S830a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S830b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S830c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S890",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D802_806sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D802_806rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D802_806sc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D802_806rc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D808_810sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D808_810rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D818_820sa",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D818_820ra",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D820_822sa",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D820_822ra",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D816_824sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D816_824rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D824_826sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D824_826rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D824_828sc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D824_828rc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D828_830sa",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D828_830ra",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D854_856sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D854_856rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D832_858sa",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D832_858ra",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D832_858sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D832_858rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D832_858sc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D832_858rc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D858_864sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D858_864rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D858_834sa",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D858_834ra",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D858_834sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D858_834rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D858_834sc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D858_834rc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D834_860sa",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D834_860ra",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D834_860sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D834_860rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D834_860sc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D834_860rc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D860_836sa",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D860_836ra",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D860_836sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D860_836rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D860_836sc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D860_836rc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D836_840sa",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D836_840ra",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D836_840sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D836_840rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D862_838sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D862_838rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D842_844sa",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D842_844ra",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D844_846sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D844_846rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D844_846sc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D844_846rc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D846_848sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.D846_848rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.s860",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.s840",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.s844",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.s848",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.s830a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.s830b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.s830c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.s890",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d802_806sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d802_806rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d802_806sc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d802_806rc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d808_810sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d808_810rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d818_820sa",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d818_820ra",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d820_822sa",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d820_822ra",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d816_824sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d816_824rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d824_826sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d824_826rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d824_828sc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d824_828rc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d828_830sa",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d828_830ra",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d854_856sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d854_856rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d832_858sa",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d832_858ra",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d832_858sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d832_858rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d832_858sc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d832_858rc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d858_864sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d858_864rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d858_834sa",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d858_834ra",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d858_834sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d858_834rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d858_834sc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d858_834rc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d834_860sa",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d834_860ra",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d834_860sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d834_860rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d834_860sc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d834_860rc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d860_836sa",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d860_836ra",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d860_836sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d860_836rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d860_836sc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d860_836rc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d836_840sa",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d836_840ra",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d836_840sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d836_840rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d862_838sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d862_838rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d842_844sa",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d842_844ra",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d844_846sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d844_846rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d844_846sc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d844_846rc",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d846_848sb",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.d846_848rb",
+      "status": "transferred"
+    },
+    {
+      "command": "Set VoltageBases = \"69,24.9,4.16, .48\"",
+      "status": "directive"
+    },
+    {
+      "command": "CalcVoltageBases",
+      "status": "directive"
+    }
+  ]
+}

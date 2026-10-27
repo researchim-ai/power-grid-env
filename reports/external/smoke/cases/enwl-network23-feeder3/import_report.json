@@ -1,0 +1,1320 @@
+{
+  "source": "/home/user/workspace/power-grid-env/data/external/processed/enwl-lvns/Feeder_3/Master.txt",
+  "source_sha256": "71e33bdb09ba7b4cdfeb5194207730d53870da202c3fb7a7cc25fb96674db6db",
+  "format": "txt",
+  "errors": [],
+  "warnings": [],
+  "mappings": [
+    {
+      "from": "Transformer.TR1",
+      "to": "transformer:TR1",
+      "vector_group": "Dyn1"
+    },
+    {
+      "from": "Line.LINE1",
+      "to": "line:LINE1",
+      "r_ohm": 7.873905e-05,
+      "x_ohm": 2.5259910000000003e-05,
+      "length_m": 0.31707,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00031707 km"
+    },
+    {
+      "from": "Line.LINE2",
+      "to": "line:LINE2",
+      "r_ohm": 1.8684103333333334e-05,
+      "x_ohm": 5.9939606666666666e-06,
+      "length_m": 0.075238,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 7.5238e-05 km"
+    },
+    {
+      "from": "Line.LINE3",
+      "to": "line:LINE3",
+      "r_ohm": 6.447975e-05,
+      "x_ohm": 2.068545e-05,
+      "length_m": 0.25965,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00025965 km"
+    },
+    {
+      "from": "Line.LINE4",
+      "to": "line:LINE4",
+      "r_ohm": 2.0322606666666667e-05,
+      "x_ohm": 6.519601333333334e-06,
+      "length_m": 0.081836,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 8.1836e-05 km"
+    },
+    {
+      "from": "Line.LINE5",
+      "to": "line:LINE5",
+      "r_ohm": 3.51044e-05,
+      "x_ohm": 1.1261680000000001e-05,
+      "length_m": 0.14136,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00014136 km"
+    },
+    {
+      "from": "Line.LINE6",
+      "to": "line:LINE6",
+      "r_ohm": 0.00013551798333333334,
+      "x_ohm": 4.347489666666667e-05,
+      "length_m": 0.54571,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00054571 km"
+    },
+    {
+      "from": "Line.LINE7",
+      "to": "line:LINE7",
+      "r_ohm": 8.432158333333332e-06,
+      "x_ohm": 2.705081666666666e-06,
+      "length_m": 0.033955,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 3.3955e-05 km"
+    },
+    {
+      "from": "Line.LINE8",
+      "to": "line:LINE8",
+      "r_ohm": 1.1925463333333333e-05,
+      "x_ohm": 3.8257526666666665e-06,
+      "length_m": 0.048022,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 4.8022e-05 km"
+    },
+    {
+      "from": "Line.LINE9",
+      "to": "line:LINE9",
+      "r_ohm": 0.00021637035,
+      "x_ohm": 6.941277e-05,
+      "length_m": 0.87129,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00087129 km"
+    },
+    {
+      "from": "Line.LINE10",
+      "to": "line:LINE10",
+      "r_ohm": 5.552981666666667e-05,
+      "x_ohm": 1.7814263333333332e-05,
+      "length_m": 0.22361,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00022361 km"
+    },
+    {
+      "from": "Line.LINE11",
+      "to": "line:LINE11",
+      "r_ohm": 5.372443333333333e-05,
+      "x_ohm": 1.7235086666666665e-05,
+      "length_m": 0.21634,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00021634 km"
+    },
+    {
+      "from": "Line.LINE12",
+      "to": "line:LINE12",
+      "r_ohm": 3.8792149999999994e-05,
+      "x_ohm": 1.244473e-05,
+      "length_m": 0.15621,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00015621 km"
+    },
+    {
+      "from": "Line.LINE13",
+      "to": "line:LINE13",
+      "r_ohm": 0.0010979313333333333,
+      "x_ohm": 0.0003522222666666667,
+      "length_m": 4.4212,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.0044212 km"
+    },
+    {
+      "from": "Line.LINE14",
+      "to": "line:LINE14",
+      "r_ohm": 0.00011828613333333333,
+      "x_ohm": 3.7946826666666665e-05,
+      "length_m": 0.47632,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00047632 km"
+    },
+    {
+      "from": "Line.LINE15",
+      "to": "line:LINE15",
+      "r_ohm": 0.002029777333333333,
+      "x_ohm": 0.0006511634666666666,
+      "length_m": 8.1736,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.0081736 km"
+    },
+    {
+      "from": "Line.LINE16",
+      "to": "line:LINE16",
+      "r_ohm": 0.0018571608333333334,
+      "x_ohm": 0.0005957871666666667,
+      "length_m": 7.4785,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.0074785 km"
+    },
+    {
+      "from": "Line.LINE17",
+      "to": "line:LINE17",
+      "r_ohm": 0.001204218,
+      "x_ohm": 0.0003863196,
+      "length_m": 4.8492,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.0048492 km"
+    },
+    {
+      "from": "Line.LINE18",
+      "to": "line:LINE18",
+      "r_ohm": 5.679631666666666e-05,
+      "x_ohm": 1.822056333333333e-05,
+      "length_m": 0.22871,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00022871 km"
+    },
+    {
+      "from": "Line.LINE19",
+      "to": "line:LINE19",
+      "r_ohm": 0.0007001013333333333,
+      "x_ohm": 0.00022459626666666667,
+      "length_m": 2.8192,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.0028192 km"
+    },
+    {
+      "from": "Line.LINE20",
+      "to": "line:LINE20",
+      "r_ohm": 6.074978333333332e-05,
+      "x_ohm": 1.9488856666666665e-05,
+      "length_m": 0.24463,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00024463 km"
+    },
+    {
+      "from": "Line.LINE21",
+      "to": "line:LINE21",
+      "r_ohm": 3.51342e-05,
+      "x_ohm": 1.1271240000000001e-05,
+      "length_m": 0.14148,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00014148 km"
+    },
+    {
+      "from": "Line.LINE22",
+      "to": "line:LINE22",
+      "r_ohm": 5.8206849999999997e-05,
+      "x_ohm": 1.8673069999999997e-05,
+      "length_m": 0.23439,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00023439 km"
+    },
+    {
+      "from": "Line.LINE23",
+      "to": "line:LINE23",
+      "r_ohm": 6.42935e-05,
+      "x_ohm": 2.0625699999999998e-05,
+      "length_m": 0.2589,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.0002589 km"
+    },
+    {
+      "from": "Line.LINE24",
+      "to": "line:LINE24",
+      "r_ohm": 4.554681666666666e-05,
+      "x_ohm": 1.4611663333333331e-05,
+      "length_m": 0.18341,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00018341 km"
+    },
+    {
+      "from": "Line.LINE25",
+      "to": "line:LINE25",
+      "r_ohm": 2.238451833333333e-05,
+      "x_ohm": 7.181073666666666e-06,
+      "length_m": 0.090139,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 9.0139e-05 km"
+    },
+    {
+      "from": "Line.LINE26",
+      "to": "line:LINE26",
+      "r_ohm": 2.9571533333333333e-05,
+      "x_ohm": 9.486706666666666e-06,
+      "length_m": 0.11908,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00011908 km"
+    },
+    {
+      "from": "Line.LINE27",
+      "to": "line:LINE27",
+      "r_ohm": 3.5355216666666667e-05,
+      "x_ohm": 1.1342143333333333e-05,
+      "length_m": 0.14237,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00014237 km"
+    },
+    {
+      "from": "Line.LINE28",
+      "to": "line:LINE28",
+      "r_ohm": 3.464746666666666e-05,
+      "x_ohm": 1.1115093333333332e-05,
+      "length_m": 0.13952,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00013952 km"
+    },
+    {
+      "from": "Line.LINE29",
+      "to": "line:LINE29",
+      "r_ohm": 3.8943633333333324e-05,
+      "x_ohm": 1.2493326666666665e-05,
+      "length_m": 0.15682,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00015682 km"
+    },
+    {
+      "from": "Line.LINE30",
+      "to": "line:LINE30",
+      "r_ohm": 4.6483033333333335e-05,
+      "x_ohm": 1.4912006666666667e-05,
+      "length_m": 0.18718,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00018718 km"
+    },
+    {
+      "from": "Line.LINE31",
+      "to": "line:LINE31",
+      "r_ohm": 0.00010609793333333333,
+      "x_ohm": 3.403678666666667e-05,
+      "length_m": 0.42724,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00042724 km"
+    },
+    {
+      "from": "Line.LINE32",
+      "to": "line:LINE32",
+      "r_ohm": 7.561501666666666e-05,
+      "x_ohm": 2.425770333333333e-05,
+      "length_m": 0.30449,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00030449 km"
+    },
+    {
+      "from": "Line.LINE33",
+      "to": "line:LINE33",
+      "r_ohm": 5.4385e-05,
+      "x_ohm": 1.7447e-05,
+      "length_m": 0.219,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.000219 km"
+    },
+    {
+      "from": "Line.LINE34",
+      "to": "line:LINE34",
+      "r_ohm": 7.748e-05,
+      "x_ohm": 2.4855999999999997e-05,
+      "length_m": 0.312,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.000312 km"
+    },
+    {
+      "from": "Line.LINE35",
+      "to": "line:LINE35",
+      "r_ohm": 8.691418333333334e-06,
+      "x_ohm": 2.7882536666666665e-06,
+      "length_m": 0.034999,
+      "note": "LineCode.4c_185_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 3.4999e-05 km"
+    },
+    {
+      "from": "Line.LINE36",
+      "to": "line:LINE36",
+      "r_ohm": 7.310277e-05,
+      "x_ohm": 2.9736720000000004e-05,
+      "length_m": 0.41301,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00041301 km"
+    },
+    {
+      "from": "Line.LINE37",
+      "to": "line:LINE37",
+      "r_ohm": 3.501060000000001e-05,
+      "x_ohm": 1.4241600000000003e-05,
+      "length_m": 0.1978,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.0001978 km"
+    },
+    {
+      "from": "Line.LINE38",
+      "to": "line:LINE38",
+      "r_ohm": 4.2835770000000005e-05,
+      "x_ohm": 1.742472e-05,
+      "length_m": 0.24201,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00024201 km"
+    },
+    {
+      "from": "Line.LINE39",
+      "to": "line:LINE39",
+      "r_ohm": 5.1330000000000005e-05,
+      "x_ohm": 2.0880000000000003e-05,
+      "length_m": 0.29,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00029 km"
+    },
+    {
+      "from": "Line.LINE40",
+      "to": "line:LINE40",
+      "r_ohm": 4.906086e-05,
+      "x_ohm": 1.995696e-05,
+      "length_m": 0.27718,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00027718 km"
+    },
+    {
+      "from": "Line.LINE41",
+      "to": "line:LINE41",
+      "r_ohm": 3.7564710000000004e-05,
+      "x_ohm": 1.528056e-05,
+      "length_m": 0.21223,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00021223 km"
+    },
+    {
+      "from": "Line.LINE42",
+      "to": "line:LINE42",
+      "r_ohm": 4.4809320000000006e-05,
+      "x_ohm": 1.8227520000000003e-05,
+      "length_m": 0.25316,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00025316 km"
+    },
+    {
+      "from": "Line.LINE43",
+      "to": "line:LINE43",
+      "r_ohm": 4.568901000000001e-05,
+      "x_ohm": 1.8585360000000004e-05,
+      "length_m": 0.25813,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00025813 km"
+    },
+    {
+      "from": "Line.LINE44",
+      "to": "line:LINE44",
+      "r_ohm": 4.7273160000000004e-05,
+      "x_ohm": 1.922976e-05,
+      "length_m": 0.26708,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00026708 km"
+    },
+    {
+      "from": "Line.LINE45",
+      "to": "line:LINE45",
+      "r_ohm": 5.452662e-05,
+      "x_ohm": 2.218032e-05,
+      "length_m": 0.30806,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00030806 km"
+    },
+    {
+      "from": "Line.LINE46",
+      "to": "line:LINE46",
+      "r_ohm": 0.00037585950000000004,
+      "x_ohm": 0.000152892,
+      "length_m": 2.1235,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.0021235 km"
+    },
+    {
+      "from": "Line.LINE47",
+      "to": "line:LINE47",
+      "r_ohm": 0.0008289618000000001,
+      "x_ohm": 0.0003372048,
+      "length_m": 4.6834,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.0046834 km"
+    },
+    {
+      "from": "Line.LINE48",
+      "to": "line:LINE48",
+      "r_ohm": 6.869193000000001e-05,
+      "x_ohm": 2.7942480000000004e-05,
+      "length_m": 0.38809,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00038809 km"
+    },
+    {
+      "from": "Line.LINE49",
+      "to": "line:LINE49",
+      "r_ohm": 6.746532000000001e-05,
+      "x_ohm": 2.7443520000000004e-05,
+      "length_m": 0.38116,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00038116 km"
+    },
+    {
+      "from": "Line.LINE50",
+      "to": "line:LINE50",
+      "r_ohm": 7.093806000000002e-05,
+      "x_ohm": 2.8856160000000007e-05,
+      "length_m": 0.40078,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00040078 km"
+    },
+    {
+      "from": "Line.LINE51",
+      "to": "line:LINE51",
+      "r_ohm": 6.199779000000001e-05,
+      "x_ohm": 2.5219440000000004e-05,
+      "length_m": 0.35027,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.00035027 km"
+    },
+    {
+      "from": "Line.LINE52",
+      "to": "line:LINE52",
+      "r_ohm": 0.0002434281,
+      "x_ohm": 9.90216e-05,
+      "length_m": 1.3753,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.0013753 km"
+    },
+    {
+      "from": "Line.LINE53",
+      "to": "line:LINE53",
+      "r_ohm": 0.0015250320000000002,
+      "x_ohm": 0.0006203520000000001,
+      "length_m": 8.616,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.008616 km"
+    },
+    {
+      "from": "Line.LINE54",
+      "to": "line:LINE54",
+      "r_ohm": 0.0008113149000000001,
+      "x_ohm": 0.00033002640000000006,
+      "length_m": 4.5837,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.0045837 km"
+    },
+    {
+      "from": "Line.LINE55",
+      "to": "line:LINE55",
+      "r_ohm": 0.0008659017000000001,
+      "x_ohm": 0.0003522312,
+      "length_m": 4.8921,
+      "note": "LineCode.4c_.5_SAC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.0048921 km"
+    },
+    {
+      "from": "Line.LINE56",
+      "to": "line:LINE56",
+      "r_ohm": 0.02487534666666667,
+      "x_ohm": 0.0015933668000000002,
+      "length_m": 20.1692,
+      "note": "LineCode.25_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.0201692 km"
+    },
+    {
+      "from": "Line.LINE57",
+      "to": "line:LINE57",
+      "r_ohm": 0.02487534666666667,
+      "x_ohm": 0.0015933668000000002,
+      "length_m": 20.1692,
+      "note": "LineCode.25_SAC_XC: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3, длина 0.0201692 km"
+    },
+    {
+      "from": "Load.LOAD1",
+      "to": "load:LOAD1",
+      "kw": 1.0,
+      "kvar": 0.3286841051788632,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.LOAD2",
+      "to": "load:LOAD2",
+      "kw": 1.0,
+      "kvar": 0.3286841051788632,
+      "grounding": "solid"
+    },
+    {
+      "from": "Vsource.source",
+      "to": "source",
+      "r_ohm": 0.5134360308102702,
+      "x_ohm": 2.053744123241081
+    }
+  ],
+  "approximations": [
+    "sidecar нет: conn=wye в OpenDSS без узла нейтрали записывается как solid и попадает в отчёт",
+    "New Circuit в файле нет. Цепь собрана из Edit Vsource, шина SourceBus.",
+    "частота в DSS не задана: оставлен встроенный OpenDSS 60 Гц",
+    "s_base_va=10 МВА — только отчётная база, омы линий не масштабируются",
+    "Z0 и Z1 переведены в фазную матрицу транспонированной линии: Zс=(2Z1+Z0)/3, Zв=(Z0-Z1)/3. Это не измеренная матрица проводников.",
+    "Vsource.source: r1/x1 получены из ISC3=3000 А и X/R=4.",
+    "Vsource.source: r0/x0 получены из ISC1=2500 А и X0/R0=3 по формуле OpenDSS.",
+    "Transformer.TR1: обмотка 1 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.TR1: сдвиг Dyn1 — стандартный ANSI OpenDSS для смешанных обмоток, в DSS часы не написаны",
+    "Transformer.TR1: %r и %loadloss в файле нет, оставлен встроенный OpenDSS %loadloss=0.4",
+    "Line.LINE1: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE2: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE3: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE4: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE5: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE6: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE7: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE8: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE9: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE10: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE11: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE12: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE13: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE14: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE15: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE16: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE17: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE18: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE19: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE20: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE21: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE22: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE23: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE24: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE25: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE26: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE27: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE28: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE29: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE30: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE31: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE32: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE33: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE34: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE35: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE36: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE37: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE38: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE39: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE40: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE41: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE42: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE43: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE44: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE45: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE46: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE47: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE48: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE49: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE50: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE51: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE52: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE53: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE54: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE55: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE56: rating_a не задан, для проверки режима взят 400 А",
+    "Line.LINE57: rating_a не задан, для проверки режима взят 400 А",
+    "Load.LOAD1: conn не задан, принят wye как в OpenDSS по умолчанию",
+    "Load.LOAD1: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.LOAD1: профиль Shape_1 не прочитан (нет чисел или файл отсутствует). Остаётся паспортная мощность.",
+    "Load.LOAD2: conn не задан, принят wye как в OpenDSS по умолчанию",
+    "Load.LOAD2: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.LOAD2: профиль Shape_2 не прочитан (нет чисел или файл отсутствует). Остаётся паспортная мощность."
+  ],
+  "assumptions": [
+    "sequence_to_phase"
+  ],
+  "sources": [
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/processed/enwl-lvns/Feeder_3/Master.txt",
+      "sha256": "71e33bdb09ba7b4cdfeb5194207730d53870da202c3fb7a7cc25fb96674db6db"
+    },
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/processed/enwl-lvns/Feeder_3/LineCode.txt",
+      "sha256": "cb961fd0e6916fbc79492738af0e57b667a4bc64d0a36a375dd4fe28d84e25bb"
+    },
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/processed/enwl-lvns/Feeder_3/LoadShapes.txt",
+      "sha256": "1706b2f0fc281ce5f91241a31ce27abd83678e380402d0094a63dbcdb4ea563e"
+    },
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/processed/enwl-lvns/Feeder_3/Lines.txt",
+      "sha256": "6a7d266255fdc2cf49503bc1c39167ead77572b642c2711c2abb38ecf830fbfa"
+    },
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/processed/enwl-lvns/Feeder_3/Transformers.txt",
+      "sha256": "92e718dd2ceb639471bca897b967ada21bb14fd39eb41ce6fd99ed413017f877"
+    },
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/processed/enwl-lvns/Feeder_3/Loads.txt",
+      "sha256": "416ae9e2043208f12c53bf5ebb03ded4be14861a146cbd296e856f93d039d730"
+    },
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/processed/enwl-lvns/Feeder_3/Monitors.txt",
+      "sha256": "8492b297bf3fb6bb8db0aad6ddcc0921e7c7d167b4cb3176f460315b05c6fc61"
+    }
+  ],
+  "commands": [
+    {
+      "command": "Vsource.Source",
+      "status": "transferred"
+    },
+    {
+      "command": "LineCode.25_SAC_XC",
+      "status": "transferred"
+    },
+    {
+      "command": "LineCode.4c_.5_SAC",
+      "status": "transferred"
+    },
+    {
+      "command": "LineCode.4c_185_SAC_XC",
+      "status": "transferred"
+    },
+    {
+      "command": "Loadshape.Shape_1",
+      "status": "transferred"
+    },
+    {
+      "command": "Loadshape.Shape_2",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE1",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE2",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE3",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE4",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE5",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE6",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE7",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE8",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE9",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE10",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE11",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE12",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE13",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE14",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE15",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE16",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE17",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE18",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE19",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE20",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE21",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE22",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE23",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE24",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE25",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE26",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE27",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE28",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE29",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE30",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE31",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE32",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE33",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE34",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE35",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE36",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE37",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE38",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE39",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE40",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE41",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE42",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE43",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE44",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE45",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE46",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE47",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE48",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE49",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE50",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE51",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE52",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE53",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE54",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE55",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE56",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.LINE57",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.TR1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.LOAD1",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.LOAD2",
+      "status": "transferred"
+    },
+    {
+      "command": "Monitor.LINE1_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE1_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE2_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE2_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE3_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE3_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE4_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE4_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE5_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE5_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE6_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE6_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE7_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE7_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE8_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE8_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE9_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE9_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE10_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE10_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE11_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE11_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE12_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE12_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE13_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE13_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE14_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE14_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE15_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE15_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE16_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE16_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE17_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE17_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE18_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE18_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE19_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE19_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE20_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE20_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE21_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE21_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE22_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE22_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE23_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE23_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE24_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE24_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE25_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE25_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE26_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE26_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE27_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE27_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE28_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE28_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE29_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE29_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE30_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE30_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE31_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE31_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE32_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE32_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE33_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE33_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE34_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE34_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE35_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE35_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE36_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE36_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE37_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE37_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE38_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE38_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE39_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE39_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE40_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE40_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE41_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE41_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE42_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE42_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE43_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE43_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE44_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE44_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE45_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE45_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE46_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE46_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE47_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE47_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE48_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE48_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE49_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE49_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE50_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE50_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE51_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE51_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE52_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE52_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE53_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE53_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE54_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE54_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE55_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE55_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE56_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE56_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE57_PQ_vs_Time",
+      "status": "ignored_non_electrical"
+    },
+    {
+      "command": "Monitor.LINE57_VI_vs_Time",
+      "status": "ignored_non_electrical"
+    }
+  ]
+}

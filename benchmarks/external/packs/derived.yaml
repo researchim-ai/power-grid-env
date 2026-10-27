@@ -1,0 +1,23 @@
+schema_version: power-grid-env.benchmark-pack/v1
+id: derived-operating-points
+note: >
+  Производные сценарии плана B4. Исходные DSS не редактируются.
+  Множители 0.5 и 1.2 задаются до первого Solve, иначе регулятор
+  остаётся в положении базового режима. Заморозка — controlmode=OFF
+  и начальные отпайки. Переключение IEEE123 — первая нормально
+  замкнутая линия Sw1 из мастер-файла, enabled=no.
+  Допуски те же: 1e-5 о.е. и 1e-4 рад. Это не опубликованный эталон.
+cases:
+  - id: ieee13
+    folder: 13Bus
+    master: IEEE13Nodeckt.dss
+    scenarios: [frozen, load_0_5, load_1_2]
+  - id: ieee34
+    folder: 34Bus
+    master: ieee34Mod1.dss
+    scenarios: [frozen, load_0_5, load_1_2]
+  - id: ieee123
+    folder: 123Bus
+    master: IEEE123Master.dss
+    scenarios: [frozen, load_0_5, load_1_2, open_sw1]
+    open_line: Sw1

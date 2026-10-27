@@ -23,6 +23,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+benchmark = ["pandapower>=3.5"]
 
 [project.scripts]
 power-grid = "power_grid_env.cli:main"

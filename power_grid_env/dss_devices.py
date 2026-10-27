@@ -32,7 +32,10 @@ def loadshapes(commands: list[dict[str, Any]]) -> dict[str, list[list[float]]]:
         klass, _, name = command["name"].partition(".")
         if klass.lower() != "loadshape":
             continue
-        values = _number_list(command.get("raw") or "", "mult")
+        raw = command.get("raw") or ""
+        if "file=" in raw.lower():
+            continue
+        values = _number_list(raw, "mult")
         interval_h = float(command["args"].get("interval", "nan"))
         if not values or not math.isfinite(interval_h) or interval_h <= 0:
             raise ValueError(f"LoadShape.{name}: нужны mult=[...] и положительный interval в часах")
@@ -71,7 +74,10 @@ def attach_profile(load_id: str, args: dict[str, str], shapes: dict[str, list[li
         return
     points = shapes.get(ref.lower())
     if points is None:
-        raise ValueError(f"Load.{load_id}: LoadShape.{ref} не объявлен")
+        report["approximations"].append(
+            f"Load.{load_id}: профиль {ref} не прочитан (нет чисел или файл отсутствует). Остаётся паспортная мощность."
+        )
+        return
     report.setdefault("load_profiles", {})[load_id] = points
     report["approximations"].append(
         f"Load.{load_id}: LoadShape.{ref} перенесён в профиль сценария в секундах. "
@@ -82,9 +88,14 @@ def attach_profile(load_id: str, args: dict[str, str], shapes: dict[str, list[li
 
 def _shunt(name: str, args: dict[str, str], ctx: dict[str, Any]) -> Shunt:
     phases = _phases(name, args, "Capacitor")
-    connection = _connection(args, f"Capacitor.{name}")
-    bus = ctx["ensure_node"](args["bus1"], float(args["kv"]))
-    ground = _ground(ctx["grounding"], f"Capacitor.{name}", connection)
+    connection = _connection(args, f"Capacitor.{name}", default=None if ctx["side"].get("schema_version") else "wye", report=ctx["report"])
+    bus = ctx["ensure_node"](args["bus1"]) if len(phases) == 1 else ctx["ensure_node"](args["bus1"], float(args["kv"]))
+    ground = _ground(
+        ctx["grounding"],
+        f"Capacitor.{name}",
+        connection,
+        allow_solid_default=not bool(ctx["side"].get("schema_version")),
+    )
     kvar = float(args.get("kvar", "nan"))
     kv = float(args["kv"])
     if not math.isfinite(kvar) or kvar == 0:
@@ -239,11 +250,35 @@ def _source(name: str, args: dict[str, str], ctx: dict[str, Any]) -> VoltageSour
 
 
 def _regulator(name: str, args: dict[str, str], ctx: dict[str, Any]) -> None:
-    spec = (ctx["side"].get("regulators") or {}).get(f"RegControl.{name}") or {}
+    spec = dict((ctx["side"].get("regulators") or {}).get(f"RegControl.{name}") or {})
+    transformer_name = args.get("transformer")
+    target = next((item for item in ctx["transformers"] if item.id == transformer_name), None)
+    if target is None:
+        raise ValueError(f"RegControl.{name}: трансформатор {transformer_name} не найден")
+    if "v_target_pu" not in spec and "vreg" in args and not ctx["side"].get("schema_version"):
+        winding_index = int(float(args.get("winding", "2"))) - 1
+        kv = target.windings[winding_index].nominal_ll_v / 1000.0
+        ratio = float(args.get("ptratio", "1"))
+        vreg = float(args["vreg"])
+        band = float(args.get("band", "2"))
+        spec = {
+            "winding": winding_index,
+            "v_target_pu": vreg * ratio / (kv * 1000.0),
+            "deadband_pu": 0.5 * band * ratio / (kv * 1000.0),
+            "tap_min_pu": 0.9,
+            "tap_max_pu": 1.1,
+            "tap_step_pu": 0.00625,
+            "pt_ratio": ratio,
+            "ct_primary_a": float(args.get("ctprim", "0")) or None,
+            "compensator_r_v": float(args.get("r", "0")),
+            "compensator_x_v": float(args.get("x", "0")),
+        }
+        ctx["report"]["approximations"].append(
+            f"RegControl.{name}: уставка из vreg/ptratio. Шаг отпайки 0.00625 и пределы 0.9…1.1 — стандарт OpenDSS. R/X компенсатора перенесены."
+        )
     required = ("v_target_pu", "deadband_pu", "tap_min_pu", "tap_max_pu", "tap_step_pu", "winding")
     if any(key not in spec for key in required):
         raise ValueError(f"RegControl.{name}: в sidecar нет пределов РПН и номера обмотки")
-    transformer_name = args.get("transformer")
     target = next((item for item in ctx["transformers"] if item.id == transformer_name), None)
     if target is None:
         raise ValueError(f"RegControl.{name}: трансформатор {transformer_name} не найден")
@@ -254,6 +289,10 @@ def _regulator(name: str, args: dict[str, str], ctx: dict[str, Any]) -> None:
         tap_min_pu=float(spec["tap_min_pu"]),
         tap_max_pu=float(spec["tap_max_pu"]),
         tap_step_pu=float(spec["tap_step_pu"]),
+        pt_ratio=spec.get("pt_ratio"),
+        ct_primary_a=spec.get("ct_primary_a"),
+        compensator_r_v=spec.get("compensator_r_v"),
+        compensator_x_v=spec.get("compensator_x_v"),
     )
     ctx["report"]["mappings"].append({"from": f"RegControl.{name}", "to": f"transformer:{transformer_name}.ltc"})
 
@@ -271,14 +310,17 @@ def _phases(name: str, args: dict[str, str], label: str) -> list[str]:
     raise ValueError(f"{label}.{name}: поддержаны 1 или 3 фазы")
 
 
-def _connection(args: dict[str, str], key: str) -> str:
+def _connection(args: dict[str, str], key: str, *, default: str | None = None, report: dict[str, Any] | None = None) -> str:
     connection = args.get("conn", "")
-    if connection not in {"wye", "delta"}:
-        raise ValueError(f"{key}: соединение conn не задано явно")
-    return connection
+    if connection in {"wye", "delta"}:
+        return connection
+    if default and report is not None:
+        report["approximations"].append(f"{key}: conn не задан, принят {default} как в OpenDSS по умолчанию")
+        return default
+    raise ValueError(f"{key}: соединение conn не задано явно")
 
 
-def _ground(table: dict[str, Any], key: str, connection: str) -> GroundingSpec:
+def _ground(table: dict[str, Any], key: str, connection: str, *, allow_solid_default: bool = False) -> GroundingSpec:
     raw = table.get(key)
     kind = raw.get("kind") if isinstance(raw, dict) else raw
     if connection == "delta":
@@ -286,6 +328,8 @@ def _ground(table: dict[str, Any], key: str, connection: str) -> GroundingSpec:
             raise ValueError(f"{key}: у треугольника не должно быть заземления нейтрали")
         return GroundingSpec(kind="not_applicable")
     if kind not in {"solid", "ungrounded", "impedance"}:
+        if allow_solid_default:
+            return GroundingSpec(kind="solid")
         raise ValueError(f"{key}: заземление звезды отсутствует в sidecar")
     return GroundingSpec(kind=kind)
 

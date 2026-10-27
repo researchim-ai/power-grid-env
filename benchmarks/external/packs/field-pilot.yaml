@@ -1,0 +1,13 @@
+schema_version: power-grid-env.benchmark-pack/v1
+id: field-pilot
+verdict: not_assessed_missing_paired_measurements
+required:
+  - topology_on_each_interval
+  - equipment_parameters
+  - independent_inputs
+  - independent_targets
+  - meter_mapping
+  - timestamps
+  - quality_flags
+  - usage_terms
+cases: []

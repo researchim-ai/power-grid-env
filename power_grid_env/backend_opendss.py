@@ -27,6 +27,7 @@ from power_grid_env.model import (
     Network,
     StudyFault,
     Transformer,
+    VoltageSource,
     parse_vector_group,
 )
 from power_grid_env.results import (
@@ -97,21 +98,34 @@ def _advance_ltc(network: Network, result: SolveResult) -> bool:
     if not isinstance(topology, dict):
         return False
     for transformer in network.transformers:
-        if transformer.ltc is None:
+        if transformer.ltc is None or transformer.ltc.ct_primary_a:
             continue
         ltc = transformer.ltc
         winding = transformer.windings[ltc.controlled_winding]
         bus_id = topology.get(winding.terminal_id)
         if bus_id is None:
             continue
+        watched = (winding.phase,) if winding.phase else ("A", "B", "C")
         mags = [
             abs(voltage[(bus_id, phase)].complex) / voltage[(bus_id, phase)].v_base_ln_v
-            for phase in ("A", "B", "C")
+            for phase in watched
             if (bus_id, phase) in voltage and voltage[(bus_id, phase)].energized
         ]
         if not mags:
             continue
         measured = float(sum(mags) / len(mags))
+        if ltc.pt_ratio and ltc.ct_primary_a and (ltc.compensator_r_v or ltc.compensator_x_v):
+            phase = winding.phase or "A"
+            current = 0j
+            for flow in result.flows:
+                if flow.equipment_id == transformer.id and flow.phase == phase and flow.terminal_index == ltc.controlled_winding:
+                    current = flow.current
+                    break
+            voltage_phasor = voltage[(bus_id, phase)].complex
+            compensated = voltage_phasor / ltc.pt_ratio - (-current) / ltc.ct_primary_a * complex(
+                ltc.compensator_r_v or 0.0, ltc.compensator_x_v or 0.0
+            )
+            measured = abs(compensated) * ltc.pt_ratio / voltage[(bus_id, phase)].v_base_ln_v
         if abs(measured - ltc.v_target_pu) <= ltc.deadband_pu:
             continue
         step = ltc.tap_step_pu if measured < ltc.v_target_pu else -ltc.tap_step_pu
@@ -273,10 +287,11 @@ def _solve_once(network: Network, options: SolveOptions) -> SolveResult:
             **base,
         )
     voltages, flows = _read(session, topology, registry)
+    solved_taps = _transformer_taps(session, registry)
     limited = _limited_generators(network, flows)
     if any(math.isnan(item.v_real_v) or math.isnan(item.v_imag_v) for item in voltages):
         converged = False
-    pq_error = _pq_setpoint_error(network, topology, flows)
+    pq_error = _pq_setpoint_error(network, topology, flows, voltages)
     if converged and pq_error > 1e-5:
         converged = False
         warnings = warnings + [
@@ -290,6 +305,7 @@ def _solve_once(network: Network, options: SolveOptions) -> SolveResult:
         "collapse": False,
         "kcl_residual_pu": _kcl_residual(network, voltages, flows),
         "pq_setpoint_error_pu": pq_error,
+        "solved_taps": solved_taps,
         "_topology_terminal_bus": terminal_bus,
         "approximations": list(warnings),
     }
@@ -359,6 +375,13 @@ def _zero_voltages(topology: Topology, energized_ids: set[str]) -> list[PhaseVol
     return voltages
 
 
+def _source_impedance(source: VoltageSource) -> str:
+    text = f"r1={source.r_ohm:.12g} x1={source.x_ohm:.12g}"
+    if source.r0_ohm is not None and source.x0_ohm is not None:
+        text += f" r0={source.r0_ohm:.12g} x0={source.x0_ohm:.12g}"
+    return text
+
+
 def _token(prefix: str, raw: str) -> str:
     digest = hashlib.sha1(raw.encode("utf-8")).hexdigest()[:12]
     return f"{prefix}{digest}"
@@ -386,8 +409,9 @@ def _render(
         "Clear",
         f"Set DefaultBaseFrequency={network.frequency_hz:.8g}",
     ]
+    uses_regcontrol = any(item.ltc is not None and item.ltc.ct_primary_a for item in network.transformers)
     solver_sets = [
-        "Set controlmode=off",
+        "Set controlmode=static" if uses_regcontrol else "Set controlmode=off",
         f"Set tolerance={options.tolerance:.1e}",
         f"Set maxiterations={options.max_iterations}",
     ]
@@ -414,7 +438,7 @@ def _render(
                     )
                 )
                 script.append(
-                    f"Edit Vsource.source r1={source.r_ohm:.12g} x1={source.x_ohm:.12g} "
+                    f"Edit Vsource.source {_source_impedance(source)} "
                     f"basekv={base_kv:.8g} pu=1.0 angle={angle:.8g} bus1={_bus_spec(token, ['A', 'B', 'C'])}"
                 )
                 registry.append(("Vsource.source", source.id))
@@ -426,7 +450,7 @@ def _render(
                 script.append(
                     f"New Vsource.{name} bus1={_bus_spec(token, ['A', 'B', 'C'])} phases=3 "
                     f"basekv={base_kv:.8g} pu=1.0 angle={angle:.8g} "
-                    f"r1={source.r_ohm:.12g} x1={source.x_ohm:.12g}"
+                    f"{_source_impedance(source)}"
                 )
                 registry.append((f"Vsource.{name}", source.id))
             else:
@@ -434,7 +458,7 @@ def _render(
                 script.append(
                     f"New Vsource.{name} bus1={_bus_spec(token, ['A', 'B', 'C'])} phases=3 "
                     f"basekv={base_kv:.8g} pu=1.0 angle={angle:.8g} "
-                    f"r1={source.r_ohm:.12g} x1={source.x_ohm:.12g}"
+                    f"{_source_impedance(source)}"
                 )
                 registry.append((f"Vsource.{name}", source.id))
     # Первый источник первого острова уже добавлен. Ветвь position==0 для
@@ -600,10 +624,10 @@ def _line_commands(line, topology, bus_token, grounds, frequency_hz, warnings, t
         f"~ rmatrix={_lower_triangle(resistance)}",
         f"~ xmatrix={_lower_triangle(reactance)}",
     ]
-    if any(abs(value) > 0 for row in susceptance for value in row):
-        omega = 2.0 * math.pi * frequency_hz
-        capacitance = [[value / omega * 1.0e9 for value in row] for row in susceptance]
-        commands.append(f"~ cmatrix={_lower_triangle(capacitance)}")
+    omega = 2.0 * math.pi * frequency_hz
+    capacitance = [[value / omega * 1.0e9 for value in row] for row in susceptance]
+    # Явный ноль не даёт OpenDSS подставить свой шунт 2.8 нФ на единицу длины.
+    commands.append(f"~ cmatrix={_lower_triangle(capacitance)}")
     return commands
 
 
@@ -638,7 +662,7 @@ def _transformer_commands(transformer: Transformer, topology, bus_token, warning
         )
     leadlag = _leadlag(parsed)
     header = (
-        f"New Transformer.{name} phases=3 windings={len(transformer.windings)} "
+        f"New Transformer.{name} phases={transformer.phases} windings={len(transformer.windings)} "
         f"xhl={transformer.x_hl_pct:.12g} %loadloss={transformer.load_loss_pct:.12g} "
         f"%imag={imag:.12g} %noloadloss={noload:.12g} ppm_antifloat=1"
     )
@@ -650,11 +674,20 @@ def _transformer_commands(transformer: Transformer, topology, bus_token, warning
     for index, winding in enumerate(transformer.windings):
         bus = bus_token[topology.terminal_bus[winding.terminal_id]]
         bus_spec, neutral = _winding_bus(bus, winding)
+        connection = "" if winding.phase or winding.nodes else f" conn={winding.connection}"
         command = (
-            f"~ wdg={index + 1} bus={bus_spec} conn={winding.connection} "
+            f"~ wdg={index + 1} bus={bus_spec}{connection} "
             f"kv={winding.nominal_ll_v / 1000.0:.8g} kva={winding.rated_va / 1000.0:.8g} "
             f"tap={winding.tap_pu:.8g}"
         )
+        if winding.r_pct is not None:
+            command += f" %r={winding.r_pct:.12g}"
+        if abs(winding.angle_deg) > 1e-9 and leadlag is None:
+            # У dss-python 0.15 нет свойства Transformer.angle. Сдвиг остаётся в модели.
+            warnings.append(
+                f"{transformer.id}: сдвиг обмотки {index + 1} на {winding.angle_deg:.8g}° "
+                "не передан в OpenDSS, у сборки нет свойства angle. Углы этой группы не сверены."
+            )
         if neutral is not None:
             command += f" rneut={neutral[0]:.12g} xneut={neutral[1]:.12g}"
             if winding.grounding.kind == "ungrounded":
@@ -663,6 +696,17 @@ def _transformer_commands(transformer: Transformer, topology, bus_token, warning
                     f"Rneut={UNGROUNDED_NEUTRAL_R_OHM:.0e} Ом на явном узле нейтрали"
                 )
         commands.append(command)
+    ltc = transformer.ltc
+    if ltc is not None and ltc.ct_primary_a and ltc.pt_ratio:
+        winding = transformer.windings[ltc.controlled_winding]
+        kv = winding.nominal_ll_v / 1000.0
+        vreg = ltc.v_target_pu * kv * 1000.0 / ltc.pt_ratio
+        band = ltc.deadband_pu * 2.0 * kv * 1000.0 / ltc.pt_ratio
+        commands.append(
+            f"New RegControl.{name} transformer={name} winding={ltc.controlled_winding + 1} "
+            f"vreg={vreg:.8g} band={band:.8g} ptratio={ltc.pt_ratio:.8g} ctprim={ltc.ct_primary_a:.8g} "
+            f"R={ltc.compensator_r_v or 0:.8g} X={ltc.compensator_x_v or 0:.8g}"
+        )
     return commands
 
 
@@ -679,19 +723,38 @@ def _leadlag(parsed) -> str | None:
         return "ansi"
     if unique == {11}:
         return "euro"
+    if unique == {5}:
+        return None
     raise ValueError(f"группа {parsed.raw} не имеет одного поддержанного сдвига LeadLag")
 
 
 def _winding_bus(bus_token: str, winding) -> tuple[str, tuple[float, float] | None]:
+    if winding.nodes:
+        return bus_token + "".join(f".{node}" for node in winding.nodes), None
+    if winding.phase:
+        node = {"A": "1", "B": "2", "C": "3"}[winding.phase]
+        return f"{bus_token}.{node}", None
     if winding.connection == "delta":
         return f"{bus_token}.1.2.3", None
     if winding.grounding.kind == "solid":
-        return f"{bus_token}.1.2.3", (0.0, 0.0)
+        # rneut=-1 в OpenDSS значит нейтраль сидит на узле 0. Нулевой реактор — другой элемент.
+        return f"{bus_token}.1.2.3", None
     if winding.grounding.kind == "impedance":
         return f"{bus_token}.1.2.3.4", (winding.grounding.r_ohm or 0.0, winding.grounding.x_ohm or 0.0)
     if winding.grounding.kind == "ungrounded":
         return f"{bus_token}.1.2.3.4", (UNGROUNDED_NEUTRAL_R_OHM, 0.0)
     raise ValueError("заземление обмотки не задано")
+
+
+def _declared_kv(load, nominal_ll_v: float, phases: list[str]) -> float:
+    """kV OpenDSS: для однофазной звезды это фазное, для трёхфазной и delta — линейное."""
+    if load.rated_kv is not None:
+        if load.connection == "wye" and len(load.phases) == 3 and len(phases) == 1:
+            return load.rated_kv / math.sqrt(3.0)
+        return load.rated_kv
+    if load.connection == "wye" and len(phases) == 1:
+        return ll_to_ln(nominal_ll_v) / 1000.0
+    return nominal_ll_v / 1000.0
 
 
 def _load_commands(load, bus_token: str, nominal_ll_v: float) -> list[str]:
@@ -702,6 +765,20 @@ def _load_commands(load, bus_token: str, nominal_ll_v: float) -> list[str]:
         and len(set(round(load.p_w[phase], 6) for phase in load.phases)) == 1
         and len(set(round(load.q_var[phase], 6) for phase in load.phases)) == 1
     )
+    if load.connection == "delta" and len(load.phases) == 2:
+        commands.append(
+            _one_load(
+                _token("d", load.id),
+                _bus_spec(bus_token, list(load.phases)),
+                1,
+                "delta",
+                _declared_kv(load, nominal_ll_v, load.phases),
+                sum(load.p_w.values()),
+                sum(load.q_var.values()),
+                load,
+            )
+        )
+        return commands
     if balanced or (load.connection == "delta" and len(load.phases) == 3):
         active = sum(load.p_w.values())
         reactive = sum(load.q_var.values())
@@ -711,7 +788,7 @@ def _load_commands(load, bus_token: str, nominal_ll_v: float) -> list[str]:
                 _bus_spec(bus_token, list(load.phases)),
                 len(load.phases),
                 load.connection,
-                nominal_ll_v / 1000.0,
+                _declared_kv(load, nominal_ll_v, load.phases),
                 active,
                 reactive,
                 load,
@@ -719,7 +796,7 @@ def _load_commands(load, bus_token: str, nominal_ll_v: float) -> list[str]:
         )
         return commands
     for phase in load.phases:
-        kv = ll_to_ln(nominal_ll_v) / 1000.0 if load.connection == "wye" else nominal_ll_v / 1000.0
+        kv = _declared_kv(load, nominal_ll_v, [phase])
         commands.append(
             _one_load(
                 _token("d", f"{load.id}:{phase}"),
@@ -736,13 +813,13 @@ def _load_commands(load, bus_token: str, nominal_ll_v: float) -> list[str]:
 
 
 def _one_load(name, bus, phases, connection, kv, active_w, reactive_var, load) -> str:
-    model = {"constant_pq": 1, "constant_z": 2, "zip": 8}[load.model]
+    model = load.opendss_model or {"constant_pq": 1, "constant_z": 2, "constant_i": 5, "zip": 8}[load.model]
     command = (
         f"New Load.{name} bus1={bus} phases={phases} conn={connection} kv={kv:.8g} "
         f"kw={active_w / 1000.0:.12g} kvar={reactive_var / 1000.0:.12g} model={model} "
-        f"vminpu={load.vmin_pu:.8g} vmaxpu=1.5"
+        f"vminpu={load.vmin_pu:.8g} vmaxpu={load.vmax_pu:.8g}"
     )
-    if load.model == "zip":
+    if load.model == "zip" and load.opendss_model not in {3, 4}:
         command += (
             " zipv=({zp:.12g} {ip:.12g} {pp:.12g} {zq:.12g} {iq:.12g} {pq:.12g} 0)".format(
                 zp=load.zip_z,
@@ -763,7 +840,7 @@ def _load_names(load) -> list[str]:
         and len(set(round(load.p_w[phase], 6) for phase in load.phases)) == 1
         and len(set(round(load.q_var[phase], 6) for phase in load.phases)) == 1
     )
-    if balanced or (load.connection == "delta" and len(load.phases) == 3):
+    if balanced or (load.connection == "delta" and len(load.phases) in (2, 3)):
         return [f"Load.{_token('d', load.id)}"]
     return [f"Load.{_token('d', f'{load.id}:{phase}')}" for phase in load.phases]
 
@@ -827,6 +904,24 @@ def _fault_commands(fault: StudyFault, bus_token: str) -> list[tuple[str, str]]:
             )
         )
     return commands
+
+
+def _transformer_taps(session, registry: list[tuple[str, str]]) -> dict[str, float]:
+    """Отпайка второй обмотки после Solve. Имена — исходные id, не внутренние токены."""
+    wanted = {
+        element.split(".", 1)[1]: equipment_id
+        for element, equipment_id in registry
+        if element.lower().startswith("transformer.")
+    }
+    found: dict[str, float] = {}
+    for token, equipment_id in wanted.items():
+        try:
+            session.Text.Command(f"Transformer.{token}.wdg=2")
+            session.Text.Command(f"? Transformer.{token}.tap")
+            found[equipment_id] = float(str(session.Text.Result()).strip())
+        except Exception:
+            continue
+    return found
 
 
 def _execute(script: list[str], options: SolveOptions):
@@ -942,12 +1037,16 @@ def _read(session, topology: Topology, registry: list[tuple[str, str]]):
     return voltages, flows
 
 
-def _pq_setpoint_error(network: Network, topology: Topology, flows: list[ConductorFlow]) -> float:
+def _pq_setpoint_error(
+    network: Network, topology: Topology, flows: list[ConductorFlow], voltages: list[PhaseVoltage]
+) -> float:
     energized = {island.id for island in topology.islands if island.energized}
     worst = 0.0
     for load in network.loads:
         bus_id = topology.terminal_bus[load.terminal_id]
         if topology.bus_island[bus_id] not in energized or load.model != "constant_pq":
+            continue
+        if _load_left_pq_band(load, bus_id, voltages):
             continue
         actual_p = 0.0
         actual_q = 0.0
@@ -963,6 +1062,26 @@ def _pq_setpoint_error(network: Network, topology: Topology, flows: list[Conduct
             abs(actual_q - requested_q) / network.s_base_va,
         )
     return worst
+
+
+def _load_left_pq_band(load, bus_id: str, voltages: list[PhaseVoltage]) -> bool:
+    """Ниже vminpu и выше vmaxpu OpenDSS сам переводит нагрузку в постоянный Z."""
+    if load.rated_kv:
+        rated_ln = load.rated_kv * 1000.0
+        if not (load.connection == "wye" and len(load.phases) == 1):
+            rated_ln /= math.sqrt(3.0)
+    else:
+        rated_ln = None
+    for voltage in voltages:
+        if voltage.bus_id != bus_id or voltage.phase not in load.phases or not voltage.energized:
+            continue
+        base = rated_ln or voltage.v_base_ln_v
+        if not base:
+            continue
+        pu = abs(voltage.complex) / base
+        if pu < load.vmin_pu or pu > load.vmax_pu:
+            return True
+    return False
 
 
 def _limited_generators(network: Network, flows: list[ConductorFlow]) -> list[str]:

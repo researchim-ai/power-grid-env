@@ -1,0 +1,79 @@
+{
+  "pack": "distribution",
+  "verdict": "pass",
+  "cases": [
+    {
+      "id": "ieee34",
+      "source": "ieee-pes",
+      "verdict": "pass",
+      "native_converged": true,
+      "import_status": "converged",
+      "max_voltage_error_pu": 9.042544490966975e-12,
+      "coverage": {
+        "counts": {
+          "directive": 3,
+          "transferred": 214
+        },
+        "unsupported": [],
+        "errors": []
+      },
+      "evidence": "conversion_consistency"
+    },
+    {
+      "id": "ieee123",
+      "source": "ieee-pes",
+      "verdict": "pass",
+      "native_converged": true,
+      "import_status": "converged",
+      "max_voltage_error_pu": 3.101656345094739e-07,
+      "coverage": {
+        "counts": {
+          "directive": 3,
+          "transferred": 266
+        },
+        "unsupported": [],
+        "errors": []
+      },
+      "evidence": "conversion_consistency"
+    },
+    {
+      "id": "enwl-median",
+      "source": "enwl-lvns",
+      "verdict": "pass",
+      "native_converged": true,
+      "import_status": "converged",
+      "max_voltage_error_pu": 8.547829111194005e-12,
+      "coverage": {
+        "counts": {
+          "transferred": 1027,
+          "ignored_non_electrical": 1810
+        },
+        "unsupported": [],
+        "errors": []
+      },
+      "evidence": "conversion_consistency"
+    },
+    {
+      "id": "enwl-largest",
+      "source": "enwl-lvns",
+      "verdict": "pass",
+      "native_converged": true,
+      "import_status": "converged",
+      "max_voltage_error_pu": 2.811029187199665e-11,
+      "coverage": {
+        "counts": {
+          "transferred": 7686,
+          "ignored_non_electrical": 14042
+        },
+        "unsupported": [],
+        "errors": []
+      },
+      "evidence": "conversion_consistency"
+    },
+    {
+      "id": "smart-ds-one-feeder",
+      "verdict": "not_run",
+      "source": "smart-ds"
+    }
+  ]
+}

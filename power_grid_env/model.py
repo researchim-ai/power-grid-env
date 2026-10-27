@@ -114,11 +114,15 @@ class Winding(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     terminal_id: str
-    connection: Literal["wye", "delta"]
+    connection: Literal["wye", "delta", "series"]
+    phase: Literal["A", "B", "C"] | None = None
+    nodes: list[str] | None = None
     grounding: GroundingSpec
     nominal_ll_v: float
     rated_va: float
     tap_pu: float = 1.0
+    r_pct: float | None = None
+    angle_deg: float = 0.0
 
 
 class LTCSpec(BaseModel):
@@ -130,6 +134,10 @@ class LTCSpec(BaseModel):
     tap_min_pu: float
     tap_max_pu: float
     tap_step_pu: float
+    pt_ratio: float | None = None
+    ct_primary_a: float | None = None
+    compensator_r_v: float | None = None
+    compensator_x_v: float | None = None
     max_iterations: int = 8
 
 
@@ -138,6 +146,7 @@ class Transformer(BaseModel):
 
     id: str
     windings: list[Winding]
+    phases: int = 3
     vector_group: str
     x_hl_pct: float
     x_ht_pct: float | None = None
@@ -156,10 +165,12 @@ class Load(BaseModel):
     terminal_id: str
     connection: Literal["wye", "delta"]
     grounding: GroundingSpec
-    model: Literal["constant_pq", "constant_z", "zip"]
+    model: Literal["constant_pq", "constant_z", "constant_i", "zip"]
     phases: list[Literal["A", "B", "C"]]
     p_w: dict[str, float]
     q_var: dict[str, float]
+    rated_kv: float | None = None
+    opendss_model: int | None = None
     zip_z: float | None = None
     zip_i: float | None = None
     zip_p: float | None = None
@@ -167,6 +178,7 @@ class Load(BaseModel):
     zip_iq: float | None = None
     zip_pq: float | None = None
     vmin_pu: float = 0.0
+    vmax_pu: float = 1.5
     critical: bool = False
     priority: int = 0
     cold_load_multiplier: float | None = None
@@ -183,6 +195,8 @@ class VoltageSource(BaseModel):
     angle_a_rad: float = 0.0
     r_ohm: float
     x_ohm: float
+    r0_ohm: float | None = None
+    x0_ohm: float | None = None
     is_slack: bool = True
     participation: float | None = None
     phase_pu: dict[str, float] | None = None
@@ -332,12 +346,21 @@ class ParsedVectorGroup(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     raw: str
-    connections: list[Literal["wye", "delta"]]
+    connections: list[Literal["wye", "delta", "series"]]
     neutral_solid: list[bool]
     clock_hours: list[int]
 
 
 def parse_vector_group(text: str) -> ParsedVectorGroup:
+    if text.strip() == "Ii0":
+        return ParsedVectorGroup(raw="Ii0", connections=["series", "series"], neutral_solid=[False, False], clock_hours=[0, 0])
+    if text.strip() == "Iii0":
+        return ParsedVectorGroup(
+            raw="Iii0",
+            connections=["series", "series", "series"],
+            neutral_solid=[False, False, False],
+            clock_hours=[0, 0, 0],
+        )
     match = _VECTOR.match(text.strip())
     if not match:
         raise ValueError(f"неподдерживаемая группа соединений {text!r}")
@@ -364,9 +387,9 @@ def parse_vector_group(text: str) -> ParsedVectorGroup:
 
 def check_grounding(connection: str, grounding: GroundingSpec, where: str) -> list[str]:
     errors: list[str] = []
-    if connection == "delta":
+    if connection in {"delta", "series"}:
         if grounding.kind != "not_applicable":
-            errors.append(f"{where}: для delta заземление должно быть not_applicable")
+            errors.append(f"{where}: для {connection} заземление должно быть not_applicable")
         return errors
     if grounding.kind == "not_applicable":
         errors.append(f"{where}: для звезды заземление нужно задать явно")
@@ -545,8 +568,8 @@ def validate_network_rules(network: Network) -> list[str]:
         clocks = parsed.clock_hours
         mixed = len(set(parsed.connections)) > 1
         for hour in clocks[1:]:
-            if mixed and hour not in (1, 11):
-                errors.append(f"{transformer.id}: для смешанных соединений поддержаны только группы 1 и 11")
+            if mixed and hour not in (1, 5, 11):
+                errors.append(f"{transformer.id}: для смешанных соединений поддержаны только группы 1, 5 и 11")
             if not mixed and hour != 0:
                 errors.append(f"{transformer.id}: для одинаковых соединений поддержан только сдвиг 0")
 

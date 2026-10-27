@@ -1,0 +1,17 @@
+{
+  "id": "enwl-largest",
+  "source": "enwl-lvns",
+  "verdict": "pass",
+  "native_converged": true,
+  "import_status": "converged",
+  "max_voltage_error_pu": 2.811029187199665e-11,
+  "coverage": {
+    "counts": {
+      "transferred": 7686,
+      "ignored_non_electrical": 14042
+    },
+    "unsupported": [],
+    "errors": []
+  },
+  "evidence": "conversion_consistency"
+}

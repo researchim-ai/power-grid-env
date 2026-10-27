@@ -1,0 +1,48 @@
+{
+  "pack": "pglib-opf",
+  "verdict": "pass",
+  "global_optimum_claimed": false,
+  "note": "pass означает независимую допустимость локального решения. Совпадение с опубликованной стоимостью не доказывает глобальный оптимум.",
+  "cases": [
+    {
+      "case": "pglib_opf_case3_lmbd.m",
+      "verdict": "pass",
+      "cost": 5812.642974234948,
+      "published_cost": 5812.64,
+      "relative_gap_to_published": 5.116840106977247e-07,
+      "global_optimum_claimed": false,
+      "max_mismatch_pu": 1.5365486660812167e-13,
+      "flows_within_rating": true
+    },
+    {
+      "case": "pglib_opf_case5_pjm.m",
+      "verdict": "pass",
+      "cost": 17551.890920826838,
+      "published_cost": null,
+      "relative_gap_to_published": null,
+      "global_optimum_claimed": false,
+      "max_mismatch_pu": 5.728750807065808e-14,
+      "flows_within_rating": true
+    },
+    {
+      "case": "pglib_opf_case14_ieee.m",
+      "verdict": "pass",
+      "cost": 2178.080428255156,
+      "published_cost": null,
+      "relative_gap_to_published": null,
+      "global_optimum_claimed": false,
+      "max_mismatch_pu": 7.91033905045424e-15,
+      "flows_within_rating": true
+    },
+    {
+      "case": "pglib_opf_case118_ieee.m",
+      "verdict": "pass",
+      "cost": 97213.60739527788,
+      "published_cost": null,
+      "relative_gap_to_published": null,
+      "global_optimum_claimed": false,
+      "max_mismatch_pu": 1.4407031123653269e-11,
+      "flows_within_rating": true
+    }
+  ]
+}

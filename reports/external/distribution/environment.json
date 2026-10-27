@@ -1,0 +1,13 @@
+{
+  "python": "3.12.9",
+  "packages": {
+    "python": "3.12.9",
+    "numpy": "2.2.6",
+    "scipy": "1.15.2",
+    "pydantic": "2.11.7",
+    "opendssdirect.py": "0.9.4",
+    "dss-python": "0.15.7"
+  },
+  "platform": "Linux-6.17.0-22-generic-x86_64-with-glibc2.39",
+  "machine": "x86_64"
+}

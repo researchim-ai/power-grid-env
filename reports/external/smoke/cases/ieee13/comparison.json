@@ -1,0 +1,93 @@
+{
+  "evidence": "conversion_consistency",
+  "thresholds": {
+    "voltage_pu": 1e-05,
+    "angle_rad": 0.0001
+  },
+  "compared": 41,
+  "missing_in_native": [
+    [
+      "611",
+      1
+    ],
+    [
+      "611",
+      2
+    ],
+    [
+      "645",
+      1
+    ],
+    [
+      "646",
+      1
+    ],
+    [
+      "652",
+      2
+    ],
+    [
+      "652",
+      3
+    ],
+    [
+      "684",
+      2
+    ]
+  ],
+  "missing_in_import": [],
+  "max_voltage_error_pu": 8.778033855350031e-10,
+  "max_angle_error_rad": 1.2117307157666346e-09,
+  "worst": [
+    {
+      "bus": "675",
+      "node": 3,
+      "voltage_pu": 8.778033855350031e-10,
+      "angle_rad": 8.187051037111814e-10
+    },
+    {
+      "bus": "611",
+      "node": 3,
+      "voltage_pu": 8.726648292878281e-10,
+      "angle_rad": 8.244431803916541e-10
+    },
+    {
+      "bus": "684",
+      "node": 3,
+      "voltage_pu": 8.715038690709775e-10,
+      "angle_rad": 8.234475323831703e-10
+    },
+    {
+      "bus": "692",
+      "node": 3,
+      "voltage_pu": 8.703950893362844e-10,
+      "angle_rad": 8.234790627170696e-10
+    },
+    {
+      "bus": "671",
+      "node": 3,
+      "voltage_pu": 8.703948672916795e-10,
+      "angle_rad": 8.234790627170696e-10
+    },
+    {
+      "bus": "680",
+      "node": 3,
+      "voltage_pu": 8.703946452470745e-10,
+      "angle_rad": 8.234790627170696e-10
+    },
+    {
+      "bus": "670",
+      "node": 3,
+      "voltage_pu": 5.938046720999068e-10,
+      "angle_rad": 5.613225440015412e-10
+    },
+    {
+      "bus": "634",
+      "node": 3,
+      "voltage_pu": 4.604563397236916e-10,
+      "angle_rad": 4.455387170310132e-10
+    }
+  ],
+  "verdict": "pass",
+  "independence": "один и тот же DSS-Extensions; это проверка адаптера, не внешний решатель"
+}

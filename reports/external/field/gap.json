@@ -1,0 +1,25 @@
+{
+  "verdict": "not_assessed_missing_paired_measurements",
+  "score_computed": false,
+  "validated_for_declared_scope": false,
+  "request_sent": false,
+  "required": [
+    "topology_on_each_interval",
+    "equipment_parameters",
+    "independent_inputs",
+    "independent_targets",
+    "meter_mapping",
+    "timestamps",
+    "quality_flags",
+    "usage_terms"
+  ],
+  "present": [],
+  "thresholds_frozen_not_applied": {
+    "voltage_mae_pu": 0.005,
+    "voltage_p95_pu": 0.01,
+    "feeder_pq_nmae": 0.05,
+    "daily_energy_error": 0.02,
+    "usable_interval_fraction": 0.95
+  },
+  "note": "Нет пакета, где топология, независимые входы и независимые цели сняты на одном интервале. Пороги пилота записаны заранее и не использовались для оценки."
+}

@@ -1,0 +1,77 @@
+{
+  "status": "data_unavailable",
+  "feeder_day": "data_unavailable",
+  "models_sha256": "5ac19bcc5c0857c5d996c0e24d3d15c1e8fe4326eea0253b227576bb50d8bd51",
+  "profiles_sha256": "aa8e151779db749e4f6f93a989e7951ada071b00fc542c4f0dc94a371dce2983",
+  "profiles_bytes": 793649,
+  "shape_files_referenced": [
+    "C:\\2014\\ENWL_Network_Creation\\Feeder_Representation\\Load_files_Model\\Load_profiles\\Load1_5min.csv",
+    "C:\\2014\\ENWL_Network_Creation\\Feeder_Representation\\Load_files_Model\\Load_profiles\\Load2_5min.csv"
+  ],
+  "join_key_found": false,
+  "books": [
+    {
+      "name": "Summer_Load_Profiles.xlsx",
+      "dimension": "A1:CV288",
+      "shared_strings": false,
+      "header": false,
+      "rows": 288,
+      "columns": 100,
+      "step_min": 5,
+      "customer_or_feeder_key": null
+    },
+    {
+      "name": "Summer_PV_Profiles.xlsx",
+      "dimension": "A1:CV288",
+      "shared_strings": false,
+      "header": false,
+      "rows": 288,
+      "columns": 100,
+      "step_min": 5,
+      "customer_or_feeder_key": null
+    },
+    {
+      "name": "Winter_uCHP_Profiles.xlsx",
+      "dimension": "A1:CV288",
+      "shared_strings": false,
+      "header": false,
+      "rows": 288,
+      "columns": 100,
+      "step_min": 5,
+      "customer_or_feeder_key": null
+    },
+    {
+      "name": "Winter_Load_Profiles.xlsx",
+      "dimension": "A1:CV288",
+      "shared_strings": false,
+      "header": false,
+      "rows": 288,
+      "columns": 100,
+      "step_min": 5,
+      "customer_or_feeder_key": null
+    },
+    {
+      "name": "Winter_EV_Profiles.xlsx",
+      "dimension": "A1:CV288",
+      "shared_strings": false,
+      "header": false,
+      "rows": 288,
+      "columns": 100,
+      "step_min": 5,
+      "customer_or_feeder_key": null
+    },
+    {
+      "name": "Winter_EHP_Profiles.xlsx",
+      "dimension": "A1:CV288",
+      "shared_strings": false,
+      "header": false,
+      "rows": 288,
+      "columns": 100,
+      "step_min": 5,
+      "customer_or_feeder_key": null
+    }
+  ],
+  "evidence": "real_network_model",
+  "profile_evidence": "crest_lct_library_not_field_measurements",
+  "note": "Суточный QSTS фидера не собран: в книгах нет имени фидера, номера Shape_N и пути LoadN_5min.csv. Плоский множитель вместо отсутствующего профиля не подставлялся."
+}

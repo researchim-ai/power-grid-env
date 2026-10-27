@@ -1,0 +1,14 @@
+schema_version: power-grid-env.benchmark-pack/v1
+id: smoke
+cases:
+  - id: ieee13
+    source: ieee-pes
+    master: IEEE13Nodeckt.dss
+    evidence: conversion_consistency
+    note: прямой native solve против штатного импорта; тот же DSS-Extensions не является независимым решателем
+  - id: enwl-network23-feeder3
+    source: enwl-lvns
+    archive_member: LV network models/network_23/Feeder_3/
+    master: Master.txt
+    evidence: real_network_model
+    selection_rule: smallest New Line count among feeders, ties by path, chosen before inspecting solve errors

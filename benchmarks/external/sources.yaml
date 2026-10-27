@@ -1,0 +1,107 @@
+schema_version: power-grid-env.external-source-candidates/v1
+prepared_on: '2026-10-26'
+status: acquisition_plan_only
+downloaded: false
+note: >-
+  Источники-кандидаты проверены по страницам издателей. Файлы, SHA-256,
+  права перераспространения и измерительные каналы устанавливаются после
+  получения. Этот registry не является acquisition.lock и не доказывает
+  прохождение бенчмарка.
+initial_download_budget_mb: 250
+sources:
+  - id: ieee-pes
+    priority: 1
+    publisher: IEEE PES Distribution Test Feeder Working Group
+    landing_url: https://sites.ieee.org/pes-testfeeders/
+    description_url: https://ewh.ieee.org/soc/pes/dsacom/testfeeders/testfeeders.pdf
+    native_models_url: https://sourceforge.net/p/electricdss/code/HEAD/tree/trunk/Distrib/IEEETestCases/
+    fallback_mirror_url: https://github.com/tshort/OpenDSS/tree/master/Distrib/IEEETestCases
+    target_cases: [IEEE13, IEEE34, IEEE123]
+    evidence: [conversion_consistency, external_reference_if_available]
+    access: official_pages_not_readable_in_browser_tool_check_mirror_and_revision
+    license: verify_per_archive_and_reference
+    acquisition_status: downloaded_local_cache
+    cache_note: unofficial tshort/OpenDSS mirror, license file was not in the repository root
+  - id: enwl-lvns
+    priority: 1
+    publisher: Electricity North West / University of Manchester
+    landing_url: https://www.enwl.co.uk/lvns
+    model_url: https://www.enwl.co.uk/globalassets/innovation/lvns/lvns-academic/lv-network-models-2.zip
+    profiles_url: https://www.enwl.co.uk/globalassets/innovation/lvns/lvns-academic/lct-profiles.zip
+    documentation_url: https://www.enwl.co.uk/globalassets/innovation/lvns/lvns-academic/summary-report.pdf
+    target_selection: one_then_three_networks_selected_by_prefrozen_inventory_rule
+    evidence: [real_network_model, conversion_consistency]
+    profile_origin: mixed_inspect_each_profile_residential_loads_documented_as_CREST_generated
+    paired_measurements: not_confirmed
+    access: public_archive_links_found_binaries_not_inspected
+    license: verify_archive_terms_and_redistribution
+    acquisition_status: downloaded_local_cache
+    cache_note: model zip and lct-profiles.zip hashed; the profile library has no Shape_N key, feeder-day QSTS is data_unavailable
+  - id: smart-ds
+    priority: 2
+    publisher: NREL / OEDI
+    landing_url: https://data.openei.org/submissions/2981
+    documentation_url: https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/User_Guide/Readme.pdf
+    bucket: s3://oedi-data-lake/SMART-DS/
+    target_selection: one_feeder_and_required_profiles_after_prefix_inventory
+    evidence: [synthetic_scale, conversion_consistency, qsts_regression]
+    profile_resolution_minutes_from_catalog: 15
+    access: catalog_indexed_direct_open_returned_429_use_backoff_or_public_s3
+    license: verify_specific_submission_and_objects
+    acquisition_status: not_downloaded
+  - id: simbench
+    priority: 3
+    publisher: SimBench project
+    landing_url: https://simbench.de/en/download/
+    repository_url: https://github.com/e2nIEE/simbench
+    target_case_candidates: [1-LV-rural1--0-sw, 1-MV-rural--0-sw, 1-MV-comm--0-sw]
+    evidence: [external_benchmark_model, qsts_regression]
+    access: public_download_and_repository_pages_found
+    database_license_from_publisher: ODbL
+    database_contents_license_from_publisher: DbCL
+    license: preserve_specific_version_terms_and_attribution
+    acquisition_status: structural_csv_cached_profiles_not_downloaded
+    cache_note: nine structural tables of 1-complete_data-mixed-all-0-sw; study case n1 compared with pandapower on |V| only
+  - id: low-carbon-london
+    priority: 3
+    publisher: UK Power Networks; refactored subset by Simon H. Tindemans / TU Delft
+    landing_url: https://www.data.gov.uk/dataset/df8e55d4-c6d0-498e-abd8-f4c678766cbe/smartmeter-energy-consumption-data-in-london-households1
+    subset_description_url: https://research.tudelft.nl/en/datasets/low-carbon-london-smart-meter-data-refactored/
+    subset_doi: https://doi.org/10.4121/FBBE775B-48D8-469F-A39B-B64488BFD6FD
+    evidence: [measured_profile_only]
+    required_conversion: interval_kWh_divided_by_0_5_hours_gives_mean_kW
+    paired_network_model: not_provided_by_this_profile_source
+    license: verify_specific_original_or_refactored_file_terms
+    acquisition_status: not_downloaded
+  - id: ornl-gesl
+    priority: 3
+    publisher: ORNL / LLNL Grid Event Signature Library
+    landing_url: https://gsl.ornl.gov/
+    faq_url: https://gsl.ornl.gov/faq
+    publisher_description_url: https://www.ornl.gov/news/check-out-power
+    evidence: [event_records_classification_required_per_record]
+    paired_network_model: not_confirmed
+    access: javascript_required_record_download_and_registration_not_verified
+    license: verify_per_record
+    acquisition_status: not_downloaded
+  - id: pglib-opf
+    priority: 4
+    publisher: IEEE PES Task Force / Power Grid Library
+    repository_url: https://github.com/power-grid-lib/pglib-opf
+    baseline_url: https://github.com/power-grid-lib/pglib-opf/blob/master/BASELINE.md
+    license_url: https://github.com/power-grid-lib/pglib-opf/blob/master/LICENSE
+    prerequisites: full_network_opf_mapping_and_independent_feasibility_check
+    evidence: [external_reference]
+    data_license_from_repository: CC-BY-4.0
+    code_license_from_repository: MIT
+    acquisition_status: three_small_cases_cached
+    cache_note: case3, case5, case14 and case118 of v23.07 are locally feasible; global optimum not claimed
+  - id: industrial-partner
+    priority: parallel_data_request_preparation
+    publisher: to_be_identified_by_user
+    evidence: [field_measurements_only_after_sufficiency_gate]
+    required: [topology, equipment_parameters, independent_inputs, independent_targets, channel_mapping, timestamps, quality, usage_terms]
+    access: no_partner_identified_prepare_request_only
+    license: agreement_required
+    acquisition_status: request_drafted_not_sent
+    cache_note: benchmarks/external/partner_request.md is a draft and was not sent

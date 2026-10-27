@@ -1,0 +1,3081 @@
+{
+  "source": "/home/user/workspace/power-grid-env/data/external/raw/ieee-pes/123Bus/IEEE123Master.dss",
+  "source_sha256": "21bfab1a3c956d347dc491436ae839281bf7db4ececc405e10ddeb04d3ab00ec",
+  "format": "dss",
+  "errors": [],
+  "warnings": [],
+  "mappings": [
+    {
+      "from": "Transformer.reg1a",
+      "to": "transformer:reg1a",
+      "vector_group": "YNyn0"
+    },
+    {
+      "from": "Transformer.XFM1",
+      "to": "transformer:XFM1",
+      "vector_group": "Dd0"
+    },
+    {
+      "from": "Transformer.reg2a",
+      "to": "transformer:reg2a",
+      "vector_group": "Ii0"
+    },
+    {
+      "from": "Transformer.reg3a",
+      "to": "transformer:reg3a",
+      "vector_group": "Ii0"
+    },
+    {
+      "from": "Transformer.reg4a",
+      "to": "transformer:reg4a",
+      "vector_group": "Ii0"
+    },
+    {
+      "from": "Transformer.reg3c",
+      "to": "transformer:reg3c",
+      "vector_group": "Ii0"
+    },
+    {
+      "from": "Transformer.reg4b",
+      "to": "transformer:reg4b",
+      "vector_group": "Ii0"
+    },
+    {
+      "from": "Transformer.reg4c",
+      "to": "transformer:reg4c",
+      "vector_group": "Ii0"
+    },
+    {
+      "from": "RegControl.creg1a",
+      "to": "transformer:reg1a.ltc"
+    },
+    {
+      "from": "Line.L115",
+      "to": "line:L115",
+      "r_ohm": 0.0346666668,
+      "x_ohm": 0.08166666680000001,
+      "length_m": 400.0,
+      "note": "LineCode.1: явная матрица умножена на длину 0.4 km"
+    },
+    {
+      "from": "Line.L1",
+      "to": "line:L1",
+      "r_ohm": 0.0440549242,
+      "x_ohm": 0.044661458274999996,
+      "length_m": 175.0,
+      "note": "LineCode.10: явная матрица умножена на длину 0.175 km"
+    },
+    {
+      "from": "Line.L2",
+      "to": "line:L2",
+      "r_ohm": 0.062935606,
+      "x_ohm": 0.06380208325,
+      "length_m": 250.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L3",
+      "to": "line:L3",
+      "r_ohm": 0.0260000001,
+      "x_ohm": 0.06125000009999999,
+      "length_m": 300.0,
+      "note": "LineCode.1: явная матрица умножена на длину 0.3 km"
+    },
+    {
+      "from": "Line.L4",
+      "to": "line:L4",
+      "r_ohm": 0.05034848480000001,
+      "x_ohm": 0.05104166660000001,
+      "length_m": 200.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.2 km"
+    },
+    {
+      "from": "Line.L5",
+      "to": "line:L5",
+      "r_ohm": 0.08181628780000001,
+      "x_ohm": 0.08294270822500001,
+      "length_m": 325.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.325 km"
+    },
+    {
+      "from": "Line.L6",
+      "to": "line:L6",
+      "r_ohm": 0.062935606,
+      "x_ohm": 0.06380208325,
+      "length_m": 250.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L7",
+      "to": "line:L7",
+      "r_ohm": 0.0173333334,
+      "x_ohm": 0.040833333400000005,
+      "length_m": 200.0,
+      "note": "LineCode.1: явная матрица умножена на длину 0.2 km"
+    },
+    {
+      "from": "Line.L8",
+      "to": "line:L8",
+      "r_ohm": 0.05664204540000001,
+      "x_ohm": 0.057421874925000005,
+      "length_m": 225.0,
+      "note": "LineCode.10: явная матрица умножена на длину 0.225 km"
+    },
+    {
+      "from": "Line.L9",
+      "to": "line:L9",
+      "r_ohm": 0.05664204540000001,
+      "x_ohm": 0.057421874925000005,
+      "length_m": 225.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.225 km"
+    },
+    {
+      "from": "Line.L10",
+      "to": "line:L10",
+      "r_ohm": 0.0260000001,
+      "x_ohm": 0.06125000009999999,
+      "length_m": 300.0,
+      "note": "LineCode.1: явная матрица умножена на длину 0.3 km"
+    },
+    {
+      "from": "Line.L11",
+      "to": "line:L11",
+      "r_ohm": 0.1069905302,
+      "x_ohm": 0.108463541525,
+      "length_m": 425.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.425 km"
+    },
+    {
+      "from": "Line.L12",
+      "to": "line:L12",
+      "r_ohm": 0.0377613636,
+      "x_ohm": 0.03828124995,
+      "length_m": 150.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.15 km"
+    },
+    {
+      "from": "Line.L13",
+      "to": "line:L13",
+      "r_ohm": 0.0729062499,
+      "x_ohm": 0.163781249775,
+      "length_m": 825.0,
+      "note": "LineCode.2: явная матрица умножена на длину 0.825 km"
+    },
+    {
+      "from": "Line.L14",
+      "to": "line:L14",
+      "r_ohm": 0.062935606,
+      "x_ohm": 0.06380208325,
+      "length_m": 250.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L15",
+      "to": "line:L15",
+      "r_ohm": 0.062935606,
+      "x_ohm": 0.06380208325,
+      "length_m": 250.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L16",
+      "to": "line:L16",
+      "r_ohm": 0.09440340900000001,
+      "x_ohm": 0.095703124875,
+      "length_m": 375.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.375 km"
+    },
+    {
+      "from": "Line.L17",
+      "to": "line:L17",
+      "r_ohm": 0.0881098484,
+      "x_ohm": 0.08932291654999999,
+      "length_m": 350.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.35 km"
+    },
+    {
+      "from": "Line.L18",
+      "to": "line:L18",
+      "r_ohm": 0.062935606,
+      "x_ohm": 0.06380208325,
+      "length_m": 250.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L19",
+      "to": "line:L19",
+      "r_ohm": 0.0265113636,
+      "x_ohm": 0.0595568181,
+      "length_m": 300.0,
+      "note": "LineCode.2: явная матрица умножена на длину 0.3 km"
+    },
+    {
+      "from": "Line.L20",
+      "to": "line:L20",
+      "r_ohm": 0.08181628780000001,
+      "x_ohm": 0.08294270822500001,
+      "length_m": 325.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.325 km"
+    },
+    {
+      "from": "Line.L21",
+      "to": "line:L21",
+      "r_ohm": 0.1321647726,
+      "x_ohm": 0.133984374825,
+      "length_m": 525.0,
+      "note": "LineCode.10: явная матрица умножена на длину 0.525 km"
+    },
+    {
+      "from": "Line.L22",
+      "to": "line:L22",
+      "r_ohm": 0.022092803,
+      "x_ohm": 0.04963068175,
+      "length_m": 250.0,
+      "note": "LineCode.2: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L23",
+      "to": "line:L23",
+      "r_ohm": 0.13845833320000003,
+      "x_ohm": 0.14036458315000003,
+      "length_m": 550.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.55 km"
+    },
+    {
+      "from": "Line.L24",
+      "to": "line:L24",
+      "r_ohm": 0.024302083300000003,
+      "x_ohm": 0.054593749925000004,
+      "length_m": 275.0,
+      "note": "LineCode.2: явная матрица умножена на длину 0.275 km"
+    },
+    {
+      "from": "Line.L25",
+      "to": "line:L25",
+      "r_ohm": 0.03033333345,
+      "x_ohm": 0.07145833345,
+      "length_m": 350.0,
+      "note": "LineCode.7: явная матрица умножена на длину 0.35 km"
+    },
+    {
+      "from": "Line.L26",
+      "to": "line:L26",
+      "r_ohm": 0.0176742424,
+      "x_ohm": 0.039704545400000006,
+      "length_m": 200.0,
+      "note": "LineCode.2: явная матрица умножена на длину 0.2 km"
+    },
+    {
+      "from": "Line.L27",
+      "to": "line:L27",
+      "r_ohm": 0.023833333425000002,
+      "x_ohm": 0.05614583342500001,
+      "length_m": 275.0,
+      "note": "LineCode.7: явная матрица умножена на длину 0.275 km"
+    },
+    {
+      "from": "Line.L28",
+      "to": "line:L28",
+      "r_ohm": 0.05664204540000001,
+      "x_ohm": 0.057421874925000005,
+      "length_m": 225.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.225 km"
+    },
+    {
+      "from": "Line.L29",
+      "to": "line:L29",
+      "r_ohm": 0.125871212,
+      "x_ohm": 0.1276041665,
+      "length_m": 500.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.5 km"
+    },
+    {
+      "from": "Line.L30",
+      "to": "line:L30",
+      "r_ohm": 0.0265113636,
+      "x_ohm": 0.0595568181,
+      "length_m": 300.0,
+      "note": "LineCode.2: явная матрица умножена на длину 0.3 km"
+    },
+    {
+      "from": "Line.L31",
+      "to": "line:L31",
+      "r_ohm": 0.0309299242,
+      "x_ohm": 0.06948295445,
+      "length_m": 350.0,
+      "note": "LineCode.2: явная матрица умножена на длину 0.35 km"
+    },
+    {
+      "from": "Line.L32",
+      "to": "line:L32",
+      "r_ohm": 0.0176742424,
+      "x_ohm": 0.039704545400000006,
+      "length_m": 200.0,
+      "note": "LineCode.2: явная матрица умножена на длину 0.2 km"
+    },
+    {
+      "from": "Line.L33",
+      "to": "line:L33",
+      "r_ohm": 0.0755227272,
+      "x_ohm": 0.0765624999,
+      "length_m": 300.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.3 km"
+    },
+    {
+      "from": "Line.L34",
+      "to": "line:L34",
+      "r_ohm": 0.025174242400000005,
+      "x_ohm": 0.025520833300000004,
+      "length_m": 100.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.1 km"
+    },
+    {
+      "from": "Line.L35",
+      "to": "line:L35",
+      "r_ohm": 0.05633333355,
+      "x_ohm": 0.13270833355,
+      "length_m": 650.0,
+      "note": "LineCode.8: явная матрица умножена на длину 0.65 km"
+    },
+    {
+      "from": "Line.L36",
+      "to": "line:L36",
+      "r_ohm": 0.02166666675,
+      "x_ohm": 0.05104166675,
+      "length_m": 250.0,
+      "note": "LineCode.1: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L37",
+      "to": "line:L37",
+      "r_ohm": 0.0755227272,
+      "x_ohm": 0.0765624999,
+      "length_m": 300.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.3 km"
+    },
+    {
+      "from": "Line.L38",
+      "to": "line:L38",
+      "r_ohm": 0.062935606,
+      "x_ohm": 0.06380208325,
+      "length_m": 250.0,
+      "note": "LineCode.10: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L39",
+      "to": "line:L39",
+      "r_ohm": 0.08181628780000001,
+      "x_ohm": 0.08294270822500001,
+      "length_m": 325.0,
+      "note": "LineCode.10: явная матрица умножена на длину 0.325 km"
+    },
+    {
+      "from": "Line.L40",
+      "to": "line:L40",
+      "r_ohm": 0.08181628780000001,
+      "x_ohm": 0.08294270822500001,
+      "length_m": 325.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.325 km"
+    },
+    {
+      "from": "Line.L41",
+      "to": "line:L41",
+      "r_ohm": 0.02166666675,
+      "x_ohm": 0.05104166675,
+      "length_m": 250.0,
+      "note": "LineCode.1: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L42",
+      "to": "line:L42",
+      "r_ohm": 0.125871212,
+      "x_ohm": 0.1276041665,
+      "length_m": 500.0,
+      "note": "LineCode.10: явная матрица умножена на длину 0.5 km"
+    },
+    {
+      "from": "Line.L43",
+      "to": "line:L43",
+      "r_ohm": 0.0173333334,
+      "x_ohm": 0.040833333400000005,
+      "length_m": 200.0,
+      "note": "LineCode.1: явная матрица умножена на длину 0.2 km"
+    },
+    {
+      "from": "Line.L44",
+      "to": "line:L44",
+      "r_ohm": 0.05034848480000001,
+      "x_ohm": 0.05104166660000001,
+      "length_m": 200.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.2 km"
+    },
+    {
+      "from": "Line.L45",
+      "to": "line:L45",
+      "r_ohm": 0.02166666675,
+      "x_ohm": 0.05104166675,
+      "length_m": 250.0,
+      "note": "LineCode.1: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L46",
+      "to": "line:L46",
+      "r_ohm": 0.0755227272,
+      "x_ohm": 0.0765624999,
+      "length_m": 300.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.3 km"
+    },
+    {
+      "from": "Line.L47",
+      "to": "line:L47",
+      "r_ohm": 0.01311079545,
+      "x_ohm": 0.03025852275,
+      "length_m": 150.0,
+      "note": "LineCode.4: явная матрица умножена на длину 0.15 km"
+    },
+    {
+      "from": "Line.L48",
+      "to": "line:L48",
+      "r_ohm": 0.02185132575,
+      "x_ohm": 0.05043087125,
+      "length_m": 250.0,
+      "note": "LineCode.4: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L49",
+      "to": "line:L49",
+      "r_ohm": 0.02185132575,
+      "x_ohm": 0.05043087125,
+      "length_m": 250.0,
+      "note": "LineCode.4: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L50",
+      "to": "line:L50",
+      "r_ohm": 0.02185132575,
+      "x_ohm": 0.05043087125,
+      "length_m": 250.0,
+      "note": "LineCode.4: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L51",
+      "to": "line:L51",
+      "r_ohm": 0.0437026515,
+      "x_ohm": 0.1008617425,
+      "length_m": 500.0,
+      "note": "LineCode.4: явная матрица умножена на длину 0.5 km"
+    },
+    {
+      "from": "Line.L52",
+      "to": "line:L52",
+      "r_ohm": 0.0173333334,
+      "x_ohm": 0.040833333400000005,
+      "length_m": 200.0,
+      "note": "LineCode.1: явная матрица умножена на длину 0.2 km"
+    },
+    {
+      "from": "Line.L53",
+      "to": "line:L53",
+      "r_ohm": 0.010833333375,
+      "x_ohm": 0.025520833375,
+      "length_m": 125.0,
+      "note": "LineCode.1: явная матрица умножена на длину 0.125 km"
+    },
+    {
+      "from": "Line.L54",
+      "to": "line:L54",
+      "r_ohm": 0.023833333425000002,
+      "x_ohm": 0.05614583342500001,
+      "length_m": 275.0,
+      "note": "LineCode.1: явная матрица умножена на длину 0.275 km"
+    },
+    {
+      "from": "Line.L55",
+      "to": "line:L55",
+      "r_ohm": 0.030591856049999998,
+      "x_ohm": 0.07060321975,
+      "length_m": 350.0,
+      "note": "LineCode.3: явная матрица умножена на длину 0.35 km"
+    },
+    {
+      "from": "Line.L56",
+      "to": "line:L56",
+      "r_ohm": 0.023833333425000002,
+      "x_ohm": 0.05614583342500001,
+      "length_m": 275.0,
+      "note": "LineCode.1: явная матрица умножена на длину 0.275 km"
+    },
+    {
+      "from": "Line.L57",
+      "to": "line:L57",
+      "r_ohm": 0.062935606,
+      "x_ohm": 0.06380208325,
+      "length_m": 250.0,
+      "note": "LineCode.10: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L58",
+      "to": "line:L58",
+      "r_ohm": 0.06555397725,
+      "x_ohm": 0.15129261375,
+      "length_m": 750.0,
+      "note": "LineCode.3: явная матрица умножена на длину 0.75 km"
+    },
+    {
+      "from": "Line.L59",
+      "to": "line:L59",
+      "r_ohm": 0.062935606,
+      "x_ohm": 0.06380208325,
+      "length_m": 250.0,
+      "note": "LineCode.10: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L60",
+      "to": "line:L60",
+      "r_ohm": 0.048604166600000005,
+      "x_ohm": 0.10918749985000001,
+      "length_m": 550.0,
+      "note": "LineCode.5: явная матрица умножена на длину 0.55 km"
+    },
+    {
+      "from": "Line.L61",
+      "to": "line:L61",
+      "r_ohm": 0.0720123105,
+      "x_ohm": 0.0356107955,
+      "length_m": 250.0,
+      "note": "LineCode.12: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L62",
+      "to": "line:L62",
+      "r_ohm": 0.05040861735,
+      "x_ohm": 0.024927556849999997,
+      "length_m": 175.0,
+      "note": "LineCode.12: явная матрица умножена на длину 0.175 km"
+    },
+    {
+      "from": "Line.L63",
+      "to": "line:L63",
+      "r_ohm": 0.1008172347,
+      "x_ohm": 0.049855113699999995,
+      "length_m": 350.0,
+      "note": "LineCode.12: явная матрица умножена на длину 0.35 km"
+    },
+    {
+      "from": "Line.L64",
+      "to": "line:L64",
+      "r_ohm": 0.12242092784999999,
+      "x_ohm": 0.06053835235,
+      "length_m": 425.0,
+      "note": "LineCode.12: явная матрица умножена на длину 0.425 km"
+    },
+    {
+      "from": "Line.L65",
+      "to": "line:L65",
+      "r_ohm": 0.09361600365,
+      "x_ohm": 0.04629403415,
+      "length_m": 325.0,
+      "note": "LineCode.12: явная матрица умножена на длину 0.325 km"
+    },
+    {
+      "from": "Line.L66",
+      "to": "line:L66",
+      "r_ohm": 0.05034848480000001,
+      "x_ohm": 0.05104166660000001,
+      "length_m": 200.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.2 km"
+    },
+    {
+      "from": "Line.L67",
+      "to": "line:L67",
+      "r_ohm": 0.024036458325000003,
+      "x_ohm": 0.05547395837500001,
+      "length_m": 275.0,
+      "note": "LineCode.3: явная матрица умножена на длину 0.275 km"
+    },
+    {
+      "from": "Line.L68",
+      "to": "line:L68",
+      "r_ohm": 0.02185132575,
+      "x_ohm": 0.05043087125,
+      "length_m": 250.0,
+      "note": "LineCode.3: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L69",
+      "to": "line:L69",
+      "r_ohm": 0.06922916660000002,
+      "x_ohm": 0.07018229157500001,
+      "length_m": 275.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.275 km"
+    },
+    {
+      "from": "Line.L70",
+      "to": "line:L70",
+      "r_ohm": 0.08181628780000001,
+      "x_ohm": 0.08294270822500001,
+      "length_m": 325.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.325 km"
+    },
+    {
+      "from": "Line.L71",
+      "to": "line:L71",
+      "r_ohm": 0.06922916660000002,
+      "x_ohm": 0.07018229157500001,
+      "length_m": 275.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.275 km"
+    },
+    {
+      "from": "Line.L72",
+      "to": "line:L72",
+      "r_ohm": 0.06922916660000002,
+      "x_ohm": 0.07018229157500001,
+      "length_m": 275.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.275 km"
+    },
+    {
+      "from": "Line.L73",
+      "to": "line:L73",
+      "r_ohm": 0.0174810606,
+      "x_ohm": 0.040344697000000006,
+      "length_m": 200.0,
+      "note": "LineCode.3: явная матрица умножена на длину 0.2 km"
+    },
+    {
+      "from": "Line.L74",
+      "to": "line:L74",
+      "r_ohm": 0.0881098484,
+      "x_ohm": 0.08932291654999999,
+      "length_m": 350.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.35 km"
+    },
+    {
+      "from": "Line.L75",
+      "to": "line:L75",
+      "r_ohm": 0.10069696960000002,
+      "x_ohm": 0.10208333320000001,
+      "length_m": 400.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.4 km"
+    },
+    {
+      "from": "Line.L76",
+      "to": "line:L76",
+      "r_ohm": 0.0346666668,
+      "x_ohm": 0.08166666680000001,
+      "length_m": 400.0,
+      "note": "LineCode.6: явная матрица умножена на длину 0.4 km"
+    },
+    {
+      "from": "Line.L77",
+      "to": "line:L77",
+      "r_ohm": 0.061183712099999996,
+      "x_ohm": 0.1412064395,
+      "length_m": 700.0,
+      "note": "LineCode.3: явная матрица умножена на длину 0.7 km"
+    },
+    {
+      "from": "Line.L78",
+      "to": "line:L78",
+      "r_ohm": 0.0086666667,
+      "x_ohm": 0.020416666700000002,
+      "length_m": 100.0,
+      "note": "LineCode.6: явная матрица умножена на длину 0.1 km"
+    },
+    {
+      "from": "Line.L79",
+      "to": "line:L79",
+      "r_ohm": 0.019500000075000003,
+      "x_ohm": 0.045937500075,
+      "length_m": 225.0,
+      "note": "LineCode.6: явная матрица умножена на длину 0.225 km"
+    },
+    {
+      "from": "Line.L80",
+      "to": "line:L80",
+      "r_ohm": 0.041166666824999996,
+      "x_ohm": 0.09697916682499999,
+      "length_m": 475.0,
+      "note": "LineCode.6: явная матрица умножена на длину 0.475 km"
+    },
+    {
+      "from": "Line.L81",
+      "to": "line:L81",
+      "r_ohm": 0.015166666725,
+      "x_ohm": 0.035729166725,
+      "length_m": 175.0,
+      "note": "LineCode.6: явная матрица умножена на длину 0.175 km"
+    },
+    {
+      "from": "Line.L82",
+      "to": "line:L82",
+      "r_ohm": 0.02166666675,
+      "x_ohm": 0.05104166675,
+      "length_m": 250.0,
+      "note": "LineCode.6: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L83",
+      "to": "line:L83",
+      "r_ohm": 0.16992613620000002,
+      "x_ohm": 0.17226562477500001,
+      "length_m": 675.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.675 km"
+    },
+    {
+      "from": "Line.L84",
+      "to": "line:L84",
+      "r_ohm": 0.02166666675,
+      "x_ohm": 0.05104166675,
+      "length_m": 250.0,
+      "note": "LineCode.6: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L85",
+      "to": "line:L85",
+      "r_ohm": 0.1195776514,
+      "x_ohm": 0.121223958175,
+      "length_m": 475.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.475 km"
+    },
+    {
+      "from": "Line.L86",
+      "to": "line:L86",
+      "r_ohm": 0.039000000150000005,
+      "x_ohm": 0.09187500015,
+      "length_m": 450.0,
+      "note": "LineCode.6: явная матрица умножена на длину 0.45 km"
+    },
+    {
+      "from": "Line.L87",
+      "to": "line:L87",
+      "r_ohm": 0.0440549242,
+      "x_ohm": 0.044661458274999996,
+      "length_m": 175.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.175 km"
+    },
+    {
+      "from": "Line.L88",
+      "to": "line:L88",
+      "r_ohm": 0.023833333425000002,
+      "x_ohm": 0.05614583342500001,
+      "length_m": 275.0,
+      "note": "LineCode.6: явная матрица умножена на длину 0.275 km"
+    },
+    {
+      "from": "Line.L89",
+      "to": "line:L89",
+      "r_ohm": 0.062935606,
+      "x_ohm": 0.06380208325,
+      "length_m": 250.0,
+      "note": "LineCode.10: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L90",
+      "to": "line:L90",
+      "r_ohm": 0.019500000075000003,
+      "x_ohm": 0.045937500075,
+      "length_m": 225.0,
+      "note": "LineCode.6: явная матрица умножена на длину 0.225 km"
+    },
+    {
+      "from": "Line.L91",
+      "to": "line:L91",
+      "r_ohm": 0.0755227272,
+      "x_ohm": 0.0765624999,
+      "length_m": 300.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.3 km"
+    },
+    {
+      "from": "Line.L92",
+      "to": "line:L92",
+      "r_ohm": 0.019500000075000003,
+      "x_ohm": 0.045937500075,
+      "length_m": 225.0,
+      "note": "LineCode.6: явная матрица умножена на длину 0.225 km"
+    },
+    {
+      "from": "Line.L93",
+      "to": "line:L93",
+      "r_ohm": 0.06922916660000002,
+      "x_ohm": 0.07018229157500001,
+      "length_m": 275.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.275 km"
+    },
+    {
+      "from": "Line.L94",
+      "to": "line:L94",
+      "r_ohm": 0.0260000001,
+      "x_ohm": 0.06125000009999999,
+      "length_m": 300.0,
+      "note": "LineCode.6: явная матрица умножена на длину 0.3 km"
+    },
+    {
+      "from": "Line.L95",
+      "to": "line:L95",
+      "r_ohm": 0.05034848480000001,
+      "x_ohm": 0.05104166660000001,
+      "length_m": 200.0,
+      "note": "LineCode.10: явная матрица умножена на длину 0.2 km"
+    },
+    {
+      "from": "Line.L96",
+      "to": "line:L96",
+      "r_ohm": 0.024036458325000003,
+      "x_ohm": 0.05547395837500001,
+      "length_m": 275.0,
+      "note": "LineCode.3: явная матрица умножена на длину 0.275 km"
+    },
+    {
+      "from": "Line.L97",
+      "to": "line:L97",
+      "r_ohm": 0.048072916650000005,
+      "x_ohm": 0.11094791675000001,
+      "length_m": 550.0,
+      "note": "LineCode.3: явная матрица умножена на длину 0.55 km"
+    },
+    {
+      "from": "Line.L98",
+      "to": "line:L98",
+      "r_ohm": 0.0262215909,
+      "x_ohm": 0.0605170455,
+      "length_m": 300.0,
+      "note": "LineCode.3: явная матрица умножена на длину 0.3 km"
+    },
+    {
+      "from": "Line.L99",
+      "to": "line:L99",
+      "r_ohm": 0.0699242424,
+      "x_ohm": 0.16137878800000002,
+      "length_m": 800.0,
+      "note": "LineCode.3: явная матрица умножена на длину 0.8 km"
+    },
+    {
+      "from": "Line.L118",
+      "to": "line:L118",
+      "r_ohm": 0.02185132575,
+      "x_ohm": 0.05043087125,
+      "length_m": 250.0,
+      "note": "LineCode.3: явная матрица умножена на длину 0.25 km"
+    },
+    {
+      "from": "Line.L100",
+      "to": "line:L100",
+      "r_ohm": 0.05664204540000001,
+      "x_ohm": 0.057421874925000005,
+      "length_m": 225.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.225 km"
+    },
+    {
+      "from": "Line.L101",
+      "to": "line:L101",
+      "r_ohm": 0.024036458325000003,
+      "x_ohm": 0.05547395837500001,
+      "length_m": 275.0,
+      "note": "LineCode.3: явная матрица умножена на длину 0.275 km"
+    },
+    {
+      "from": "Line.L102",
+      "to": "line:L102",
+      "r_ohm": 0.08181628780000001,
+      "x_ohm": 0.08294270822500001,
+      "length_m": 325.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.325 km"
+    },
+    {
+      "from": "Line.L103",
+      "to": "line:L103",
+      "r_ohm": 0.1762196968,
+      "x_ohm": 0.17864583309999998,
+      "length_m": 700.0,
+      "note": "LineCode.11: явная матрица умножена на длину 0.7 km"
+    },
+    {
+      "from": "Line.L104",
+      "to": "line:L104",
+      "r_ohm": 0.05664204540000001,
+      "x_ohm": 0.057421874925000005,
+      "length_m": 225.0,
+      "note": "LineCode.10: явная матрица умножена на длину 0.225 km"
+    },
+    {
+      "from": "Line.L105",
+      "to": "line:L105",
+      "r_ohm": 0.028406723475000003,
+      "x_ohm": 0.065560132625,
+      "length_m": 325.0,
+      "note": "LineCode.3: явная матрица умножена на длину 0.325 km"
+    },
+    {
+      "from": "Line.L106",
+      "to": "line:L106",
+      "r_ohm": 0.1447518938,
+      "x_ohm": 0.146744791475,
+      "length_m": 575.0,
+      "note": "LineCode.10: явная матрица умножена на длину 0.575 km"
+    },
+    {
+      "from": "Line.L107",
+      "to": "line:L107",
+      "r_ohm": 0.11328409080000001,
+      "x_ohm": 0.11484374985000001,
+      "length_m": 450.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.45 km"
+    },
+    {
+      "from": "Line.L108",
+      "to": "line:L108",
+      "r_ohm": 0.087405303,
+      "x_ohm": 0.201723485,
+      "length_m": 1000.0,
+      "note": "LineCode.3: явная матрица умножена на длину 1 km"
+    },
+    {
+      "from": "Line.L109",
+      "to": "line:L109",
+      "r_ohm": 0.0755227272,
+      "x_ohm": 0.0765624999,
+      "length_m": 300.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.3 km"
+    },
+    {
+      "from": "Line.L110",
+      "to": "line:L110",
+      "r_ohm": 0.1447518938,
+      "x_ohm": 0.146744791475,
+      "length_m": 575.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.575 km"
+    },
+    {
+      "from": "Line.L111",
+      "to": "line:L111",
+      "r_ohm": 0.031467803,
+      "x_ohm": 0.031901041625,
+      "length_m": 125.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.125 km"
+    },
+    {
+      "from": "Line.L112",
+      "to": "line:L112",
+      "r_ohm": 0.1321647726,
+      "x_ohm": 0.133984374825,
+      "length_m": 525.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.525 km"
+    },
+    {
+      "from": "Line.L113",
+      "to": "line:L113",
+      "r_ohm": 0.08181628780000001,
+      "x_ohm": 0.08294270822500001,
+      "length_m": 325.0,
+      "note": "LineCode.9: явная матрица умножена на длину 0.325 km"
+    },
+    {
+      "from": "Line.L114",
+      "to": "line:L114",
+      "r_ohm": 0.032776988625,
+      "x_ohm": 0.075646306875,
+      "length_m": 375.0,
+      "note": "LineCode.4: явная матрица умножена на длину 0.375 km"
+    },
+    {
+      "from": "Line.L116",
+      "to": "line:L116",
+      "r_ohm": 0.0346666668,
+      "x_ohm": 0.08166666680000001,
+      "length_m": 400.0,
+      "note": "LineCode.1: явная матрица умножена на длину 0.4 km"
+    },
+    {
+      "from": "Line.L117",
+      "to": "line:L117",
+      "r_ohm": 0.03033333345,
+      "x_ohm": 0.07145833345,
+      "length_m": 350.0,
+      "note": "LineCode.6: явная матрица умножена на длину 0.35 km"
+    },
+    {
+      "from": "Line.Sw1",
+      "to": "line:Sw1",
+      "r_ohm": 1e-06,
+      "x_ohm": 0.0,
+      "length_m": 1.0,
+      "note": "r1/x1/r0/x0 умножены на length, как у линии OpenDSS"
+    },
+    {
+      "from": "Line.Sw2",
+      "to": "line:Sw2",
+      "r_ohm": 1e-06,
+      "x_ohm": 0.0,
+      "length_m": 1.0,
+      "note": "r1/x1/r0/x0 умножены на length, как у линии OpenDSS"
+    },
+    {
+      "from": "Line.Sw3",
+      "to": "line:Sw3",
+      "r_ohm": 1e-06,
+      "x_ohm": 0.0,
+      "length_m": 1.0,
+      "note": "r1/x1/r0/x0 умножены на length, как у линии OpenDSS"
+    },
+    {
+      "from": "Line.Sw4",
+      "to": "line:Sw4",
+      "r_ohm": 1e-06,
+      "x_ohm": 0.0,
+      "length_m": 1.0,
+      "note": "r1/x1/r0/x0 умножены на length, как у линии OpenDSS"
+    },
+    {
+      "from": "Line.Sw5",
+      "to": "line:Sw5",
+      "r_ohm": 1e-06,
+      "x_ohm": 0.0,
+      "length_m": 1.0,
+      "note": "r1/x1/r0/x0 умножены на length, как у линии OpenDSS"
+    },
+    {
+      "from": "Line.Sw6",
+      "to": "line:Sw6",
+      "r_ohm": 1e-06,
+      "x_ohm": 0.0,
+      "length_m": 1.0,
+      "note": "r1/x1/r0/x0 умножены на length, как у линии OpenDSS"
+    },
+    {
+      "from": "Line.Sw7",
+      "to": "line:Sw7",
+      "r_ohm": 1e-06,
+      "x_ohm": 0.0,
+      "length_m": 1.0,
+      "note": "r1/x1/r0/x0 умножены на length, как у линии OpenDSS"
+    },
+    {
+      "from": "Line.Sw8",
+      "to": "line:Sw8",
+      "r_ohm": 1e-06,
+      "x_ohm": 0.0,
+      "length_m": 1.0,
+      "note": "диагональ из r1/x1 умножена на length, как у линии OpenDSS"
+    },
+    {
+      "from": "Capacitor.C83",
+      "to": "shunt:C83",
+      "kvar": 600.0
+    },
+    {
+      "from": "Capacitor.C88a",
+      "to": "shunt:C88a",
+      "kvar": 50.0
+    },
+    {
+      "from": "Capacitor.C90b",
+      "to": "shunt:C90b",
+      "kvar": 50.0
+    },
+    {
+      "from": "Capacitor.C92c",
+      "to": "shunt:C92c",
+      "kvar": 50.0
+    },
+    {
+      "from": "RegControl.creg2a",
+      "to": "transformer:reg2a.ltc"
+    },
+    {
+      "from": "RegControl.creg3a",
+      "to": "transformer:reg3a.ltc"
+    },
+    {
+      "from": "RegControl.creg3c",
+      "to": "transformer:reg3c.ltc"
+    },
+    {
+      "from": "RegControl.creg4a",
+      "to": "transformer:reg4a.ltc"
+    },
+    {
+      "from": "RegControl.creg4b",
+      "to": "transformer:reg4b.ltc"
+    },
+    {
+      "from": "RegControl.creg4c",
+      "to": "transformer:reg4c.ltc"
+    },
+    {
+      "from": "Load.S1a",
+      "to": "load:S1a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S2b",
+      "to": "load:S2b",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S4c",
+      "to": "load:S4c",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S5c",
+      "to": "load:S5c",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S6c",
+      "to": "load:S6c",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S7a",
+      "to": "load:S7a",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S9a",
+      "to": "load:S9a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S10a",
+      "to": "load:S10a",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S11a",
+      "to": "load:S11a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S12b",
+      "to": "load:S12b",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S16c",
+      "to": "load:S16c",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S17c",
+      "to": "load:S17c",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S19a",
+      "to": "load:S19a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S20a",
+      "to": "load:S20a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S22b",
+      "to": "load:S22b",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S24c",
+      "to": "load:S24c",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S28a",
+      "to": "load:S28a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S29a",
+      "to": "load:S29a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S30c",
+      "to": "load:S30c",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S31c",
+      "to": "load:S31c",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S32c",
+      "to": "load:S32c",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S33a",
+      "to": "load:S33a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S34c",
+      "to": "load:S34c",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S35a",
+      "to": "load:S35a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.S37a",
+      "to": "load:S37a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S38b",
+      "to": "load:S38b",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S39b",
+      "to": "load:S39b",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S41c",
+      "to": "load:S41c",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S42a",
+      "to": "load:S42a",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S43b",
+      "to": "load:S43b",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S45a",
+      "to": "load:S45a",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S46a",
+      "to": "load:S46a",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S47",
+      "to": "load:S47",
+      "kw": 105.0,
+      "kvar": 75.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S48",
+      "to": "load:S48",
+      "kw": 210.0,
+      "kvar": 150.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S49a",
+      "to": "load:S49a",
+      "kw": 35.0,
+      "kvar": 25.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S49b",
+      "to": "load:S49b",
+      "kw": 70.0,
+      "kvar": 50.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S49c",
+      "to": "load:S49c",
+      "kw": 35.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S50c",
+      "to": "load:S50c",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S51a",
+      "to": "load:S51a",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S52a",
+      "to": "load:S52a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S53a",
+      "to": "load:S53a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S55a",
+      "to": "load:S55a",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S56b",
+      "to": "load:S56b",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S58b",
+      "to": "load:S58b",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S59b",
+      "to": "load:S59b",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S60a",
+      "to": "load:S60a",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S62c",
+      "to": "load:S62c",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S63a",
+      "to": "load:S63a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S64b",
+      "to": "load:S64b",
+      "kw": 75.0,
+      "kvar": 35.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S65a",
+      "to": "load:S65a",
+      "kw": 35.0,
+      "kvar": 25.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.S65b",
+      "to": "load:S65b",
+      "kw": 35.0,
+      "kvar": 25.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.S65c",
+      "to": "load:S65c",
+      "kw": 70.0,
+      "kvar": 50.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.S66c",
+      "to": "load:S66c",
+      "kw": 75.0,
+      "kvar": 35.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S68a",
+      "to": "load:S68a",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S69a",
+      "to": "load:S69a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S70a",
+      "to": "load:S70a",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S71a",
+      "to": "load:S71a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S73c",
+      "to": "load:S73c",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S74c",
+      "to": "load:S74c",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S75c",
+      "to": "load:S75c",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S76a",
+      "to": "load:S76a",
+      "kw": 105.0,
+      "kvar": 80.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.S76b",
+      "to": "load:S76b",
+      "kw": 70.0,
+      "kvar": 50.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.S76c",
+      "to": "load:S76c",
+      "kw": 70.0,
+      "kvar": 50.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.S77b",
+      "to": "load:S77b",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S79a",
+      "to": "load:S79a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S80b",
+      "to": "load:S80b",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S82a",
+      "to": "load:S82a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S83c",
+      "to": "load:S83c",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S84c",
+      "to": "load:S84c",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S85c",
+      "to": "load:S85c",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S86b",
+      "to": "load:S86b",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S87b",
+      "to": "load:S87b",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S88a",
+      "to": "load:S88a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S90b",
+      "to": "load:S90b",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S92c",
+      "to": "load:S92c",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S94a",
+      "to": "load:S94a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S95b",
+      "to": "load:S95b",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S96b",
+      "to": "load:S96b",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S98a",
+      "to": "load:S98a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S99b",
+      "to": "load:S99b",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S100c",
+      "to": "load:S100c",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S102c",
+      "to": "load:S102c",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S103c",
+      "to": "load:S103c",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S104c",
+      "to": "load:S104c",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S106b",
+      "to": "load:S106b",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S107b",
+      "to": "load:S107b",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S109a",
+      "to": "load:S109a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S111a",
+      "to": "load:S111a",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S112a",
+      "to": "load:S112a",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S113a",
+      "to": "load:S113a",
+      "kw": 40.0,
+      "kvar": 20.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.S114a",
+      "to": "load:S114a",
+      "kw": 20.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Vsource.source",
+      "to": "source",
+      "r_ohm": 0.0,
+      "x_ohm": 0.0001
+    }
+  ],
+  "approximations": [
+    "sidecar нет: conn=wye в OpenDSS без узла нейтрали записывается как solid и попадает в отчёт",
+    "s_base_va=10 МВА — только отчётная база, омы линий не масштабируются",
+    "Transformer.reg1a: обмотка 0 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.reg1a: обмотка 1 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.XFM1: %loadloss собран из %r обмоток",
+    "Transformer.reg2a: однофазный аппарат записан как Ii0, без группы Dyn",
+    "Transformer.reg3a: однофазный аппарат записан как Ii0, без группы Dyn",
+    "Transformer.reg4a: однофазный аппарат записан как Ii0, без группы Dyn",
+    "Transformer.reg3c: однофазный аппарат записан как Ii0, без группы Dyn",
+    "Transformer.reg4b: однофазный аппарат записан как Ii0, без группы Dyn",
+    "Transformer.reg4c: однофазный аппарат записан как Ii0, без группы Dyn",
+    "RegControl.creg1a: уставка из vreg/ptratio. Шаг отпайки 0.00625 и пределы 0.9…1.1 — стандарт OpenDSS. R/X компенсатора перенесены.",
+    "Line.L115: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L1: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L2: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L3: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L4: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L5: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L6: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L7: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L8: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L9: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L10: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L11: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L12: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L13: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L14: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L15: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L16: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L17: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L18: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L19: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L20: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L21: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L22: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L23: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L24: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L25: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L26: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L27: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L28: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L29: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L30: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L31: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L32: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L33: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L34: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L35: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L36: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L37: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L38: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L39: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L40: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L41: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L42: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L43: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L44: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L45: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L46: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L47: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L48: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L49: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L50: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L51: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L52: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L53: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L54: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L55: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L56: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L57: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L58: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L59: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L60: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L61: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L62: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L63: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L64: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L65: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L66: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L67: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L68: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L69: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L70: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L71: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L72: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L73: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L74: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L75: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L76: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L77: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L78: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L79: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L80: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L81: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L82: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L83: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L84: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L85: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L86: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L87: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L88: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L89: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L90: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L91: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L92: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L93: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L94: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L95: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L96: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L97: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L98: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L99: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L118: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L100: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L101: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L102: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L103: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L104: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L105: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L106: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L107: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L108: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L109: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L110: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L111: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L112: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L113: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L114: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L116: rating_a не задан, для проверки режима взят 400 А",
+    "Line.L117: rating_a не задан, для проверки режима взят 400 А",
+    "Line.Sw1: rating_a не задан, для проверки режима взят 400 А",
+    "Line.Sw2: rating_a не задан, для проверки режима взят 400 А",
+    "Line.Sw3: rating_a не задан, для проверки режима взят 400 А",
+    "Line.Sw4: rating_a не задан, для проверки режима взят 400 А",
+    "Line.Sw5: rating_a не задан, для проверки режима взят 400 А",
+    "Line.Sw6: rating_a не задан, для проверки режима взят 400 А",
+    "Line.Sw7: rating_a не задан, для проверки режима взят 400 А",
+    "Line.Sw8: rating_a не задан, для проверки режима взят 400 А",
+    "Capacitor.C83: conn не задан, принят wye как в OpenDSS по умолчанию",
+    "Capacitor.C88a: conn не задан, принят wye как в OpenDSS по умолчанию",
+    "Capacitor.C90b: conn не задан, принят wye как в OpenDSS по умолчанию",
+    "Capacitor.C92c: conn не задан, принят wye как в OpenDSS по умолчанию",
+    "RegControl.creg2a: уставка из vreg/ptratio. Шаг отпайки 0.00625 и пределы 0.9…1.1 — стандарт OpenDSS. R/X компенсатора перенесены.",
+    "RegControl.creg3a: уставка из vreg/ptratio. Шаг отпайки 0.00625 и пределы 0.9…1.1 — стандарт OpenDSS. R/X компенсатора перенесены.",
+    "RegControl.creg3c: уставка из vreg/ptratio. Шаг отпайки 0.00625 и пределы 0.9…1.1 — стандарт OpenDSS. R/X компенсатора перенесены.",
+    "RegControl.creg4a: уставка из vreg/ptratio. Шаг отпайки 0.00625 и пределы 0.9…1.1 — стандарт OpenDSS. R/X компенсатора перенесены.",
+    "RegControl.creg4b: уставка из vreg/ptratio. Шаг отпайки 0.00625 и пределы 0.9…1.1 — стандарт OpenDSS. R/X компенсатора перенесены.",
+    "RegControl.creg4c: уставка из vreg/ptratio. Шаг отпайки 0.00625 и пределы 0.9…1.1 — стандарт OpenDSS. R/X компенсатора перенесены.",
+    "Load.S1a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S2b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S4c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S5c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S6c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S7a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S9a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S10a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S11a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S12b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S16c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S17c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S19a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S20a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S22b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S24c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S28a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S29a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S30c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S31c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S32c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S33a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S34c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S37a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S38b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S39b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S41c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S42a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S43b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S45a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S46a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S47: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S48: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S49a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S49b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S49c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S50c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S51a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S52a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S53a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S55a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S56b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S58b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S59b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S60a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S62c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S63a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S64b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S66c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S68a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S69a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S70a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S71a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S73c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S74c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S75c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S77b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S79a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S80b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S82a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S83c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S84c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S85c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S86b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S87b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S88a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S90b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S92c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S94a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S95b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S96b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S98a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S99b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S100c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S102c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S103c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S104c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S106b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S107b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S109a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S111a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S112a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S113a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.S114a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле"
+  ],
+  "assumptions": [
+    "explicit_phase_matrix"
+  ],
+  "sources": [
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/raw/ieee-pes/123Bus/IEEE123Master.dss",
+      "sha256": "21bfab1a3c956d347dc491436ae839281bf7db4ececc405e10ddeb04d3ab00ec"
+    },
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/raw/ieee-pes/123Bus/IEEELineCodes.DSS",
+      "sha256": "4bc8e3a0b24ad7b1cb4321f1c3b6c8458b646dd3a83b3cd11cccc02444624cb2"
+    },
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/raw/ieee-pes/123Bus/IEEE123Regulators.DSS",
+      "sha256": "cd6ad77980dc018631ce39faab528afce40b0b9a50a6bc1c9ac8049ffb8207d7"
+    },
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/raw/ieee-pes/123Bus/IEEE123Loads.DSS",
+      "sha256": "fd28f52836205506a1980b52c5a7e12ca585aa626c52a6249502c1c3b2fc2255"
+    }
+  ],
+  "commands": [
+    {
+      "command": "Clear",
+      "status": "directive"
+    },
+    {
+      "command": "circuit.ieee123",
+      "status": "transferred"
+    },
+    {
+      "command": "transformer.reg1a",
+      "status": "transferred"
+    },
+    {
+      "command": "regcontrol.creg1a",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.1",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.2",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.3",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.4",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.5",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.6",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.7",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.8",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.9",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.10",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.11",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.12",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.300",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.301",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.302",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.303",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.304",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.400",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.601",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.602",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.603",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.604",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.605",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.606",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.607",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.721",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.722",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.723",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.724",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L115",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L1",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L2",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L3",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L4",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L5",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L6",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L7",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L8",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L9",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L10",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L11",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L12",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L13",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L14",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L15",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L16",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L17",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L18",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L19",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L20",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L21",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L22",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L23",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L24",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L25",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L26",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L27",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L28",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L29",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L30",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L31",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L32",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L33",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L34",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L35",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L36",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L37",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L38",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L39",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L40",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L41",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L42",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L43",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L44",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L45",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L46",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L47",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L48",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L49",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L50",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L51",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L52",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L53",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L54",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L55",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L56",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L57",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L58",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L59",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L60",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L61",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L62",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L63",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L64",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L65",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L66",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L67",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L68",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L69",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L70",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L71",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L72",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L73",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L74",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L75",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L76",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L77",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L78",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L79",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L80",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L81",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L82",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L83",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L84",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L85",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L86",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L87",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L88",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L89",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L90",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L91",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L92",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L93",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L94",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L95",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L96",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L97",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L98",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L99",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L118",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L100",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L101",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L102",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L103",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L104",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L105",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L106",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L107",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L108",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L109",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L110",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L111",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L112",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L113",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L114",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L116",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.L117",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.Sw1",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.Sw2",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.Sw3",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.Sw4",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.Sw5",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.Sw6",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.Sw7",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.Sw8",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.XFM1",
+      "status": "transferred"
+    },
+    {
+      "command": "Capacitor.C83",
+      "status": "transferred"
+    },
+    {
+      "command": "Capacitor.C88a",
+      "status": "transferred"
+    },
+    {
+      "command": "Capacitor.C90b",
+      "status": "transferred"
+    },
+    {
+      "command": "Capacitor.C92c",
+      "status": "transferred"
+    },
+    {
+      "command": "transformer.reg2a",
+      "status": "transferred"
+    },
+    {
+      "command": "transformer.reg3a",
+      "status": "transferred"
+    },
+    {
+      "command": "transformer.reg4a",
+      "status": "transferred"
+    },
+    {
+      "command": "transformer.reg3c",
+      "status": "transferred"
+    },
+    {
+      "command": "transformer.reg4b",
+      "status": "transferred"
+    },
+    {
+      "command": "transformer.reg4c",
+      "status": "transferred"
+    },
+    {
+      "command": "regcontrol.creg2a",
+      "status": "transferred"
+    },
+    {
+      "command": "regcontrol.creg3a",
+      "status": "transferred"
+    },
+    {
+      "command": "regcontrol.creg3c",
+      "status": "transferred"
+    },
+    {
+      "command": "regcontrol.creg4a",
+      "status": "transferred"
+    },
+    {
+      "command": "regcontrol.creg4b",
+      "status": "transferred"
+    },
+    {
+      "command": "regcontrol.creg4c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S1a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S2b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S4c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S5c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S6c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S7a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S9a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S10a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S11a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S12b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S16c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S17c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S19a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S20a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S22b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S24c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S28a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S29a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S30c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S31c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S32c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S33a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S34c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S35a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S37a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S38b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S39b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S41c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S42a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S43b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S45a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S46a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S47",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S48",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S49a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S49b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S49c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S50c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S51a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S52a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S53a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S55a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S56b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S58b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S59b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S60a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S62c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S63a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S64b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S65a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S65b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S65c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S66c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S68a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S69a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S70a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S71a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S73c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S74c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S75c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S76a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S76b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S76c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S77b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S79a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S80b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S82a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S83c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S84c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S85c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S86b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S87b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S88a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S90b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S92c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S94a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S95b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S96b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S98a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S99b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S100c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S102c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S103c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S104c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S106b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S107b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S109a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S111a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S112a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S113a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.S114a",
+      "status": "transferred"
+    },
+    {
+      "command": "Set VoltageBases = [4.16, 0.48]",
+      "status": "directive"
+    },
+    {
+      "command": "CalcVoltageBases",
+      "status": "directive"
+    }
+  ]
+}

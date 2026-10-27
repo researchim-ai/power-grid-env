@@ -1,0 +1,17 @@
+{
+  "id": "ieee13",
+  "source": "ieee-pes",
+  "verdict": "pass",
+  "native_converged": true,
+  "import_status": "converged",
+  "max_voltage_error_pu": 8.778033855350031e-10,
+  "coverage": {
+    "counts": {
+      "directive": 5,
+      "transferred": 74
+    },
+    "unsupported": [],
+    "errors": []
+  },
+  "evidence": "conversion_consistency"
+}

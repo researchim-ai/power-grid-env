@@ -1,0 +1,52 @@
+{
+  "cases": [
+    {
+      "id": "ieee34",
+      "coverage": {
+        "counts": {
+          "directive": 3,
+          "transferred": 214
+        },
+        "unsupported": [],
+        "errors": []
+      }
+    },
+    {
+      "id": "ieee123",
+      "coverage": {
+        "counts": {
+          "directive": 3,
+          "transferred": 266
+        },
+        "unsupported": [],
+        "errors": []
+      }
+    },
+    {
+      "id": "enwl-median",
+      "coverage": {
+        "counts": {
+          "transferred": 1027,
+          "ignored_non_electrical": 1810
+        },
+        "unsupported": [],
+        "errors": []
+      }
+    },
+    {
+      "id": "enwl-largest",
+      "coverage": {
+        "counts": {
+          "transferred": 7686,
+          "ignored_non_electrical": 14042
+        },
+        "unsupported": [],
+        "errors": []
+      }
+    },
+    {
+      "id": "smart-ds-one-feeder",
+      "coverage": null
+    }
+  ]
+}

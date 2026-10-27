@@ -86,6 +86,6 @@ class SolveOptions(BaseModel):
 
     tolerance: float = 1e-10
     max_iterations: int = 80
-    max_outer: int = 12
+    max_outer: int = 20
     apply_regulators: bool = True
     inverter_current_limit_model: bool = False

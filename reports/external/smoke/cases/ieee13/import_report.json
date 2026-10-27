@@ -1,0 +1,642 @@
+{
+  "source": "/home/user/workspace/power-grid-env/data/external/raw/ieee-pes/13Bus/IEEE13Nodeckt.dss",
+  "source_sha256": "a8403f9b3bee958ed8a12cb826922c804b4c146caf27f5dfbe2ee1ec2dc95723",
+  "format": "dss",
+  "errors": [],
+  "warnings": [],
+  "mappings": [
+    {
+      "from": "Transformer.Sub",
+      "to": "transformer:Sub",
+      "vector_group": "Dyn1"
+    },
+    {
+      "from": "Transformer.Reg1",
+      "to": "transformer:Reg1",
+      "vector_group": "Ii0"
+    },
+    {
+      "from": "Transformer.Reg2",
+      "to": "transformer:Reg2",
+      "vector_group": "Ii0"
+    },
+    {
+      "from": "Transformer.Reg3",
+      "to": "transformer:Reg3",
+      "vector_group": "Ii0"
+    },
+    {
+      "from": "Transformer.XFM1",
+      "to": "transformer:XFM1",
+      "vector_group": "YNyn0"
+    },
+    {
+      "from": "RegControl.Reg1",
+      "to": "transformer:Reg1.ltc"
+    },
+    {
+      "from": "RegControl.Reg2",
+      "to": "transformer:Reg2.ltc"
+    },
+    {
+      "from": "RegControl.Reg3",
+      "to": "transformer:Reg3.ltc"
+    },
+    {
+      "from": "Load.671",
+      "to": "load:671",
+      "kw": 1155.0,
+      "kvar": 660.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.634a",
+      "to": "load:634a",
+      "kw": 160.0,
+      "kvar": 110.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.634b",
+      "to": "load:634b",
+      "kw": 120.0,
+      "kvar": 90.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.634c",
+      "to": "load:634c",
+      "kw": 120.0,
+      "kvar": 90.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.645",
+      "to": "load:645",
+      "kw": 170.0,
+      "kvar": 125.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.646",
+      "to": "load:646",
+      "kw": 230.0,
+      "kvar": 132.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.692",
+      "to": "load:692",
+      "kw": 170.0,
+      "kvar": 151.0,
+      "grounding": "not_applicable"
+    },
+    {
+      "from": "Load.675a",
+      "to": "load:675a",
+      "kw": 485.0,
+      "kvar": 190.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.675b",
+      "to": "load:675b",
+      "kw": 68.0,
+      "kvar": 60.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.675c",
+      "to": "load:675c",
+      "kw": 290.0,
+      "kvar": 212.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.611",
+      "to": "load:611",
+      "kw": 170.0,
+      "kvar": 80.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.652",
+      "to": "load:652",
+      "kw": 128.0,
+      "kvar": 86.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.670a",
+      "to": "load:670a",
+      "kw": 17.0,
+      "kvar": 10.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.670b",
+      "to": "load:670b",
+      "kw": 66.0,
+      "kvar": 38.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Load.670c",
+      "to": "load:670c",
+      "kw": 117.0,
+      "kvar": 68.0,
+      "grounding": "solid"
+    },
+    {
+      "from": "Capacitor.Cap1",
+      "to": "shunt:Cap1",
+      "kvar": 600.0
+    },
+    {
+      "from": "Capacitor.Cap2",
+      "to": "shunt:Cap2",
+      "kvar": 100.0
+    },
+    {
+      "from": "Line.650632",
+      "to": "line:650632",
+      "r_ohm": 0.13124999999999998,
+      "x_ohm": 0.3855681818181818,
+      "length_m": 609.6,
+      "note": "LineCode.mtx601: явная матрица умножена на длину 0.378788 mi. cmatrix в файле нет: оставлен встроенный шунт OpenDSS C1=3.4 нФ и C0=1.6 нФ на единицу длины (Cс=2.8, Cв=-0.6)"
+    },
+    {
+      "from": "Line.632670",
+      "to": "line:632670",
+      "r_ohm": 0.043771874999999995,
+      "x_ohm": 0.1285869886363636,
+      "length_m": 203.3016,
+      "note": "LineCode.mtx601: явная матрица умножена на длину 0.126326 mi. cmatrix в файле нет: оставлен встроенный шунт OpenDSS C1=3.4 нФ и C0=1.6 нФ на единицу длины (Cс=2.8, Cв=-0.6)"
+    },
+    {
+      "from": "Line.670671",
+      "to": "line:670671",
+      "r_ohm": 0.08747812499999999,
+      "x_ohm": 0.25698119318181817,
+      "length_m": 406.2984,
+      "note": "LineCode.mtx601: явная матрица умножена на длину 0.252462 mi. cmatrix в файле нет: оставлен встроенный шунт OpenDSS C1=3.4 нФ и C0=1.6 нФ на единицу длины (Cс=2.8, Cв=-0.6)"
+    },
+    {
+      "from": "Line.671680",
+      "to": "line:671680",
+      "r_ohm": 0.06562499999999999,
+      "x_ohm": 0.1927840909090909,
+      "length_m": 304.8,
+      "note": "LineCode.mtx601: явная матрица умножена на длину 0.189394 mi. cmatrix в файле нет: оставлен встроенный шунт OpenDSS C1=3.4 нФ и C0=1.6 нФ на единицу длины (Cс=2.8, Cв=-0.6)"
+    },
+    {
+      "from": "Line.632633",
+      "to": "line:632633",
+      "r_ohm": 0.0712689393939394,
+      "x_ohm": 0.111875,
+      "length_m": 152.4,
+      "note": "LineCode.mtx602: явная матрица умножена на длину 0.094697 mi. cmatrix в файле нет: оставлен встроенный шунт OpenDSS C1=3.4 нФ и C0=1.6 нФ на единицу длины (Cс=2.8, Cв=-0.6)"
+    },
+    {
+      "from": "Line.632645",
+      "to": "line:632645",
+      "r_ohm": 0.1253598484848485,
+      "x_ohm": 0.12849431818181817,
+      "length_m": 152.4,
+      "note": "LineCode.mtx603: явная матрица умножена на длину 0.094697 mi. cmatrix в файле нет: оставлен встроенный шунт OpenDSS C1=3.4 нФ и C0=1.6 нФ на единицу длины (Cс=2.8, Cв=-0.6)"
+    },
+    {
+      "from": "Line.645646",
+      "to": "line:645646",
+      "r_ohm": 0.0752159090909091,
+      "x_ohm": 0.0770965909090909,
+      "length_m": 91.44,
+      "note": "LineCode.mtx603: явная матрица умножена на длину 0.0568182 mi. cmatrix в файле нет: оставлен встроенный шунт OpenDSS C1=3.4 нФ и C0=1.6 нФ на единицу длины (Cс=2.8, Cв=-0.6)"
+    },
+    {
+      "from": "Line.692675",
+      "to": "line:692675",
+      "r_ohm": 0.07497357954545454,
+      "x_ohm": 0.04151060606060606,
+      "length_m": 152.4,
+      "note": "LineCode.mtx606: явная матрица умножена на длину 0.094697 mi"
+    },
+    {
+      "from": "Line.671684",
+      "to": "line:671684",
+      "r_ohm": 0.0752159090909091,
+      "x_ohm": 0.0770965909090909,
+      "length_m": 91.44,
+      "note": "LineCode.mtx604: явная матрица умножена на длину 0.0568182 mi. cmatrix в файле нет: оставлен встроенный шунт OpenDSS C1=3.4 нФ и C0=1.6 нФ на единицу длины (Cс=2.8, Cв=-0.6)"
+    },
+    {
+      "from": "Line.684611",
+      "to": "line:684611",
+      "r_ohm": 0.07552272727272727,
+      "x_ohm": 0.07656249999999999,
+      "length_m": 91.44,
+      "note": "LineCode.mtx605: явная матрица умножена на длину 0.0568182 mi. cmatrix в файле нет: оставлен встроенный шунт OpenDSS C1=3.4 нФ и C0=1.6 нФ на единицу длины (Cс=2.8, Cв=-0.6)"
+    },
+    {
+      "from": "Line.684652",
+      "to": "line:684652",
+      "r_ohm": 0.20340909090909093,
+      "x_ohm": 0.07763636363636363,
+      "length_m": 243.84,
+      "note": "LineCode.mtx607: явная матрица умножена на длину 0.151515 mi"
+    },
+    {
+      "from": "Line.671692",
+      "to": "line:671692",
+      "r_ohm": 1.0000000000000001e-07,
+      "x_ohm": 0.0,
+      "length_m": 1.0,
+      "note": "r1/x1/r0/x0 умножены на length, как у линии OpenDSS"
+    },
+    {
+      "from": "Vsource.source",
+      "to": "source",
+      "r_ohm": 0.16037668205527517,
+      "x_ohm": 0.6415067282211007
+    },
+    {
+      "from": "BusCoords IEEE13Node_BusXY.csv",
+      "to": "node.x,y"
+    }
+  ],
+  "approximations": [
+    "sidecar нет: conn=wye в OpenDSS без узла нейтрали записывается как solid и попадает в отчёт",
+    "s_base_va=10 МВА — только отчётная база, омы линий не масштабируются",
+    "Vsource.source: r1/x1 получены из MVAsc3=20000 МВА и X/R=4.",
+    "Vsource.source: r0/x0 получены из MVAsc1=21000 МВА и X0/R0=3 по формуле OpenDSS.",
+    "Transformer.Sub: обмотка 1 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.Sub: сдвиг Dyn1 — стандартный ANSI OpenDSS для смешанных обмоток, в DSS часы не написаны",
+    "Transformer.Sub: %loadloss собран из %r обмоток",
+    "Transformer.Reg1: однофазный аппарат записан как Ii0, без группы Dyn",
+    "Transformer.Reg2: однофазный аппарат записан как Ii0, без группы Dyn",
+    "Transformer.Reg3: однофазный аппарат записан как Ii0, без группы Dyn",
+    "Transformer.XFM1: обмотка 0 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.XFM1: обмотка 1 conn=wye без узла нейтрали. В OpenDSS нейтраль сидит на земле, здесь это записано как solid.",
+    "Transformer.XFM1: %loadloss собран из %r обмоток",
+    "RegControl.Reg1: уставка из vreg/ptratio. Шаг отпайки 0.00625 и пределы 0.9…1.1 — стандарт OpenDSS. R/X компенсатора перенесены.",
+    "RegControl.Reg2: уставка из vreg/ptratio. Шаг отпайки 0.00625 и пределы 0.9…1.1 — стандарт OpenDSS. R/X компенсатора перенесены.",
+    "RegControl.Reg3: уставка из vreg/ptratio. Шаг отпайки 0.00625 и пределы 0.9…1.1 — стандарт OpenDSS. R/X компенсатора перенесены.",
+    "Load.634a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.634b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.634c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.645: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.675a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.675b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.675c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.611: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.652: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.670a: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.670b: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Load.670c: звезда без sidecar записана как solid, нейтраль OpenDSS на земле",
+    "Capacitor.Cap1: conn не задан, принят wye как в OpenDSS по умолчанию",
+    "Capacitor.Cap2: conn не задан, принят wye как в OpenDSS по умолчанию",
+    "Line.650632: rating_a не задан, для проверки режима взят 400 А",
+    "Line.632670: rating_a не задан, для проверки режима взят 400 А",
+    "Line.670671: rating_a не задан, для проверки режима взят 400 А",
+    "Line.671680: rating_a не задан, для проверки режима взят 400 А",
+    "Line.632633: rating_a не задан, для проверки режима взят 400 А",
+    "Line.632645: rating_a не задан, для проверки режима взят 400 А",
+    "Line.645646: rating_a не задан, для проверки режима взят 400 А",
+    "Line.692675: rating_a не задан, для проверки режима взят 400 А",
+    "Line.671684: rating_a не задан, для проверки режима взят 400 А",
+    "Line.684611: rating_a не задан, для проверки режима взят 400 А",
+    "Line.684652: rating_a не задан, для проверки режима взят 400 А",
+    "Line.671692: rating_a не задан, для проверки режима взят 400 А"
+  ],
+  "assumptions": [
+    "explicit_phase_matrix"
+  ],
+  "sources": [
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/raw/ieee-pes/13Bus/IEEE13Nodeckt.dss",
+      "sha256": "a8403f9b3bee958ed8a12cb826922c804b4c146caf27f5dfbe2ee1ec2dc95723"
+    },
+    {
+      "path": "/home/user/workspace/power-grid-env/data/external/raw/ieee-pes/13Bus/IEEELineCodes.DSS",
+      "sha256": "4bc8e3a0b24ad7b1cb4321f1c3b6c8458b646dd3a83b3cd11cccc02444624cb2"
+    }
+  ],
+  "commands": [
+    {
+      "command": "Clear",
+      "status": "directive"
+    },
+    {
+      "command": "circuit.IEEE13Nodeckt",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.Sub",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.Reg1",
+      "status": "transferred"
+    },
+    {
+      "command": "regcontrol.Reg1",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.Reg2",
+      "status": "transferred"
+    },
+    {
+      "command": "regcontrol.Reg2",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.Reg3",
+      "status": "transferred"
+    },
+    {
+      "command": "regcontrol.Reg3",
+      "status": "transferred"
+    },
+    {
+      "command": "Transformer.XFM1",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.1",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.2",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.3",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.4",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.5",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.6",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.7",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.8",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.9",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.10",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.11",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.12",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.300",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.301",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.302",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.303",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.304",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.400",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.601",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.602",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.603",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.604",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.605",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.606",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.607",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.721",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.722",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.723",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.724",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.mtx601",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.mtx602",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.mtx603",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.mtx604",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.mtx605",
+      "status": "transferred"
+    },
+    {
+      "command": "Linecode.mtx606",
+      "status": "transferred"
+    },
+    {
+      "command": "linecode.mtx607",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.671",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.634a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.634b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.634c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.645",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.646",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.692",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.675a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.675b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.675c",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.611",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.652",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.670a",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.670b",
+      "status": "transferred"
+    },
+    {
+      "command": "Load.670c",
+      "status": "transferred"
+    },
+    {
+      "command": "Capacitor.Cap1",
+      "status": "transferred"
+    },
+    {
+      "command": "Capacitor.Cap2",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.650632",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.632670",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.670671",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.671680",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.632633",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.632645",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.645646",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.692675",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.671684",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.684611",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.684652",
+      "status": "transferred"
+    },
+    {
+      "command": "Line.671692",
+      "status": "transferred"
+    },
+    {
+      "command": "Set Voltagebases=[115, 4.16, .48]",
+      "status": "directive"
+    },
+    {
+      "command": "calcv",
+      "status": "directive"
+    },
+    {
+      "command": "Solve",
+      "status": "directive"
+    },
+    {
+      "command": "BusCoords IEEE13Node_BusXY.csv",
+      "status": "directive"
+    }
+  ]
+}

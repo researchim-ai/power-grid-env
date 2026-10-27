@@ -1,0 +1,46 @@
+{
+  "pack": "simbench-snapshot",
+  "verdict": "pass",
+  "study_case": "n1",
+  "gate_voltage_pu": 0.0001,
+  "same_engine_gate_pu": 1e-05,
+  "same_engine_gate_claimed": false,
+  "angles_compared": false,
+  "profiles": "not_downloaded",
+  "note": "Порог 1e-4 о.е. относится к паре OpenDSS и pandapower. Допуск 1e-5 одного движка здесь не заявляется: взаимное сопротивление линий обнулено, импеданс внешней сети в CSV отсутствует, сдвиг Dyn5 в эту сборку OpenDSS не передаётся.",
+  "cases": [
+    {
+      "case": "1-LV-rural1--0-sw",
+      "verdict": "pass",
+      "reference": "pandapower",
+      "compared_nodes": 43,
+      "max_voltage_pu": 2.361533110351033e-05,
+      "gate_voltage_pu": 0.0001,
+      "angles_compared": false,
+      "same_engine_gate_claimed": false,
+      "evidence": "independent_positive_sequence_solver"
+    },
+    {
+      "case": "1-MV-rural--0-sw",
+      "verdict": "pass",
+      "reference": "pandapower",
+      "compared_nodes": 299,
+      "max_voltage_pu": 3.3736462314859494e-05,
+      "gate_voltage_pu": 0.0001,
+      "angles_compared": false,
+      "same_engine_gate_claimed": false,
+      "evidence": "independent_positive_sequence_solver"
+    },
+    {
+      "case": "1-MV-comm--0-sw",
+      "verdict": "pass",
+      "reference": "pandapower",
+      "compared_nodes": 329,
+      "max_voltage_pu": 2.8425801789633276e-05,
+      "gate_voltage_pu": 0.0001,
+      "angles_compared": false,
+      "same_engine_gate_claimed": false,
+      "evidence": "independent_positive_sequence_solver"
+    }
+  ]
+}

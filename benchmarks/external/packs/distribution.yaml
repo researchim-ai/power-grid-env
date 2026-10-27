@@ -1,0 +1,39 @@
+schema_version: power-grid-env.benchmark-pack/v1
+id: distribution
+note: >
+  IEEE 34 и IEEE 123 — тот же неофициальный mirror, что и IEEE 13.
+  Две сети ENWL выбраны правилом, зафиксированным до просмотра ошибки:
+  медиана и максимум числа строк New Line, при равенстве — по пути.
+cases:
+  - id: ieee34
+    source: ieee-pes
+    folder: 34Bus
+    master: ieee34Mod1.dss
+    evidence: conversion_consistency
+  - id: ieee123
+    source: ieee-pes
+    folder: 123Bus
+    master: IEEE123Master.dss
+    evidence: conversion_consistency
+  - id: enwl-median
+    source: enwl-lvns
+    archive_member: LV network models/network_1/Feeder_1/
+    master: Master.txt
+    evidence: real_network_model
+    selection_rule: median New Line count, ties by path
+  - id: enwl-largest
+    source: enwl-lvns
+    archive_member: LV network models/Network_8/Feeder_2/
+    master: Master.txt
+    evidence: real_network_model
+    selection_rule: largest New Line count, ties by path
+  - id: smart-ds-one-feeder
+    source: smart-ds
+    status: not_run
+    note: >
+      Инвентаризация s3://oedi-data-lake/SMART-DS/v1.0/2018/SFO/P1U.
+      Скачан только opendss_no_loadshapes, 11 МБ, 113 файла.
+      Мастер выбран до решения: самый маленький Master.dss, при равенстве по пути,
+      p1uhs0_1247--p1udt104.       Снимок этого мастера сходится внутри 1e-5 после переноса средней точки,
+      неравных %R обмоток и импеданса Switch=yes. QSTS первых суток и недели
+      считается отдельно, только по 36 CSV этого фидера.

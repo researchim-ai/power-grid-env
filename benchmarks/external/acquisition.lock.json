@@ -1,0 +1,181 @@
+{
+  "schema_version": "power-grid-env.acquisition-lock/v1",
+  "sources": {
+    "ieee-pes": {
+      "note": "redirect alias IEEELineCodes.dss создаётся при extract, raw файл не переименовывается",
+      "files": [
+        {
+          "name": "13Bus/IEEE13Nodeckt.dss",
+          "url": "https://raw.githubusercontent.com/tshort/OpenDSS/master/Distrib/IEEETestCases/13Bus/IEEE13Nodeckt.dss",
+          "sha256": "a8403f9b3bee958ed8a12cb826922c804b4c146caf27f5dfbe2ee1ec2dc95723",
+          "bytes": 8294
+        },
+        {
+          "name": "13Bus/IEEELineCodes.DSS",
+          "url": "https://raw.githubusercontent.com/tshort/OpenDSS/master/Distrib/IEEETestCases/13Bus/IEEELineCodes.DSS",
+          "sha256": "4bc8e3a0b24ad7b1cb4321f1c3b6c8458b646dd3a83b3cd11cccc02444624cb2",
+          "bytes": 11851
+        },
+        {
+          "name": "13Bus/IEEE13Node_BusXY.csv",
+          "url": "https://raw.githubusercontent.com/tshort/OpenDSS/master/Distrib/IEEETestCases/13Bus/IEEE13Node_BusXY.csv",
+          "sha256": "f8dd1528c72f339ebf41bf1355ed64ef12fbe30864fcc839ed5e5e9dc527846e",
+          "bytes": 243
+        },
+        {
+          "name": "34Bus/ieee34Mod1.dss",
+          "url": "https://raw.githubusercontent.com/tshort/OpenDSS/master/Distrib/IEEETestCases/34Bus/ieee34Mod1.dss",
+          "sha256": "f1e732b7ea61914be307dde97b0b73398038af66a09e35dda266d409e6ebf7a5",
+          "bytes": 14312
+        },
+        {
+          "name": "34Bus/IEEELineCodes.DSS",
+          "url": "https://raw.githubusercontent.com/tshort/OpenDSS/master/Distrib/IEEETestCases/34Bus/IEEELineCodes.DSS",
+          "sha256": "b54774e50861c034b35836d8f93fba29b8d25d9562c216162f0c6c46a8ab9dff",
+          "bytes": 11911
+        },
+        {
+          "name": "34Bus/IEEE34_BusXY.csv",
+          "url": "https://raw.githubusercontent.com/tshort/OpenDSS/master/Distrib/IEEETestCases/34Bus/IEEE34_BusXY.csv",
+          "sha256": "6e022bbb3adb3c7f29ccb7bbdee2013517ae55e19ad25cda815616c5d4a37958",
+          "bytes": 506
+        },
+        {
+          "name": "123Bus/IEEE123Master.dss",
+          "url": "https://raw.githubusercontent.com/tshort/OpenDSS/master/Distrib/IEEETestCases/123Bus/IEEE123Master.dss",
+          "sha256": "21bfab1a3c956d347dc491436ae839281bf7db4ececc405e10ddeb04d3ab00ec",
+          "bytes": 15574
+        },
+        {
+          "name": "123Bus/IEEE123Loads.DSS",
+          "url": "https://raw.githubusercontent.com/tshort/OpenDSS/master/Distrib/IEEETestCases/123Bus/IEEE123Loads.DSS",
+          "sha256": "fd28f52836205506a1980b52c5a7e12ca585aa626c52a6249502c1c3b2fc2255",
+          "bytes": 8289
+        },
+        {
+          "name": "123Bus/IEEE123Regulators.DSS",
+          "url": "https://raw.githubusercontent.com/tshort/OpenDSS/master/Distrib/IEEETestCases/123Bus/IEEE123Regulators.DSS",
+          "sha256": "cd6ad77980dc018631ce39faab528afce40b0b9a50a6bc1c9ac8049ffb8207d7",
+          "bytes": 1861
+        },
+        {
+          "name": "123Bus/IEEELineCodes.DSS",
+          "url": "https://raw.githubusercontent.com/tshort/OpenDSS/master/Distrib/IEEETestCases/123Bus/IEEELineCodes.DSS",
+          "sha256": "4bc8e3a0b24ad7b1cb4321f1c3b6c8458b646dd3a83b3cd11cccc02444624cb2",
+          "bytes": 11851
+        },
+        {
+          "name": "123Bus/BusCoords.dat",
+          "url": "https://raw.githubusercontent.com/tshort/OpenDSS/master/Distrib/IEEETestCases/123Bus/BusCoords.dat",
+          "sha256": "0b409c0e5d99f365c0140bf38280c1d64932032f1ecb8ef83ae54d4ed0d2716f",
+          "bytes": 2858
+        }
+      ]
+    },
+    "enwl-lvns": {
+      "note": "архив моделей закреплён; lct-profiles.zip — библиотека без ключа к Shape_N, суточный фидер не собран",
+      "files": [
+        {
+          "name": "lv-network-models-2.zip",
+          "url": "https://www.enwl.co.uk/globalassets/innovation/lvns/lvns-academic/lv-network-models-2.zip",
+          "sha256": "5ac19bcc5c0857c5d996c0e24d3d15c1e8fe4326eea0253b227576bb50d8bd51",
+          "bytes": 12600354
+        },
+        {
+          "name": "lct-profiles.zip",
+          "url": "https://www.enwl.co.uk/globalassets/innovation/lvns/lvns-academic/lct-profiles.zip",
+          "sha256": "aa8e151779db749e4f6f93a989e7951ada071b00fc542c4f0dc94a371dce2983",
+          "bytes": 793649
+        }
+      ]
+    },
+    "simbench": {
+      "note": "структурный снимок study case n1; LoadProfile.csv и соседние профили не скачивались",
+      "files": [
+        {
+          "name": "1-complete_data-mixed-all-0-sw/Node.csv",
+          "url": "https://raw.githubusercontent.com/e2nIEE/simbench/master/simbench/networks/1-complete_data-mixed-all-0-sw/Node.csv",
+          "sha256": "a47e8ef775bbd420ba7f3c59789197a036d6d7d06a8751966b87bfcaf707954c",
+          "bytes": 7910156
+        },
+        {
+          "name": "1-complete_data-mixed-all-0-sw/Line.csv",
+          "url": "https://raw.githubusercontent.com/e2nIEE/simbench/master/simbench/networks/1-complete_data-mixed-all-0-sw/Line.csv",
+          "sha256": "ab55c0a74e17bd8a0a416f84da67b79594d6cdffc61a78e904a5d676ba07ec13",
+          "bytes": 3280794
+        },
+        {
+          "name": "1-complete_data-mixed-all-0-sw/Load.csv",
+          "url": "https://raw.githubusercontent.com/e2nIEE/simbench/master/simbench/networks/1-complete_data-mixed-all-0-sw/Load.csv",
+          "sha256": "6823f650cc32a44734ac2861344311928b0c8973af3d7fb24d2736d24da3568e",
+          "bytes": 2610836
+        },
+        {
+          "name": "1-complete_data-mixed-all-0-sw/Switch.csv",
+          "url": "https://raw.githubusercontent.com/e2nIEE/simbench/master/simbench/networks/1-complete_data-mixed-all-0-sw/Switch.csv",
+          "sha256": "e380a71f354243ae336a96ccf2b3cad832fe101a957a39c75231730ca8fbde22",
+          "bytes": 5177639
+        },
+        {
+          "name": "1-complete_data-mixed-all-0-sw/LineType.csv",
+          "url": "https://raw.githubusercontent.com/e2nIEE/simbench/master/simbench/networks/1-complete_data-mixed-all-0-sw/LineType.csv",
+          "sha256": "5397304a8dd2f2edf01063c7581a66d12532dd79355b9e74f9ce990ff00ffbee",
+          "bytes": 1587
+        },
+        {
+          "name": "1-complete_data-mixed-all-0-sw/ExternalNet.csv",
+          "url": "https://raw.githubusercontent.com/e2nIEE/simbench/master/simbench/networks/1-complete_data-mixed-all-0-sw/ExternalNet.csv",
+          "sha256": "5c3cca5f8f2f2494642ff9d6c6e1ba32a5d6d61941b469714a9af01dd777de1d",
+          "bytes": 45038
+        },
+        {
+          "name": "1-complete_data-mixed-all-0-sw/Transformer.csv",
+          "url": "https://raw.githubusercontent.com/e2nIEE/simbench/master/simbench/networks/1-complete_data-mixed-all-0-sw/Transformer.csv",
+          "sha256": "fa10e4fc0981a481bd0d04bcf4c1953ded66834a86e06c474573f2c40c4329e2",
+          "bytes": 70708
+        },
+        {
+          "name": "1-complete_data-mixed-all-0-sw/TransformerType.csv",
+          "url": "https://raw.githubusercontent.com/e2nIEE/simbench/master/simbench/networks/1-complete_data-mixed-all-0-sw/TransformerType.csv",
+          "sha256": "a7834ecce3d670d652fec12a436f7930f12609a49fb483d0436275525e0b6f4d",
+          "bytes": 989
+        },
+        {
+          "name": "1-complete_data-mixed-all-0-sw/StudyCases.csv",
+          "url": "https://raw.githubusercontent.com/e2nIEE/simbench/master/simbench/networks/1-complete_data-mixed-all-0-sw/StudyCases.csv",
+          "sha256": "834d518fb2408555e0f88f3c8a0431ea73515f21a1dc8edafcaad88b9d89808d",
+          "bytes": 710
+        }
+      ]
+    },
+    "pglib-opf": {
+      "note": "кейсы v23.07. Локальный SLSQP с аналитическим якобианом; глобальный оптимум не заявлен",
+      "files": [
+        {
+          "name": "pglib_opf_case3_lmbd.m",
+          "url": "https://raw.githubusercontent.com/power-grid-lib/pglib-opf/master/pglib_opf_case3_lmbd.m",
+          "sha256": "168f73f389aa8abd7707fae04d26ee2046ef3622e8ea2f6661a89d815e9c637d",
+          "bytes": 4895
+        },
+        {
+          "name": "pglib_opf_case5_pjm.m",
+          "url": "https://raw.githubusercontent.com/power-grid-lib/pglib-opf/master/pglib_opf_case5_pjm.m",
+          "sha256": "cadf7501a15c2d508820493cef6acc85757274197e74c40bcec4fc4ecf619e6f",
+          "bytes": 5218
+        },
+        {
+          "name": "pglib_opf_case14_ieee.m",
+          "url": "https://raw.githubusercontent.com/power-grid-lib/pglib-opf/master/pglib_opf_case14_ieee.m",
+          "sha256": "bd5c568621de65e4b0922317010868bc7fa94173807faa10ea8fdbbe77c28106",
+          "bytes": 13781
+        },
+        {
+          "name": "pglib_opf_case118_ieee.m",
+          "url": "https://raw.githubusercontent.com/power-grid-lib/pglib-opf/master/pglib_opf_case118_ieee.m",
+          "sha256": "b1af0833849040c04babc3700631cff0d9afa66b79c5d3e13ae79bdf516cec78",
+          "bytes": 80336
+        }
+      ]
+    }
+  }
+}

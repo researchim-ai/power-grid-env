@@ -1,0 +1,17 @@
+{
+  "id": "enwl-network23-feeder3",
+  "source": "enwl-lvns",
+  "verdict": "pass",
+  "native_converged": true,
+  "import_status": "converged",
+  "max_voltage_error_pu": 4.526379271396763e-13,
+  "coverage": {
+    "counts": {
+      "transferred": 66,
+      "ignored_non_electrical": 114
+    },
+    "unsupported": [],
+    "errors": []
+  },
+  "evidence": "conversion_consistency"
+}

@@ -1,0 +1,89 @@
+{
+  "feeder": "p1uhs0_1247--p1udt104",
+  "evidence": [
+    "synthetic_scale",
+    "conversion_consistency"
+  ],
+  "selection_rule": "самый маленький Master.dss в opendss_no_loadshapes, при равенстве по пути, до решения",
+  "window": {
+    "start_index": 0,
+    "steps": 96,
+    "step_minutes": 15,
+    "reason": "первые интервалы года, сутки=96 и неделя=672, зафиксировано до оценки ошибки"
+  },
+  "verdict": "pass",
+  "max_voltage_error_pu": 5.17950127232325e-09,
+  "native_seconds": 0.8007988760000444,
+  "native_step_seconds": {
+    "cold_s": 0.00027528700047696475,
+    "warm_p50_s": 5.778800004918594e-05,
+    "warm_p95_s": 6.790800034650601e-05,
+    "n": 96.0
+  },
+  "import_step_seconds": {
+    "cold_s": 0.013870452999981353,
+    "warm_p50_s": 0.012868482001067605,
+    "warm_p95_s": 0.05295206200025859,
+    "n": 96.0
+  },
+  "rss_kb": 531988,
+  "environment": {
+    "python": "3.12.9",
+    "packages": {
+      "python": "3.12.9",
+      "numpy": "2.2.6",
+      "scipy": "1.15.2",
+      "pydantic": "2.11.7",
+      "opendssdirect.py": "0.9.4",
+      "dss-python": "0.15.7"
+    },
+    "platform": "Linux-6.17.0-22-generic-x86_64-with-glibc2.39",
+    "machine": "x86_64"
+  },
+  "profile_sha256": {
+    "com_kw_39297_pu.csv": "890b9d0f1caf83d6aef2f3ffafd44d8649ebeb05c33e40744b7f56a678d09c1a",
+    "com_kw_2753_pu.csv": "89432cdb3b264d317d4c89cf407f9ca87708280d7a21e775a59a00ebd53af240",
+    "com_kw_17383_pu.csv": "fe86ce9532f5cd754947b26d4f185a38d8e4398aa29c37bbb6c94ec1fd7b9e16",
+    "com_kw_41686_pu.csv": "916692d5dd3f69ddf349eaa2bebc06ac4f2015271139fb1cb68ce207e5368b61",
+    "com_kw_8481_pu.csv": "04e36abd4e5ea8edf614fbc0352ad5c34dc87ab5c127a12530253eeedf29816a",
+    "com_kw_29594_pu.csv": "c2975289b58d48bc58c833af25dcbe3a39e37336b8ec99e5fe3e8f3ed6fe6c0e",
+    "com_kvar_17383_pu.csv": "a399fe8c9ac64f2ddd8468440e384ca887b4219af706881a10789bab4d234bbf",
+    "com_kvar_29594_pu.csv": "db5c14019d82e2dc06492b2100746de657aa67eed264bfb10c4e5276204f6858",
+    "com_kvar_34423_pu.csv": "8eef614025a23557d5cbbc3a638a1be207b9a1188a058d155e8f292d33f87bb0",
+    "com_kw_35518_pu.csv": "6221fab6692f663d7d42850fd6fd1b8621b11ed6da84078c1915420a61864255",
+    "com_kvar_41498_pu.csv": "8900790f62ab6431382d4eb0a95968ec522764edcb2ffb3a47dbc2843ff26eb8",
+    "com_kw_22519_pu.csv": "0a058fbc2085a81164ad77a39a4bfb612528b4d703f992aef570dc8dd0c76dca",
+    "com_kvar_22725_pu.csv": "a42dd3db070cfe4acbeb93fdb9188bc8dd00322f6879e0a78f455e332bf6bcfa",
+    "com_kvar_31403_pu.csv": "62e2f61e3966421c1b1c592f5ce688ef2b9d1aa1673a84c1e4e9410f070f1b94",
+    "com_kvar_39297_pu.csv": "ad4f34299e24cdf44c69f2318867529af8a994b054e8f725ee86be6f55578a45",
+    "com_kvar_20812_pu.csv": "e74aca48774c32aea37340b330a9c47e7319a18596f564b435a22e0d888b6a0e",
+    "com_kvar_39427_pu.csv": "d5272237744d841ebfd360b1ebc3a5dc745a4dac3263b8e663b532e555c7b1ff",
+    "com_kvar_2616_pu.csv": "128b3d57ec88da6918e3d7eed7cd9df59ff121c76d397cc30e39fffc2b1696b4",
+    "com_kvar_35518_pu.csv": "bc398e06557386499b0cbe7175804def690d010717b6b086348aa9f7749dd081",
+    "com_kw_35612_pu.csv": "d74d43fa1fece172d5f2e36a212f6126511177aef815f3876306c192bd99b227",
+    "com_kvar_41686_pu.csv": "49cb88e9dd23c05bef87fc732129cf5eb9f0233eb7e2205fe80a8343d434ec6e",
+    "com_kw_22725_pu.csv": "1e9c539ced6e8255f994a64ce7a340e75d55a5b2518285434595d69c02091ec0",
+    "com_kvar_8481_pu.csv": "29e62547c1f02fe8a1efc39ae1dd4a0d002c86576303838ed40ce26f5a1dde80",
+    "com_kw_2616_pu.csv": "a94224b73db3e618fee4c3ecf615d8ca501b5ed60393bedd2f5d399b430cdbb0",
+    "com_kw_29280_pu.csv": "48e71c199644dc7b383c5a343a230b3e034ef4560ba29c82d910499442105774",
+    "com_kvar_29280_pu.csv": "44fad5434b49279c82a76fd17766670f93b302899d5d6cd5a4586baf0842d710",
+    "com_kvar_2753_pu.csv": "48b8c420eb2aad860415deed194911903a81c84d31bbb967d645e29d11dac97d",
+    "com_kvar_35612_pu.csv": "5d93b71ed751765531a0e97eb12d881a1629c851401e68c33a6ae7eb181ad955",
+    "com_kvar_8560_pu.csv": "c793edfdae61713f52e423d1d991d1415a87a980fc5bd7425101c5896a04a0f7",
+    "com_kw_34423_pu.csv": "1ca666296ea1bc585faee83263335b1139d4331e9176e91fe58cdf35970adc76",
+    "com_kw_20812_pu.csv": "8d9a85776f9323c5367439494f05980f38211618ab213e18cdb74b74709630f1",
+    "com_kw_41498_pu.csv": "97283daf5924c5425491c21ff37ef3d12503b5dd6fc18079642fd4c708e8a992",
+    "com_kw_39427_pu.csv": "b29bd38878170932a0493c1da9e0442ae1d2106e81656891e9629c9154ae6f78",
+    "com_kw_31403_pu.csv": "1ec4ebcec4043d918b180223953e74478e58f2542694b368f96a73a20b67ad94",
+    "com_kw_8560_pu.csv": "bf69824f6b17b27fd504f3a5c707e7404aaac5d08d74a8b0743b2c8f919e3198",
+    "com_kvar_22519_pu.csv": "0dbcd48cf7c1dc9c70808f74d5034a4e74abb72173ae07f67b03fce1c82f5dc8"
+  },
+  "replay": {
+    "verdict": "pass",
+    "cursor": 48,
+    "checkpoint_sha256": "df423f4beac54c557e7076e0c28d19233fb536affe5fc8cbb0b21aed21215cd1",
+    "max_voltage_error_pu": 0.0,
+    "compared_steps": 48,
+    "gate_voltage_pu": 1e-05
+  }
+}
