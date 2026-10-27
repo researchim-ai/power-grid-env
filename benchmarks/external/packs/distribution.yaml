@@ -30,6 +30,7 @@ cases:
   - id: smart-ds-one-feeder
     source: smart-ds
     status: not_run
+    required: false
     note: >
       Инвентаризация s3://oedi-data-lake/SMART-DS/v1.0/2018/SFO/P1U.
       Скачан только opendss_no_loadshapes, 11 МБ, 113 файла.

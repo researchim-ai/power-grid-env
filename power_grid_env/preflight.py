@@ -9,7 +9,13 @@ from power_grid_env.model import Network
 from power_grid_env.topology import compile_topology
 
 
-def preflight(network: Network, *, task: str = "restoration", solve_initial: bool = True) -> dict[str, Any]:
+def preflight(
+    network: Network,
+    *,
+    task: str = "restoration",
+    solve_initial: bool = True,
+    approximate_phase_shift: bool = False,
+) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
     topology = compile_topology(network)
@@ -28,6 +34,17 @@ def preflight(network: Network, *, task: str = "restoration", solve_initial: boo
     for transformer in network.transformers:
         if transformer.imag_pct is None or transformer.no_load_loss_pct is None:
             warnings.append(f"{transformer.id}: намагничивание не задано и не будет подобрано")
+        for index, winding in enumerate(transformer.windings):
+            if abs(winding.angle_deg) > 1e-9 and not approximate_phase_shift:
+                errors.append(
+                    f"{transformer.id}: сдвиг обмотки {index + 1} на {winding.angle_deg:.8g}° "
+                    "не подтверждён backend и в точном режиме запрещён"
+                )
+    for omission in network.omissions:
+        if task == "power_flow" and omission.power_flow == "not_in_admittance":
+            warnings.append(f"{omission.object_id}: {omission.note}")
+        elif task in {"protection", "restoration"} and omission.protection == "unsupported":
+            errors.append(f"{omission.object_id}: для задачи {task} не поддержан. {omission.note}")
     for load in network.loads:
         if load.cold_load_multiplier is None:
             continue

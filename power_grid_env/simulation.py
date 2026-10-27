@@ -116,6 +116,8 @@ class Engine:
         self._seq = 0
         self.rng = random.Random(0)
         self.relays: list[RelayState] = []
+        self.execution_log: list[dict[str, Any]] = []
+        self.ltc_outside_since: dict[str, float | None] = {}
         self.measurements: list[dict[str, Any]] = []
         self.soc: dict[str, float] = {}
         self.base_p: dict[str, dict[str, float]] = {}
@@ -151,6 +153,8 @@ class Engine:
         self.queue = []
         self._seq = 0
         self.measurements = []
+        self.execution_log = []
+        self.ltc_outside_since = {}
         self.trace = []
         self.history = []
         self.what_if_used = 0
@@ -201,7 +205,8 @@ class Engine:
         while self.time_s < target_s - 1e-12:
             next_time = self.queue[0].time_s if self.queue else math.inf
             protection_in = self._protection_wait()
-            step = min(target_s - self.time_s, next_time - self.time_s, protection_in)
+            ltc_in = self._ltc_wait()
+            step = min(target_s - self.time_s, next_time - self.time_s, protection_in, ltc_in)
             step = max(0.0, step)
             self._accumulate(step)
             self.time_s += step
@@ -211,6 +216,8 @@ class Engine:
                 changed |= self._apply_event(event)
             if protection_in <= step + 1e-9:
                 changed |= self._trip_due_relays()
+            if ltc_in <= step + 1e-9:
+                changed = True
             if changed or self.last_result is None:
                 self._resolve()
             if step <= 1e-15 and not changed and (not self.queue or self.queue[0].time_s > self.time_s + 1e-9):
@@ -243,6 +250,8 @@ class Engine:
             "seq": self._seq,
             "rng": _export_rng(self.rng),
             "relays": [asdict(relay) for relay in self.relays],
+            "execution_log": list(self.execution_log),
+            "ltc_outside_since": dict(self.ltc_outside_since),
             "measurements": list(self.measurements),
             "soc": dict(self.soc),
             "base_p": self.base_p,
@@ -269,6 +278,8 @@ class Engine:
         self._seq = int(snapshot["seq"])
         self.rng.setstate(_import_rng(snapshot["rng"]))
         self.relays = [RelayState(**item) for item in snapshot["relays"]]
+        self.execution_log = list(snapshot.get("execution_log") or [])
+        self.ltc_outside_since = dict(snapshot.get("ltc_outside_since") or {})
         self.measurements = list(snapshot["measurements"])
         self.soc = dict(snapshot["soc"])
         self.base_p = {key: dict(value) for key, value in snapshot["base_p"].items()}
@@ -464,7 +475,9 @@ class Engine:
                 for voltage in result.voltages
                 if voltage.bus_id == bus_id and voltage.phase in load.phases
             ]
-            demand = sum(self.base_p[load.id].values())
+            # base_p — паспорт. На интервале действует уже применённый профиль в p_w.
+            demand = sum(load.p_w.values())
+            nameplate = sum(self.base_p[load.id].values())
             energized = bool(phase_pu) and max(phase_pu) > 0.05 and result.status == "converged"
             if not energized:
                 fraction = 1.0
@@ -484,6 +497,9 @@ class Engine:
                 {
                     "dt_s": dt_s,
                     "demand_w": demand,
+                    "nameplate_w": nameplate,
+                    "supplied_w": served,
+                    "curtailed_w": 0.0,
                     "phase_pu": phase_pu,
                     "energized": energized,
                     "v_min_pu": v_min,
@@ -538,17 +554,117 @@ class Engine:
             "causal_claim": False,
         }
 
+    def _call_solve(self) -> SolveResult:
+        delayed = any(item.ltc is not None and item.ltc.delay_s > 0 for item in self.net.transformers)
+        if delayed and self.solve is solve_network:
+            from power_grid_env.results import SolveOptions
+
+            return solve_network(self.net, SolveOptions(apply_regulators=False))
+        return self.solve(self.net)
+
+    def _persist_taps(self) -> None:
+        result = self.last_result
+        if result is None:
+            return
+        solved = result.diagnostics.get("solved_taps") or {}
+        for transformer in self.net.transformers:
+            positions = result.tap_positions.get(transformer.id)
+            if transformer.id in solved and len(transformer.windings) >= 2:
+                transformer.windings[1].tap_pu = float(solved[transformer.id])
+            elif positions:
+                for winding, tap in zip(transformer.windings, positions, strict=False):
+                    winding.tap_pu = float(tap)
+
+    def _ltc_wait(self) -> float:
+        wait = math.inf
+        for transformer in self.net.transformers:
+            ltc = transformer.ltc
+            if ltc is None or ltc.delay_s <= 0:
+                continue
+            started = self.ltc_outside_since.get(transformer.id)
+            if started is None:
+                continue
+            wait = min(wait, max(0.0, ltc.delay_s - (self.time_s - started)))
+        return wait
+
+    def _step_delayed_ltc(self) -> bool:
+        """Одна ступень после выдержки. Внутренний цикл решателя при delay_s > 0 выключен."""
+        result = self.last_result
+        if result is None or result.status != "converged":
+            return False
+        changed = False
+        for transformer in self.net.transformers:
+            ltc = transformer.ltc
+            if ltc is None or ltc.delay_s <= 0:
+                continue
+            measured = self._controlled_voltage_pu(transformer)
+            if measured is None:
+                self.ltc_outside_since[transformer.id] = None
+                continue
+            if abs(measured - ltc.v_target_pu) <= ltc.deadband_pu:
+                self.ltc_outside_since[transformer.id] = None
+                continue
+            started = self.ltc_outside_since.get(transformer.id)
+            if started is None:
+                self.ltc_outside_since[transformer.id] = self.time_s
+                continue
+            if self.time_s - started + 1e-9 < ltc.delay_s:
+                continue
+            winding = transformer.windings[ltc.controlled_winding]
+            step = ltc.tap_step_pu if measured < ltc.v_target_pu else -ltc.tap_step_pu
+            updated = min(ltc.tap_max_pu, max(ltc.tap_min_pu, winding.tap_pu + step))
+            if updated != winding.tap_pu:
+                winding.tap_pu = updated
+                changed = True
+            self.ltc_outside_since[transformer.id] = self.time_s
+        return changed
+
+    def _controlled_voltage_pu(self, transformer) -> float | None:
+        ltc = transformer.ltc
+        if ltc is None or self.last_result is None:
+            return None
+        winding = transformer.windings[ltc.controlled_winding]
+        bus_id = compile_topology(self.net).terminal_bus[winding.terminal_id]
+        values = [
+            abs(voltage.complex) / voltage.v_base_ln_v
+            for voltage in self.last_result.voltages
+            if voltage.bus_id == bus_id and voltage.phase in {"A", "B", "C"} and voltage.v_base_ln_v and voltage.energized
+        ]
+        if not values:
+            return None
+        return float(sum(values) / len(values))
+
+    def _execution_allowed(self, switch, closed: bool, *, reclose: bool) -> tuple[bool, str]:
+        if not switch.operable:
+            return False, "not_operable"
+        if switch.locked or (reclose and switch.locked):
+            return False, "locked"
+        if closed and switch.tagged_for_maintenance:
+            return False, "maintenance_tag"
+        if switch.max_operations is not None and switch.operations_used >= switch.max_operations:
+            return False, "operation_limit"
+        if closed and bool(getattr(self.scenario, "radiality", True)) and self._would_loop(switch):
+            return False, "creates_loop"
+        if not closed and switch.kind == "disconnector" and self._incident_current(switch) > switch.interrupt_current_a + 1e-6:
+            return False, "disconnector_cannot_interrupt"
+        return True, "accepted"
+
     def _resolve(self) -> None:
         self._apply_load_levels()
         self._apply_storage_limits()
-        self.last_result = self.solve(self.net)
+        self.last_result = self._call_solve()
+        self._persist_taps()
+        if self._step_delayed_ltc():
+            self.last_result = self._call_solve()
+            self._persist_taps()
         self._publish()
         if any(
             load.cold_load_multiplier and self.cold_started.get(load.id) == self.time_s
             for load in self.net.loads
         ):
             self._apply_load_levels()
-            self.last_result = self.solve(self.net)
+            self.last_result = self._call_solve()
+            self._persist_taps()
 
     def _apply_load_levels(self) -> None:
         profiles = getattr(self.scenario, "load_profile", {}) or {}
@@ -718,15 +834,26 @@ class Engine:
         if self.last_result is None:
             return 0.0
         if relay.kind == "overcurrent":
+            measured = relay.measured_equipment_id
+            if measured:
+                return _equipment_current(self.last_result, measured)
             switch = next((item for item in self.net.switches if item.id == relay.equipment_id), None)
             if switch is not None:
                 return self._switch_current_a(switch)
-            measured = getattr(relay, "measured_equipment_id", None) or relay.equipment_id
-            return _equipment_current(self.last_result, measured)
+            return _equipment_current(self.last_result, relay.equipment_id)
+        node_id = relay.measured_node_id
+        if not node_id:
+            if "measured_node_id" not in relay.notes:
+                relay.notes.append("measured_node_id")
+            return 1.0 if relay.kind == "undervoltage" else 0.0
+        topology = compile_topology(self.net)
+        bus_id = topology.node_to_bus.get(node_id)
+        if bus_id is None:
+            return 1.0 if relay.kind == "undervoltage" else 0.0
         voltages = [
             abs(voltage.complex) / voltage.v_base_ln_v
             for voltage in self.last_result.voltages
-            if voltage.phase in {"A", "B", "C"} and voltage.energized and voltage.v_base_ln_v
+            if voltage.bus_id == bus_id and voltage.phase in {"A", "B", "C"} and voltage.v_base_ln_v
         ]
         if not voltages:
             return 0.0
@@ -741,9 +868,17 @@ class Engine:
             return False
         switch = self._switch(event.payload["id"])
         closed = bool(event.payload["closed"])
-        if event.payload.get("reclose") and switch.locked:
-            return False
-        if switch.closed == closed:
+        allowed, reason = self._execution_allowed(switch, closed, reclose=bool(event.payload.get("reclose")))
+        self.execution_log.append(
+            {
+                "time_s": self.time_s,
+                "equipment_id": switch.id,
+                "command": "close" if closed else "open",
+                "accepted": allowed,
+                "reason": reason,
+            }
+        )
+        if not allowed or switch.closed == closed:
             return False
         switch.closed = closed
         switch.operations_used += 1
@@ -971,6 +1106,8 @@ def _relay_from_dict(raw: dict[str, Any]) -> RelayState:
         max_shots=raw.get("max_shots"),
         reclose_delay_s=raw.get("reclose_delay_s"),
         directional=bool(raw.get("directional", False)),
+        measured_equipment_id=raw.get("measured_equipment_id"),
+        measured_node_id=raw.get("measured_node_id"),
     )
 
 

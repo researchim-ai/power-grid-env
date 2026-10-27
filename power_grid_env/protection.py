@@ -65,6 +65,8 @@ class RelayState:
     lockout: bool = False
     pending_close_at: float | None = None
     directional: bool = False
+    measured_equipment_id: str | None = None
+    measured_node_id: str | None = None
     notes: list[str] = field(default_factory=list)
 
     def integrate(self, signal: float, dt_s: float, voltage: complex | None = None, current: complex | None = None) -> str | None:

@@ -1,0 +1,7 @@
+{
+  "declared_timeout_s": 0.1,
+  "outer_deadline_s": 1.5,
+  "outer_deadline_exceeded": true,
+  "stdout": "",
+  "stderr": ""
+}

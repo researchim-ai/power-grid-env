@@ -139,6 +139,7 @@ class LTCSpec(BaseModel):
     compensator_r_v: float | None = None
     compensator_x_v: float | None = None
     max_iterations: int = 8
+    delay_s: float = 0.0
 
 
 class Transformer(BaseModel):
@@ -308,6 +309,18 @@ class StudyFault(BaseModel):
     x_ohm: float = 0.0
 
 
+class Omission(BaseModel):
+    """Объект, который не вошёл в расчёт. Статус зависит от задачи."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    object_id: str
+    status: Literal["ignored_non_electrical", "unsupported", "approximate"]
+    power_flow: Literal["not_in_admittance", "supported", "approximate"]
+    protection: Literal["unsupported", "supported"]
+    note: str
+
+
 class Network(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -332,6 +345,7 @@ class Network(BaseModel):
     meters: list[Meter] = Field(default_factory=list)
     study_faults: list[StudyFault] = Field(default_factory=list)
     assumptions: list[str] = Field(default_factory=list)
+    omissions: list[Omission] = Field(default_factory=list)
     provenance: Provenance
 
     @model_validator(mode="after")
@@ -546,7 +560,7 @@ def validate_network_rules(network: Network) -> list[str]:
             ltc = transformer.ltc
             if not 0 <= ltc.controlled_winding < len(transformer.windings):
                 errors.append(f"{transformer.id}: РПН ссылается на несуществующую обмотку")
-            if ltc.tap_step_pu <= 0 or ltc.deadband_pu < 0:
+            if ltc.tap_step_pu <= 0 or ltc.deadband_pu < 0 or ltc.delay_s < 0:
                 errors.append(f"{transformer.id}: некорректные параметры РПН")
             if ltc.tap_min_pu > ltc.tap_max_pu:
                 errors.append(f"{transformer.id}: пределы РПН переставлены")

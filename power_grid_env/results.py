@@ -89,3 +89,4 @@ class SolveOptions(BaseModel):
     max_outer: int = 20
     apply_regulators: bool = True
     inverter_current_limit_model: bool = False
+    approximate_phase_shift: bool = False

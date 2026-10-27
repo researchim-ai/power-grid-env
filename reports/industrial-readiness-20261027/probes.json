@@ -1,0 +1,69 @@
+{
+  "empty_reference": {
+    "evidence": "conversion_consistency",
+    "thresholds": {
+      "voltage_pu": 1e-05,
+      "angle_rad": 0.0001
+    },
+    "compared": 0,
+    "missing_in_native": [
+      [
+        "b",
+        1
+      ]
+    ],
+    "missing_in_import": [],
+    "max_voltage_error_pu": null,
+    "max_angle_error_rad": null,
+    "worst": [],
+    "verdict": "pass",
+    "independence": "один и тот же DSS-Extensions; это проверка адаптера, не внешний решатель"
+  },
+  "nonfinite_voltage": {
+    "evidence": "conversion_consistency",
+    "thresholds": {
+      "voltage_pu": 1e-05,
+      "angle_rad": 0.0001
+    },
+    "compared": 1,
+    "missing_in_native": [],
+    "missing_in_import": [],
+    "max_voltage_error_pu": "NaN",
+    "max_angle_error_rad": 0.0,
+    "worst": [
+      {
+        "bus": "b",
+        "node": 1,
+        "voltage_pu": "NaN",
+        "angle_rad": 0.0
+      }
+    ],
+    "verdict": "pass",
+    "independence": "один и тот же DSS-Extensions; это проверка адаптера, не внешний решатель"
+  },
+  "low_voltage_reference": {
+    "evidence": "conversion_consistency",
+    "thresholds": {
+      "voltage_pu": 1e-05,
+      "angle_rad": 0.0001
+    },
+    "compared": 1,
+    "missing_in_native": [],
+    "missing_in_import": [],
+    "max_voltage_error_pu": null,
+    "max_angle_error_rad": null,
+    "worst": [],
+    "verdict": "pass",
+    "independence": "один и тот же DSS-Extensions; это проверка адаптера, не внешний решатель"
+  },
+  "profile_ens": {
+    "reported_wh": 1666.6666666666667,
+    "expected_wh": 2500.0,
+    "final_requested_w": 200000.0
+  },
+  "controller_content_fingerprint": {
+    "changed_code_changes_hash": false
+  },
+  "test_functions": 40,
+  "commit": "336d6c830d049549cbf07cbe3b419a804e27c29b"
+}

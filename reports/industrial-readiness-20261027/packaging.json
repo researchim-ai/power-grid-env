@@ -1,0 +1,8 @@
+{
+  "wheel_built": true,
+  "includes_cases": false,
+  "includes_benchmarks": false,
+  "outside_checkout_returncode": 1,
+  "stdout": "/tmp/pge-industrial-audit-20261027/unpacked/power_grid_env/__init__.py\n",
+  "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/tmp/pge-industrial-audit-20261027/unpacked/power_grid_env/paths.py\", line 13, in repo_root\n    raise FileNotFoundError(\"корень power-grid-env не найден\")\nFileNotFoundError: корень power-grid-env не найден\n"
+}

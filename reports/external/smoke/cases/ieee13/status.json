@@ -1,6 +1,7 @@
 {
   "id": "ieee13",
   "source": "ieee-pes",
+  "required": true,
   "verdict": "pass",
   "native_converged": true,
   "import_status": "converged",

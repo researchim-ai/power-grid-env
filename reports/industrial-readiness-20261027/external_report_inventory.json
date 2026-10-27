@@ -1,0 +1,81 @@
+[
+  {
+    "path": "reports/external/derived/results.json",
+    "sha256": "093285546982e1b0fb435069462cd76d44d972fd1d28631bc5e83390c061eaa0",
+    "verdict": "pass",
+    "cases": 10,
+    "window": null,
+    "max_voltage_error_pu": null
+  },
+  {
+    "path": "reports/external/distribution/results.json",
+    "sha256": "a2af8f51ec8c58a231315f222675f1b93b91764bed15e468fe08fc832dd1e0b4",
+    "verdict": "pass",
+    "cases": 5,
+    "window": null,
+    "max_voltage_error_pu": null
+  },
+  {
+    "path": "reports/external/pglib/results.json",
+    "sha256": "85fa0673db397d85119b8c135a7a05b1905a70eda5829307942edf37f7c692bc",
+    "verdict": "pass",
+    "cases": 4,
+    "window": null,
+    "max_voltage_error_pu": null
+  },
+  {
+    "path": "reports/external/simbench/results.json",
+    "sha256": "e6e6ba005bcbb0e93c77e450db991369f2ed6d82071b1024fb0f638ebd5e9ea6",
+    "verdict": "pass",
+    "cases": 3,
+    "window": null,
+    "max_voltage_error_pu": null
+  },
+  {
+    "path": "reports/external/smart-ds/qsts_2.json",
+    "sha256": "6b8b8402dd792bff6c600cc5d64cf13de13d591260fa9accf176a345f222bcf2",
+    "verdict": "pass",
+    "cases": 0,
+    "window": {
+      "start_index": 0,
+      "steps": 2,
+      "step_minutes": 15,
+      "reason": "первые интервалы года, сутки=96 и неделя=672, зафиксировано до оценки ошибки"
+    },
+    "max_voltage_error_pu": 4.83406425999533e-09
+  },
+  {
+    "path": "reports/external/smart-ds/qsts_672.json",
+    "sha256": "f43b00b8dc8279627d150850233c4689d0d657987ab857fcb88bc9069f8a29eb",
+    "verdict": "pass",
+    "cases": 0,
+    "window": {
+      "start_index": 0,
+      "steps": 672,
+      "step_minutes": 15,
+      "reason": "первые интервалы года, сутки=96 и неделя=672, зафиксировано до оценки ошибки"
+    },
+    "max_voltage_error_pu": 5.3133102362323825e-09
+  },
+  {
+    "path": "reports/external/smart-ds/qsts_96.json",
+    "sha256": "a50121dd2c7b5dab1141230dd7028535b3cfbc6c2f0406f7557a82f44ee5cd5d",
+    "verdict": "pass",
+    "cases": 0,
+    "window": {
+      "start_index": 0,
+      "steps": 96,
+      "step_minutes": 15,
+      "reason": "первые интервалы года, сутки=96 и неделя=672, зафиксировано до оценки ошибки"
+    },
+    "max_voltage_error_pu": 5.17950127232325e-09
+  },
+  {
+    "path": "reports/external/smoke/results.json",
+    "sha256": "50d8287bcf5759135da18ebceac2f7c3f69d5b06f1002608a21f56e7178328b3",
+    "verdict": "pass",
+    "cases": 2,
+    "window": null,
+    "max_voltage_error_pu": null
+  }
+]

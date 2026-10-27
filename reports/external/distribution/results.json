@@ -5,6 +5,7 @@
     {
       "id": "ieee34",
       "source": "ieee-pes",
+      "required": true,
       "verdict": "pass",
       "native_converged": true,
       "import_status": "converged",
@@ -22,6 +23,7 @@
     {
       "id": "ieee123",
       "source": "ieee-pes",
+      "required": true,
       "verdict": "pass",
       "native_converged": true,
       "import_status": "converged",
@@ -39,6 +41,7 @@
     {
       "id": "enwl-median",
       "source": "enwl-lvns",
+      "required": true,
       "verdict": "pass",
       "native_converged": true,
       "import_status": "converged",
@@ -56,6 +59,7 @@
     {
       "id": "enwl-largest",
       "source": "enwl-lvns",
+      "required": true,
       "verdict": "pass",
       "native_converged": true,
       "import_status": "converged",
@@ -73,7 +77,8 @@
     {
       "id": "smart-ds-one-feeder",
       "verdict": "not_run",
-      "source": "smart-ds"
+      "source": "smart-ds",
+      "required": false
     }
   ]
 }

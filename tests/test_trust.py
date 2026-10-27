@@ -171,6 +171,246 @@ def test_empty_verdict_is_not_a_pass_and_interval_must_be_positive():
         Scenario(id="zero", control_interval_s=0)
 
 
+def test_delayed_tap_and_midpoint_checkpoint_match():
+    builder = NetBuilder("ltc", "РПН", 20.0)
+    builder.node("hv", 20.0)
+    builder.node("lv", 0.4)
+    builder.source("hv", 0.05, 0.2)
+    builder.transformer(
+        "hv",
+        "lv",
+        vector_group="Dyn11",
+        kva=160,
+        hv_kv=20,
+        lv_kv=0.4,
+        x_pct=4,
+        r_pct=1,
+        hv_ground="not_applicable",
+        lv_ground="solid",
+        transformer_id="t",
+    )
+    builder.load("lv", 20_000, 5_000, load_id="load")
+    network = builder.build()
+    network.transformers[0].ltc = __import__(
+        "power_grid_env.model", fromlist=["LTCSpec"]
+    ).LTCSpec(
+        controlled_winding=1,
+        v_target_pu=1.2,
+        deadband_pu=0.01,
+        tap_min_pu=0.9,
+        tap_max_pu=1.1,
+        tap_step_pu=0.01,
+        delay_s=5.0,
+    )
+    engine = Engine(network, Scenario(id="ltc", horizon_s=30, settle_s=600, control_interval_s=30))
+    engine.reset()
+    assert engine.net.transformers[0].windings[1].tap_pu == pytest.approx(1.0)
+    engine.advance_to(4.0)
+    assert engine.net.transformers[0].windings[1].tap_pu == pytest.approx(1.0)
+    snapshot = json.loads(json.dumps(engine.snapshot()))
+    engine.advance_to(5.0)
+    assert engine.net.transformers[0].windings[1].tap_pu == pytest.approx(1.01)
+    restored = Engine(network.model_copy(deep=True), engine.scenario)
+    restored.restore(snapshot)
+    restored.advance_to(5.0)
+    assert restored.time_s == pytest.approx(engine.time_s)
+    assert restored.net.transformers[0].windings[1].tap_pu == pytest.approx(1.01)
+
+
+def test_execution_rechecks_maintenance_and_uv_uses_its_node():
+    builder = NetBuilder("prot", "Защита", 12.47)
+    builder.node("src")
+    builder.node("end")
+    builder.source("src", 0.02, 0.08)
+    builder.switch("src", "end", switch_id="sw", operate_time_s=1.0)
+    builder.load("end", 50_000, 0.0, load_id="load")
+    engine = Engine(
+        builder.build(),
+        Scenario(
+            id="prot",
+            horizon_s=30,
+            settle_s=600,
+            control_interval_s=30,
+            protection=[
+                {
+                    "id": "uv",
+                    "kind": "undervoltage",
+                    "equipment_id": "sw",
+                    "measured_node_id": "end",
+                    "pickup": 0.9,
+                    "time_multiplier_s": 0.5,
+                    "breaker_delay_s": 0.0,
+                    "max_shots": 1,
+                }
+            ],
+        ),
+    )
+    engine.reset()
+    engine.net.switches[0].closed = False
+    engine._resolve()
+    engine.submit({"kind": "switch", "equipment_id": "sw", "command": "close"})
+    engine.net.switches[0].tagged_for_maintenance = True
+    engine.advance_to(1.0)
+    assert engine.net.switches[0].closed is False
+    assert engine.execution_log[-1]["reason"] == "maintenance_tag"
+    engine.advance_to(1.5)
+    assert engine.relays[0].shots == 1
+    assert engine.relays[0].lockout is True
+
+
+def test_equal_time_switch_order_follows_submission():
+    builder = NetBuilder("order", "Порядок", 12.47)
+    builder.node("src")
+    builder.node("a")
+    builder.node("b")
+    builder.source("src", 0.02, 0.08)
+    builder.switch("src", "a", switch_id="a", closed=False, operate_time_s=0.0)
+    builder.switch("src", "b", switch_id="b", closed=False, operate_time_s=0.0)
+    builder.load("a", 10_000, 0.0, load_id="la")
+    builder.load("b", 10_000, 0.0, load_id="lb")
+    engine = Engine(builder.build(), Scenario(id="order", horizon_s=10, settle_s=600, radiality=False))
+    engine.reset()
+    engine.submit({"kind": "switch", "equipment_id": "a", "command": "close"})
+    engine.submit({"kind": "switch", "equipment_id": "b", "command": "close"})
+    engine.advance_to(0.01)
+    assert [item["equipment_id"] for item in engine.execution_log] == ["a", "b"]
+    assert engine.net.switches[0].closed and engine.net.switches[1].closed
+
+
+def test_exact_mode_rejects_unverified_winding_shift():
+    from power_grid_env.preflight import preflight
+    from power_grid_env.results import SolveOptions
+
+    builder = NetBuilder("dyn5", "Dyn5", 20.0)
+    builder.node("hv", 20.0)
+    builder.node("lv", 0.4)
+    builder.source("hv", 0.1, 0.4)
+    builder.transformer(
+        "hv",
+        "lv",
+        vector_group="Dyn5",
+        kva=160,
+        hv_kv=20,
+        lv_kv=0.4,
+        x_pct=4,
+        r_pct=1,
+        hv_ground="not_applicable",
+        lv_ground="solid",
+    )
+    builder.load("lv", 10_000, 0.0, load_id="load")
+    network = builder.build()
+    network.transformers[0].windings[1].angle_deg = -150.0
+    blocked = solve_network(network)
+    assert blocked.status == "invalid_model"
+    assert any("angle" in item for item in blocked.warnings)
+    allowed = solve_network(network, SolveOptions(approximate_phase_shift=True))
+    assert allowed.status == "converged"
+    assert preflight(network, task="power_flow", solve_initial=False)["ok"] is False
+    assert preflight(network, task="power_flow", solve_initial=False, approximate_phase_shift=True)["ok"] is True
+
+
+def test_fuse_is_outside_power_flow_and_blocks_protection(tmp_path: Path):
+    from power_grid_env.preflight import preflight
+
+    (tmp_path / "net.dss").write_text(
+        "\n".join(
+            [
+                "Clear",
+                "New Circuit.t basekv=10 pu=1 phases=3 bus1=a",
+                "Edit Vsource.source r1=0.1 x1=0.1",
+                "New Line.l bus1=a bus2=b phases=3 length=1 units=km r1=0.2 x1=0.3 r0=0.6 x0=0.9",
+                "New Load.b bus1=b phases=3 conn=wye kv=10 kw=10 kvar=0",
+                "New Fuse.f monitoredobj=Line.l switchedobj=Line.l",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    network, report = import_network(tmp_path / "net.dss")
+    assert network is not None, report["errors"]
+    fuse = next(row for row in report["commands"] if row["command"] == "Fuse.f")
+    assert fuse["power_flow"] == "not_in_admittance"
+    assert fuse["protection"] == "unsupported"
+    power_flow = preflight(network, task="power_flow", solve_initial=False)
+    assert power_flow["ok"] is True
+    assert any("Fuse.f" in item for item in power_flow["warnings"])
+    protection = preflight(network, task="protection", solve_initial=False)
+    assert protection["ok"] is False
+
+
+def test_profiled_outage_counts_the_raised_demand():
+    builder = NetBuilder("outage", "Отключение", 12.47)
+    builder.node("src")
+    builder.node("end")
+    builder.source("src", 0.02, 0.08)
+    builder.switch("src", "end", switch_id="sw", closed=False)
+    builder.load("end", 100_000, 0.0, load_id="load")
+    engine = Engine(
+        builder.build(),
+        Scenario(
+            id="outage",
+            horizon_s=60,
+            settle_s=600,
+            control_interval_s=60,
+            load_profile={"load": [[0, 1.0], [30, 2.0]]},
+        ),
+    )
+    engine.reset()
+    record = engine.step_control({"kind": "hold"})
+    assert record["energy_not_served_wh"] == pytest.approx(2500.0)
+    assert energy_from_service_log([record]) == pytest.approx(2500.0)
+    assert record["service_rows"][0]["nameplate_w"] == pytest.approx(100_000)
+
+
+def test_partial_controller_line_cannot_outlive_the_deadline(tmp_path: Path):
+    import sys
+    import time
+
+    from power_grid_env.controllers import SubprocessController
+
+    script = tmp_path / "partial.py"
+    script.write_text(
+        "import sys, time\nsys.stdout.write('{')\nsys.stdout.flush()\ntime.sleep(5)\n",
+        encoding="utf-8",
+    )
+    controller = SubprocessController([sys.executable, str(script)], timeout_s=0.3)
+    started = time.monotonic()
+    result = controller._request({"op": "act"})
+    elapsed = time.monotonic() - started
+    assert result["outcome"] == "timeout"
+    assert elapsed < 1.2
+    assert controller.process.poll() is not None
+
+
+def test_controller_stderr_flood_still_returns_the_frame(tmp_path: Path):
+    import sys
+
+    from power_grid_env.controllers import SubprocessController
+
+    script = tmp_path / "flood.py"
+    script.write_text(
+        "import sys\nsys.stderr.write('x' * 200000)\nsys.stderr.flush()\n"
+        "sys.stdout.write('{\"ok\": true}\\n')\nsys.stdout.flush()\n",
+        encoding="utf-8",
+    )
+    controller = SubprocessController([sys.executable, str(script)], timeout_s=2.0)
+    result = controller._request({"op": "reset"})
+    assert result["outcome"] == "ok"
+    controller.close()
+
+
+def test_controller_rejects_a_json_array(tmp_path: Path):
+    import sys
+
+    from power_grid_env.controllers import SubprocessController
+
+    script = tmp_path / "array.py"
+    script.write_text("import sys\nsys.stdout.write('[]\\n')\nsys.stdout.flush()\n", encoding="utf-8")
+    controller = SubprocessController([sys.executable, str(script)], timeout_s=1.0)
+    result = controller._request({"op": "act"})
+    assert result["outcome"] == "invalid_action"
+    assert controller.process.poll() is not None
+
+
 def test_service_log_matches_reported_energy():
     engine = Engine(_feeder().build(), Scenario(id="energy", horizon_s=120, settle_s=600))
     engine.reset()
@@ -264,13 +504,64 @@ def test_linecode_impedance_scales_with_length(tmp_path):
     assert network.lines[0].r_ohm[0][1] == 0.0
 
 
-def test_fingerprint_tracks_the_controller_command():
+def test_fingerprint_tracks_the_controller_command(tmp_path: Path):
     network = _feeder().build()
     scenario = Scenario(id="fingerprint", horizon_s=60, settle_s=600)
     first = experiment_fingerprint(scenario, {"command": ["noop"]}, network)
     second = experiment_fingerprint(scenario, {"command": ["other"]}, network)
     assert first != second
     assert experiment_fingerprint(scenario, {"command": ["noop"]}, network) == first
+    script = tmp_path / "controller.py"
+    script.write_text("print(1)\n", encoding="utf-8")
+    before = experiment_fingerprint(scenario, {"command": ["python3", str(script)]}, network)
+    script.write_text("print(2)\n", encoding="utf-8")
+    after = experiment_fingerprint(scenario, {"command": ["python3", str(script)]}, network)
+    assert before != after
+
+
+def test_attempts_stay_immutable_and_idempotency_does_not_duplicate(tmp_path: Path):
+    from power_grid_env.runner import run_suite
+
+    model = tmp_path / "model.json"
+    model.write_text(_feeder().build().model_dump_json(), encoding="utf-8")
+    suite = tmp_path / "suite.yaml"
+    suite.write_text(
+        "\n".join(
+            [
+                "id: tiny",
+                "title: tiny",
+                "task: power_flow",
+                "scenarios:",
+                "  - id: one",
+                f"    model: {model}",
+                "    baseline: {policy: hold}",
+                "    candidate: {policy: hold}",
+                "    scenario:",
+                "      id: one",
+                "      horizon_s: 60",
+                "      control_interval_s: 60",
+                "      settle_s: 600",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    out = tmp_path / "out"
+    first = run_suite(suite, out, use_process_backend=False, idempotency_key="run-1")
+    assert first["verdict"] == "pass"
+    again = run_suite(suite, out, use_process_backend=False, idempotency_key="run-1")
+    assert again["verdict"] == "pass"
+    attempts = list((out / "one" / "baseline" / "attempts").iterdir())
+    assert len(attempts) == 1
+    kept = attempts[0]
+    (kept / "metrics.json").write_text("{", encoding="utf-8")
+    (out / "one" / "baseline" / "latest.json").write_text("{", encoding="utf-8")
+    resumed = run_suite(suite, out, use_process_backend=False, resume=True)
+    assert resumed["verdict"] == "pass"
+    assert kept.exists()
+    assert len(list((out / "one" / "baseline" / "attempts").iterdir())) == 2
+    suite.write_text(suite.read_text(encoding="utf-8").replace("horizon_s: 60", "horizon_s: 120"), encoding="utf-8")
+    with pytest.raises(ValueError, match="другим отпечатком"):
+        run_suite(suite, out, use_process_backend=False, idempotency_key="run-1")
 
 
 def test_two_machine_equilibrium_and_benchmark_is_finite():

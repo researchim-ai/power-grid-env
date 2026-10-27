@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-27",
+  "commit": "336d6c830d049549cbf07cbe3b419a804e27c29b",
+  "python": "3.12.9",
+  "packages": {
+    "numpy": "2.2.6",
+    "scipy": "1.15.2",
+    "pydantic": "2.11.7",
+    "opendssdirect.py": "0.9.4",
+    "dss-python": "0.15.7",
+    "pandapower": "3.5.6",
+    "pytest": "9.1.1"
+  },
+  "pytest": {
+    "command": "python3 -m pytest -q",
+    "exit_code": 0,
+    "passed": 40,
+    "skipped": 0
+  },
+  "fresh_suite": {
+    "comparisons": 10,
+    "failures": 0,
+    "unassessed": 0,
+    "verdict": "completed_with_recorded_regressions"
+  },
+  "data_lock": {
+    "verified_files": 26,
+    "all_present_and_matching": true
+  },
+  "scope_note": "Внешние тесты выполнены в pytest. Существующие QSTS 96/672 отчёты только изучены, полные окна заново не запускались. Изменений расчётного ядра аудит не вносил."
+}

@@ -4,6 +4,14 @@
     "voltage_pu": 1e-05,
     "angle_rad": 0.0001
   },
+  "counts": {
+    "native_targets": 41,
+    "imported_targets": 48,
+    "compared": 41,
+    "missing_required": 0,
+    "nonfinite": 0,
+    "angle_skipped": 0
+  },
   "compared": 41,
   "missing_in_native": [
     [
@@ -38,6 +46,7 @@
   "missing_in_import": [],
   "max_voltage_error_pu": 8.778033855350031e-10,
   "max_angle_error_rad": 1.2117307157666346e-09,
+  "reasons": [],
   "worst": [
     {
       "bus": "675",

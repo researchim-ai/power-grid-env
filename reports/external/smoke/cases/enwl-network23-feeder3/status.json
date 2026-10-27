@@ -1,6 +1,7 @@
 {
   "id": "enwl-network23-feeder3",
   "source": "enwl-lvns",
+  "required": true,
   "verdict": "pass",
   "native_converged": true,
   "import_status": "converged",

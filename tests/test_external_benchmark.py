@@ -17,6 +17,40 @@ def test_voltage_gate_stays_strict():
     far = compare_buses(native, [{"bus": "b", "node": 1, "pu": 1.0 + VOLTAGE_PU * 10, "angle_deg": 0.0}])
     assert close["verdict"] == "pass"
     assert far["verdict"] == "fail"
+    empty = compare_buses({"converged": True, "buses": []}, [{"bus": "b", "node": 1, "pu": 1.0, "angle_deg": 0.0}])
+    assert empty["verdict"] == "fail"
+    missing = compare_buses(
+        {"converged": True, "buses": []},
+        [],
+    )
+    assert missing["verdict"] == "fail"
+    nan = compare_buses(
+        native,
+        [{"bus": "b", "node": 1, "pu": float("nan"), "angle_deg": 0.0}],
+    )
+    assert nan["verdict"] == "fail"
+    assert nan["max_voltage_error_pu"] is None
+    deenergized = compare_buses(
+        {"converged": True, "buses": [{"name": "b", "phases": [{"node": 1, "pu": 0.0, "angle_deg": 0.0}]}]},
+        [{"bus": "b", "node": 1, "pu": 1.0, "angle_deg": 40.0}],
+    )
+    assert deenergized["verdict"] == "fail"
+    assert deenergized["counts"]["angle_skipped"] == 1
+    both_dead = compare_buses(
+        {"converged": True, "buses": [{"name": "b", "phases": [{"node": 1, "pu": 0.0, "angle_deg": 90.0}]}]},
+        [{"bus": "b", "node": 1, "pu": 0.0, "angle_deg": 0.0}],
+    )
+    assert both_dead["verdict"] == "pass"
+    duplicated = compare_buses(
+        {
+            "converged": True,
+            "buses": [
+                {"name": "b", "phases": [{"node": 1, "pu": 1.0, "angle_deg": 0.0}, {"node": 1, "pu": 1.0, "angle_deg": 0.0}]}
+            ],
+        },
+        [{"bus": "b", "node": 1, "pu": 1.0, "angle_deg": 0.0}],
+    )
+    assert duplicated["verdict"] == "fail"
 
 
 def test_sequence_linecode_keeps_zero_sequence(tmp_path: Path):

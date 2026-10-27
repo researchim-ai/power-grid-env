@@ -8,12 +8,21 @@ from __future__ import annotations
 
 import json
 import os
-import select
 import subprocess
 import sys
+import time
 import uuid
 from typing import Any, Callable
 
+from power_grid_env.ipc import (
+    FrameTimeout,
+    FrameTooLarge,
+    ProtocolError,
+    kill_process_group,
+    parse_object,
+    read_frame,
+    write_frame,
+)
 from power_grid_env.paths import repo_root
 
 
@@ -71,9 +80,9 @@ class SubprocessController:
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True,
             cwd=root,
             env=env,
+            start_new_session=True,
         )
         self.alive = True
 
@@ -114,35 +123,36 @@ class SubprocessController:
             self._request({"op": "close"})
         except Exception:
             pass
-        if self.process.poll() is None:
-            self.process.terminate()
+        kill_process_group(self.process)
         self.alive = False
 
     def _request(self, payload: dict[str, Any]) -> dict[str, Any]:
-        self.sent.append(payload)
+        request_id = str(uuid.uuid4())
+        message = {**payload, "protocol": 1, "request_id": request_id}
+        self.sent.append(message)
         if not self.alive or self.process.poll() is not None:
             self.alive = False
             return {"outcome": "controller_crash"}
         assert self.process.stdin is not None and self.process.stdout is not None
+        deadline = time.monotonic() + self.timeout_s
         try:
-            self.process.stdin.write(json.dumps(payload, ensure_ascii=False) + "\n")
-            self.process.stdin.flush()
-        except BrokenPipeError:
-            self.alive = False
-            return {"outcome": "controller_crash"}
-        ready, _, _ = select.select([self.process.stdout], [], [], self.timeout_s)
-        if not ready:
-            self.process.kill()
+            write_frame(self.process.stdin, message, deadline, 1_048_576)
+            raw, _stderr = read_frame(self.process.stdout, self.process.stderr, deadline, 1_048_576)
+            data = parse_object(raw)
+        except FrameTimeout:
+            kill_process_group(self.process)
             self.alive = False
             return {"outcome": "timeout", "synthesized_hold": True}
-        raw = self.process.stdout.readline()
-        if raw == "":
+        except (BrokenPipeError, FrameTooLarge, ProtocolError):
+            kill_process_group(self.process)
             self.alive = False
-            return {"outcome": "controller_crash"}
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
-            return {"outcome": "invalid_action", "raw": raw}
+            return {"outcome": "invalid_action"}
+        if data.get("protocol") not in (None, 1):
+            return {"outcome": "invalid_action", "reason": "protocol"}
+        if data.get("request_id") not in (None, request_id):
+            return {"outcome": "invalid_action", "reason": "request_id"}
+        if message["op"] in {"initialize", "reset", "close"} and data.get("ok") is not True:
+            return {"outcome": "handshake_failed", "data": data}
         return {"outcome": "ok", "data": data}
 
 

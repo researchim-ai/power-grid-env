@@ -40,20 +40,25 @@ def run_pack(pack_path: Path, out: Path, *, offline: bool = False) -> dict[str, 
     cases = []
     for case in pack.get("cases") or []:
         if case.get("status") == "not_run":
-            cases.append({"id": case["id"], "verdict": "not_run", "source": case.get("source")})
+            cases.append(
+                {
+                    "id": case["id"],
+                    "verdict": "not_run",
+                    "source": case.get("source"),
+                    "required": case.get("required", True),
+                }
+            )
             continue
         cases.append(_run_case(case, out, offline=offline))
-    required = [item for item in cases if item["verdict"] not in {"not_run"}]
-    if not required:
+    mandatory = [item for item in cases if item.get("required", True)]
+    if not mandatory:
         summary = "not_run"
-    elif any(item["verdict"] == "fail" for item in required):
+    elif any(item["verdict"] == "fail" for item in mandatory):
         summary = "fail"
-    elif any(item["verdict"] in {"unsupported", "data_unavailable", "inconclusive"} for item in required):
+    elif any(item["verdict"] != "pass" for item in mandatory):
         summary = "inconclusive"
-    elif all(item["verdict"] == "pass" for item in required):
-        summary = "pass"
     else:
-        summary = "inconclusive"
+        summary = "pass"
     payload = {"pack": pack["id"], "verdict": summary, "cases": cases}
     write_json(out / "results.json", payload)
     write_json(out / "coverage.json", {"cases": [{"id": item["id"], "coverage": item.get("coverage")} for item in cases]})
@@ -101,10 +106,14 @@ def _run_case(case: dict[str, Any], out: Path, *, offline: bool) -> dict[str, An
     solved = solve_network(imported)
     rows = _imported_rows(imported, solved)
     comparison = compare_buses(native, rows)
+    if solved.status != "converged":
+        comparison["verdict"] = "fail"
+        comparison.setdefault("reasons", []).append("import_solver_not_converged")
     write_json(case_dir / "comparison.json", comparison)
     result = {
         "id": case["id"],
         "source": source,
+        "required": case.get("required", True),
         "verdict": comparison["verdict"],
         "native_converged": True,
         "import_status": solved.status,

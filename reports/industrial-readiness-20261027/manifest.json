@@ -1,0 +1,33 @@
+{
+  "schema_version": "power-grid-env.audit-evidence/v1",
+  "files": [
+    {
+      "path": "assessment.json",
+      "sha256": "fceb44a2f02522d24743100d1576fca557c905a78b7c329a7b5082be6df5b42b"
+    },
+    {
+      "path": "controller_timeout.json",
+      "sha256": "d6c597bd6ac666cf207440e0b0c14d9a3004c9ac5616aef7c1ee0b647693cd0f"
+    },
+    {
+      "path": "data_integrity.json",
+      "sha256": "466d1efddbabd8756a508a26ff49e28b9da79f7fc829f747642d779d4262c55e"
+    },
+    {
+      "path": "external_report_inventory.json",
+      "sha256": "6e234079c26fea399c56bc4a87691775ae87e44a885cb8f302f28f5e3e80054c"
+    },
+    {
+      "path": "packaging.json",
+      "sha256": "58bdf5f47263a0ba2b4511dd5df6490f8d42d4af9b654a408036f9aff52ff78c"
+    },
+    {
+      "path": "probes.json",
+      "sha256": "256a000059abf04a83eacc89ab960acfdb86de610e229b4bb2642245172f670a"
+    },
+    {
+      "path": "suite_summary.json",
+      "sha256": "6178786574bfac46145628f2cdd51922299a8374d07417f672f64be8468f940c"
+    }
+  ]
+}

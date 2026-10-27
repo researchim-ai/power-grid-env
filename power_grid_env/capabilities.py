@@ -8,7 +8,7 @@ CAPABILITY_MATRIX = {
     "version": MATRIX_VERSION,
     "evidence_limit": "Численная и перекрёстная проверка на авторских схемах. Натурных осциллограмм нет, поэтому validated_for_declared_scope не присвоен.",
     "features": [
-        {"id": "phase_domain_power_flow", "status": "numerically_verified", "scope": "OpenDSSDirect 0.9 / dss-python: линии ABC/ABCN, YNyn0, Dyn11, Dyn5, YNd11, ZIP, PQ, постоянный Z, шунт, КЗ через импеданс, острова. Сдвиг группы 5 записан в модели; у этой сборки OpenDSS нет свойства angle, углы группы 5 не сверены"},
+        {"id": "phase_domain_power_flow", "status": "numerically_verified", "scope": "OpenDSSDirect 0.9 / dss-python: линии ABC/ABCN, YNyn0, Dyn11, YNd11, ZIP, PQ, постоянный Z, шунт, КЗ через импеданс, острова. Сдвиг группы 5 в точном режиме отклоняется: у сборки нет свойства angle. Явный флаг approximate_phase_shift считает режим без сверки углов"},
         {"id": "dss_transformer_import", "status": "implemented", "scope": "две обмотки YNyn0 и Dyn11 из DSS, если sidecar задаёт группу и заземление"},
         {"id": "dss_linecode", "status": "implemented", "scope": "LineCode r1/x1, явная матрица или перевод Z0/Z1 в фазную матрицу; единицы m, km, ft, kft, mi"},
         {"id": "external_benchmark", "status": "implemented", "scope": "IEEE 13, 34, 123 и три фидера ENWL сходятся с прямым OpenDSS внутри 1e-5 о.е. Производные режимы 0.5/1.2, замороженные регуляторы и размыкание Sw1 на IEEE123 — тот же допуск. Один фидер SMART-DS: снимок, QSTS первых суток и недели и продолжение с середины суток из JSON-снимка тоже внутри 1e-5. Три снимка SimBench сверены с pandapower по |V| внутри 1e-4 о.е.; углы и допуск 1e-5 одного движка не заявлены. Сутки ENWL не собраны: нет ключа между Shape_N и библиотекой LCT. Это не натурная сверка"},
@@ -29,7 +29,7 @@ CAPABILITY_MATRIX = {
         {"id": "symmetric_newton_ac", "status": "numerically_verified", "scope": "симметричный эквивалент прямой последовательности; не заменяет фазный фидер"},
         {"id": "kron_reduction", "status": "numerically_verified", "scope": "только явно разрешённая редукция при твёрдой нейтрали и нулевой shunt-матрице"},
         {"id": "transformer_magnetizing", "status": "implemented", "scope": "учитывается только если заданы imag_pct и no_load_loss_pct; иначе нуль. ppm_antifloat=1 — численный антифлоат"},
-        {"id": "qsts_restoration", "status": "implemented", "scope": "известный повреждённый участок, выключатель, разъединитель, задержки, replay, checkpoint"},
+        {"id": "qsts_restoration", "status": "implemented", "scope": "известный повреждённый участок, выключатель, разъединитель, задержки, replay, checkpoint. Отпайка с delay_s и аккумулятор реле переживают снимок. UV/OV смотрит свой узел, ток — свой аппарат. Команда перепроверяется в момент исполнения"},
         {"id": "cold_load_pickup", "status": "implemented", "scope": "только при явных multiplier и tau"},
         {"id": "der_limits_soc", "status": "numerically_verified", "scope": "круг S, приоритет P/Q, SoC по исполненной мощности и КПД"},
         {"id": "qsts_overcurrent", "status": "numerically_verified", "scope": "IEC 60255-151 таблица A.1 SI/VI/EI и определённая выдержка. Не distance и не differential"},

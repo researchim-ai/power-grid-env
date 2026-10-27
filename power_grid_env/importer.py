@@ -23,6 +23,7 @@ from power_grid_env.model import (
     Load,
     Meter,
     Network,
+    Omission,
     Provenance,
     Switch,
     Terminal,
@@ -540,6 +541,7 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
     terminals: list[Terminal] = []
     lines: list[Line] = []
     switches: list[Switch] = []
+    omissions: list[Omission] = []
     loads: list[Load] = []
     transformers: list[Transformer] = []
     generators: list = []
@@ -569,9 +571,28 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
         if klass.lower() == "linecode":
             continue
         if klass.lower() == "fuse":
-            report["approximations"].append(
-                f"Fuse.{name}: контроллер предохранителя не входит в расчёт режима. "
-                f"Наблюдаемый объект {args.get('monitoredobj', 'не указан')} остаётся в схеме."
+            note = (
+                f"Контроллер предохранителя не входит в матрицу проводимости. "
+                f"Наблюдаемый объект {args.get('monitoredobj', 'не указан')} остаётся в схеме. "
+                "Для защиты и восстановления это не модель плавления."
+            )
+            omissions.append(
+                Omission(
+                    object_id=f"Fuse.{name}",
+                    status="ignored_non_electrical",
+                    power_flow="not_in_admittance",
+                    protection="unsupported",
+                    note=note,
+                )
+            )
+            report["approximations"].append(f"Fuse.{name}: {note}")
+            report["mappings"].append(
+                {
+                    "from": f"Fuse.{name}",
+                    "status": "ignored_non_electrical",
+                    "power_flow": "not_in_admittance",
+                    "protection": "unsupported",
+                }
             )
             continue
         if try_device(
@@ -879,6 +900,7 @@ def _from_dss(text: str, side: dict[str, Any], report: dict[str, Any]) -> Networ
         shunts=shunts,
         meters=meters,
         assumptions=list(report["assumptions"]),
+        omissions=omissions,
         provenance=Provenance(source=str(report["source"]), quality="derived"),
     )
 
@@ -1222,8 +1244,18 @@ def _command_ledger(commands: list[dict[str, Any]]) -> list[dict[str, str]]:
         elif kind == "new":
             klass = name.split(".", 1)[0].lower()
             supported = {"line", "load", "transformer", "linecode", "capacitor", "generator", "storage", "pvsystem", "vsource", "regcontrol", "loadshape"}
-            if klass in {"monitor", "energymeter", "fuse"}:
+            if klass in {"monitor", "energymeter"}:
                 status = "ignored_non_electrical"
+            elif klass == "fuse":
+                rows.append(
+                    {
+                        "command": name,
+                        "status": "ignored_non_electrical",
+                        "power_flow": "not_in_admittance",
+                        "protection": "unsupported",
+                    }
+                )
+                continue
             elif klass in supported:
                 status = "transferred"
             else:

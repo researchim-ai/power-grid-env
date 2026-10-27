@@ -492,7 +492,7 @@ def _render(
     for transformer in network.transformers:
         if not all(energized_terminal(winding.terminal_id) for winding in transformer.windings):
             continue
-        script.extend(_transformer_commands(transformer, topology, bus_token, warnings))
+        script.extend(_transformer_commands(transformer, topology, bus_token, warnings, options))
         registry.append((f"Transformer.{_token('t', transformer.id)}", transformer.id))
     for load in network.loads:
         if not energized_terminal(load.terminal_id):
@@ -646,7 +646,7 @@ def _kron(resistance, reactance, phases: list[str]):
     return reduced.real.tolist(), reduced.imag.tolist(), new_phases
 
 
-def _transformer_commands(transformer: Transformer, topology, bus_token, warnings) -> list[str]:
+def _transformer_commands(transformer: Transformer, topology, bus_token, warnings, options: SolveOptions) -> list[str]:
     parsed = parse_vector_group(transformer.vector_group)
     name = _token("t", transformer.id)
     imag = 0.0 if transformer.imag_pct is None else transformer.imag_pct
@@ -683,11 +683,13 @@ def _transformer_commands(transformer: Transformer, topology, bus_token, warning
         if winding.r_pct is not None:
             command += f" %r={winding.r_pct:.12g}"
         if abs(winding.angle_deg) > 1e-9 and leadlag is None:
-            # У dss-python 0.15 нет свойства Transformer.angle. Сдвиг остаётся в модели.
-            warnings.append(
+            message = (
                 f"{transformer.id}: сдвиг обмотки {index + 1} на {winding.angle_deg:.8g}° "
-                "не передан в OpenDSS, у сборки нет свойства angle. Углы этой группы не сверены."
+                "не передаётся в OpenDSS, у сборки нет свойства angle"
             )
+            if not options.approximate_phase_shift:
+                raise ValueError(message + ". Точный режим это отклоняет")
+            warnings.append(message + ". Приближение включено явно, углы этой группы не сверены")
         if neutral is not None:
             command += f" rneut={neutral[0]:.12g} xneut={neutral[1]:.12g}"
             if winding.grounding.kind == "ungrounded":

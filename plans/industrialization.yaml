@@ -1,0 +1,246 @@
+schema_version: power-grid-env.agent-workplan/v1
+prepared_on: '2026-10-27'
+baseline_commit: 336d6c830d049549cbf07cbe3b419a804e27c29b
+status: in_progress
+specification: docs/AGENT_INDUSTRIALIZATION_PLAN_RU.md
+assessment: reports/industrial-readiness-20261027/assessment.json
+target: Industrial QSTS v1
+execution_policy:
+  local_first: true
+  economic_work: excluded
+  status_done_requires_gate_evidence: true
+  preserve_failed_cases: true
+  forbid_threshold_changes_to_force_pass: true
+  unavailable_external_data_blocks_only_dependent_track: true
+  stop_after_planning: false
+  core_files_changed_by_this_audit: false
+release_profiles:
+  industrial_qsts_v1:
+    required_tasks: [AG-01, AG-02, AG-03, AG-04, AG-05, AG-06, AG-07, AG-08, AG-09, AG-10, AG-11, AG-16]
+    optional_tasks: [AG-12, AG-13, AG-14]
+    excluded: [full_EMT, HIL, real_time, live_equipment_control, cloud_cluster, economic_analysis]
+    field_validation_required_for_software_release: false
+    field_validation_claim_requires: AG-14
+  industrial_rms:
+    required_tasks: [AG-15]
+    additional_prerequisite: qualified_industrial_qsts_contracts_and_runtime
+    inherits_qsts_validation_automatically: false
+task_result_contract:
+  required_fields: [task_id, status, input_fingerprint, changed_files, commands, checks, evidence_paths, remaining_limits]
+  statuses: [planned, in_progress, done, waiting_for_data, failed_gate]
+  gate_pass_requires: all_required_checks_pass_and_evidence_present
+  note: >-
+    Это очередь реализации. Описания gates ниже ещё не являются выполняемыми
+    тестами. Агент создаёт соответствующие tests/commands и фиксирует их
+    реальные результаты, а не просто заменяет planned на done.
+tasks:
+  - id: AG-01
+    title: Strict verdict and complete comparison
+    priority: P0
+    status: done
+    depends_on: []
+    scope: [benchmarks/external/compare.py, benchmarks/external/run.py, power_grid_env/runner.py, power_grid_env/cli.py]
+    findings: [IR-01, IR-06]
+    gates:
+      - empty_reference_and_zero_comparisons_cannot_pass
+      - NaN_Inf_duplicate_and_missing_required_targets_rejected
+      - deenergized_voltage_magnitude_compared_angle_only_can_be_excluded
+      - nonconverged_import_solver_cannot_pass
+      - required_not_run_or_skipped_blocks_qualification
+      - mutation_tests_prove_rejection
+  - id: AG-02
+    title: Profile-aware demand and independent energy metrics
+    priority: P0
+    status: done
+    depends_on: []
+    scope: [power_grid_env/simulation.py, power_grid_env/metrics.py, power_grid_env/evaluator.py]
+    findings: [IR-02]
+    gates:
+      - audited_outage_example_is_2500_Wh_not_1666_67
+      - demand_supplied_curtailed_and_quality_service_are_explicit
+      - profile_switch_CLPU_ZIP_and_partial_phase_have_oracles
+      - evaluator_checks_source_profile_and_interval_boundaries
+  - id: AG-03
+    title: Bounded process protocol and true deadlines
+    priority: P0
+    status: done
+    depends_on: []
+    scope: [power_grid_env/controllers.py, power_grid_env/backend_process.py, power_grid_env/backend_worker.py]
+    findings: [IR-03]
+    gates:
+      - partial_line_does_not_outlive_monotonic_deadline
+      - bounded_write_read_and_stderr_buffers
+      - wrong_JSON_root_ID_version_and_handshake_rejected
+      - child_processes_cleaned_on_timeout_cancel_and_crash
+      - no_runner_hang_under_fault_injection
+  - id: AG-04
+    title: Semantic compiler and task-specific physical scope
+    priority: P0_P1
+    status: done
+    depends_on: [AG-01]
+    scope: [power_grid_env/model.py, power_grid_env/preflight.py, power_grid_env/importer.py, power_grid_env/dss_devices.py, power_grid_env/backend_opendss.py, power_grid_env/capabilities.py]
+    findings: [IR-07]
+    gates:
+      - every_significant_object_and_property_has_mapping_status
+      - unsupported_phase_shift_rejected_or_independently_verified
+      - fuse_support_depends_on_study_task
+      - approximation_is_opt_in_derived_model
+      - finite_units_bases_grounding_and_terminal_ownership_checked
+  - id: AG-05
+    title: Persistent QSTS controls and event-correct protection
+    priority: P1
+    status: done
+    depends_on: [AG-02, AG-04]
+    scope: [power_grid_env/simulation.py, power_grid_env/backend_opendss.py, power_grid_env/protection.py, power_grid_env/results.py, power_grid_env/scenarios.py]
+    findings: [IR-08]
+    gates:
+      - taps_caps_SOC_CLPU_relay_and_meter_state_persist
+      - control_delays_and_hysteresis_match_reference_timeline
+      - CT_VT_location_separate_from_trip_actuator
+      - execution_time_interlocks_rechecked
+      - mid_timer_checkpoint_and_step_refinement_equivalent
+  - id: AG-06
+    title: Content-addressed immutable runs and recovery
+    priority: P1
+    status: done
+    depends_on: [AG-01, AG-03, AG-05]
+    scope: [power_grid_env/runner.py, power_grid_env/report.py, power_grid_env/simulation.py, power_grid_env/acceptance.py]
+    findings: [IR-04, IR-09]
+    gates:
+      - controller_content_environment_solver_and_thresholds_affect_identity
+      - attempts_do_not_overwrite_previous_results
+      - stale_or_corrupt_resume_rejected
+      - kill_resume_cancel_is_durable_and_replayable
+      - manifest_finalized_after_all_outputs
+  - id: AG-07
+    title: Full external validation through production Engine
+    priority: P1
+    status: planned
+    depends_on: [AG-01, AG-04, AG-05, AG-06]
+    scope: [benchmarks/external, tests/test_external_benchmark.py, power_grid_env/checks.py]
+    findings: [IR-06]
+    gates:
+      - V_I_P_Q_losses_neutral_controls_and_status_compared
+      - production_Engine_used_for_QSTS_and_checkpoint
+      - IEEE_13_34_123_and_three_ENWL_snapshots_qualified
+      - two_different_SMART_DS_feeders_day_and_week_qualified
+      - independent_solver_subset_and_precision_tiers_explicit
+      - derived_native_reference_not_reported_as_original
+      - ENWL_missing_Shape_N_not_fabricated
+  - id: AG-08
+    title: Installable reproducible product outside checkout
+    priority: P1
+    status: planned
+    depends_on: [AG-03, AG-04]
+    scope: [pyproject.toml, power_grid_env/paths.py, power_grid_env/controllers.py, power_grid_env/cli.py]
+    findings: [IR-05, IR-09]
+    gates:
+      - pinned_dependency_runtime_and_platform_matrix
+      - wheel_and_sdist_install_cleanly
+      - no_repo_root_dependency_for_user_projects
+      - import_run_external_controller_report_replay_outside_checkout
+      - case_packs_versioned_and_separate_from_private_data
+  - id: AG-09
+    title: Shared study API and engineering workspace
+    priority: P1_P2
+    status: planned
+    depends_on: [AG-03, AG-04, AG-06, AG-08]
+    scope: [power_grid_env/study.py, power_grid_env/cli.py, power_grid_env/viewer.py, power_grid_env/assets/sld]
+    findings: [IR-09]
+    gates:
+      - CLI_Python_and_local_API_use_same_study_service
+      - import_validate_run_cancel_resume_compare_export_end_to_end
+      - scheme_and_timeline_link_to_actual_execution_and_limits
+      - controller_view_has_no_privileged_payload
+      - reload_preserves_jobs_and_results
+  - id: AG-10
+    title: Measured resource envelope and reliable long runs
+    priority: P1_P2
+    status: planned
+    depends_on: [AG-03, AG-05, AG-06, AG-07]
+    scope: [power_grid_env/benchmarks.py, power_grid_env/backend_opendss.py, power_grid_env/backend_process.py, power_grid_env/dataset.py, benchmarks/external]
+    findings: [IR-09]
+    gates:
+      - hardware_and_workload_budgets_frozen_before_evaluation
+      - cold_warm_full_step_p50_p95_RSS_and_failures_measured
+      - incremental_solver_preserves_trajectory_and_numerical_tolerances
+      - bounded_buffers_streaming_results_no_unbounded_memory_growth
+      - repeated_run_OOM_timeout_and_worker_recovery_tested
+    trial_sizes_bus: [100, 1000, 10000]
+    trial_horizons_days: [7, 30]
+    size_claim_requires_actual_pass: true
+  - id: AG-11
+    title: Qualified industrial QSTS task packs
+    priority: P2
+    status: planned
+    depends_on: [AG-04, AG-05, AG-07]
+    scope: [cases/industrial, cases/suites, power_grid_env/tasks.py, power_grid_env/evaluator.py]
+    gates:
+      - ATS_two_infeeds_section_maintenance_and_device_failure_cases
+      - LTC_capacitor_DER_BESS_limits_and_SOC_cases
+      - transformer_and_infeed_limits_in_addition_to_line_limits
+      - asymmetry_neutral_three_winding_and_fault_subset_qualified
+      - positive_negative_and_near_limit_reference_for_each_pack
+  - id: AG-12
+    title: Independently checked OPF N-1 and state estimation
+    priority: P2
+    status: planned
+    depends_on: [AG-01, AG-04, AG-07]
+    scope: [power_grid_env/network_opf.py, power_grid_env/analysis.py, power_grid_env/symmetric_ac.py, benchmarks/external/pglib_opf.py]
+    gates:
+      - independent_oracle_checks_all_OPF_constraints
+      - infeasible_and_constraint_mutations_detected
+      - N1_tracks_islands_V_I_unserved_load_and_unsolved_cases
+      - WLS_observability_covariance_and_bad_data_corpus
+  - id: AG-13
+    title: General AI interfaces and controlled execution
+    priority: P2
+    status: planned
+    depends_on: [AG-03, AG-04, AG-06, AG-09]
+    scope: [power_grid_env/gym_env.py, power_grid_env/llm_tools.py, power_grid_env/vlm.py, power_grid_env/controllers.py]
+    gates:
+      - stable_IDs_variable_network_size_validity_and_produced_age
+      - Gym_checker_vector_rollout_and_termination_semantics
+      - LLM_tools_and_VLM_use_shared_validated_execution_contract
+      - raw_and_shielded_benchmarks_separate
+      - untrusted_runtime_file_env_network_and_resource_isolation
+      - heldout_families_rule_and_optimization_baselines
+  - id: AG-14
+    title: Field measurements and scoped validation
+    priority: P2_external_data
+    status: planned
+    depends_on: [AG-01, AG-02, AG-04, AG-07]
+    scope: [benchmarks/external/field_gap.py, benchmarks/external/partner_request.md, benchmarks/external/packs/field-pilot.yaml]
+    external_dependency: paired_model_parameters_inputs_independent_targets_time_and_quality
+    unavailable_data_behavior: write_gap_manifest_set_waiting_for_data_continue_other_tasks
+    gates:
+      - data_sufficiency_and_channel_mapping_confirmed
+      - calibration_validation_split_frozen
+      - uncertainty_budget_and_thresholds_fixed_before_evaluation
+      - independent_targets_not_used_as_boundary_inputs
+      - measured_evidence_separate_from_same_engine_and_synthetic
+  - id: AG-15
+    title: RMS backend in a separate qualified release
+    priority: P2_P3
+    status: planned
+    depends_on: [AG-03, AG-04, AG-05, AG-06]
+    scope: [power_grid_env/dynamics.py, new_RMS_adapter, new_dynamic_reference_pack]
+    gates:
+      - operating_point_to_DAE_initialization_verified
+      - multi_machine_AVR_governor_events_and_limits_corpus
+      - no_disturbance_equilibrium_and_dt_refinement_converge
+      - independent_reference_trajectories_match_declared_tolerances
+  - id: AG-16
+    title: Automated release qualification and documentation
+    priority: P1_release_gate
+    status: planned
+    depends_on: [AG-01, AG-02, AG-03, AG-04, AG-05, AG-06, AG-07, AG-08, AG-09, AG-10, AG-11]
+    scope: [.github/workflows, power_grid_env/acceptance.py, power_grid_env/capabilities.py, README.md, README.en.md, docs]
+    gates:
+      - no_open_P0_in_declared_release_scope
+      - mandatory_release_tracks_have_no_hidden_skips
+      - clean_install_full_workflow_and_fault_injection_pass
+      - numerical_scenario_external_performance_evidence_complete
+      - capability_status_bound_to_version_scope_and_evidence
+      - immutable_bundle_checksums_replay_and_migration_docs
+      - missing_README_requirement_links_repaired

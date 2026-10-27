@@ -74,7 +74,10 @@ def solve_case(code: str) -> dict:
     network = build_case(code)
     # 1e-10 на MV уводит Newton OpenDSS в расхождение за 200 итераций.
     # 1e-9 сходится, остаток KCL остаётся около 1e-8 о.е.
-    result = solve_network(network, SolveOptions(tolerance=1e-9, max_iterations=80))
+    result = solve_network(
+        network,
+        SolveOptions(tolerance=1e-9, max_iterations=80, approximate_phase_shift=True),
+    )
     topology = compile_topology(network)
     voltages = {}
     for item in result.voltages:
