@@ -297,6 +297,11 @@ def _solve_once(network: Network, options: SolveOptions) -> SolveResult:
     voltages, flows = _read(session, topology, registry)
     solved_taps = _transformer_taps(session, registry)
     limited = _limited_generators(network, flows)
+    forming_over = _forming_over_rating(network, flows)
+    if forming_over:
+        warnings.extend(
+            f"{item}: мощность grid-forming выше Sном, предел тока не применён" for item in forming_over
+        )
     if any(math.isnan(item.v_real_v) or math.isnan(item.v_imag_v) for item in voltages):
         converged = False
     pq_error = _pq_setpoint_error(network, topology, flows, voltages)
@@ -322,6 +327,7 @@ def _solve_once(network: Network, options: SolveOptions) -> SolveResult:
         "kcl_residual_pu": kcl_error,
         "pq_setpoint_error_pu": pq_error,
         "solved_taps": solved_taps,
+        "forming_over_rating": forming_over,
         "_topology_terminal_bus": terminal_bus,
         "approximations": list(warnings),
     }
@@ -477,6 +483,39 @@ def _render(
                     f"{_source_impedance(source)}"
                 )
                 registry.append((f"Vsource.{name}", source.id))
+    forming = sorted((item for item in network.inverters if item.forming), key=lambda item: item.id)
+    for inverter in forming:
+        bus_id = topology.terminal_bus[inverter.terminal_id]
+        if topology.bus_island[bus_id] not in energized_islands:
+            continue
+        token = bus_token[bus_id]
+        base_kv = inverter.ll_v / 1000.0
+        impedance = (
+            f"r1={inverter.forming_r_ohm:.12g} x1={inverter.forming_x_ohm:.12g} "
+            f"r0={inverter.forming_r_ohm:.12g} x0={inverter.forming_x_ohm:.12g}"
+        )
+        if not circuit_started:
+            script.append(
+                "New Circuit.{name} basekv={kv:.8g} pu=1.0 phases=3 bus1={bus} angle=0".format(
+                    name=_token("c", network.id),
+                    kv=base_kv,
+                    bus=token,
+                )
+            )
+            script.append(
+                f"Edit Vsource.source {impedance} basekv={base_kv:.8g} pu=1.0 angle=0 "
+                f"bus1={_bus_spec(token, ['A', 'B', 'C'])}"
+            )
+            registry.append(("Vsource.source", inverter.id))
+            script.extend(solver_sets)
+            circuit_started = True
+        else:
+            name = _token("v", inverter.id)
+            script.append(
+                f"New Vsource.{name} bus1={_bus_spec(token, ['A', 'B', 'C'])} phases=3 "
+                f"basekv={base_kv:.8g} pu=1.0 angle=0 {impedance}"
+            )
+            registry.append((f"Vsource.{name}", inverter.id))
     # Первый источник первого острова уже добавлен. Ветвь position==0 для
     # первого острова обработана выше через circuit_started. Дополнительные
     # источники того же острова попадают в else. Источники следующих островов
@@ -514,7 +553,15 @@ def _render(
         if not energized_terminal(load.terminal_id):
             continue
         bus_id = topology.terminal_bus[load.terminal_id]
-        script.extend(_load_commands(load, bus_token[bus_id], topology.buses[bus_id].nominal_ll_v))
+        script.extend(
+            _load_commands(
+                load,
+                bus_token[bus_id],
+                topology.buses[bus_id].nominal_ll_v,
+                topology.buses[bus_id].phases,
+                warnings,
+            )
+        )
         # Несколько однофазных элементов остаются под одним equipment id.
         for name in _load_names(load):
             registry.append((name, load.id))
@@ -539,7 +586,7 @@ def _render(
             )
         registry.append((f"Generator.{name}", generator.id))
     for inverter in network.inverters:
-        if not energized_terminal(inverter.terminal_id):
+        if inverter.forming or not energized_terminal(inverter.terminal_id):
             continue
         bus_id = topology.terminal_bus[inverter.terminal_id]
         script.extend(_inverter_commands(inverter, bus_token[bus_id], options))
@@ -776,8 +823,22 @@ def _declared_kv(load, nominal_ll_v: float, phases: list[str]) -> float:
     return nominal_ll_v / 1000.0
 
 
-def _load_commands(load, bus_token: str, nominal_ll_v: float) -> list[str]:
+def _neutral_return(load) -> bool:
+    return load.connection == "wye" and load.grounding.kind == "ungrounded"
+
+
+def _phase_neutral_bus(bus_token: str, phase: str) -> str:
+    node = {"A": "1", "B": "2", "C": "3"}[phase]
+    return f"{bus_token}.{node}.4"
+
+
+def _load_commands(load, bus_token: str, nominal_ll_v: float, bus_phases: tuple[str, ...] = (), warnings: list[str] | None = None) -> list[str]:
     commands = []
+    to_neutral = _neutral_return(load)
+    if to_neutral and "N" not in bus_phases:
+        raise ValueError(f"{load.id}: незаземлённая звезда требует узел нейтрали N, на землю её не сажаем")
+    if to_neutral and warnings is not None:
+        warnings.append(f"{load.id}: звезда подключена к нейтрали узла, а не к земле")
     balanced = (
         load.connection == "wye"
         and load.phases == ["A", "B", "C"]
@@ -798,7 +859,7 @@ def _load_commands(load, bus_token: str, nominal_ll_v: float) -> list[str]:
             )
         )
         return commands
-    if balanced or (load.connection == "delta" and len(load.phases) == 3):
+    if (balanced or (load.connection == "delta" and len(load.phases) == 3)) and not to_neutral:
         active = sum(load.p_w.values())
         reactive = sum(load.q_var.values())
         commands.append(
@@ -816,10 +877,11 @@ def _load_commands(load, bus_token: str, nominal_ll_v: float) -> list[str]:
         return commands
     for phase in load.phases:
         kv = _declared_kv(load, nominal_ll_v, [phase])
+        bus = _phase_neutral_bus(bus_token, phase) if to_neutral else _bus_spec(bus_token, [phase])
         commands.append(
             _one_load(
                 _token("d", f"{load.id}:{phase}"),
-                _bus_spec(bus_token, [phase]),
+                bus,
                 1,
                 load.connection,
                 kv,
@@ -859,7 +921,7 @@ def _load_names(load) -> list[str]:
         and len(set(round(load.p_w[phase], 6) for phase in load.phases)) == 1
         and len(set(round(load.q_var[phase], 6) for phase in load.phases)) == 1
     )
-    if balanced or (load.connection == "delta" and len(load.phases) in (2, 3)):
+    if (balanced or (load.connection == "delta" and len(load.phases) in (2, 3))) and not _neutral_return(load):
         return [f"Load.{_token('d', load.id)}"]
     return [f"Load.{_token('d', f'{load.id}:{phase}')}" for phase in load.phases]
 
@@ -1227,6 +1289,19 @@ def _load_left_pq_band(load, bus_id: str, voltages: list[PhaseVoltage]) -> bool:
         if pu < load.vmin_pu or pu > load.vmax_pu:
             return True
     return False
+
+
+def _forming_over_rating(network: Network, flows: list[ConductorFlow]) -> list[str]:
+    over = []
+    for inverter in network.inverters:
+        if not inverter.forming:
+            continue
+        active = sum(flow.p_into_w for flow in flows if flow.equipment_id == inverter.id and flow.phase in "ABC")
+        reactive = sum(flow.q_into_var for flow in flows if flow.equipment_id == inverter.id and flow.phase in "ABC")
+        # Мощность в устройство положительна, когда сеть питает его. Источник отдаёт отрицательную.
+        if math.hypot(active, reactive) > inverter.s_rated_va * (1.0 + 1e-6):
+            over.append(inverter.id)
+    return over
 
 
 def _limited_generators(network: Network, flows: list[ConductorFlow]) -> list[str]:

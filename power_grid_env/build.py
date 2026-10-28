@@ -517,6 +517,9 @@ class NetBuilder:
         volt_watt: list[tuple[float, float]] | None = None,
         fault_current_multiple: float | None = None,
         ramp_w_per_s: float | None = None,
+        forming: bool = False,
+        forming_r_ohm: float | None = None,
+        forming_x_ohm: float | None = None,
     ) -> str:
         node = next(item for item in self.nodes if item.id == node_id)
         level = next(item for item in self.levels if item.id == node.voltage_level_id)
@@ -535,7 +538,14 @@ class NetBuilder:
                 volt_watt=volt_watt,
                 ramp_w_per_s=ramp_w_per_s,
                 fault_current_multiple=fault_current_multiple,
-                provenance=provenance("инвертор ограничен по S; классическая машина не используется"),
+                forming=forming,
+                forming_r_ohm=forming_r_ohm,
+                forming_x_ohm=forming_x_ohm,
+                provenance=provenance(
+                    "grid-forming — источник напряжения за импедансом"
+                    if forming
+                    else "grid-following не является опорой острова"
+                ),
             )
         )
         return inverter_id

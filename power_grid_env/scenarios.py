@@ -30,6 +30,7 @@ class Scenario(BaseModel):
     drop_probability: float = 0.0
     measurement_period_s: float | None = None
     protection: list[dict[str, Any]] = Field(default_factory=list)
+    capacitor_controls: list[dict[str, Any]] = Field(default_factory=list)
     load_profile: dict[str, list[list[float]]] = Field(default_factory=dict)
     trace_limit: int | None = None
     what_if_quota: int = 4

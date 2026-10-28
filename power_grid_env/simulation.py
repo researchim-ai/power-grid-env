@@ -16,6 +16,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Callable
 
 from power_grid_env.backend_opendss import solve_network
+from power_grid_env.controls import capacitor_next_steps, ltc_next_tap
 from power_grid_env.conventions import ll_to_ln
 from power_grid_env.der import apparent_limit, apply_ramp, clip_storage_power, cold_load_multiplier, update_soc
 from power_grid_env.metrics import phase_voltage_pu, step_reward, unserved_fraction
@@ -119,6 +120,7 @@ class Engine:
         self.relays: list[RelayState] = []
         self.execution_log: list[dict[str, Any]] = []
         self.ltc_outside_since: dict[str, float | None] = {}
+        self.capacitor_since: dict[str, float | None] = {}
         self.measurements: list[dict[str, Any]] = []
         self.soc: dict[str, float] = {}
         self.base_p: dict[str, dict[str, float]] = {}
@@ -128,6 +130,8 @@ class Engine:
         self.last_result: SolveResult | None = None
         self.trace: list[dict[str, Any]] = []
         self.dropped_trace_steps = 0
+        self.retained_integrals = _empty_integrals()
+        self.retained_violation_counts: dict[str, int] = {}
         self.history: list[dict[str, Any]] = []
         self.what_if_used = 0
         self.overload_seconds: dict[str, float] = {}
@@ -157,8 +161,12 @@ class Engine:
         self.measurements = []
         self.execution_log = []
         self.ltc_outside_since = {}
+        self.capacitor_since = {}
+        self._validate_capacitor_controls()
         self.trace = []
         self.dropped_trace_steps = 0
+        self.retained_integrals = _empty_integrals()
+        self.retained_violation_counts: dict[str, int] = {}
         self.history = []
         self.what_if_used = 0
         self.overload_seconds = {}
@@ -209,7 +217,8 @@ class Engine:
             next_time = self.queue[0].time_s if self.queue else math.inf
             protection_in = self._protection_wait()
             ltc_in = self._ltc_wait()
-            step = min(target_s - self.time_s, next_time - self.time_s, protection_in, ltc_in)
+            capacitor_in = self._capacitor_wait()
+            step = min(target_s - self.time_s, next_time - self.time_s, protection_in, ltc_in, capacitor_in)
             step = max(0.0, step)
             self._accumulate(step)
             self.time_s += step
@@ -219,7 +228,7 @@ class Engine:
                 changed |= self._apply_event(event)
             if protection_in <= step + 1e-9:
                 changed |= self._trip_due_relays()
-            if ltc_in <= step + 1e-9:
+            if ltc_in <= step + 1e-9 or capacitor_in <= step + 1e-9:
                 changed = True
             if changed or self.last_result is None:
                 self._resolve()
@@ -255,6 +264,7 @@ class Engine:
             "relays": [asdict(relay) for relay in self.relays],
             "execution_log": list(self.execution_log),
             "ltc_outside_since": dict(self.ltc_outside_since),
+            "capacitor_since": dict(self.capacitor_since),
             "measurements": list(self.measurements),
             "soc": dict(self.soc),
             "base_p": self.base_p,
@@ -269,6 +279,8 @@ class Engine:
             "history": list(self.history),
             "trace": list(self.trace),
             "dropped_trace_steps": self.dropped_trace_steps,
+            "retained_integrals": dict(self.retained_integrals),
+            "retained_violation_counts": dict(self.retained_violation_counts),
             "terminated": self.terminated,
             "truncated": self.truncated,
             "last_result": None if self.last_result is None else self.last_result.model_dump(mode="json"),
@@ -284,6 +296,7 @@ class Engine:
         self.relays = [RelayState(**item) for item in snapshot["relays"]]
         self.execution_log = list(snapshot.get("execution_log") or [])
         self.ltc_outside_since = dict(snapshot.get("ltc_outside_since") or {})
+        self.capacitor_since = dict(snapshot.get("capacitor_since") or {})
         self.measurements = list(snapshot["measurements"])
         self.soc = dict(snapshot["soc"])
         self.base_p = {key: dict(value) for key, value in snapshot["base_p"].items()}
@@ -298,6 +311,10 @@ class Engine:
         self.history = list(snapshot["history"])
         self.trace = list(snapshot.get("trace") or [])
         self.dropped_trace_steps = int(snapshot.get("dropped_trace_steps") or 0)
+        self.retained_integrals = dict(snapshot.get("retained_integrals") or _empty_integrals())
+        self.retained_violation_counts = {
+            str(key): int(value) for key, value in (snapshot.get("retained_violation_counts") or {}).items()
+        }
         self.terminated = bool(snapshot["terminated"])
         self.truncated = bool(snapshot["truncated"])
         self.last_result = None if snapshot["last_result"] is None else SolveResult.model_validate(snapshot["last_result"])
@@ -448,9 +465,23 @@ class Engine:
         if limit is not None:
             extra = len(self.trace) - int(limit)
             if extra > 0:
+                for old in self.trace[:extra]:
+                    for key in INTEGRAL_KEYS:
+                        self.retained_integrals[key] += float(old.get(key) or 0.0)
+                    for violation in old.get("violations") or []:
+                        kind = str(violation.get("kind") or "unknown")
+                        self.retained_violation_counts[kind] = self.retained_violation_counts.get(kind, 0) + 1
                 del self.trace[:extra]
                 self.dropped_trace_steps += extra
         return record
+
+    def total_integrals(self) -> dict[str, float]:
+        """Сумма отброшенных и ещё хранимых интервалов. Обрезка следа интеграл не обнуляет."""
+        totals = dict(self.retained_integrals)
+        for row in self.trace:
+            for key in INTEGRAL_KEYS:
+                totals[key] = totals.get(key, 0.0) + float(row.get(key) or 0.0)
+        return totals
 
     def _interval_metrics(self, dt_s: float) -> dict[str, Any]:
         result = self.last_result
@@ -628,13 +659,90 @@ class Engine:
             if self.time_s - started + 1e-9 < ltc.delay_s:
                 continue
             winding = transformer.windings[ltc.controlled_winding]
-            step = ltc.tap_step_pu if measured < ltc.v_target_pu else -ltc.tap_step_pu
-            updated = min(ltc.tap_max_pu, max(ltc.tap_min_pu, winding.tap_pu + step))
+            updated = ltc_next_tap(
+                measured,
+                target_pu=ltc.v_target_pu,
+                deadband_pu=ltc.deadband_pu,
+                tap_pu=winding.tap_pu,
+                step_pu=ltc.tap_step_pu,
+                tap_min_pu=ltc.tap_min_pu,
+                tap_max_pu=ltc.tap_max_pu,
+            )
             if updated != winding.tap_pu:
                 winding.tap_pu = updated
                 changed = True
             self.ltc_outside_since[transformer.id] = self.time_s
         return changed
+
+    def _validate_capacitor_controls(self) -> None:
+        known = {shunt.id for shunt in self.net.shunts}
+        nodes = {node.id for node in self.net.connectivity_nodes}
+        for spec in getattr(self.scenario, "capacitor_controls", []) or []:
+            shunt_id = spec.get("shunt_id")
+            node_id = spec.get("measured_node_id")
+            if shunt_id not in known or node_id not in nodes:
+                raise ValueError("управление конденсатором ссылается на неизвестный шунт или узел")
+            if float(spec["delay_s"]) <= 0:
+                raise ValueError("конденсатор в цикле событий требует положительную выдержку")
+            if float(spec["open_above_pu"]) <= float(spec["close_below_pu"]):
+                raise ValueError("гистерезис конденсатора вырожден")
+
+    def _capacitor_wait(self) -> float:
+        wait = math.inf
+        for spec in getattr(self.scenario, "capacitor_controls", []) or []:
+            started = self.capacitor_since.get(spec["shunt_id"])
+            if started is None:
+                continue
+            wait = min(wait, max(0.0, float(spec["delay_s"]) - (self.time_s - started)))
+        return wait
+
+    def _step_delayed_capacitors(self) -> bool:
+        """Одна ступень батареи после выдержки. Внутри окна положение не меняется."""
+        if self.last_result is None or self.last_result.status != "converged":
+            return False
+        changed = False
+        shunts = {shunt.id: shunt for shunt in self.net.shunts}
+        for spec in getattr(self.scenario, "capacitor_controls", []) or []:
+            shunt = shunts[spec["shunt_id"]]
+            measured = self._node_voltage_pu(spec["measured_node_id"])
+            if measured is None:
+                self.capacitor_since[shunt.id] = None
+                continue
+            outside = measured < float(spec["close_below_pu"]) or measured > float(spec["open_above_pu"])
+            if not outside:
+                self.capacitor_since[shunt.id] = None
+                continue
+            started = self.capacitor_since.get(shunt.id)
+            if started is None:
+                self.capacitor_since[shunt.id] = self.time_s
+                continue
+            if self.time_s - started + 1e-9 < float(spec["delay_s"]):
+                continue
+            updated = capacitor_next_steps(
+                measured,
+                shunt.steps_in,
+                shunt.steps,
+                close_below_pu=float(spec["close_below_pu"]),
+                open_above_pu=float(spec["open_above_pu"]),
+            )
+            if updated != shunt.steps_in:
+                shunt.steps_in = updated
+                changed = True
+            self.capacitor_since[shunt.id] = self.time_s
+        return changed
+
+    def _node_voltage_pu(self, node_id: str) -> float | None:
+        if self.last_result is None:
+            return None
+        bus_id = compile_topology(self.net).node_to_bus[node_id]
+        values = [
+            abs(voltage.complex) / voltage.v_base_ln_v
+            for voltage in self.last_result.voltages
+            if voltage.bus_id == bus_id and voltage.phase in {"A", "B", "C"} and voltage.v_base_ln_v and voltage.energized
+        ]
+        if not values:
+            return None
+        return float(sum(values) / len(values))
 
     def _controlled_voltage_pu(self, transformer) -> float | None:
         ltc = transformer.ltc
@@ -673,7 +781,7 @@ class Engine:
         self._apply_storage_limits()
         self.last_result = self._call_solve()
         self._persist_taps()
-        if self._step_delayed_ltc():
+        if self._step_delayed_ltc() or self._step_delayed_capacitors():
             self.last_result = self._call_solve()
             self._persist_taps()
         self._publish()
@@ -1089,6 +1197,21 @@ def _reachable_nodes(network: Network, start: str, ignore_switch: str | None) ->
                 seen.add(nxt)
                 stack.append(nxt)
     return seen
+
+
+INTEGRAL_KEYS = (
+    "energy_not_served_wh",
+    "critical_served_wh",
+    "critical_demand_wh",
+    "voltage_violation_s",
+    "voltage_violation_pu_s",
+    "overload_s",
+    "overload_pu_s",
+)
+
+
+def _empty_integrals() -> dict[str, float]:
+    return {key: 0.0 for key in INTEGRAL_KEYS}
 
 
 def _empty_pending() -> dict[str, Any]:

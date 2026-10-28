@@ -133,6 +133,10 @@ def compile_topology(network: Network) -> Topology:
     sources_on_bus: dict[str, list[str]] = {bus_id: [] for bus_id in buses}
     for source in network.sources:
         sources_on_bus[terminal_bus[source.terminal_id]].append(source.id)
+    forming_on_bus: dict[str, list[str]] = {bus_id: [] for bus_id in buses}
+    for inverter in network.inverters:
+        if inverter.forming:
+            forming_on_bus[terminal_bus[inverter.terminal_id]].append(inverter.id)
 
     seen: set[str] = set()
     islands: list[IslandInfo] = []
@@ -152,8 +156,16 @@ def compile_topology(network: Network) -> Topology:
         source_ids = tuple(
             source_id for bus_id in member_buses for source_id in sources_on_bus[bus_id]
         )
-        energized = bool(source_ids)
-        reason = "grid_forming_source" if energized else "no_grid_forming_source"
+        forming_ids = tuple(
+            inverter_id for bus_id in member_buses for inverter_id in forming_on_bus[bus_id]
+        )
+        energized = bool(source_ids) or bool(forming_ids)
+        if source_ids:
+            reason = "grid_forming_source"
+        elif forming_ids:
+            reason = "grid_forming_inverter"
+        else:
+            reason = "no_grid_forming_source"
         identifier = island_identifier(member_buses)
         islands.append(
             IslandInfo(

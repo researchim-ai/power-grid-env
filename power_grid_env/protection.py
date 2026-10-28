@@ -76,6 +76,56 @@ class RelayState:
         return advance_relay(self, signal, dt_s)
 
 
+def instrument_secondary(primary: float, primary_rated: float, secondary_rated: float) -> float:
+    """Вторичная величина. Номиналы CT или VT не подставляются из тока аварии."""
+    if primary_rated <= 0 or secondary_rated <= 0:
+        raise ValueError("номинал измерительного трансформатора должен быть положительным")
+    return primary * secondary_rated / primary_rated
+
+
+def trip_from_secondary(
+    primary: float,
+    primary_rated: float,
+    secondary_rated: float,
+    pickup_secondary: float,
+    *,
+    available: bool,
+) -> dict[str, bool | float | str | None]:
+    """Реле сравнивает вторичную величину. Нет измерения — нет отключения."""
+    if not available:
+        return {"trip": False, "reason": "measurement_unavailable", "secondary": None}
+    secondary = instrument_secondary(primary, primary_rated, secondary_rated)
+    return {"trip": secondary > pickup_secondary, "reason": "threshold", "secondary": secondary}
+
+
+def residual_current(phase_currents: list[complex]) -> complex:
+    """3I0 для земли. Сумма симметричных фаз равна нулю."""
+    if len(phase_currents) != 3:
+        raise ValueError("земля считается по трём фазным токам")
+    return phase_currents[0] + phase_currents[1] + phase_currents[2]
+
+
+def critical_stays_supplied(cleared_breaker: str, lost_buses: dict[str, set[str]], critical_bus: str) -> bool:
+    """Критическая шина остаётся, если отключённый аппарат не питает её сверху."""
+    if cleared_breaker not in lost_buses:
+        raise ValueError("аппарат не входит в карту питания")
+    return critical_bus not in lost_buses[cleared_breaker]
+
+
+def clearing_times(
+    current_a: float,
+    stages: list[tuple[str, float, str, float]],
+) -> list[tuple[str, float]]:
+    """Пары (id, уставка, кривая, TMS). Время inf, если ток не выше уставки.
+
+    Это карта селективности по току, не дистанционная и не дифференциальная защита.
+    """
+    ordered = []
+    for relay_id, pickup_a, curve, multiplier in stages:
+        ordered.append((relay_id, iec_operate_time(current_a, pickup_a, curve, multiplier)))
+    return sorted(ordered, key=lambda item: item[1])
+
+
 def linear_reset(accumulator_s: float, dt_s: float, reset_s: float) -> float:
     """Линейный сброс аккумулятора за reset_s. Это не кривая возврата IEC."""
     if reset_s <= 0:

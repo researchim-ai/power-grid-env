@@ -256,6 +256,9 @@ class Inverter(BaseModel):
     volt_watt: list[tuple[float, float]] | None = None
     ramp_w_per_s: float | None = None
     fault_current_multiple: float | None = None
+    forming: bool = False
+    forming_r_ohm: float | None = None
+    forming_x_ohm: float | None = None
     provenance: Provenance
 
 
@@ -328,6 +331,17 @@ class StudyFault(BaseModel):
     x_ohm: float = 0.0
 
 
+class HarmonicComponent(BaseModel):
+    """Один порядок спектра. declared — задание расчёта, measured — не натурное подтверждение модели."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    order: int = Field(ge=1)
+    current_a: float = Field(ge=0.0)
+    angle_deg: float = 0.0
+    quality: Literal["declared", "measured"] = "declared"
+
+
 class Omission(BaseModel):
     """Объект, который не вошёл в расчёт. Статус зависит от задачи."""
 
@@ -363,6 +377,7 @@ class Network(BaseModel):
     neutral_grounds: list[NeutralGround] = Field(default_factory=list)
     meters: list[Meter] = Field(default_factory=list)
     study_faults: list[StudyFault] = Field(default_factory=list)
+    harmonics: list[HarmonicComponent] = Field(default_factory=list)
     assumptions: list[str] = Field(default_factory=list)
     omissions: list[Omission] = Field(default_factory=list)
     provenance: Provenance
@@ -652,6 +667,15 @@ def validate_network_rules(network: Network) -> list[str]:
             errors.append(f"{inverter.id}: Sном должна быть положительной")
         if inverter.fault_current_multiple is not None and inverter.fault_current_multiple <= 0:
             errors.append(f"{inverter.id}: кратность тока КЗ инвертора должна быть положительной")
+        if inverter.forming:
+            if inverter.forming_r_ohm is None or inverter.forming_x_ohm is None:
+                errors.append(f"{inverter.id}: grid-forming требует forming_r_ohm и forming_x_ohm")
+            elif inverter.forming_r_ohm < 0 or inverter.forming_x_ohm < 0:
+                errors.append(f"{inverter.id}: импеданс grid-forming отрицательный")
+            elif inverter.forming_r_ohm == 0 and inverter.forming_x_ohm == 0:
+                errors.append(f"{inverter.id}: Тевенин grid-forming требует ненулевой r или x")
+        elif inverter.forming_r_ohm is not None or inverter.forming_x_ohm is not None:
+            errors.append(f"{inverter.id}: grid-following не хранит импеданс опоры")
 
     for storage in network.storages:
         need_terminal(storage.terminal_id, storage.id, storage.phases)

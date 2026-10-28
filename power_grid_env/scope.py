@@ -19,13 +19,23 @@ def compile_scope(network: Network, study: StudyName) -> dict[str, Any]:
     blocked: list[dict[str, str]] = []
     supported: list[str] = []
     if study == "harmonic":
-        blocked.append(
-            {
-                "id": network.id,
-                "reason": "спектр гармоник не задан и не заменён типовым спектром",
-            }
-        )
-        errors.append("harmonic: нет частотной модели")
+        if not network.harmonics:
+            blocked.append(
+                {
+                    "id": network.id,
+                    "reason": "спектр гармоник не задан и не заменён типовым спектром",
+                }
+            )
+            errors.append("harmonic: нет частотной модели")
+        else:
+            for component in network.harmonics:
+                supported.append(f"harmonic:{component.order}:{component.quality}")
+                if component.quality == "declared":
+                    warnings.append(f"порядок {component.order}: спектр объявлен, это не измерение")
+                else:
+                    warnings.append(
+                        f"порядок {component.order}: пометка measured не делает расчёт натурно подтверждённым"
+                    )
     for source in network.sources:
         supported.append(f"source:{source.id}:power_flow")
         if study == "short_circuit" and (source.r0_ohm is None or source.x0_ohm is None):

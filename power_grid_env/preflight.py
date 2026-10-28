@@ -20,7 +20,7 @@ def preflight(
     warnings: list[str] = []
     topology = compile_topology(network)
     errors.extend(topology.errors)
-    if not network.sources:
+    if not network.sources and not any(item.forming for item in network.inverters):
         errors.append("нет источника")
     if task == "restoration" and not network.switches:
         errors.append("задача восстановления требует коммутационные аппараты")

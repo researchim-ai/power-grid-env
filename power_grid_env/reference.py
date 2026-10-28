@@ -183,6 +183,30 @@ def thevenin_fault_current(
 
 
 def line_to_line_current(v_ln: complex, z1: complex, z2: complex, z_fault: complex) -> complex:
-    """Модуль тока между фазами A и B. Напряжение AB = V∠0 − V∠−120."""
+    """Ток между фазами A и B. Напряжение AB = V∠0 − V∠−120."""
     v_ab = v_ln - v_ln * np.exp(-1j * 2.0 * math.pi / 3.0)
     return v_ab / (z1 + z2 + z_fault)
+
+
+def llg_phase_currents(
+    v_ln: complex,
+    z1: complex,
+    z2: complex,
+    z0: complex,
+    z_fault: complex,
+) -> tuple[complex, complex, complex]:
+    """Двухфазное КЗ на землю фаз B и C. В каждой повреждённой фазе свой Zf на землю.
+
+    Фазная матрица источника: Zсобств = (Z0+2 Z1)/3, Zвзаим = (Z0−Z1)/3 при Z1=Z2.
+    Фаза A разомкнута. Это не параллель Z2 и (Z0+3 Zf) и не IEC 60909.
+    """
+    if z1 != z2:
+        raise ValueError("эта запись матрицы требует Z1 = Z2")
+    self_z = (z0 + 2.0 * z1) / 3.0
+    mutual = (z0 - z1) / 3.0
+    operator = np.exp(1j * 2.0 * math.pi / 3.0)
+    emf_b = v_ln * operator**2
+    emf_c = v_ln * operator
+    matrix = np.array([[self_z + z_fault, mutual], [mutual, self_z + z_fault]], dtype=np.complex128)
+    phase_b, phase_c = np.linalg.solve(matrix, np.array([emf_b, emf_c], dtype=np.complex128))
+    return 0j, complex(phase_b), complex(phase_c)

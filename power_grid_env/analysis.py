@@ -61,6 +61,44 @@ def wls_dc(measurements: np.ndarray, h_matrix: np.ndarray, variances: np.ndarray
     return {"observable": True, "estimate": estimate, "residuals": residual, "normalized": normalized}
 
 
+def reject_gross_error(
+    measurements: np.ndarray,
+    h_matrix: np.ndarray,
+    variances: np.ndarray,
+    threshold: float = 3.0,
+) -> dict[str, Any]:
+    """Одно удаление наибольшего остатка и повторная оценка. Второе удаление не делается."""
+    first = wls_dc(measurements, h_matrix, variances)
+    if not first["observable"]:
+        return {"removed": None, "estimate": None, "observable": False}
+    flagged = gross_error(first["normalized"], threshold)
+    if flagged["index"] is None:
+        return {"removed": None, "estimate": first["estimate"], "observable": True}
+    index = int(flagged["index"])
+    keep = [item for item in range(len(measurements)) if item != index]
+    if len(keep) < h_matrix.shape[1]:
+        return {"removed": index, "estimate": None, "observable": False}
+    cleaned = wls_dc(measurements[keep], h_matrix[keep], variances[keep])
+    return {
+        "removed": index,
+        "estimate": cleaned["estimate"],
+        "observable": cleaned["observable"],
+    }
+
+
+def gross_error(normalized: np.ndarray | None, threshold: float = 3.0) -> dict[str, Any]:
+    """Индекс наибольшего нормированного остатка, если он выше порога. Порог 3 задан до расчёта."""
+    if threshold <= 0:
+        raise ValueError("порог грубой ошибки должен быть положительным")
+    if normalized is None:
+        return {"observable": False, "index": None}
+    magnitudes = np.abs(np.asarray(normalized, dtype=float))
+    index = int(np.argmax(magnitudes))
+    if float(magnitudes[index]) <= threshold:
+        return {"observable": True, "index": None}
+    return {"observable": True, "index": index}
+
+
 def dc_opf(costs: np.ndarray, pmin: np.ndarray, pmax: np.ndarray, load_pu: float) -> dict[str, Any]:
     size = len(costs)
     result = linprog(costs, bounds=list(zip(pmin, pmax)), A_eq=np.ones((1, size)), b_eq=[load_pu], method="highs")

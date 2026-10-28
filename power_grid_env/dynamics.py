@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import math
+from typing import Any
 
 import numpy as np
 
@@ -14,6 +15,26 @@ import numpy as np
 def release_status() -> dict[str, bool | str]:
     """Промышленный RMS-релиз не открыт. SMIB остаётся аналитической регрессией."""
     return {"industrial_rms_qualified": False, "andes_integrated": False, "analytic_smib": "regression_only"}
+
+
+def state_from_terminal_voltage(
+    pm: float,
+    e_pu: float,
+    v_pu: float,
+    x_pu: float,
+    inertia_s: float,
+    damping: float,
+    omega_s: float,
+) -> dict[str, float]:
+    """Начальное состояние из напряжения режима. Шаг времени не делается."""
+    delta, omega = equilibrium(pm, e_pu, v_pu, x_pu, omega_s)
+    residual = derivative(np.array([delta, omega]), pm, e_pu, v_pu, x_pu, inertia_s, damping, omega_s)
+    return {
+        "delta_rad": delta,
+        "omega_rad_s": omega,
+        "residual_max": float(np.max(np.abs(residual))),
+        "steps": 0.0,
+    }
 
 
 def equilibrium(pm: float, e_pu: float, v_pu: float, x_pu: float, omega_s: float) -> tuple[float, float]:
@@ -183,6 +204,124 @@ def induction_equilibrium_slip(voltage: float, rotor_r: float, reactance: float,
         raise ValueError("момент выше опрокидывающего")
     root = (-b - math.sqrt(discriminant)) / (2 * a)
     return root
+
+
+def airgap_torque(power_w: float, synchronous_rad_s: float) -> float:
+    """Te = Pзазора / ωсинхр. induction_torque возвращает мощность зазора на фазу, не Н·м."""
+    if synchronous_rad_s <= 0:
+        raise ValueError("синхронная скорость должна быть положительной")
+    return power_w / synchronous_rad_s
+
+
+def coupled_induction(
+    emf: complex,
+    thevenin: complex,
+    rotor_r: float,
+    reactance: float,
+    load_torque: float,
+    parallel: complex | None = None,
+) -> dict[str, float | complex | bool]:
+    """Двигатель за сопротивлением сети. Ветвь ниже опрокидывания. parallel — соседний шунт."""
+    if rotor_r <= 0 or reactance <= 0 or load_torque <= 0:
+        raise ValueError("R, X и момент нагрузки должны быть положительными")
+    breakdown = rotor_r / reactance
+
+    def voltage_at(slip: float) -> complex:
+        motor = rotor_r / slip + 1j * reactance
+        admit = 1.0 / motor
+        if parallel is not None:
+            admit += 1.0 / parallel
+        return emf / (1.0 + thevenin * admit)
+
+    def mismatch(slip: float) -> float:
+        return induction_torque(slip, abs(voltage_at(slip)), rotor_r, reactance) - load_torque
+
+    if mismatch(breakdown) < 0.0:
+        return {"stalled": True, "slip": breakdown, "voltage": voltage_at(breakdown), "current": 0j}
+    low = 1e-6
+    high = breakdown
+    for _ in range(60):
+        mid = 0.5 * (low + high)
+        if mismatch(mid) < 0.0:
+            low = mid
+        else:
+            high = mid
+    slip = 0.5 * (low + high)
+    voltage = voltage_at(slip)
+    motor = rotor_r / slip + 1j * reactance
+    current = voltage / motor
+    return {"stalled": False, "slip": slip, "voltage": voltage, "current": current}
+
+
+def feeder_restart(
+    emf: complex,
+    z_line: complex,
+    motors: list[dict[str, float | str]],
+    minimum_v: float,
+) -> dict[str, Any]:
+    """Пуск группы по приоритету. Напряжение пересчитывается после каждого принятого двигателя."""
+    started: list[dict[str, float | str]] = []
+    voltage = emf
+    slips: dict[str, float] = {}
+    for motor in sorted(motors, key=lambda item: float(item["priority"])):
+        trial = _motors_on_feeder(emf, z_line, started + [motor])
+        if trial["stalled"] or abs(trial["voltage"]) < minimum_v:
+            break
+        started.append(motor)
+        voltage = trial["voltage"]
+        slips = trial["slips"]
+    return {"started": [str(item["id"]) for item in started], "voltage": voltage, "slips": slips}
+
+
+def _motors_on_feeder(emf: complex, z_line: complex, motors: list[dict[str, float | str]]) -> dict[str, Any]:
+    if not motors:
+        return {"stalled": False, "voltage": emf, "slips": {}, "currents": {}}
+    voltage = emf
+    slips: dict[str, float] = {}
+    currents: dict[str, complex] = {}
+    for _ in range(40):
+        currents = {}
+        for motor in motors:
+            try:
+                slip = induction_equilibrium_slip(
+                    abs(voltage), float(motor["rotor_r"]), float(motor["reactance"]), float(motor["load_torque"])
+                )
+            except ValueError:
+                return {"stalled": True, "voltage": voltage, "slips": slips, "currents": {}}
+            impedance = float(motor["rotor_r"]) / slip + 1j * float(motor["reactance"])
+            currents[str(motor["id"])] = voltage / impedance
+            slips[str(motor["id"])] = slip
+        updated = emf - sum(currents.values(), 0j) * z_line
+        if abs(updated - voltage) <= 1e-12 * max(1.0, abs(emf)):
+            voltage = updated
+            slips = {}
+            currents = {}
+            for motor in motors:
+                slip = induction_equilibrium_slip(
+                    abs(voltage), float(motor["rotor_r"]), float(motor["reactance"]), float(motor["load_torque"])
+                )
+                impedance = float(motor["rotor_r"]) / slip + 1j * float(motor["reactance"])
+                currents[str(motor["id"])] = voltage / impedance
+                slips[str(motor["id"])] = slip
+            return {"stalled": False, "voltage": voltage, "slips": slips, "currents": currents}
+        voltage = updated
+    return {"stalled": True, "voltage": voltage, "slips": slips, "currents": currents}
+
+
+def restart_sequence(motors: list[dict[str, float | str]], voltage_pu: float, minimum_pu: float) -> list[str]:
+    """Пуск по приоритету. Следующий не стартует, если просадка уводит напряжение ниже порога."""
+    if minimum_pu <= 0:
+        raise ValueError("порог напряжения пуска должен быть положительным")
+    started: list[str] = []
+    if voltage_pu < minimum_pu:
+        return started
+    ordered = sorted(motors, key=lambda item: float(item["priority"]))
+    for motor in ordered:
+        if voltage_pu < minimum_pu:
+            break
+        started.append(str(motor["id"]))
+        voltage_pu -= float(motor["drop_pu"])
+    return started
 
 
 def simulate_induction(

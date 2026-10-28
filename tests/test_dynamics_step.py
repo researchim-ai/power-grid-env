@@ -5,7 +5,7 @@ import math
 import numpy as np
 import pytest
 
-from power_grid_env.dynamics import _trapezoid_jacobian, derivative, equilibrium, simulate_smib
+from power_grid_env.dynamics import _trapezoid_jacobian, derivative, equilibrium, simulate_smib, simulate_two_machine
 
 
 def test_trapezoid_jacobian_matches_the_residual_derivative():
@@ -78,6 +78,21 @@ def test_trapezoid_error_drops_by_about_four_when_the_step_is_halved():
             omega0=omega_eq,
             dt_s=step_s,
             t_end_s=0.2,
+        )
+        errors.append(abs(float(coarse["delta"][-1]) - float(reference["delta"][-1])))
+    assert errors[0] > errors[1] > errors[2]
+    assert errors[0] / errors[1] == pytest.approx(4.0, rel=0.25)
+    assert errors[1] / errors[2] == pytest.approx(4.0, rel=0.25)
+
+
+def test_two_machine_step_error_drops_by_about_four_when_the_step_is_halved():
+    reference = simulate_two_machine(
+        pm=0.4, emf=1.2, reactance=0.35, inertia_s=4.0, disturbance_rad=0.08, dt_s=0.001, t_end_s=0.2
+    )
+    errors = []
+    for step_s in (0.02, 0.01, 0.005):
+        coarse = simulate_two_machine(
+            pm=0.4, emf=1.2, reactance=0.35, inertia_s=4.0, disturbance_rad=0.08, dt_s=step_s, t_end_s=0.2
         )
         errors.append(abs(float(coarse["delta"][-1]) - float(reference["delta"][-1])))
     assert errors[0] > errors[1] > errors[2]
