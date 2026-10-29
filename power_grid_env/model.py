@@ -112,6 +112,10 @@ class Switch(BaseModel):
     representation: Literal["topological", "series"] = "topological"
     series_r_ohm: float | None = None
     series_x_ohm: float | None = None
+    sync_check: bool = False
+    sync_max_angle_rad: float = 0.2
+    sync_max_voltage_pu: float = 0.1
+    sync_dead_pu: float = 0.05
     provenance: Provenance
 
     @model_validator(mode="after")
@@ -123,6 +127,8 @@ class Switch(BaseModel):
                 raise ValueError(f"{self.id}: сопротивление последовательного аппарата отрицательное")
         elif self.series_r_ohm is not None or self.series_x_ohm is not None:
             raise ValueError(f"{self.id}: топологический аппарат не хранит импеданс")
+        if self.sync_check and (self.sync_max_angle_rad <= 0 or self.sync_max_voltage_pu <= 0 or self.sync_dead_pu <= 0):
+            raise ValueError(f"{self.id}: пределы синхронизма должны быть положительными")
         return self
 
 
@@ -251,12 +257,14 @@ class Inverter(BaseModel):
     s_rated_va: float
     p_w: float
     q_var: float = 0.0
+    p_requested_w: float | None = None
     priority: Literal["P", "Q"] = "P"
     volt_var: list[tuple[float, float]] | None = None
     volt_watt: list[tuple[float, float]] | None = None
     ramp_w_per_s: float | None = None
     fault_current_multiple: float | None = None
     forming: bool = False
+    forming_limit: bool = False
     forming_r_ohm: float | None = None
     forming_x_ohm: float | None = None
     provenance: Provenance
@@ -676,6 +684,8 @@ def validate_network_rules(network: Network) -> list[str]:
                 errors.append(f"{inverter.id}: Тевенин grid-forming требует ненулевой r или x")
         elif inverter.forming_r_ohm is not None or inverter.forming_x_ohm is not None:
             errors.append(f"{inverter.id}: grid-following не хранит импеданс опоры")
+        if inverter.forming_limit and not inverter.forming:
+            errors.append(f"{inverter.id}: предел мощности опоры задаётся только у grid-forming")
 
     for storage in network.storages:
         need_terminal(storage.terminal_id, storage.id, storage.phases)

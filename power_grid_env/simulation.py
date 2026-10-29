@@ -418,6 +418,9 @@ class Engine:
         if command == "open" and switch.kind == "disconnector" and enforce_hidden_current:
             if self._incident_current(switch) > switch.interrupt_current_a + 1e-6:
                 return {"accepted": False, "reason": "disconnector_cannot_interrupt", "interlock": True}
+        if command == "close" and switch.sync_check:
+            allowed, reason = self._sync_allowed(switch)
+            return {"accepted": allowed, "reason": reason, "interlock": not allowed}
         return {"accepted": True, "reason": "accepted"}
 
     def _record(self, action: dict[str, Any], acceptance: dict[str, Any], origin: str) -> dict[str, Any]:
@@ -759,6 +762,33 @@ class Engine:
             return None
         return float(sum(values) / len(values))
 
+    def _node_phasor(self, node_id: str) -> tuple[complex, float]:
+        """Нет точки в решении — сторона считается погашенной, не отказом измерения."""
+        if self.last_result is None:
+            return 0j, 1.0
+        topology = compile_topology(self.net)
+        bus_id = topology.node_to_bus[node_id]
+        found = next((item for item in self.last_result.voltages if item.bus_id == bus_id and item.phase == "A"), None)
+        if found is None:
+            return 0j, 1.0
+        return found.complex, found.v_base_ln_v or 1.0
+
+    def _sync_allowed(self, switch) -> tuple[bool, str]:
+        from power_grid_env.protection import sync_allows
+
+        left_node, right_node = _switch_nodes(self.net, switch)
+        left, left_base = self._node_phasor(left_node)
+        right, right_base = self._node_phasor(right_node)
+        return sync_allows(
+            left,
+            right,
+            left_base,
+            right_base,
+            max_angle_rad=switch.sync_max_angle_rad,
+            max_voltage_pu=switch.sync_max_voltage_pu,
+            dead_pu=switch.sync_dead_pu,
+        )
+
     def _execution_allowed(self, switch, closed: bool, *, reclose: bool) -> tuple[bool, str]:
         if not switch.operable:
             return False, "not_operable"
@@ -774,6 +804,8 @@ class Engine:
             return False, "parallel_infeed"
         if not closed and switch.kind == "disconnector" and self._incident_current(switch) > switch.interrupt_current_a + 1e-6:
             return False, "disconnector_cannot_interrupt"
+        if closed and switch.sync_check:
+            return self._sync_allowed(switch)
         return True, "accepted"
 
     def _resolve(self) -> None:

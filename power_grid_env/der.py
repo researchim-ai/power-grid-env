@@ -10,6 +10,17 @@ from __future__ import annotations
 import math
 
 
+def capability_q(active_w: float, s_rated_va: float, intercept_var: float, slope_var_per_w: float) -> float:
+    """Реактивный потолок — меньший из круга S и полевой прямой Q = a − b P."""
+    if s_rated_va <= 0:
+        raise ValueError("Sном должна быть положительной")
+    if abs(active_w) > s_rated_va:
+        return 0.0
+    circle = math.sqrt(s_rated_va**2 - active_w**2)
+    field = intercept_var - slope_var_per_w * active_w
+    return min(circle, field)
+
+
 def apparent_limit(active_w: float, reactive_var: float, s_rated_va: float, priority: str) -> tuple[float, float]:
     """Обрезка по кругу S. priority='P' сохраняет P, priority='Q' сохраняет Q."""
     if s_rated_va <= 0:
@@ -102,6 +113,42 @@ def update_soc(
     if updated < soc_min - 1e-9 or updated > soc_max + 1e-9:
         raise ValueError("исполненная мощность вывела SoC за предел: энергия не сходится")
     return min(soc_max, max(soc_min, updated))
+
+
+def qualify_round_trip() -> dict[str, float | bool | str | list[str]]:
+    """Круг разряд-заряд возвращает SoC. Из сети приходит больше, чем ушло."""
+    energy_j = 1_000_000.0
+    eta_charge = 0.9
+    eta_discharge = 0.8
+    dt_s = 10.0
+    discharge_w = 1000.0
+    soc0 = 0.5
+    soc_after_discharge = update_soc(soc0, discharge_w, energy_j, eta_charge, eta_discharge, dt_s, 0.0, 1.0)
+    left_j = discharge_w * dt_s / eta_discharge
+    charge_w = left_j / (eta_charge * dt_s)
+    soc_after_charge = update_soc(soc_after_discharge, -charge_w, energy_j, eta_charge, eta_discharge, dt_s, 0.0, 1.0)
+    clipped = clip_storage_power(
+        1.0e9, 0.2, 0.1, 1.0, energy_j, eta_charge, eta_discharge, dt_s, 1.0e9
+    )
+    available_w = (0.2 - 0.1) * energy_j * eta_discharge / dt_s
+    reasons: list[str] = []
+    if abs(soc_after_charge - soc0) > 1e-12:
+        reasons.append("soc")
+    if charge_w * dt_s <= discharge_w * dt_s:
+        reasons.append("loss")
+    if abs(clipped - available_w) > 1e-9:
+        reasons.append("clip")
+    try:
+        update_soc(0.2, 1.0e9, energy_j, eta_charge, eta_discharge, dt_s, 0.1, 1.0)
+        reasons.append("overflow")
+    except ValueError:
+        pass
+    return {
+        "verdict": "fail" if reasons else "pass",
+        "reasons": reasons,
+        "charge_w": charge_w,
+        "clipped_w": clipped,
+    }
 
 
 def cold_load_multiplier(elapsed_s: float, peak: float, tau_s: float) -> float:

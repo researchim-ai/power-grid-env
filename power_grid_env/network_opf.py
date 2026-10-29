@@ -399,12 +399,23 @@ def audit_feasibility(
         if value < generator.qmin - 1e-3 or value > generator.qmax + 1e-3:
             worst = max(worst, 1.0)
     flow_ok = True
+    angle_ok = True
     for branch in case.branches:
-        if branch.status != 1 or branch.rate_a <= 0 or branch.rate_a >= 1e5:
+        if branch.status != 1:
+            continue
+        separation = math.degrees(theta[index[branch.fbus]] - theta[index[branch.tbus]])
+        if separation < branch.angmin_deg - 1e-3 or separation > branch.angmax_deg + 1e-3:
+            angle_ok = False
+        if branch.rate_a <= 0 or branch.rate_a >= 1e5:
             continue
         if any(flow > branch.rate_a + 1e-3 for flow in _branch_mva(vm, theta, branch, index, case.base_mva)):
             flow_ok = False
-    return {"max_mismatch_pu": worst, "flows_within_rating": flow_ok, "feasible": worst <= tolerance and flow_ok}
+    return {
+        "max_mismatch_pu": worst,
+        "flows_within_rating": flow_ok,
+        "angles_within_limit": angle_ok,
+        "feasible": worst <= tolerance and flow_ok and angle_ok,
+    }
 
 
 def _ybus(case: OpfCase, index: dict[int, int]) -> np.ndarray:

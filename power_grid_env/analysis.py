@@ -50,6 +50,17 @@ def lodf(ptdf_outage: float, ptdf_monitored: float) -> float:
     return ptdf_monitored / (1.0 - ptdf_outage)
 
 
+def estimate_covariance(h_matrix: np.ndarray, variances: np.ndarray) -> np.ndarray | None:
+    """Ковариация оценки (Hᵀ W H)⁻¹. Сингулярный Gram возвращает None."""
+    if np.any(variances <= 0):
+        raise ValueError("дисперсии измерений должны быть положительными")
+    weight = np.diag(1.0 / np.asarray(variances, dtype=float))
+    gram = np.asarray(h_matrix, dtype=float).T @ weight @ np.asarray(h_matrix, dtype=float)
+    if np.linalg.matrix_rank(gram) < gram.shape[0]:
+        return None
+    return np.linalg.inv(gram)
+
+
 def wls_dc(measurements: np.ndarray, h_matrix: np.ndarray, variances: np.ndarray) -> dict[str, Any]:
     weight = np.diag(1.0 / variances)
     gram = h_matrix.T @ weight @ h_matrix
@@ -86,6 +97,98 @@ def reject_gross_error(
     }
 
 
+def reject_gross_errors(
+    measurements: np.ndarray,
+    h_matrix: np.ndarray,
+    variances: np.ndarray,
+    threshold: float = 3.0,
+) -> dict[str, Any]:
+    """Удаляет грубые ошибки по одной, пока остаток не станет ниже порога или система не наблюдаема."""
+    if threshold <= 0:
+        raise ValueError("порог грубой ошибки должен быть положительным")
+    kept = list(range(len(measurements)))
+    removed: list[int] = []
+    while True:
+        if len(kept) < h_matrix.shape[1]:
+            return {"removed": removed, "estimate": None, "observable": False}
+        solved = wls_dc(np.asarray(measurements)[kept], np.asarray(h_matrix)[kept], np.asarray(variances)[kept])
+        if not solved["observable"]:
+            return {"removed": removed, "estimate": None, "observable": False}
+        flagged = gross_error(solved["normalized"], threshold)
+        if flagged["index"] is None:
+            return {"removed": removed, "estimate": solved["estimate"], "observable": True}
+        local = int(flagged["index"])
+        removed.append(kept.pop(local))
+
+
+def seeded_bad_data(count: int = 24, seed: int = 7) -> dict[str, Any]:
+    """Объявленный набор с одной вставленной ошибкой на случай. Не корпус предприятия."""
+    if count < 1:
+        raise ValueError("в корпусе должен быть хотя бы один случай")
+    rng = np.random.default_rng(seed)
+    missed = 0
+    false_clean = 0
+    for _ in range(count):
+        truth = float(rng.normal())
+        values = np.full(6, truth)
+        clean = reject_gross_errors(values, np.ones((6, 1)), np.ones(6))
+        if clean["removed"]:
+            false_clean += 1
+        bad = int(rng.integers(0, 6))
+        values[bad] = truth + 40.0
+        found = reject_gross_errors(values, np.ones((6, 1)), np.ones(6))
+        estimate = None if found["estimate"] is None else float(found["estimate"][0])
+        if found["removed"] != [bad] or estimate is None or abs(estimate - truth) > 1e-6:
+            missed += 1
+    return {"cases": count, "missed": missed, "false_removals": false_clean, "enterprise_corpus": False}
+
+
+def bad_data_corpus() -> list[dict[str, Any]]:
+    """Пять объявленных случаев. Это не статистический корпус предприятия."""
+    rows = []
+    clean = reject_gross_errors(np.array([5.0, 5.0, 5.0]), np.ones((3, 1)), np.ones(3))
+    rows.append({"id": "clean", "removed": clean["removed"], "observable": clean["observable"]})
+    one = reject_gross_errors(np.array([5.0, 5.0, 40.0]), np.ones((3, 1)), np.ones(3))
+    rows.append({"id": "one", "removed": one["removed"], "observable": one["observable"]})
+    two = reject_gross_errors(np.array([5.0, 5.0, 40.0, -15.0]), np.ones((4, 1)), np.ones(4))
+    rows.append({"id": "two", "removed": two["removed"], "estimate": None if two["estimate"] is None else float(two["estimate"][0]), "observable": two["observable"]})
+    singular = reject_gross_errors(np.array([0.0, 10.0]), np.array([[1.0, 0.0], [1.0, 0.0]]), np.ones(2))
+    rows.append({"id": "singular", "removed": singular["removed"], "observable": singular["observable"]})
+    tolerated = reject_gross_errors(np.array([0.0, 0.0, 10.0]), np.ones((3, 1)), np.array([1.0, 1.0, 100.0]))
+    rows.append({"id": "wide_variance", "removed": tolerated["removed"], "observable": tolerated["observable"]})
+    return rows
+
+
+def weighted_residual_sum(
+    measurements: np.ndarray,
+    h_matrix: np.ndarray,
+    variances: np.ndarray,
+) -> float | None:
+    """J = rᵀ W r после оценки. Точные измерения дают нуль."""
+    solved = wls_dc(measurements, h_matrix, variances)
+    if not solved["observable"] or solved["residuals"] is None:
+        return None
+    residual = np.asarray(solved["residuals"], dtype=float)
+    scale = np.asarray(variances, dtype=float)
+    return float(residual @ (residual / scale))
+
+
+def drop_measurement(
+    measurements: np.ndarray,
+    h_matrix: np.ndarray,
+    variances: np.ndarray,
+    index: int,
+) -> dict[str, Any]:
+    """Оценка без одного измерения. Это пропуск, не поиск грубой ошибки."""
+    if index < 0 or index >= len(measurements):
+        raise ValueError("нет измерения с таким номером")
+    keep = [item for item in range(len(measurements)) if item != index]
+    if len(keep) < h_matrix.shape[1]:
+        return {"observable": False, "estimate": None, "dropped": index}
+    solved = wls_dc(np.asarray(measurements)[keep], np.asarray(h_matrix)[keep], np.asarray(variances)[keep])
+    return {"observable": solved["observable"], "estimate": solved["estimate"], "dropped": index}
+
+
 def gross_error(normalized: np.ndarray | None, threshold: float = 3.0) -> dict[str, Any]:
     """Индекс наибольшего нормированного остатка, если он выше порога. Порог 3 задан до расчёта."""
     if threshold <= 0:
@@ -102,7 +205,14 @@ def gross_error(normalized: np.ndarray | None, threshold: float = 3.0) -> dict[s
 def dc_opf(costs: np.ndarray, pmin: np.ndarray, pmax: np.ndarray, load_pu: float) -> dict[str, Any]:
     size = len(costs)
     result = linprog(costs, bounds=list(zip(pmin, pmax)), A_eq=np.ones((1, size)), b_eq=[load_pu], method="highs")
-    return {"success": bool(result.success), "generation_pu": None if result.x is None else result.x, "cost": None if result.fun is None else float(result.fun), "status": result.message}
+    return {
+        "success": bool(result.success),
+        "generation_pu": None if result.x is None else result.x,
+        "cost": None if result.fun is None else float(result.fun),
+        "status": result.message,
+        "global_optimum_claimed": True,
+        "convex": True,
+    }
 
 
 def ac_opf_two_bus(load_p: float, load_q: float, x_pu: float, cost: float, pmax: float, vmax: float = 1.05) -> dict[str, Any]:

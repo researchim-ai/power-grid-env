@@ -111,7 +111,7 @@ def test_baseline_report_does_not_claim_superiority():
     assert payload["competitive_superiority_proven"] is False
     by_id = {item["id"]: item["comparison_run"] for item in payload["candidates"]}
     assert by_id["direct-dss"] == "conversion_consistency"
-    assert by_id["andes"] == "not_performed"
+    assert by_id["andes"] == "two_bus_power_flow"
     assert by_id["grid2op"] == "not_performed"
 
 
@@ -124,3 +124,6 @@ def test_qualification_bundle_is_not_a_release(tmp_path: Path):
     assert payload["validated_for_declared_scope"] is False
     assert any("AG-14" in item for item in payload["open_limits"])
     assert "simulation.py" in payload["package_py_sha256"]
+    assert payload["measured_two_bus_p50_s"] > 0.0
+    assert payload["timing_is_a_city_claim"] is False
+    assert payload["competitive_superiority_proven"] is False

@@ -51,6 +51,31 @@ def test_forming_inverter_matches_the_thevenin_and_does_not_invent_a_current_lim
     assert abs(abs(over_v) - abs(expected)) / vln < 1e-5
 
 
+def test_forming_power_limit_scales_the_internal_voltage_when_asked():
+    builder = NetBuilder("limit", "Предел", 10.0, s_base_va=1.0e6)
+    builder.node("bus")
+    builder.inverter(
+        "bus",
+        s_rated_va=20_000.0,
+        p_w=0.0,
+        forming=True,
+        forming_limit=True,
+        forming_r_ohm=0.05,
+        forming_x_ohm=0.2,
+        inverter_id="grid",
+    )
+    builder.load("bus", 100_000.0, 20_000.0, model="constant_z", load_id="load")
+    solved = solve_network(builder.build())
+    assert solved.status == "converged", solved.warnings
+    assert solved.diagnostics["forming_limited"] == ["grid"]
+    assert solved.diagnostics["forming_over_rating"] == []
+    delivered = math.hypot(
+        sum(flow.p_into_w for flow in solved.flows if flow.equipment_id == "grid" and flow.phase in "ABC"),
+        sum(flow.q_into_var for flow in solved.flows if flow.equipment_id == "grid" and flow.phase in "ABC"),
+    )
+    assert delivered == pytest.approx(20_000.0, rel=1e-4)
+
+
 def test_following_inverter_still_does_not_energize_an_island():
     builder = NetBuilder("follow", "Следование", 10.0)
     builder.node("bus")

@@ -263,6 +263,9 @@ class NetBuilder:
         tagged: bool = False,
         telemetered: bool = True,
         phases: str = "ABC",
+        sync_check: bool = False,
+        sync_max_angle_rad: float = 0.2,
+        sync_max_voltage_pu: float = 0.1,
     ) -> str:
         identifier = switch_id or f"sw_{len(self.switches)}"
         if interrupt_current_a is None:
@@ -284,6 +287,9 @@ class NetBuilder:
                 tagged_for_maintenance=tagged,
                 telemetered=telemetered,
                 operable=operable,
+                sync_check=sync_check,
+                sync_max_angle_rad=sync_max_angle_rad,
+                sync_max_voltage_pu=sync_max_voltage_pu,
                 provenance=provenance(),
             )
         )
@@ -518,6 +524,7 @@ class NetBuilder:
         fault_current_multiple: float | None = None,
         ramp_w_per_s: float | None = None,
         forming: bool = False,
+        forming_limit: bool = False,
         forming_r_ohm: float | None = None,
         forming_x_ohm: float | None = None,
     ) -> str:
@@ -539,6 +546,7 @@ class NetBuilder:
                 ramp_w_per_s=ramp_w_per_s,
                 fault_current_multiple=fault_current_multiple,
                 forming=forming,
+                forming_limit=forming_limit,
                 forming_r_ohm=forming_r_ohm,
                 forming_x_ohm=forming_x_ohm,
                 provenance=provenance(

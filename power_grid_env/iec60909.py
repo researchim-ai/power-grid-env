@@ -2,7 +2,8 @@
 
 c берётся из таблицы напряжения стандарта, а не из режима сети.
 Есть I''k для трёх фаз, фазы на землю и двух фаз, пик через κ и Ib через μ.
-Нет вклада двигателя, сетки и теплового эквивалента.
+Вклад асинхронного двигателя здесь — ток в глухое КЗ на его выводах, c·Un/(√3·ZM).
+Он не равен току ветви в сети с падением напряжения. Нет сетки и теплового эквивалента.
 """
 
 from __future__ import annotations
@@ -53,6 +54,17 @@ def initial_symmetrical_line_to_line(nominal_ll_v: float, c: float, z1: complex,
     if abs(loop) == 0:
         raise ValueError("контур междуфазного КЗ вырожден")
     return c * nominal_ll_v / loop
+
+
+def induction_motor_terminal_current(nominal_ll_v: float, c: float, locked_rotor: complex) -> complex:
+    """Ток двигателя в глухое КЗ на его выводах: c·Un / (√3·ZM).
+
+    ZM — сопротивление заторможенного ротора. Это не ток ветви в сети,
+    где напряжение на выводах уже просело.
+    """
+    if c <= 0 or nominal_ll_v <= 0 or abs(locked_rotor) == 0:
+        raise ValueError("c, напряжение и ZM двигателя должны быть ненулевыми")
+    return c * nominal_ll_v / (math.sqrt(3.0) * locked_rotor)
 
 
 def peak_factor(resistance_over_reactance: float) -> float:

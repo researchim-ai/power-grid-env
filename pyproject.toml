@@ -22,7 +22,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "andes>=2.0,<3"]
+rms = ["andes>=2.0,<3"]
 benchmark = ["pandapower>=3.5"]
 
 [project.scripts]

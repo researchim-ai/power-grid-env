@@ -153,6 +153,8 @@ activemq-data/
 .env
 .envrc
 .venv
+.andes-deps/
+.andes-pycode/
 env/
 venv/
 ENV/

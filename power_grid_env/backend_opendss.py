@@ -160,7 +160,9 @@ def _advance_inverters(network: Network, result: SolveResult) -> bool:
         active = inverter.p_w
         reactive = inverter.q_var
         if inverter.volt_watt:
-            active = inverter.p_w * interpolate_curve(list(inverter.volt_watt), measured)
+            if inverter.p_requested_w is None:
+                inverter.p_requested_w = inverter.p_w
+            active = inverter.p_requested_w * interpolate_curve(list(inverter.volt_watt), measured)
         if inverter.volt_var:
             reactive = inverter.s_rated_va * interpolate_curve(list(inverter.volt_var), measured)
         active, reactive = apparent_limit(active, reactive, inverter.s_rated_va, inverter.priority)
@@ -295,6 +297,11 @@ def _solve_once(network: Network, options: SolveOptions) -> SolveResult:
             **base,
         )
     voltages, flows = _read(session, topology, registry)
+    forming_limited = _enforce_forming_power_limit(session, network, flows)
+    if forming_limited:
+        voltages, flows = _read(session, topology, registry)
+        converged = bool(session.Solution.Converged())
+        warnings.extend(f"{item}: внутреннее напряжение опоры снижено так, чтобы S = Sном" for item in forming_limited)
     solved_taps = _transformer_taps(session, registry)
     limited = _limited_generators(network, flows)
     forming_over = _forming_over_rating(network, flows)
@@ -328,6 +335,7 @@ def _solve_once(network: Network, options: SolveOptions) -> SolveResult:
         "pq_setpoint_error_pu": pq_error,
         "solved_taps": solved_taps,
         "forming_over_rating": forming_over,
+        "forming_limited": forming_limited,
         "_topology_terminal_bus": terminal_bus,
         "approximations": list(warnings),
     }
@@ -1289,6 +1297,24 @@ def _load_left_pq_band(load, bus_id: str, voltages: list[PhaseVoltage]) -> bool:
         if pu < load.vmin_pu or pu > load.vmax_pu:
             return True
     return False
+
+
+def _enforce_forming_power_limit(session, network: Network, flows: list[ConductorFlow]) -> list[str]:
+    """Линейная сеть: S пропорциональна квадрату ЭДС. Один источник — одна опора."""
+    formers = [item for item in network.inverters if item.forming and item.forming_limit]
+    if len(formers) != 1 or network.sources:
+        return []
+    inverter = formers[0]
+    power = math.hypot(
+        sum(flow.p_into_w for flow in flows if flow.equipment_id == inverter.id and flow.phase in "ABC"),
+        sum(flow.q_into_var for flow in flows if flow.equipment_id == inverter.id and flow.phase in "ABC"),
+    )
+    if power <= inverter.s_rated_va * (1.0 + 1e-6) or power <= 0:
+        return []
+    scale = math.sqrt(inverter.s_rated_va / power)
+    session.Text.Command(f"Edit Vsource.source pu={scale:.12g}")
+    session.Text.Command("Solve")
+    return [inverter.id]
 
 
 def _forming_over_rating(network: Network, flows: list[ConductorFlow]) -> list[str]:

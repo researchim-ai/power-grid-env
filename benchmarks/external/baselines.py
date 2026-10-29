@@ -21,6 +21,6 @@ def baseline_report() -> dict[str, Any]:
             {"id": "pandapower", "comparison_run": "partial_simbench_voltage_only"},
             {"id": "power-grid-model", "comparison_run": "not_performed"},
             {"id": "grid2op", "comparison_run": "not_performed"},
-            {"id": "andes", "comparison_run": "not_performed"},
+            {"id": "andes", "comparison_run": "two_bus_power_flow"},
         ],
     }
