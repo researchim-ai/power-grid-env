@@ -78,6 +78,10 @@ def test_declared_spectrum_unblocks_harmonic_and_matches_the_nodal_rlc():
     network = builder.build()
     assert compile_scope(network, "harmonic")["ok"] is False
     network.harmonics.append(HarmonicComponent(order=5, current_a=2.0, quality="declared"))
+    unbound = compile_scope(network, "harmonic")
+    assert unbound["ok"] is False
+    assert any("не привязан" in item for item in unbound["errors"])
+    network.harmonics[0] = HarmonicComponent(order=5, current_a=2.0, quality="declared", bus_id="src", phases=["A", "B", "C"])
     scoped = compile_scope(network, "harmonic")
     assert scoped["ok"] is True
     assert any("объявлен" in item for item in scoped["warnings"])

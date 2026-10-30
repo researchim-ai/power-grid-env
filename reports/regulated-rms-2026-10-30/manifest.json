@@ -1,0 +1,32 @@
+{
+  "files": [
+    {
+      "path": "added-coupled-test.xml",
+      "sha256": "0469fa380f429fa224d3de136610532d9d12ec9b26603d0a1d26eab84ca48380"
+    },
+    {
+      "path": "delivery.json",
+      "sha256": "5ff23998c144a8cbe9de330e32b4a7452075e01f348f77292817731d5b81b00a"
+    },
+    {
+      "path": "full-tests.xml",
+      "sha256": "25dcd9377a8aa86a7fb29d30bdf88147d7ec7eee9eb4ca33ec40a3b27cad043a"
+    },
+    {
+      "path": "summary.json",
+      "sha256": "db2258ba85408e5d754478048643d04fe77224141db7809cae74d5691d377564"
+    },
+    {
+      "path": "trajectory-0.001.json",
+      "sha256": "6b7f4eb5e21918cc63747eaf3de486918d8a189bdccf2c28258f99db745fc23b"
+    },
+    {
+      "path": "trajectory-0.002.json",
+      "sha256": "7e076c74435751f72ac31dfa0a39680b04ce44c6474c9408a78285dd07d29402"
+    },
+    {
+      "path": "worker-smoke.json",
+      "sha256": "77c09073089bbe56b53e4c9dc571069629639a2040caf54159169a10506fce6e"
+    }
+  ]
+}

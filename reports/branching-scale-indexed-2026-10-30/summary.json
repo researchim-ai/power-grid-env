@@ -1,0 +1,282 @@
+{
+  "verdict": "pass",
+  "code_sha256": "aa37f6409cf540ba65d78402725909596a40cd0b98f8168fc69284169c36f41c",
+  "evidence": "synthetic_correctness_and_resource_measurement",
+  "cases": [
+    {
+      "nodes": 100,
+      "family": "radial_binary_tree",
+      "load_w_per_nonroot_bus": 500.0,
+      "build_s": 0.0025721759993757587,
+      "solve_seconds": [
+        0.26640501599831623,
+        0.016891217997908825,
+        0.016169457998330472
+      ],
+      "checks": [
+        {
+          "status": "converged",
+          "kcl_pu": 3.985206112739733e-14,
+          "pq_error_pu": 2.4210891069742503e-16,
+          "demand_error_pu": 7.914786692708731e-15,
+          "power_balance_error_pu": 1.291898921806478e-10,
+          "min_voltage_pu": 0.9999060835075182,
+          "voltage_channels": 300,
+          "missing_equipment": []
+        },
+        {
+          "status": "converged",
+          "kcl_pu": 3.985206112739733e-14,
+          "pq_error_pu": 2.4210891069742503e-16,
+          "demand_error_pu": 7.914786692708731e-15,
+          "power_balance_error_pu": 1.291898921806478e-10,
+          "min_voltage_pu": 0.9999060835075182,
+          "voltage_channels": 300,
+          "missing_equipment": []
+        },
+        {
+          "status": "converged",
+          "kcl_pu": 3.985206112739733e-14,
+          "pq_error_pu": 2.4210891069742503e-16,
+          "demand_error_pu": 7.914786692708731e-15,
+          "power_balance_error_pu": 1.291898921806478e-10,
+          "min_voltage_pu": 0.9999060835075182,
+          "voltage_channels": 300,
+          "missing_equipment": []
+        }
+      ],
+      "verdict": "pass",
+      "process_lifetime_peak_rss_kib_linux": 133944
+    },
+    {
+      "nodes": 100,
+      "family": "meshed_binary_tree",
+      "load_w_per_nonroot_bus": 500.0,
+      "build_s": 0.021991055000398774,
+      "solve_seconds": [
+        0.016281415002595168,
+        0.016399795000324957,
+        0.01588928700221004
+      ],
+      "checks": [
+        {
+          "status": "converged",
+          "kcl_pu": 3.793803191840963e-14,
+          "pq_error_pu": 2.4206059379139333e-16,
+          "demand_error_pu": 7.905327947810292e-15,
+          "power_balance_error_pu": 1.290517557023474e-10,
+          "min_voltage_pu": 0.999906083509521,
+          "voltage_channels": 300,
+          "missing_equipment": []
+        },
+        {
+          "status": "converged",
+          "kcl_pu": 3.793803191840963e-14,
+          "pq_error_pu": 2.4206059379139333e-16,
+          "demand_error_pu": 7.905327947810292e-15,
+          "power_balance_error_pu": 1.290517557023474e-10,
+          "min_voltage_pu": 0.999906083509521,
+          "voltage_channels": 300,
+          "missing_equipment": []
+        },
+        {
+          "status": "converged",
+          "kcl_pu": 3.793803191840963e-14,
+          "pq_error_pu": 2.4206059379139333e-16,
+          "demand_error_pu": 7.905327947810292e-15,
+          "power_balance_error_pu": 1.290517557023474e-10,
+          "min_voltage_pu": 0.999906083509521,
+          "voltage_channels": 300,
+          "missing_equipment": []
+        }
+      ],
+      "verdict": "pass",
+      "process_lifetime_peak_rss_kib_linux": 134904
+    },
+    {
+      "nodes": 1000,
+      "family": "radial_binary_tree",
+      "load_w_per_nonroot_bus": 500.0,
+      "build_s": 0.024396299999352777,
+      "solve_seconds": [
+        0.2391466919980303,
+        0.31068855299963616,
+        0.2793784629975562
+      ],
+      "checks": [
+        {
+          "status": "converged",
+          "kcl_pu": 5.1960730550802325e-14,
+          "pq_error_pu": 2.713179014790512e-16,
+          "demand_error_pu": 1.131265889853239e-13,
+          "power_balance_error_pu": 1.9866182602754635e-10,
+          "min_voltage_pu": 0.9991896943636238,
+          "voltage_channels": 3000,
+          "missing_equipment": []
+        },
+        {
+          "status": "converged",
+          "kcl_pu": 5.1960730550802325e-14,
+          "pq_error_pu": 2.713179014790512e-16,
+          "demand_error_pu": 1.131265889853239e-13,
+          "power_balance_error_pu": 1.9866182602754635e-10,
+          "min_voltage_pu": 0.9991896943636238,
+          "voltage_channels": 3000,
+          "missing_equipment": []
+        },
+        {
+          "status": "converged",
+          "kcl_pu": 5.1960730550802325e-14,
+          "pq_error_pu": 2.713179014790512e-16,
+          "demand_error_pu": 1.131265889853239e-13,
+          "power_balance_error_pu": 1.9866182602754635e-10,
+          "min_voltage_pu": 0.9991896943636238,
+          "voltage_channels": 3000,
+          "missing_equipment": []
+        }
+      ],
+      "verdict": "pass",
+      "process_lifetime_peak_rss_kib_linux": 194956
+    },
+    {
+      "nodes": 1000,
+      "family": "meshed_binary_tree",
+      "load_w_per_nonroot_bus": 500.0,
+      "build_s": 0.030529597999702673,
+      "solve_seconds": [
+        0.274236737001047,
+        0.287416236998979,
+        0.3544486539976788
+      ],
+      "checks": [
+        {
+          "status": "converged",
+          "kcl_pu": 4.4108148915191634e-14,
+          "pq_error_pu": 2.584499725344358e-16,
+          "demand_error_pu": 1.1216034181416035e-13,
+          "power_balance_error_pu": 1.9748329411868325e-10,
+          "min_voltage_pu": 0.9991964364884769,
+          "voltage_channels": 3000,
+          "missing_equipment": []
+        },
+        {
+          "status": "converged",
+          "kcl_pu": 4.4108148915191634e-14,
+          "pq_error_pu": 2.584499725344358e-16,
+          "demand_error_pu": 1.1216034181416035e-13,
+          "power_balance_error_pu": 1.9748329411868325e-10,
+          "min_voltage_pu": 0.9991964364884769,
+          "voltage_channels": 3000,
+          "missing_equipment": []
+        },
+        {
+          "status": "converged",
+          "kcl_pu": 4.4108148915191634e-14,
+          "pq_error_pu": 2.584499725344358e-16,
+          "demand_error_pu": 1.1216034181416035e-13,
+          "power_balance_error_pu": 1.9748329411868325e-10,
+          "min_voltage_pu": 0.9991964364884769,
+          "voltage_channels": 3000,
+          "missing_equipment": []
+        }
+      ],
+      "verdict": "pass",
+      "process_lifetime_peak_rss_kib_linux": 195796
+    },
+    {
+      "nodes": 10000,
+      "family": "radial_binary_tree",
+      "load_w_per_nonroot_bus": 500.0,
+      "build_s": 0.6888278030019137,
+      "solve_seconds": [
+        19.63884356500057,
+        21.340680927001813,
+        21.681106939002348
+      ],
+      "checks": [
+        {
+          "status": "converged",
+          "kcl_pu": 4.6186384593818723e-14,
+          "pq_error_pu": 2.653644060046645e-15,
+          "demand_error_pu": 7.635354995727539e-12,
+          "power_balance_error_pu": 1.0497885836230124e-09,
+          "min_voltage_pu": 0.9891016164800569,
+          "voltage_channels": 30000,
+          "missing_equipment": []
+        },
+        {
+          "status": "converged",
+          "kcl_pu": 4.6186384593818723e-14,
+          "pq_error_pu": 2.653644060046645e-15,
+          "demand_error_pu": 7.635354995727539e-12,
+          "power_balance_error_pu": 1.0497885836230124e-09,
+          "min_voltage_pu": 0.9891016164800569,
+          "voltage_channels": 30000,
+          "missing_equipment": []
+        },
+        {
+          "status": "converged",
+          "kcl_pu": 4.6186384593818723e-14,
+          "pq_error_pu": 2.653644060046645e-15,
+          "demand_error_pu": 7.635354995727539e-12,
+          "power_balance_error_pu": 1.0497885836230124e-09,
+          "min_voltage_pu": 0.9891016164800569,
+          "voltage_channels": 30000,
+          "missing_equipment": []
+        }
+      ],
+      "verdict": "pass",
+      "process_lifetime_peak_rss_kib_linux": 824692
+    },
+    {
+      "nodes": 10000,
+      "family": "meshed_binary_tree",
+      "load_w_per_nonroot_bus": 500.0,
+      "build_s": 0.7407458560010127,
+      "solve_seconds": [
+        29.092277400999592,
+        21.990551929000503,
+        20.586380046999693
+      ],
+      "checks": [
+        {
+          "status": "converged",
+          "kcl_pu": 4.9213665109959696e-14,
+          "pq_error_pu": 1.0512820836083847e-15,
+          "demand_error_pu": 4.1673891246318816e-12,
+          "power_balance_error_pu": 6.648855844105128e-10,
+          "min_voltage_pu": 0.9905552387572258,
+          "voltage_channels": 30000,
+          "missing_equipment": []
+        },
+        {
+          "status": "converged",
+          "kcl_pu": 4.9213665109959696e-14,
+          "pq_error_pu": 1.0512820836083847e-15,
+          "demand_error_pu": 4.1673891246318816e-12,
+          "power_balance_error_pu": 6.648855844105128e-10,
+          "min_voltage_pu": 0.9905552387572258,
+          "voltage_channels": 30000,
+          "missing_equipment": []
+        },
+        {
+          "status": "converged",
+          "kcl_pu": 4.9213665109959696e-14,
+          "pq_error_pu": 1.0512820836083847e-15,
+          "demand_error_pu": 4.1673891246318816e-12,
+          "power_balance_error_pu": 6.648855844105128e-10,
+          "min_voltage_pu": 0.9905552387572258,
+          "voltage_channels": 30000,
+          "missing_equipment": []
+        }
+      ],
+      "verdict": "pass",
+      "process_lifetime_peak_rss_kib_linux": 831212
+    }
+  ],
+  "repeats": 3,
+  "field_validated": false,
+  "arbitrary_scale_claim": false,
+  "independent_large_network_oracle": false,
+  "cross_simulator_speed_claim": false
+}

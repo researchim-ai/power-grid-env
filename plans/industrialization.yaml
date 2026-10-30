@@ -177,7 +177,9 @@ tasks:
       Луч 150 кВт и 0.05+j0.08 Ом на участок доводится подъёмом нагрузки
       до формулы на 2054 шинах внутри 1e-5 о.е. Дальше решения нет.
       10 000 шин с тем же суммарным Z, что у луча из 1000, сходятся.
-      Горизонты 7 и 30 суток не измерялись. Пул воркеров не сделан. Масштаб города не заявлен.
+      7 и 30 суток измерены на двухшинной схеме с шагом одни сутки.
+      Два процесса решателя повторяют прямой расчёт, мёртвый процесс
+      заменяется и не портит второй. Масштаб города не заявлен.
     depends_on: [AG-03, AG-05, AG-06, AG-07]
     scope: [power_grid_env/benchmarks.py, power_grid_env/backend_opendss.py, power_grid_env/backend_process.py, power_grid_env/dataset.py, benchmarks/external]
     findings: [IR-09]
@@ -253,8 +255,9 @@ tasks:
     priority: P2_P3
     status: planned
     progress: >-
-      Аналитический SMIB остаётся регрессией. industrial_rms_qualified и
-      andes_integrated равны false. Отдельный RMS-релиз не открыт.
+      Классическая машина ANDES сверяет угол, качание и собственную частоту.
+      industrial_rms_qualified и andes_integrated равны false. Отдельный
+      RMS-релиз не открыт.
     depends_on: [AG-03, AG-04, AG-05, AG-06]
     scope: [power_grid_env/dynamics.py, new_RMS_adapter, new_dynamic_reference_pack]
     gates:

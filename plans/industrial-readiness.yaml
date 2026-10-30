@@ -1,0 +1,300 @@
+schema: power-grid-env.readiness/v1
+date: '2026-10-31'
+document: docs/INDUSTRIAL_READINESS_AND_ROADMAP_2026_10_30_RU.md
+status: in_progress
+released: false
+competitive_superiority_proven: false
+field_validation: waiting_for_data
+items:
+- id: IN-00
+  title: Реестр доказательств и профиль
+  status: done
+  progress: >-
+    PM-00…11 записаны как regression_verified и не открывают профиль.
+    Пропуск, устаревший хеш, превышение допуска, неподдержанный объект и
+    двухшинная схема не становятся успехом площадки. Неизвестный профиль
+    не выпускается. Команда qualify --profile возвращает ненулевой код.
+- id: IN-01
+  title: StudySpec и общий запуск
+  status: done
+  progress: >-
+    Один runner считает две разные сети power_flow/opendss. Двигатель,
+    чужой backend и гармоническое исследование отклоняются до расчёта.
+    Спектр без узла и фаз не принимается. Старое поле kind мигрирует в study.
+    Канонический ANDES-адаптер и отдельный motor study добавлены последующими
+    этапами; универсальный паспорт произвольной площадки ещё не квалифицирован.
+- id: IN-02
+  title: Пакет площадки
+  status: done
+  progress: >-
+    Одна схема 110/10/0,4 кВ с двумя вводами, секцией, тремя трансформаторами,
+    критической нагрузкой, ФЭС и накопителем. 23 сценария, из них нарушения
+    ожидаются заранее. Место КЗ меняет ввод, нагрузка пересекает 0,95 о.е.,
+    слепая уставка не видит ток. Динамический пуск двигателей и спектр без
+    узла видны как отказ до расчёта. Профиль поставки и натурный трек не открыты.
+- id: IN-03
+  title: Внешний корпус
+  status: done
+  progress: >-
+    Четырнадцать сетей пяти семейств. ENWL — отложенное семейство: успех IEEE
+    его не закрывает. Один движок держит 1e-5 о.е. и 1e-4 рад, пара SimBench
+    остаётся на 1e-4 о.е. без углов. Пропуск канала, исчезновение узла и
+    перенос упрощений SimBench дают неуспех. Аналитическая двухшинная схема
+    проходит 1e-5, 1e-4 и KCL 1e-8.
+- id: IN-04
+  status: in_progress
+  progress: >-
+    Нет своего CSV у любого из двух фидеров — расчёт суток блокируется и
+    случайный профиль не подставляется. Внешние 2880 интервалов по 15 минут
+    не считались. Добавлен общий QSTS runner с JSONL, checksum checkpoint,
+    resume/cancel и ограниченным retained trace/history. На двух малых
+    синтетических топологиях 30 суток по 2880 интервалов и повтор с середины
+    прошли; это не квалификация двух внешних фидеров.
+- id: IN-05
+  title: КЗ площадки
+  status: done
+  progress: >-
+    Формула одного источника на два ввода не применяется. Ток ввода меняется
+    с местом КЗ. Более слабый источник и реактор в нейтрали уменьшают ток
+    одноэквивалентной схемы. Ближняя уставка быстрее дальней, слепая уставка
+    не видит повреждение, пик выше действующего, коэффициент отключения не
+    больше единицы. Это не весь IEC 60909 и не заводской терминал.
+- id: IN-06
+  status: in_progress
+  progress: >-
+    Общий StudySpec rms/andes строит balanced GENCLS сеть из Network:
+    положительная последовательность линий, PQ loads, внешний source Z,
+    паспорта H/MVA/Xd-prime, события и полные траектории. Проверены
+    аналитическая PF/RK45 сверка, h/h2/h4, смена системной базы, две машины,
+    load scale, generator trip и connected line trip. Двухобмоточные transformers с tap/clock и разными voltage bases поддержаны
+    и сверены с фазным backend. Трёхобмоточные, magnetization, LTC dynamics,
+    GENROU с transient/subtransient rotor states и saturation добавлен и
+    независимо сверён; GENSAL, совместная динамика motors+generators,
+    converters и islanding ещё открыты.
+    Добавлены TGOV1/SEXS/IEEEST, explicit balanced fault/clearing и killable
+    process с deadline/cancel/output limits. Полная связанная declared SMIB
+    сверена независимой ODE. Промышленный RMS профиль не открыт.
+  document: docs/CANONICAL_RMS_RU.md
+- id: IN-07
+  status: in_progress
+  progress: >-
+    motor_start/scipy: single-cage third-order rotor dynamics with shared sparse
+    balanced network, constant-Z background and two-winding transformers.
+    Explicit fan torque, cold start, voltage sag/recovery, contactor coast/reclose
+    and simultaneous/staggered group start. Independent physical SI rotor-flux
+    reference and full T circuit; ABC snapshot checks four transformer groups.
+    Controlled GENROU/motor dynamics, constant-torque loads, deep-bar, saturation, OEM rotor/stator thermal
+    protection and converters remain open. Добавлена токовая тепловая реплика
+    с непрерывным trip, latch/cooling и строгой сверкой SI CSV по протоколу.
+  document: docs/INDUCTION_MOTOR_RU.md
+- id: IN-08
+  status: planned
+- id: IN-09
+  status: planned
+- id: IN-10
+  status: in_progress
+  progress: >-
+    Параллельный bounded solve_many, сериализация worker-протокола,
+    ограниченные повторы независимого solve и восстановление worker.
+    Wheel строится без сетевой build isolation и выполняет PF вне checkout
+    с зависимостями текущего окружения. CI расширен на Python 3.11/3.12.
+    Чистая установка всех зависимостей на другой машине, job API,
+    дисковые квоты и OS sandbox недоверенного кода ещё не квалифицированы.
+- id: IN-11
+  status: waiting_for_data
+- id: IN-12
+  status: planned
+
+runtime_delivery:
+  document: docs/DURABLE_STUDIES_RU.md
+  report: reports/industrial-runtime-2026-10-30/
+  profile_released: false
+  field_validated: false
+  external_feeders_qualified: false
+  fixes:
+    - private_dss_context_reuse_with_clear_under_lock
+    - durable_streamed_qsts_with_verified_continuation
+    - full_pf_engineering_result_and_failure_exit_status
+    - finite_nonnegative_metrics_and_hashed_evidence_loader
+    - inherited_network_gates_and_duplicate_claim_rejection
+
+multivoltage_and_scale_delivery:
+  document: docs/MULTIVOLTAGE_AND_SCALE_RU.md
+  rms_scope: balanced_two_winding_transformers_without_magnetization_or_ltc
+  pv_scope: bounded_refinement_at_original_setpoints
+  industrial_profile_qualified: false
+  arbitrary_scale_claim: false
+
+historical_multivoltage_verified_delivery:
+  report: reports/multivoltage-validation-2026-10-30/delivery.json
+  full_tests_passed: 281
+  final_scale_nodes: 10000
+  final_scale_families: [radial_binary_tree, meshed_binary_tree]
+  scale_is_universal_claim: false
+
+regulated_rms_delivery:
+  document: docs/REGULATED_RMS_AND_FAULTS_RU.md
+  report: reports/regulated-rms-2026-10-30/
+  supported: [TGOV1, SEXS, IEEEST_MODE1, balanced_finite_bus_fault_and_clear, killable_worker]
+  reference: independent_coupled_network_swing_and_controller_ODE
+  scope: reduced_order_GENCLS_on_declared_cases
+  industrial_profile_qualified: false
+  field_validated: false
+  next: [GENROU_GENSAL, motors, converters, external_dynamic_corpus, service_resource_quotas]
+
+genrou_delivery:
+  document: docs/GENROU_RMS_RU.md
+  report: reports/genrou-2026-10-30/
+  model: GENROU_six_state_algebraic_stator
+  saturation_modes: [disabled, quadratic]
+  reference: independent_equilibrium_network_and_six_state_RK45
+  mixed_machine_mapping_verified: true
+  industrial_profile_qualified: false
+  field_validated: false
+  next: [GENSAL, motors, converters, external_dynamic_corpus, parameter_provenance]
+
+small_signal_delivery:
+  document: docs/SMALL_SIGNAL_RU.md
+  report: reports/small-signal-2026-10-30/
+  models: [GENCLS, GENROU]
+  reference: analytic_swing_and_independent_six_state_jacobian
+  machine_budget: 8
+  dynamic_state_budget: 256
+  industrial_profile_qualified: false
+  field_validated: false
+  next: [GENSAL_backend_extension, motors, converters, sparse_critical_modes, external_dynamic_corpus]
+
+induction_motor_delivery:
+  document: docs/INDUCTION_MOTOR_RU.md
+  report: reports/induction-2026-10-30/
+  backend: scipy_Radau_sparse_linear_network
+  model: single_cage_third_order_algebraic_stator
+  reference: independent_SI_rotor_flux_DOP853_and_full_T_circuit
+  cases: [cold_start, voltage_sag_restart, contactor_reclose, simultaneous_group, staggered_group]
+  motor_budget: 32
+  bus_budget: 2000
+  industrial_profile_qualified: false
+  field_validated: false
+  next: [controlled_GENROU_motor_DAE, exact_stiction_and_gravity_mechanics, saturation_deep_bar, OEM_thermal_and_reset, external_motor_data, converters]
+
+latest_verified_delivery:
+  report: reports/regulated-coupled-rms-2026-10-31/delivery.json
+  full_tests_passed: 420
+  independent_synthetic_coupled_cases: 6
+  industrial_profile_qualified: false
+  field_validated: false
+
+motor_thermal_delivery:
+  document: docs/MOTOR_THERMAL_AND_VALIDATION_RU.md
+  report: reports/motor-thermal-2026-10-30/
+  model: normalized_stator_current_squared_replica
+  reference: analytic_constant_current_and_independent_SI_flux_thermal_hybrid
+  continuous_trip: true
+  latched_reclose_block: true
+  csv_trace_comparison: strict_full_horizon_SI_with_declared_protocol_and_hashes
+  source_data: synthetic_only
+  industrial_profile_qualified: false
+  field_validated: false
+
+first_pilot_acceptance:
+  status: engineering_prototype_not_pilot_qualified
+  target_use_case: offline_balanced_industrial_motor_start_restart_assessment
+  calendar_commitment: not_estimated_without_target_equipment_and_data
+  gates:
+    - id: P1
+      title: Declared model scope and parameter provenance
+      status: in_progress
+      done: [single_cage_flux_and_speed, fan_load, thermal_replica, event_audit, independent_synthetic_references, loaded_steady_initialization, viscous_quadratic_smooth_friction, local_machine_stability_gate, finite_declared_parameter_experiments, sampled_recovery_windows, shared_GENCLS_motor_network, joint_TGOV1_SEXS_and_limiter_recovery]
+      missing: [target_motor_nameplate_and_thermal_limits, target_parameter_ranges_and_correlations, target_load_model_fit]
+    - id: P2
+      title: Independent measured validation
+      status: waiting_for_data
+      done: [SI_CSV_protocol, hashes, fixed_limits, no_imputation_or_lag_search]
+      missing: [authorized_raw_RMS_I_U_speed_traces, sensor_and_timebase_metadata, grid_impedance, cold_and_warm_cases, held_out_cases]
+    - id: P3
+      title: Reproducible engineering study package
+      status: in_progress
+      done: [saved_StudySpec, code_network_and_data_hashes, CLI, JSON_schemas, auditable_result]
+      missing: [frozen_target_environment, parameter_provenance_review, clean_install_of_target_release, independent_engineer_reproduction]
+    - id: P4
+      title: Execution and scale for the target site
+      status: in_progress
+      done: [isolated_worker, deadline_cancel, bounded_output, failure_statuses]
+      missing: [target_topology_and_motor_group_benchmark, peak_memory_and_runtime_envelope, recovery_and_artifact_retention_check]
+    - id: P5
+      title: Engineering acceptance on withheld cases
+      status: waiting_for_data
+      done: [trip_vs_solver_failure_distinction, fixed_trace_metric_workflow]
+      missing: [preregistered_case_matrix_and_limits, successful_and_failed_start_cases, declared_trip_and_recovery_accuracy, independent_review]
+  industrial_modeler_remaining:
+    - controlled_GENROU_motor_DAE_and_operating_point_scale_qualification
+    - richer_motor_loads_rotor_stator_thermal_and_contactor_logic
+    - GENSAL_converters_GFL_GFM_and_declared_islanding
+    - external_dynamic_corpus_and_parameter_uncertainty
+    - sparse_large_system_dynamics_and_target_scale_qualification
+    - reproducible_release_and_if_hosted_service_resource_isolation
+  competitive_superiority_proven: false
+  field_validated: false
+
+motor_operating_point_delivery:
+  document: docs/MOTOR_OPERATING_POINT_RU.md
+  report: reports/motor-operating-point-2026-10-30/
+  initialization: bounded_high_speed_network_and_shaft_equilibrium
+  gates: [speed_bounds, original_ODE_residual, connected_machine_local_stability, initial_thermal_limit]
+  thermal_initial_state: [passport, current_equilibrium]
+  mechanical_loads: [legacy_fan, viscous, quadratic, explicitly_regularized_Coulomb]
+  events: [absolute_load_torque_scale]
+  independent_reference: physical_T_circuit_shaft_equilibrium_and_SI_rotor_flux
+  synthetic_reference_cases: 6
+  industrial_profile_qualified: false
+  field_validated: false
+  next: [target_motor_data, target_parameter_uncertainty, controlled_GENROU_motor_DAE, exact_stiction, rotor_stator_thermal_and_reset, converters]
+
+motor_sensitivity_delivery:
+  document: docs/MOTOR_SENSITIVITY_RU.md
+  report: reports/motor-sensitivity-2026-10-30/
+  designs: [one_at_a_time, cartesian]
+  maximum_parameter_points: 32
+  parameter_points_reinitialize: true
+  independent_SI_reference_points: 7
+  recovery_semantics: sampled_post_event_connected_dwell
+  failed_or_missing_points: inconclusive
+  artifact_identity: frozen_study_protocol_code_and_case_hashes
+  interval_wide_robustness_proven: false
+  industrial_profile_qualified: false
+  field_validated: false
+  next: [target_parameter_ranges_and_correlations, held_out_measurements, controlled_GENROU_motor_DAE, target_scale_qualification]
+
+coupled_generator_motor_delivery:
+  document: docs/COUPLED_GENERATOR_MOTOR_RU.md
+  report: reports/coupled-rms-2026-10-30/
+  study: coupled_rms
+  backend: scipy
+  generators: fixed_internal_voltage_GENCLS_without_controllers
+  motors: existing_single_cage_mechanical_thermal_subset
+  algebraic_coupling: one_shared_sparse_nodal_solve_per_RHS
+  initialization: joint_PV_and_optional_loaded_motor_equilibrium
+  independent_SI_cases: 6
+  ANDES_check: disconnected_motor_generator_limit_with_h_h2_h4_convergence
+  industrial_profile_qualified: false
+  field_validated: false
+  next: [controlled_GENROU_motor_DAE, external_dynamic_corpus, target_equipment_data, islanding_and_synchronization, target_scale_qualification]
+
+regulated_coupled_delivery:
+  document: docs/REGULATED_COUPLED_RMS_RU.md
+  report: reports/regulated-coupled-rms-2026-10-31/
+  study: coupled_rms
+  backend: scipy
+  machine: GENCLS
+  optional_controllers: [TGOV1, SEXS]
+  controller_power_base: own_machine_VA
+  initialization: strictly_interior_shared_PV_motor_and_controller_equilibrium
+  events: [governor_step, voltage_reference_step]
+  limiter_guard: accepted_mesh_and_saved_outputs_raw_state_overshoot
+  continuous_extremum_certified: false
+  independent_SI_and_transfer_function_cases: 6
+  ANDES_check: disconnected_motor_controlled_GENCLS_h_h2_h4
+  industrial_profile_qualified: false
+  field_validated: false
+  competitive_superiority_proven: false
+  next: [controlled_GENROU_motor_DAE, external_dynamic_corpus, target_equipment_parameters_and_measurements, target_scale_qualification]

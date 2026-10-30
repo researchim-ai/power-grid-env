@@ -1,0 +1,181 @@
+{
+  "cases": [
+    {
+      "case": "cases/studies/operating_fan_hold.json",
+      "case_sha256": "8b846162d9bdf1e6a90c01fc294e90098a3a2f1afbe3339572dad54a7c04f73f",
+      "maximum_errors": {
+        "m": {
+          "speed_pu": 0.0,
+          "e_real_pu": 3.3306690738754696e-16,
+          "e_imag_pu": 1.6653345369377348e-16,
+          "current_pu": 2.220446049250313e-16,
+          "bus_voltage_pu": 3.3306690738754696e-16,
+          "p_w": 1.1641532182693481e-10,
+          "q_var": 1.1641532182693481e-09
+        }
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "e_real_pu": 2e-05,
+        "e_imag_pu": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05,
+        "p_w": 100.0,
+        "q_var": 100.0
+      },
+      "thermal_error": null,
+      "thermal_tolerance": 2e-05,
+      "passed": true
+    },
+    {
+      "case": "cases/studies/operating_mixed_sag.json",
+      "case_sha256": "3ab3ad10dd7cbca77ae515261eec05dcf59cd850ebc94e29b523c61a31172db8",
+      "maximum_errors": {
+        "m": {
+          "speed_pu": 3.6699453476174426e-09,
+          "e_real_pu": 1.0884210865924615e-08,
+          "e_imag_pu": 4.888656646162559e-09,
+          "current_pu": 4.8317812417764117e-08,
+          "bus_voltage_pu": 3.333621156897948e-10,
+          "p_w": 0.023698414908722043,
+          "q_var": 0.051296780817210674
+        }
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "e_real_pu": 2e-05,
+        "e_imag_pu": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05,
+        "p_w": 100.0,
+        "q_var": 100.0
+      },
+      "thermal_error": null,
+      "thermal_tolerance": 2e-05,
+      "passed": true
+    },
+    {
+      "case": "cases/studies/operating_load_step.json",
+      "case_sha256": "aef0886e290f4d148b343e76c88ba1cf66b68fa883f3766f09b88abdc97fb9a5",
+      "maximum_errors": {
+        "m": {
+          "speed_pu": 2.161190448823902e-09,
+          "e_real_pu": 2.4851548596771522e-09,
+          "e_imag_pu": 6.51843568011401e-09,
+          "current_pu": 2.808768218010016e-08,
+          "bus_voltage_pu": 7.798450774032517e-11,
+          "p_w": 0.03199457668233663,
+          "q_var": 0.011560834012925625
+        }
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "e_real_pu": 2e-05,
+        "e_imag_pu": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05,
+        "p_w": 100.0,
+        "q_var": 100.0
+      },
+      "thermal_error": null,
+      "thermal_tolerance": 2e-05,
+      "passed": true
+    },
+    {
+      "case": "cases/studies/operating_group_sag.json",
+      "case_sha256": "830123036bf903d946bbcbf3044400ae3d45cc90076d7239ab8d1eadce3c436e",
+      "maximum_errors": {
+        "m": {
+          "speed_pu": 3.838287243596028e-09,
+          "e_real_pu": 8.531474415818252e-09,
+          "e_imag_pu": 8.11577952064546e-09,
+          "current_pu": 3.637077206075645e-08,
+          "bus_voltage_pu": 2.2242208075340386e-10,
+          "p_w": 0.040183756849728525,
+          "q_var": 0.021348318696254864
+        },
+        "m2": {
+          "speed_pu": 3.052314068163753e-09,
+          "e_real_pu": 2.124679154835718e-09,
+          "e_imag_pu": 3.1871826844387385e-09,
+          "current_pu": 1.3851997993086229e-08,
+          "bus_voltage_pu": 2.2242208075340386e-10,
+          "p_w": 0.005988707533106208,
+          "q_var": 0.003025960410013795
+        }
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "e_real_pu": 2e-05,
+        "e_imag_pu": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05,
+        "p_w": 100.0,
+        "q_var": 100.0
+      },
+      "thermal_error": null,
+      "thermal_tolerance": 2e-05,
+      "passed": true
+    },
+    {
+      "case": "cases/studies/operating_thermal_hold.json",
+      "case_sha256": "f276d855c3764ed8fcc1d1814773fc9da953547731faabc7a8cfa2f194ca2721",
+      "maximum_errors": {
+        "m": {
+          "speed_pu": 0.0,
+          "e_real_pu": 3.3306690738754696e-16,
+          "e_imag_pu": 1.6653345369377348e-16,
+          "current_pu": 2.220446049250313e-16,
+          "bus_voltage_pu": 3.3306690738754696e-16,
+          "p_w": 1.1641532182693481e-10,
+          "q_var": 1.1641532182693481e-09
+        }
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "e_real_pu": 2e-05,
+        "e_imag_pu": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05,
+        "p_w": 100.0,
+        "q_var": 100.0
+      },
+      "thermal_error": 8.881784197001252e-16,
+      "thermal_tolerance": 2e-05,
+      "passed": true
+    },
+    {
+      "case": "cases/studies/operating_contactor_restart.json",
+      "case_sha256": "4551b2828dcd5809649cd36cd556b76f2bfe339272e6f0506e5520461bd7490a",
+      "maximum_errors": {
+        "m": {
+          "speed_pu": 2.3451652841899318e-09,
+          "e_real_pu": 8.28191037971493e-09,
+          "e_imag_pu": 6.996559442917771e-09,
+          "current_pu": 4.698123978741364e-08,
+          "bus_voltage_pu": 2.6506474792853396e-10,
+          "p_w": 0.028736785054206848,
+          "q_var": 0.03608441399410367
+        }
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "e_real_pu": 2e-05,
+        "e_imag_pu": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05,
+        "p_w": 100.0,
+        "q_var": 100.0
+      },
+      "thermal_error": null,
+      "thermal_tolerance": 2e-05,
+      "passed": true
+    }
+  ],
+  "reference_sha256": "20cb5c7e20dbf59c6a605948c33a297e977a3daf271393565ba24918e4dfdddc",
+  "thermal_reference_sha256": "0e0da2b369d489a112a3ea43053fca93ac198af49f36b5c00cc1e2478ded0d88",
+  "benchmark_sha256": "b0c45b3d83e7cb459fed5739a5128904c98c21a6cd37cbe507e8743cb8d3ada0",
+  "method": "Independent full physical T-circuit/shaft equilibrium and SI rotor-flux DOP853",
+  "field_validated": false,
+  "industrial_profile_qualified": false
+}

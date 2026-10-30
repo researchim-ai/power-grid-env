@@ -41,6 +41,23 @@ from power_grid_env.results import (
 from power_grid_env.topology import Topology, compile_topology
 
 _LOCK = threading.Lock()
+_SESSION = None
+
+
+def _get_session():
+    """One private native context, used only under _LOCK.
+
+    Every rendered solve begins with Clear, including retry candidates. Creating
+    thousands of NewContext wrappers retains native allocations in the installed
+    DSS wrapper; clearing/rebuilding one context avoids that accumulation.
+    Independent parallelism is provided by separate backend processes.
+    """
+    global _SESSION
+    if _SESSION is None:
+        from opendssdirect.OpenDSSDirect import OpenDSSDirect
+
+        _SESSION = OpenDSSDirect().NewContext()
+    return _SESSION
 _PHASE_NODE = {"A": "1", "B": "2", "C": "3", "N": "4"}
 _NODE_PHASE = {"1": "A", "2": "B", "3": "C", "4": "N", "0": "G"}
 
@@ -280,6 +297,16 @@ def _solve_once(network: Network, options: SolveOptions) -> SolveResult:
         )
     try:
         session, algorithm, iterations, converged, attempt_notes = _execute(script, options)
+        if not converged and any(g.mode == "pv" for g in network.generators):
+            for refinement in range(options.max_pv_refinements):
+                session.Text.Command("Solve")
+                converged = bool(session.Solution.Converged())
+                iterations = int(session.Solution.Iterations())
+                attempt_notes.append({"pv_refinement": refinement + 1, "algorithm": algorithm,
+                                      "converged": converged, "iterations": iterations,
+                                      "load_fraction": 1.0})
+                if converged:
+                    break
         if not converged and network.loads:
             continuation = _ramp_load_setpoint(session, network)
             attempt_notes.extend(continuation)
@@ -583,7 +610,7 @@ def _render(
             script.append(
                 f"New Generator.{name} bus1={_bus_spec(bus_token[bus_id], list(generator.phases))} "
                 f"phases={len(generator.phases)} kv={kv:.8g} kw={generator.p_w / 1000.0:.12g} model=3 "
-                f"vminpu={generator.v_set_pu:.8g} vmaxpu={generator.v_set_pu:.8g} "
+                f"vpu={generator.v_set_pu:.8g} vminpu={generator.v_min_pu:.8g} vmaxpu={generator.v_max_pu:.8g} "
                 f"minkvar={generator.q_min_var / 1000.0:.12g} maxkvar={generator.q_max_var / 1000.0:.12g}"
             )
         else:
@@ -746,6 +773,12 @@ def _transformer_commands(transformer: Transformer, topology, bus_token, warning
     for index, winding in enumerate(transformer.windings):
         bus = bus_token[topology.terminal_bus[winding.terminal_id]]
         bus_spec, neutral = _winding_bus(bus, winding)
+        if index > 0 and parsed.clock_hours[index] == 5:
+            if transformer.phases != 3 or winding.nodes or winding.phase:
+                raise ValueError("clock-5 mapping requires full ABC windings")
+            # ANSI supplies -30 degrees; a cyclic LV terminal permutation adds
+            # -120 degrees, giving the declared clock-5 (-150 degree) relation.
+            bus_spec = bus_spec.replace(".1.2.3", ".3.1.2", 1)
         connection = "" if winding.phase or winding.nodes else f" conn={winding.connection}"
         command = (
             f"~ wdg={index + 1} bus={bus_spec}{connection} "
@@ -754,7 +787,7 @@ def _transformer_commands(transformer: Transformer, topology, bus_token, warning
         )
         if winding.r_pct is not None:
             command += f" %r={winding.r_pct:.12g}"
-        if abs(winding.angle_deg) > 1e-9 and leadlag is None:
+        if abs(winding.angle_deg) > 1e-9 and (leadlag is None or parsed.clock_hours[index] == 5):
             message = (
                 f"{transformer.id}: сдвиг обмотки {index + 1} на {winding.angle_deg:.8g}° "
                 "не передаётся в OpenDSS, у сборки нет свойства angle"
@@ -798,7 +831,7 @@ def _leadlag(parsed) -> str | None:
     if unique == {11}:
         return "euro"
     if unique == {5}:
-        return None
+        return "ansi"
     raise ValueError(f"группа {parsed.raw} не имеет одного поддержанного сдвига LeadLag")
 
 
@@ -1014,9 +1047,7 @@ def _transformer_taps(session, registry: list[tuple[str, str]]) -> dict[str, flo
 
 
 def _execute(script: list[str], options: SolveOptions):
-    from opendssdirect.OpenDSSDirect import OpenDSSDirect
-
-    session = OpenDSSDirect().NewContext()
+    session = _get_session()
     notes = []
     algorithm = "newton"
     iterations = 0
@@ -1054,6 +1085,13 @@ def _ramp_load_setpoint(session, network: Network) -> list[dict[str, Any]]:
         iterations = int(session.Solution.Iterations())
         notes.append({"continuation": fraction, "converged": converged, "iterations": iterations})
         if fraction < 1.0 and not converged:
+            # A diagnostic must refer to the requested model, never the last
+            # reduced-load continuation point.
+            _set_load_fraction(session, targets, 1.0)
+            session.Text.Command("Solve")
+            notes.append({"continuation": 1.0, "restored_requested_load": True,
+                          "converged": bool(session.Solution.Converged()),
+                          "iterations": int(session.Solution.Iterations())})
             return notes
     if not bool(session.Solution.Converged()):
         for _ in range(8):
@@ -1093,14 +1131,12 @@ def solve_loads_incrementally(
     options = options or SolveOptions()
     topology = compile_topology(edited)
     script, registry, warnings, terminal_bus = _render(base, topology, options)
-    from opendssdirect.OpenDSSDirect import OpenDSSDirect
-
     notes: list[dict[str, Any]] = []
     session = None
     iterations = 0
     converged = False
     for candidate in ("newton", "normal"):
-        session = OpenDSSDirect().NewContext()
+        session = _get_session()
         for command in script:
             if command == "Solve":
                 break
@@ -1257,15 +1293,23 @@ def _pq_setpoint_error(
 ) -> float:
     energized = {island.id for island in topology.islands if island.energized}
     worst = 0.0
+    # Index once. Scanning F flows and V voltages for each of L loads made
+    # result qualification O(L*(F+V)) even for a sparse, easy electrical network.
+    by_equipment: dict[str, list[ConductorFlow]] = {}
+    by_bus: dict[str, list[PhaseVoltage]] = {}
+    for flow in flows:
+        by_equipment.setdefault(flow.equipment_id, []).append(flow)
+    for voltage in voltages:
+        by_bus.setdefault(voltage.bus_id, []).append(voltage)
     for load in network.loads:
         bus_id = topology.terminal_bus[load.terminal_id]
         if topology.bus_island[bus_id] not in energized or load.model != "constant_pq":
             continue
-        if _load_left_pq_band(load, bus_id, voltages):
+        if _load_left_pq_band(load, bus_id, by_bus.get(bus_id, [])):
             continue
         actual_p = 0.0
         actual_q = 0.0
-        for flow in flows:
+        for flow in by_equipment.get(load.id, []):
             if flow.equipment_id == load.id and flow.phase in set(load.phases):
                 actual_p += flow.p_into_w
                 actual_q += flow.q_into_var

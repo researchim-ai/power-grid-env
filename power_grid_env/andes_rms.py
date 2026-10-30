@@ -15,7 +15,7 @@ from typing import Any
 
 import numpy as np
 
-from power_grid_env.dynamics import _implicit_trapezoid, equilibrium, simulate_smib, tgov1_power
+from power_grid_env.dynamics import _implicit_trapezoid, equilibrium, natural_frequency, simulate_smib, tgov1_power
 
 _MACHINE_BASE = 8.0
 _INERTIA_S = _MACHINE_BASE / 2.0
@@ -36,6 +36,43 @@ def ensure_andes_importable() -> bool:
         return False
     sys.path.append(str(bundled))
     return importlib.util.find_spec("andes") is not None
+
+
+def qualify_swing_mode() -> dict[str, Any]:
+    """Мнимая часть собственной частоты ANDES совпадает с формулой малых качаний."""
+    if not ensure_andes_importable():
+        raise ImportError("ANDES не установлен")
+    import andes
+
+    logging.getLogger("andes").setLevel(logging.ERROR)
+    system = _system(andes, 0.01)
+    system.TDS.init()
+    if not system.TDS.test_ok:
+        return {"verdict": "fail", "reasons": ["initialization"], "industrial_rms_qualified": False}
+    system.EIG.run()
+    values = np.asarray(system.EIG.mu)
+    expected = natural_frequency(
+        _analytic_angle(system),
+        _internal_voltage(system),
+        _INFINITE_V,
+        _INTERNAL_X + _LINE_X,
+        _INERTIA_S,
+        2.0 * math.pi * _FREQUENCY_HZ,
+    )
+    nearest = values[int(np.argmin(np.abs(np.abs(np.imag(values)) - expected)))]
+    error = abs(abs(float(np.imag(nearest))) - expected) / expected
+    reasons = []
+    if error > 1e-6:
+        reasons.append("frequency")
+    if abs(float(np.real(nearest))) > 1e-6:
+        reasons.append("damping")
+    return {
+        "verdict": "fail" if reasons else "pass",
+        "reasons": reasons,
+        "frequency_error": error,
+        "real_part": float(np.real(nearest)),
+        "industrial_rms_qualified": False,
+    }
 
 
 def qualify_classical_machine() -> dict[str, Any]:

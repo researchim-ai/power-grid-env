@@ -132,14 +132,16 @@ def _generator(name: str, args: dict[str, str], ctx: dict[str, Any]) -> Generato
     terminal = f"{name}:{bus}"
     ctx["terminals"].append(Terminal(id=terminal, equipment_id=name, connectivity_node_id=bus, phases=phases))
     if model == "3":
-        vmin = float(args.get("vminpu", "nan"))
-        vmax = float(args.get("vmaxpu", "nan"))
+        vmin = float(args.get("vminpu", "0.9"))
+        vmax = float(args.get("vmaxpu", "1.1"))
         qmin = float(args.get("minkvar", "nan"))
         qmax = float(args.get("maxkvar", "nan"))
-        if not math.isfinite(vmin) or abs(vmin - vmax) > 1e-9 or not math.isfinite(qmin) or not math.isfinite(qmax):
-            raise ValueError(f"Generator.{name}: PV требует равные vminpu и vmaxpu и пределы kvar")
+        v_set = float(args.get("vpu", "nan"))
+        if "vpu" not in args and abs(vmin-vmax) <= 1e-9:
+            v_set = vmin  # legacy repository files; preserve their explicit band
+        if not all(math.isfinite(v) for v in (vmin,vmax,v_set,qmin,qmax)) or vmin<=0 or vmax<vmin:
+            raise ValueError(f"Generator.{name}: PV требует Vpu, voltage band и пределы kvar")
         mode = "pv"
-        v_set = vmin
         q_var = 0.0
         q_min = qmin * 1000.0
         q_max = qmax * 1000.0
@@ -158,6 +160,8 @@ def _generator(name: str, args: dict[str, str], ctx: dict[str, Any]) -> Generato
         p_w=kw * 1000.0,
         q_var=q_var,
         v_set_pu=v_set,
+        v_min_pu=vmin if mode=="pv" else 0.9,
+        v_max_pu=vmax if mode=="pv" else 1.1,
         q_min_var=q_min,
         q_max_var=q_max,
         ll_v=float(args["kv"]) * 1000.0,

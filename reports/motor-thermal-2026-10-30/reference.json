@@ -1,0 +1,85 @@
+{
+  "cases": [
+    {
+      "case": "cases/studies/thermal_cold_trip.json",
+      "case_sha256": "9482076bc8e588de22cecdc453573ae471c9bafc5326eee68f618678d9bdb30d",
+      "maximum_errors": {
+        "speed_pu": 2.289152201129241e-11,
+        "thermal_level": 2.341309368603106e-10,
+        "current_pu": 3.9511878213716045e-09,
+        "bus_voltage_pu": 2.410560639987125e-11
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "thermal_level": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05
+      },
+      "trip_time_error_s": 9.828249325494198e-14,
+      "trip_time_tolerance_s": 1e-06,
+      "passed": true
+    },
+    {
+      "case": "cases/studies/thermal_warm_trip.json",
+      "case_sha256": "2c5c6bf18153e37c800c387d3871b7da5b00647bf3380801782da5e4402a3b08",
+      "maximum_errors": {
+        "speed_pu": 7.070254104402096e-12,
+        "thermal_level": 1.6983570105821855e-10,
+        "current_pu": 1.4772467693546787e-09,
+        "bus_voltage_pu": 1.0352829704629585e-11
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "thermal_level": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05
+      },
+      "trip_time_error_s": 1.12417020137201e-12,
+      "trip_time_tolerance_s": 1e-06,
+      "passed": true
+    },
+    {
+      "case": "cases/studies/thermal_no_trip.json",
+      "case_sha256": "37a69cda591742e358ae3b580f4e46399e32b9ee73eca61fb1d5048fe35ada1c",
+      "maximum_errors": {
+        "speed_pu": 2.563560030921508e-09,
+        "thermal_level": 5.198343089318769e-09,
+        "current_pu": 3.0103665560332615e-08,
+        "bus_voltage_pu": 2.416368216628939e-10
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "thermal_level": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05
+      },
+      "trip_time_error_s": null,
+      "trip_time_tolerance_s": 1e-06,
+      "passed": true
+    },
+    {
+      "case": "cases/studies/thermal_blocked_reclose.json",
+      "case_sha256": "11af3ce2e5bd0de4d88d005d7af94612f2e10ce32548e396cf6eec60df5f73bb",
+      "maximum_errors": {
+        "speed_pu": 2.289152201129241e-11,
+        "thermal_level": 2.341309368603106e-10,
+        "current_pu": 3.9511878213716045e-09,
+        "bus_voltage_pu": 2.410560639987125e-11
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "thermal_level": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05
+      },
+      "trip_time_error_s": 9.828249325494198e-14,
+      "trip_time_tolerance_s": 1e-06,
+      "passed": true
+    }
+  ],
+  "reference_sha256": "2d82b5addf609ad5a0f86636f6a27f19f6a6dbd7f9083af8eceb14d092b5052e",
+  "circuit_reference_sha256": "85e383468a2f38f2a00043966e136620d5d6a51828c4d9c1f74adbe9a410b7cb",
+  "method": "Independent SI rotor-flux/thermal ODE, DOP853, terminal root and latched open circuit",
+  "field_validated": false,
+  "industrial_profile_qualified": false
+}

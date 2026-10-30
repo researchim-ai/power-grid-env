@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-30",
+  "code_sha256": "e4b1c18d5c0d3ee0572a6895c11511dec47c948135c7ba96d5e2fcc4c3fa85d0",
+  "tests": {
+    "tests": 324,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "study": "motor_start",
+  "backend": "scipy",
+  "model": "single-cage third-order rotor dynamics with algebraic stator",
+  "reference": "reference.json",
+  "synthetic_reference_cases": 5,
+  "maximum_reference_errors": {
+    "speed_pu": 5.720300788603083e-09,
+    "e_real_pu": 1.3828814648952914e-08,
+    "e_imag_pu": 1.0023572555306615e-08,
+    "current_pu": 6.104013960950283e-08,
+    "bus_voltage_pu": 3.056947806001631e-09,
+    "p_w": 0.03878422477282584,
+    "q_var": 0.03906909213401377
+  },
+  "maximum_kcl_residual_pu": 2.1610313646285627e-14,
+  "maximum_power_balance_residual_pu": 3.416878741273677e-14,
+  "transformer_phase_snapshot_checks": [
+    "YNyn0",
+    "Dyn11",
+    "YNd1",
+    "Dyn5"
+  ],
+  "worker_smoke": "group-worker.json",
+  "industrial_profile_qualified": false,
+  "field_validated": false,
+  "limitations": [
+    "fan torque only; zero-flux/zero-speed initialization",
+    "no saturation/deep-bar/stator EMT/VFD/thermal trip",
+    "no joint synchronous-generator and motor DAE",
+    "implementation budgets are not scale qualification",
+    "worker has no OS sandbox or memory quota"
+  ]
+}

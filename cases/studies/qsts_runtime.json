@@ -1,0 +1,505 @@
+{
+  "schema_version": "power-grid-env.study/v1",
+  "id": "radial",
+  "study": "qsts",
+  "backend": "opendss",
+  "network": {
+    "schema_version": "power-grid-env.network/v1",
+    "id": "radial",
+    "name": "radial",
+    "s_base_va": 1000000.0,
+    "frequency_hz": 50.0,
+    "voltage_levels": [
+      {
+        "id": "vl0",
+        "nominal_ll_v": 10000.0,
+        "substation_id": null,
+        "s_base_va": null
+      }
+    ],
+    "connectivity_nodes": [
+      {
+        "id": "src",
+        "voltage_level_id": "vl0",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "x": null,
+        "y": null
+      },
+      {
+        "id": "a",
+        "voltage_level_id": "vl0",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "x": null,
+        "y": null
+      },
+      {
+        "id": "b",
+        "voltage_level_id": "vl0",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "x": null,
+        "y": null
+      }
+    ],
+    "terminals": [
+      {
+        "id": "source:src",
+        "equipment_id": "source",
+        "connectivity_node_id": "src",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "first:src",
+        "equipment_id": "first",
+        "connectivity_node_id": "src",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "first:a",
+        "equipment_id": "first",
+        "connectivity_node_id": "a",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "second:a",
+        "equipment_id": "second",
+        "connectivity_node_id": "a",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "second:b",
+        "equipment_id": "second",
+        "connectivity_node_id": "b",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "a:a",
+        "equipment_id": "a",
+        "connectivity_node_id": "a",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "b:b",
+        "equipment_id": "b",
+        "connectivity_node_id": "b",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      }
+    ],
+    "lines": [
+      {
+        "id": "first",
+        "terminal_from": "first:src",
+        "terminal_to": "first:a",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "length_m": 1000.0,
+        "r_ohm": [
+          [
+            0.2,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.2,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.2
+          ]
+        ],
+        "x_ohm": [
+          [
+            0.4,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.4,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.4
+          ]
+        ],
+        "b_siemens": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "rating_a": 400.0,
+        "emergency_rating_a": null,
+        "emergency_duration_s": null,
+        "kron_reduction": "forbidden",
+        "temperature_c": null,
+        "resistance_alpha_per_c": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "Z1 и взаимное сопротивление заданы аналитически"
+        }
+      },
+      {
+        "id": "second",
+        "terminal_from": "second:a",
+        "terminal_to": "second:b",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "length_m": 1000.0,
+        "r_ohm": [
+          [
+            0.3,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.3,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.3
+          ]
+        ],
+        "x_ohm": [
+          [
+            0.5,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.5,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.5
+          ]
+        ],
+        "b_siemens": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "rating_a": 400.0,
+        "emergency_rating_a": null,
+        "emergency_duration_s": null,
+        "kron_reduction": "forbidden",
+        "temperature_c": null,
+        "resistance_alpha_per_c": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "Z1 и взаимное сопротивление заданы аналитически"
+        }
+      }
+    ],
+    "switches": [],
+    "transformers": [],
+    "loads": [
+      {
+        "id": "a",
+        "terminal_id": "a:a",
+        "connection": "wye",
+        "grounding": {
+          "kind": "solid",
+          "r_ohm": null,
+          "x_ohm": null
+        },
+        "model": "constant_pq",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "p_w": {
+          "A": 33333.333333333336,
+          "B": 33333.333333333336,
+          "C": 33333.333333333336
+        },
+        "q_var": {
+          "A": 6666.666666666667,
+          "B": 6666.666666666667,
+          "C": 6666.666666666667
+        },
+        "rated_kv": null,
+        "opendss_model": null,
+        "zip_z": null,
+        "zip_i": null,
+        "zip_p": null,
+        "zip_zq": null,
+        "zip_iq": null,
+        "zip_pq": null,
+        "vmin_pu": 0.0,
+        "vmax_pu": 1.5,
+        "critical": true,
+        "priority": 0,
+        "cold_load_multiplier": null,
+        "cold_load_tau_s": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": null
+        }
+      },
+      {
+        "id": "b",
+        "terminal_id": "b:b",
+        "connection": "wye",
+        "grounding": {
+          "kind": "solid",
+          "r_ohm": null,
+          "x_ohm": null
+        },
+        "model": "constant_pq",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "p_w": {
+          "A": 23333.333333333332,
+          "B": 23333.333333333332,
+          "C": 23333.333333333332
+        },
+        "q_var": {
+          "A": 5000.0,
+          "B": 5000.0,
+          "C": 5000.0
+        },
+        "rated_kv": null,
+        "opendss_model": null,
+        "zip_z": null,
+        "zip_i": null,
+        "zip_p": null,
+        "zip_zq": null,
+        "zip_iq": null,
+        "zip_pq": null,
+        "vmin_pu": 0.0,
+        "vmax_pu": 1.5,
+        "critical": true,
+        "priority": 0,
+        "cold_load_multiplier": null,
+        "cold_load_tau_s": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": null
+        }
+      }
+    ],
+    "sources": [
+      {
+        "id": "source",
+        "terminal_id": "source:src",
+        "ll_v": 10000.0,
+        "angle_a_rad": 0.0,
+        "r_ohm": 0.05,
+        "x_ohm": 0.2,
+        "r0_ohm": null,
+        "x0_ohm": null,
+        "is_slack": true,
+        "participation": null,
+        "phase_pu": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "балансный источник прямой последовательности"
+        }
+      }
+    ],
+    "generators": [],
+    "inverters": [],
+    "storages": [],
+    "shunts": [],
+    "neutral_grounds": [],
+    "meters": [],
+    "study_faults": [],
+    "harmonics": [],
+    "assumptions": [],
+    "omissions": [],
+    "provenance": {
+      "source": "authored-analytical-case",
+      "quality": "nameplate",
+      "timestamp": null,
+      "uncertainty": null,
+      "note": null
+    }
+  },
+  "requested_motors": [],
+  "scenario": {
+    "schema_version": "power-grid-env.scenario/v1",
+    "id": "radial",
+    "seed": 1,
+    "horizon_s": 3600.0,
+    "control_interval_s": 900.0,
+    "settle_s": 60.0,
+    "v_min_pu": 0.95,
+    "v_max_pu": 1.05,
+    "radiality": true,
+    "fault_line_id": null,
+    "fault_kind": "3ph",
+    "fault_phases": [
+      "A",
+      "B",
+      "C"
+    ],
+    "fault_r_ohm": 1.0,
+    "fault_disclosed": true,
+    "hidden_canary": null,
+    "unrestorable_load_ids": [],
+    "meter_delay_s": {},
+    "drop_probability": 0.0,
+    "measurement_period_s": null,
+    "protection": [],
+    "capacitor_controls": [],
+    "load_profile": {
+      "a": [
+        [
+          0.0,
+          1.0,
+          1.1
+        ],
+        [
+          900.0,
+          1.0130806258460285,
+          1.0997858923238604
+        ],
+        [
+          1800.0,
+          1.0261052384440104,
+          1.0991444861373811
+        ],
+        [
+          2700.0,
+          1.0390180644032256,
+          1.0980785280403231
+        ]
+      ],
+      "b": [
+        [
+          0.0,
+          1.0,
+          1.1
+        ],
+        [
+          900.0,
+          1.0130806258460285,
+          1.0997858923238604
+        ],
+        [
+          1800.0,
+          1.0261052384440104,
+          1.0991444861373811
+        ],
+        [
+          2700.0,
+          1.0390180644032256,
+          1.0980785280403231
+        ]
+      ]
+    },
+    "trace_limit": 2,
+    "what_if_quota": 4,
+    "maintenance_switch_ids": [],
+    "model_mismatch_scale": null,
+    "description": "",
+    "difficulty": "nominal"
+  },
+  "options": {
+    "tolerance": 1e-10,
+    "max_iterations": 80,
+    "max_outer": 20,
+    "apply_regulators": true,
+    "inverter_current_limit_model": false,
+    "approximate_phase_shift": false
+  }
+}

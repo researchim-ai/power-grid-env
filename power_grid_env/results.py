@@ -87,6 +87,7 @@ class SolveOptions(BaseModel):
     tolerance: float = 1e-10
     max_iterations: int = 80
     max_outer: int = 20
+    max_pv_refinements: int = Field(default=4, ge=0, le=32)
     apply_regulators: bool = True
     inverter_current_limit_model: bool = False
     approximate_phase_shift: bool = False

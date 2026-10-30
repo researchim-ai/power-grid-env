@@ -1,0 +1,39 @@
+{
+  "code_sha256": "ee7052d1e623da66f7bc335c87efb194908064ff97cd96eaf4fba3e95d58616d",
+  "full_tests_passed": 281,
+  "completed": [
+    "multivoltage_two_winding_rms",
+    "PV_setpoint_and_model_band_separation",
+    "bounded_PV_refinement",
+    "full_load_restore_on_failed_continuation",
+    "clock5_phase_terminal_mapping",
+    "linear_PQ_validation_indexing"
+  ],
+  "measured_scale": {
+    "final_cases": [
+      [
+        10000,
+        "radial_binary_tree"
+      ],
+      [
+        10000,
+        "meshed_binary_tree"
+      ]
+    ],
+    "raw_report": "../branching-scale-final-2026-10-30/summary.json",
+    "independent_large_network_oracle": false
+  },
+  "earlier_three_repeat_scale_report": "../branching-scale-indexed-2026-10-30/summary.json",
+  "prior_preindex_scale_attempt": "interrupted_at_10000_no_completed_envelope",
+  "field_validated": false,
+  "industrial_profile_released": false,
+  "arbitrary_scale_claim": false,
+  "next": [
+    "canonical_AVR_governor_PSS",
+    "fault_clearing",
+    "motors_converters",
+    "mixed_asymmetric_scale",
+    "external_QSTS_feeders",
+    "comparative_benchmarks"
+  ]
+}

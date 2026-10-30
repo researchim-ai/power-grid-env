@@ -1,0 +1,146 @@
+{
+  "profile": "industrial-network-studies",
+  "released": false,
+  "verdict": "fail",
+  "status": "fail",
+  "gates": [
+    {
+      "id": "plant_pack",
+      "network_class": "industrial_plant_110_10_0_4",
+      "status": "missing"
+    },
+    {
+      "id": "two_feeder_qsts",
+      "network_class": "two_feeders_15min",
+      "status": "missing"
+    },
+    {
+      "id": "clean_install",
+      "network_class": "other_machine",
+      "status": "missing"
+    }
+  ],
+  "historical": [
+    {
+      "id": "PM-00",
+      "state": "regression_verified",
+      "network_class": "declared_example",
+      "equipment": [
+        "declared_example"
+      ],
+      "scope": "якобиан трапеции и отказ несходящегося шага на объявленных примерах",
+      "field_validated": false
+    },
+    {
+      "id": "PM-01",
+      "state": "regression_verified",
+      "network_class": "declared_example",
+      "equipment": [
+        "declared_example"
+      ],
+      "scope": "паспорта части оборудования, не полная матрица площадки",
+      "field_validated": false
+    },
+    {
+      "id": "PM-02",
+      "state": "regression_verified",
+      "network_class": "declared_example",
+      "equipment": [
+        "declared_example"
+      ],
+      "scope": "фазные эталоны объявленных схем, не произвольный импорт",
+      "field_validated": false
+    },
+    {
+      "id": "PM-03",
+      "state": "regression_verified",
+      "network_class": "declared_example",
+      "equipment": [
+        "declared_example"
+      ],
+      "scope": "7 и 30 суток двухшинной схемы с шагом одни сутки",
+      "field_validated": false
+    },
+    {
+      "id": "PM-04",
+      "state": "regression_verified",
+      "network_class": "declared_example",
+      "equipment": [
+        "declared_example"
+      ],
+      "scope": "объявленный набор КЗ, не произвольная сетка IEC",
+      "field_validated": false
+    },
+    {
+      "id": "PM-05",
+      "state": "regression_verified",
+      "network_class": "declared_example",
+      "equipment": [
+        "declared_example"
+      ],
+      "scope": "карта одного луча и фазорные зоны, не терминал площадки",
+      "field_validated": false
+    },
+    {
+      "id": "PM-06",
+      "state": "regression_verified",
+      "network_class": "declared_example",
+      "equipment": [
+        "declared_example"
+      ],
+      "scope": "классическая машина и схема Кундура, не импортированная площадка",
+      "field_validated": false
+    },
+    {
+      "id": "PM-07",
+      "state": "regression_verified",
+      "network_class": "declared_example",
+      "equipment": [
+        "declared_example"
+      ],
+      "scope": "объявленные двигатель и привод, не заводской преобразователь",
+      "field_validated": false
+    },
+    {
+      "id": "PM-08",
+      "state": "regression_verified",
+      "network_class": "declared_example",
+      "equipment": [
+        "declared_example"
+      ],
+      "scope": "объявленные гармоники, не сетевой расчёт площадки",
+      "field_validated": false
+    },
+    {
+      "id": "PM-09",
+      "state": "regression_verified",
+      "network_class": "declared_example",
+      "equipment": [
+        "declared_example"
+      ],
+      "scope": "линейная оценка и локальный AC OPF",
+      "field_validated": false
+    },
+    {
+      "id": "PM-10",
+      "state": "regression_verified",
+      "network_class": "declared_example",
+      "equipment": [
+        "declared_example"
+      ],
+      "scope": "одно включение RL и одно звено RLC, не EMT сети",
+      "field_validated": false
+    },
+    {
+      "id": "PM-11",
+      "state": "regression_verified",
+      "network_class": "declared_example",
+      "equipment": [
+        "declared_example"
+      ],
+      "scope": "двухшинное сравнение с ANDES и колесо на этой машине",
+      "field_validated": false
+    }
+  ],
+  "small_case_promoted": false
+}

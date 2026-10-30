@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-30",
+  "code_sha256": "2458bed8b4b91c2a9d88bdbf4a8082c895a919c59b238ae4b36d9534444f17e1",
+  "tests": {
+    "tests": 375,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "features": [
+    "coupled loaded high-speed motor operating point",
+    "original ODE residual and local connected-machine stability gates",
+    "explicit thermal passport/equilibrium initialization",
+    "viscous/quadratic/smooth-friction shaft loads and absolute load step"
+  ],
+  "independent_synthetic_cases": 6,
+  "reference": "reference.json",
+  "maximum_reference_errors": {
+    "speed_pu": 3.838287243596028e-09,
+    "e_real_pu": 1.0884210865924615e-08,
+    "e_imag_pu": 8.11577952064546e-09,
+    "current_pu": 4.8317812417764117e-08,
+    "bus_voltage_pu": 3.333621156897948e-10,
+    "p_w": 0.040183756849728525,
+    "q_var": 0.051296780817210674
+  },
+  "maximum_initial_dynamic_residual_per_s": 4.0430621813432787e-13,
+  "maximum_kcl_residual_pu": 2.139016888732267e-14,
+  "maximum_power_balance_residual_pu": 3.3584180505429145e-14,
+  "transformer_snapshot_groups": [
+    "Dyn11",
+    "YNd1",
+    "Dyn5"
+  ],
+  "worker_smoke": "group-worker.json",
+  "industrial_profile_qualified": false,
+  "field_validated": false,
+  "competitive_superiority_proven": false,
+  "limitations": [
+    "bounded local equilibrium search; no uniqueness/global stability proof",
+    "local stability concerns connected machine states, not the whole hybrid protection system",
+    "smooth friction is not hard stiction/gravity/constant-power mechanics",
+    "no mixed synchronous-machine/motor DAE or VFD",
+    "synthetic parameters and cases; no target equipment validation"
+  ]
+}

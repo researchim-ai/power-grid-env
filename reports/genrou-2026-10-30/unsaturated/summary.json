@@ -1,0 +1,35 @@
+{
+  "verdict": "pass",
+  "reference": "independent six-state GENROU and network RK45",
+  "cases": [
+    {
+      "step_s": 0.001,
+      "errors": {
+        "delta": 2.1414571804712068e-07,
+        "omega": 5.716647466513791e-08,
+        "e1q": 5.4252494496864756e-08,
+        "e1d": 1.069449413193535e-06,
+        "e2d": 4.724334016326104e-06,
+        "e2q": 4.670755745272981e-05
+      },
+      "verdict": "pass",
+      "code_sha256": "05145376d69f3281d5615c4e6bfd9df221086940aae36e92b71c9345174595e5"
+    },
+    {
+      "step_s": 0.0005,
+      "errors": {
+        "delta": 5.709714523405296e-08,
+        "omega": 1.3699184897575378e-08,
+        "e1q": 2.8969493692798665e-08,
+        "e1d": 2.7713474609614153e-07,
+        "e2d": 1.1925201550688769e-06,
+        "e2q": 1.1663167348352488e-05
+      },
+      "verdict": "pass",
+      "code_sha256": "05145376d69f3281d5615c4e6bfd9df221086940aae36e92b71c9345174595e5"
+    }
+  ],
+  "saturation": "disabled",
+  "industrial_profile_qualified": false,
+  "field_validated": false
+}

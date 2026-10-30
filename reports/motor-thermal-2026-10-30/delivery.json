@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-30",
+  "code_sha256": "a8b1aac9c2fbb3bb67c6e27ca2ff4b3cd29d9ea6093fa277ec73c8374d08c9d4",
+  "tests": {
+    "tests": 357,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "features": [
+    "continuous thermal crossing and latched opening",
+    "thermal memory/cooling/blocked reclose audit",
+    "strict full-horizon I/U/speed SI CSV comparison"
+  ],
+  "independent_thermal_cases": 4,
+  "reference": "reference.json",
+  "comparison": "trace-comparison.json",
+  "maximum_trip_time_error_s": 1.12417020137201e-12,
+  "trace_source": "synthetic independent SI rotor-flux reference; not field measurements",
+  "industrial_profile_qualified": false,
+  "field_validated": false,
+  "competitive_superiority_proven": false,
+  "pilot_acceptance_plan": "plans/industrial-readiness.yaml#first_pilot_acceptance",
+  "limitations": [
+    "first-order current-squared replica only; no winding/rotor temperature validation",
+    "no thermal reset/automatic reclose",
+    "no mixed synchronous/motor DAE or converter model",
+    "no target-equipment parameters or measured traces",
+    "source declarations are not authenticated"
+  ]
+}

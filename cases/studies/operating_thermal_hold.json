@@ -1,0 +1,244 @@
+{
+  "schema_version": "power-grid-env.study/v1",
+  "id": "operating-thermal_hold",
+  "study": "motor_start",
+  "backend": "scipy",
+  "network": {
+    "schema_version": "power-grid-env.network/v1",
+    "id": "motor-start",
+    "name": "Motor start",
+    "s_base_va": 10000000.0,
+    "frequency_hz": 50.0,
+    "voltage_levels": [
+      {
+        "id": "vl0",
+        "nominal_ll_v": 10000.0,
+        "substation_id": null,
+        "s_base_va": null
+      }
+    ],
+    "connectivity_nodes": [
+      {
+        "id": "src",
+        "voltage_level_id": "vl0",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "x": null,
+        "y": null
+      },
+      {
+        "id": "motor",
+        "voltage_level_id": "vl0",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "x": null,
+        "y": null
+      }
+    ],
+    "terminals": [
+      {
+        "id": "source:src",
+        "equipment_id": "source",
+        "connectivity_node_id": "src",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "line:src",
+        "equipment_id": "line",
+        "connectivity_node_id": "src",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "line:motor",
+        "equipment_id": "line",
+        "connectivity_node_id": "motor",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      }
+    ],
+    "lines": [
+      {
+        "id": "line",
+        "terminal_from": "line:src",
+        "terminal_to": "line:motor",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "length_m": 1000.0,
+        "r_ohm": [
+          [
+            0.1,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.1,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.1
+          ]
+        ],
+        "x_ohm": [
+          [
+            0.4,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.4,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.4
+          ]
+        ],
+        "b_siemens": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "rating_a": 400.0,
+        "emergency_rating_a": null,
+        "emergency_duration_s": null,
+        "kron_reduction": "forbidden",
+        "temperature_c": null,
+        "resistance_alpha_per_c": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "Z1 и взаимное сопротивление заданы аналитически"
+        }
+      }
+    ],
+    "switches": [],
+    "transformers": [],
+    "loads": [],
+    "sources": [
+      {
+        "id": "source",
+        "terminal_id": "source:src",
+        "ll_v": 10000.0,
+        "angle_a_rad": 0.0,
+        "r_ohm": 0.05,
+        "x_ohm": 0.2,
+        "r0_ohm": null,
+        "x0_ohm": null,
+        "is_slack": true,
+        "participation": null,
+        "phase_pu": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "балансный источник прямой последовательности"
+        }
+      }
+    ],
+    "generators": [],
+    "inverters": [],
+    "storages": [],
+    "shunts": [],
+    "neutral_grounds": [],
+    "meters": [],
+    "study_faults": [],
+    "harmonics": [],
+    "assumptions": [],
+    "omissions": [],
+    "provenance": {
+      "source": "authored-analytical-case",
+      "quality": "nameplate",
+      "timestamp": null,
+      "uncertainty": null,
+      "note": null
+    }
+  },
+  "requested_motors": [],
+  "scenario": null,
+  "rms": null,
+  "induction": {
+    "duration_s": 0.4,
+    "step_s": 0.01,
+    "rtol": 1e-7,
+    "atol": 1e-9,
+    "motors": [
+      {
+        "id": "m",
+        "node_id": "motor",
+        "rated_va": 1000000.0,
+        "rated_ll_v": 10000.0,
+        "stator_r_pu": 0.02,
+        "stator_x_pu": 0.1,
+        "rotor_r_pu": 0.015,
+        "rotor_x_pu": 0.1,
+        "magnetizing_x_pu": 3.0,
+        "inertia_s": 0.3,
+        "fan_torque_pu": 0.8,
+        "mechanical_load": null,
+        "connected": true,
+        "thermal": {
+          "model": "stator_i2_replica",
+          "time_constant_s": 1.0,
+          "trip_level": 5.0,
+          "initial_level": 0.0
+        }
+      }
+    ],
+    "operating_point": {
+      "method": "high_speed_equilibrium",
+      "minimum_speed_pu": 0.8,
+      "tolerance": 1e-8,
+      "thermal_state": "equilibrium"
+    },
+    "events": []
+  },
+  "options": {
+    "tolerance": 1e-10,
+    "max_iterations": 80,
+    "max_outer": 20,
+    "max_pv_refinements": 4,
+    "apply_regulators": true,
+    "inverter_current_limit_model": false,
+    "approximate_phase_shift": false
+  }
+}

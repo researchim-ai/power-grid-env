@@ -1,0 +1,362 @@
+{
+  "modes": [
+    {
+      "id": "mode_000",
+      "real_per_s": -78.06292384056538,
+      "imag_rad_per_s": 0.0,
+      "frequency_hz": 0.0,
+      "damping_ratio": 1.0,
+      "participation": [
+        {
+          "state": "g.e2q",
+          "factor": 0.9815308251456293
+        },
+        {
+          "state": "g.e1d",
+          "factor": 0.013318588753150314
+        },
+        {
+          "state": "g.delta",
+          "factor": 0.0025739700206108096
+        },
+        {
+          "state": "g.omega",
+          "factor": 0.002573970020610781
+        },
+        {
+          "state": "g.e1q",
+          "factor": 1.4408358053300271e-06
+        },
+        {
+          "state": "g.e2d",
+          "factor": 1.2052241934181182e-06
+        }
+      ]
+    },
+    {
+      "id": "mode_001",
+      "real_per_s": -27.417555744678936,
+      "imag_rad_per_s": 0.0,
+      "frequency_hz": 0.0,
+      "damping_ratio": 1.0,
+      "participation": [
+        {
+          "state": "g.e2d",
+          "factor": 0.9879920462493703
+        },
+        {
+          "state": "g.e1q",
+          "factor": 0.0077852452221155635
+        },
+        {
+          "state": "g.delta",
+          "factor": 0.002068612799113842
+        },
+        {
+          "state": "g.omega",
+          "factor": 0.002068612799113813
+        },
+        {
+          "state": "g.e1d",
+          "factor": 8.289453055011228e-05
+        },
+        {
+          "state": "g.e2q",
+          "factor": 2.5883997364882763e-06
+        }
+      ]
+    },
+    {
+      "id": "mode_002",
+      "real_per_s": -2.5888202174530304,
+      "imag_rad_per_s": 0.0,
+      "frequency_hz": 0.0,
+      "damping_ratio": 1.0,
+      "participation": [
+        {
+          "state": "g.e1d",
+          "factor": 0.8831791516219236
+        },
+        {
+          "state": "g.e1q",
+          "factor": 0.0470758607148053
+        },
+        {
+          "state": "g.e2q",
+          "factor": 0.023297493265786836
+        },
+        {
+          "state": "g.delta",
+          "factor": 0.023102012037330928
+        },
+        {
+          "state": "g.omega",
+          "factor": 0.023102012037330713
+        },
+        {
+          "state": "g.e2d",
+          "factor": 0.00024347032282244946
+        }
+      ]
+    },
+    {
+      "id": "mode_003",
+      "real_per_s": -0.583970420159879,
+      "imag_rad_per_s": -7.567993248376137,
+      "frequency_hz": 1.2044835347651524,
+      "damping_ratio": 0.07693447929423682,
+      "participation": [
+        {
+          "state": "g.delta",
+          "factor": 0.46427562983152576
+        },
+        {
+          "state": "g.omega",
+          "factor": 0.4642756298315254
+        },
+        {
+          "state": "g.e1d",
+          "factor": 0.044001883542840015
+        },
+        {
+          "state": "g.e2q",
+          "factor": 0.015418920082769745
+        },
+        {
+          "state": "g.e1q",
+          "factor": 0.007662128556157723
+        },
+        {
+          "state": "g.e2d",
+          "factor": 0.004365808155181203
+        }
+      ]
+    },
+    {
+      "id": "mode_004",
+      "real_per_s": -0.583970420159879,
+      "imag_rad_per_s": 7.567993248376137,
+      "frequency_hz": 1.2044835347651524,
+      "damping_ratio": 0.07693447929423682,
+      "participation": [
+        {
+          "state": "g.delta",
+          "factor": 0.4642756298315258
+        },
+        {
+          "state": "g.omega",
+          "factor": 0.46427562983152554
+        },
+        {
+          "state": "g.e1d",
+          "factor": 0.044001883542840056
+        },
+        {
+          "state": "g.e2q",
+          "factor": 0.015418920082769752
+        },
+        {
+          "state": "g.e1q",
+          "factor": 0.007662128556157728
+        },
+        {
+          "state": "g.e2d",
+          "factor": 0.0043658081551812035
+        }
+      ]
+    },
+    {
+      "id": "mode_005",
+      "real_per_s": -0.3891765846904287,
+      "imag_rad_per_s": 0.0,
+      "frequency_hz": 0.0,
+      "damping_ratio": 1.0,
+      "participation": [
+        {
+          "state": "g.e1q",
+          "factor": 0.9269031579701088
+        },
+        {
+          "state": "g.e1d",
+          "factor": 0.05351268635778681
+        },
+        {
+          "state": "g.e2d",
+          "factor": 0.011369729747299929
+        },
+        {
+          "state": "g.e2q",
+          "factor": 0.004116502742757194
+        },
+        {
+          "state": "g.delta",
+          "factor": 0.0020489615910237505
+        },
+        {
+          "state": "g.omega",
+          "factor": 0.002048961591023668
+        }
+      ]
+    }
+  ],
+  "spectral_abscissa_per_s": -0.3891765846904287,
+  "linear_stability": "asymptotically_stable_linearized",
+  "eigenpair_residual": 3.0921510816265644e-16,
+  "eigenvector_condition_number": 64.0393994531546,
+  "participation_status": "computed_biorthogonal_magnitude_normalized_per_mode",
+  "stability_tolerance_per_s": 1e-08,
+  "solved": true,
+  "completed": true,
+  "status": "completed",
+  "time_domain_simulated": false,
+  "backend": "andes",
+  "backend_version": "2.0.0",
+  "study": "small_signal",
+  "scope": {
+    "ok": true,
+    "errors": [],
+    "model": "balanced_synchronous_machines",
+    "limitations": [
+      "positive sequence only",
+      "GENCLS is reduced order; GENROU uses transient/subtransient rotor states with algebraic stator",
+      "load is constant PQ during TDS",
+      "no switch operation or island qualification",
+      "no motor or converter dynamics",
+      "no field validation"
+    ]
+  },
+  "initial": {
+    "bus_voltage_pu": {
+      "bus_25a6634263c1b1f6": 1.0143099446463175,
+      "bus_3b6a765ede676559": 1.05
+    },
+    "bus_angle_rad": {
+      "bus_25a6634263c1b1f6": 0.04931458598508382,
+      "bus_3b6a765ede676559": 0.14334757446912938
+    }
+  },
+  "init_residual": 8.881784197001252e-16,
+  "mapping": {
+    "buses": {
+      "bus_25a6634263c1b1f6": 1,
+      "bus_3b6a765ede676559": 2
+    },
+    "lines": {
+      "line": "line_0"
+    },
+    "loads": {},
+    "machines": {
+      "g": "machine_0"
+    },
+    "machine_models": {
+      "g": "GENROU"
+    },
+    "static_generators": {
+      "g": "pv_0"
+    },
+    "transformers": {},
+    "governors": {},
+    "exciters": {},
+    "stabilizers": {}
+  },
+  "state_names": [
+    "g.delta",
+    "g.omega",
+    "g.e1q",
+    "g.e1d",
+    "g.e2d",
+    "g.e2q"
+  ],
+  "state_matrix_per_s": [
+    [
+      0.0,
+      314.1592653589793,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      -0.24406986009242004,
+      0.0,
+      -0.08797734781805586,
+      0.04639774277266981,
+      -0.04398867390902793,
+      0.13919322831800948
+    ],
+    [
+      -0.13025485239975562,
+      0.0,
+      -0.8379706379509724,
+      -0.017960991171025106,
+      0.26851468102451376,
+      -0.053882973513075305
+    ],
+    [
+      0.5354441959882437,
+      0.0,
+      -0.44317217585420116,
+      -4.2433832678146475,
+      -0.22158608792710047,
+      1.8011001965560547
+    ],
+    [
+      -3.9076455719926684,
+      0.0,
+      20.454605642778183,
+      -0.006198326902528809,
+      -27.272697178610905,
+      -0.018594980707585803
+    ],
+    [
+      29.79863351586748,
+      0.0,
+      0.0881539826137405,
+      40.90921128555637,
+      0.04407699130687118,
+      -77.27236614333091
+    ]
+  ],
+  "controller_boundary_flags": [],
+  "linearization": "T^-1 (fx - fy gy^-1 gx); algebraic state elimination",
+  "participation_note": "Normalized modal state attribution, not energy or transient stability proof",
+  "code_sha256": "86c84f8770f15d1795cf1c695252c1b8661c6194558f19369e595ad13b5f45f2",
+  "network_sha256": "73199a389c9e5b35c1d0933e354cd5dc6608adb389e5951439e8d3c204e9739d",
+  "settings": {
+    "duration_s": 0.4,
+    "step_s": 0.001,
+    "tolerance": 1e-08,
+    "machines": [
+      {
+        "model": "GENROU",
+        "generator_id": "g",
+        "rated_va": 100000000.0,
+        "inertia_s": 4.0,
+        "x_d_prime_pu": 0.3,
+        "damping_pu": 0.0,
+        "governor": null,
+        "exciter": null,
+        "stabilizer": null,
+        "x_d_pu": 1.8,
+        "x_q_pu": 1.7,
+        "x_d_subtransient_pu": 0.25,
+        "x_q_prime_pu": 0.55,
+        "x_q_subtransient_pu": 0.25,
+        "leakage_pu": 0.15,
+        "armature_r_pu": 0.002,
+        "td_prime_s": 8.0,
+        "td_subtransient_s": 0.04,
+        "tq_prime_s": 0.8,
+        "tq_subtransient_s": 0.02,
+        "saturation": "quadratic",
+        "saturation_s10": 0.1,
+        "saturation_s12": 0.4
+      }
+    ],
+    "events": [],
+    "faults": []
+  },
+  "industrial_profile_qualified": false,
+  "field_validated": false,
+  "study_id": "small-signal-genrou_saturated"
+}

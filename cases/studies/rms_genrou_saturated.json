@@ -1,0 +1,295 @@
+{
+  "schema_version": "power-grid-env.study/v1",
+  "id": "canonical-rms",
+  "study": "rms",
+  "backend": "andes",
+  "network": {
+    "schema_version": "power-grid-env.network/v1",
+    "id": "canonical-rms",
+    "name": "Canonical RMS",
+    "s_base_va": 100000000.0,
+    "frequency_hz": 50.0,
+    "voltage_levels": [
+      {
+        "id": "vl0",
+        "nominal_ll_v": 110000.0,
+        "substation_id": null,
+        "s_base_va": null
+      }
+    ],
+    "connectivity_nodes": [
+      {
+        "id": "src",
+        "voltage_level_id": "vl0",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "x": null,
+        "y": null
+      },
+      {
+        "id": "gen",
+        "voltage_level_id": "vl0",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "x": null,
+        "y": null
+      }
+    ],
+    "terminals": [
+      {
+        "id": "source:src",
+        "equipment_id": "source",
+        "connectivity_node_id": "src",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "line:src",
+        "equipment_id": "line",
+        "connectivity_node_id": "src",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "line:gen",
+        "equipment_id": "line",
+        "connectivity_node_id": "gen",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "g:gen",
+        "equipment_id": "g",
+        "connectivity_node_id": "gen",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      }
+    ],
+    "lines": [
+      {
+        "id": "line",
+        "terminal_from": "line:src",
+        "terminal_to": "line:gen",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "length_m": 1000.0,
+        "r_ohm": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "x_ohm": [
+          [
+            24.200000000000003,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            24.200000000000003,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            24.200000000000003
+          ]
+        ],
+        "b_siemens": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "rating_a": 400.0,
+        "emergency_rating_a": null,
+        "emergency_duration_s": null,
+        "kron_reduction": "forbidden",
+        "temperature_c": null,
+        "resistance_alpha_per_c": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "Z1 и взаимное сопротивление заданы аналитически"
+        }
+      }
+    ],
+    "switches": [],
+    "transformers": [],
+    "loads": [],
+    "sources": [
+      {
+        "id": "source",
+        "terminal_id": "source:src",
+        "ll_v": 110000.0,
+        "angle_a_rad": 0.0,
+        "r_ohm": 0.0,
+        "x_ohm": 12.100000000000001,
+        "r0_ohm": null,
+        "x0_ohm": null,
+        "is_slack": true,
+        "participation": null,
+        "phase_pu": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "балансный источник прямой последовательности"
+        }
+      }
+    ],
+    "generators": [
+      {
+        "id": "g",
+        "terminal_id": "g:gen",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "mode": "pv",
+        "p_w": 50000000.0,
+        "q_var": 0.0,
+        "v_set_pu": 1.05,
+        "v_min_pu": 0.9,
+        "v_max_pu": 1.1,
+        "q_min_var": -100000000.0,
+        "q_max_var": 100000000.0,
+        "participation": null,
+        "ll_v": 110000.0,
+        "inertia_s": null,
+        "x_d_pu": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": null
+        }
+      }
+    ],
+    "inverters": [],
+    "storages": [],
+    "shunts": [],
+    "neutral_grounds": [],
+    "meters": [],
+    "study_faults": [],
+    "harmonics": [],
+    "assumptions": [],
+    "omissions": [],
+    "provenance": {
+      "source": "authored-analytical-case",
+      "quality": "nameplate",
+      "timestamp": null,
+      "uncertainty": null,
+      "note": null
+    }
+  },
+  "requested_motors": [],
+  "scenario": null,
+  "rms": {
+    "duration_s": 0.4,
+    "step_s": 0.001,
+    "tolerance": 1e-8,
+    "machines": [
+      {
+        "model": "GENROU",
+        "generator_id": "g",
+        "rated_va": 100000000.0,
+        "inertia_s": 4.0,
+        "x_d_prime_pu": 0.3,
+        "damping_pu": 0.0,
+        "governor": null,
+        "exciter": null,
+        "stabilizer": null,
+        "x_d_pu": 1.8,
+        "x_q_pu": 1.7,
+        "x_d_subtransient_pu": 0.25,
+        "x_q_prime_pu": 0.55,
+        "x_q_subtransient_pu": 0.25,
+        "leakage_pu": 0.15,
+        "armature_r_pu": 0.002,
+        "td_prime_s": 8.0,
+        "td_subtransient_s": 0.04,
+        "tq_prime_s": 0.8,
+        "tq_subtransient_s": 0.02,
+        "saturation": "quadratic",
+        "saturation_s10": 0.1,
+        "saturation_s12": 0.4
+      }
+    ],
+    "events": [
+      {
+        "time_s": 0.1,
+        "kind": "mechanical_step",
+        "equipment_id": "g",
+        "value": 0.01
+      }
+    ],
+    "faults": [
+      {
+        "node_id": "gen",
+        "apply_s": 0.2,
+        "clear_s": 0.25,
+        "r_ohm": 0.0,
+        "x_ohm": 24.2
+      }
+    ]
+  },
+  "options": {
+    "tolerance": 1e-10,
+    "max_iterations": 80,
+    "max_outer": 20,
+    "max_pv_refinements": 4,
+    "apply_regulators": true,
+    "inverter_current_limit_model": false,
+    "approximate_phase_shift": false
+  }
+}

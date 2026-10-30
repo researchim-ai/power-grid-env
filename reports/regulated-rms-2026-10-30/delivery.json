@@ -1,0 +1,28 @@
+{
+  "schema_version": "power-grid-env.regulated-rms-delivery/v1",
+  "code_sha256": "1d6b1dee14cbf263b5bf6e6fa01e42b46fedfe08743da128bdf213cef40918d5",
+  "full_tests": 291,
+  "additional_test": 1,
+  "all_passed": true,
+  "capability_metadata_refresh_targeted_tests_passed": 8,
+  "single_full_292_test_run": false,
+  "reference_source_sha256": "cc1f251f50aa65a7dd9f6d03568fe252a43cd5d61aeeaa5e4b056639f9e2d4b2",
+  "input_sha256": "3ef8714af63df279e24e81229e32f2842bf7151abf569177604e83c46fd369ca",
+  "implemented": [
+    "explicit_TGOV1_SEXS_IEEEST_passports",
+    "balanced_finite_bus_fault_and_clear",
+    "controller_saturation_and_recovery_checks",
+    "independent_coupled_ODE_reference",
+    "killable_RMS_worker_deadline_cancel_output_budgets",
+    "worker_code_network_settings_identity"
+  ],
+  "next": [
+    "GENROU_GENSAL_rotor_states",
+    "motors_converters",
+    "external_dynamic_cases",
+    "job_API_memory_disk_quotas"
+  ],
+  "industrial_profile_qualified": false,
+  "field_validated": false,
+  "os_sandbox": false
+}

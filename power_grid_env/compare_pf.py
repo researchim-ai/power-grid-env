@@ -59,14 +59,14 @@ def qualify_wheel() -> dict[str, Any]:
     root = Path(__file__).resolve().parents[1]
     wheel_dir = Path(tempfile.mkdtemp(prefix="pge-wheel-"))
     built = subprocess.run(
-        [sys.executable, "-m", "pip", "wheel", "--no-deps", "-w", str(wheel_dir), str(root)],
+        [sys.executable, "-m", "pip", "wheel", "--no-deps", "--no-build-isolation", "-w", str(wheel_dir), str(root)],
         check=False,
         capture_output=True,
         text=True,
     )
     wheels = sorted(wheel_dir.glob("power_grid_env-*.whl"))
     if built.returncode != 0 or not wheels:
-        return {"verdict": "fail", "reasons": ["wheel"], "other_machine": False, "released": False}
+        return {"verdict": "fail", "reasons": ["wheel"], "build_error": built.stderr[-4000:], "other_machine": False, "released": False}
     target = wheel_dir / "site"
     installed = subprocess.run(
         [sys.executable, "-m", "pip", "install", "--no-deps", "--target", str(target), str(wheels[0])],
@@ -76,22 +76,44 @@ def qualify_wheel() -> dict[str, Any]:
     )
     env = os.environ.copy()
     env["PYTHONPATH"] = str(target)
+    smoke = """
+import json
+import power_grid_env
+from power_grid_env.build import NetBuilder
+from power_grid_env.backend_opendss import solve_network
+b = NetBuilder('wheel', 'Wheel', 10., s_base_va=1e6)
+b.node('src'); b.node('load'); b.source('src', .05, .2)
+b.line_z1('src', 'load', .2+.4j, line_id='line')
+b.load('load', 100000., 20000., load_id='load')
+r = solve_network(b.build())
+assert r.status == 'converged', r.status
+print(json.dumps({'version': power_grid_env.__version__, 'path': power_grid_env.__file__, 'solve_status': r.status}))
+"""
     probed = subprocess.run(
-        [sys.executable, "-c", "import power_grid_env; print(power_grid_env.__version__)"],
+        [sys.executable, "-c", smoke],
         check=False,
         capture_output=True,
         text=True,
         cwd=tempfile.gettempdir(),
         env=env,
     )
-    version = probed.stdout.strip()
+    try:
+        import json
+        probe = json.loads(probed.stdout.strip())
+    except (ValueError, TypeError):
+        probe = {}
+    version = probe.get("version")
     reasons = []
-    if installed.returncode != 0 or probed.returncode != 0 or version != "0.1.0":
+    if (installed.returncode != 0 or probed.returncode != 0 or version != "0.1.0"
+            or not Path(probe.get("path", "/")).resolve().is_relative_to(target.resolve())):
         reasons.append("import")
     return {
         "verdict": "fail" if reasons else "pass",
         "reasons": reasons,
         "version": version,
+        "solve_status": probe.get("solve_status"),
+        "build_isolation": False,
+        "fresh_dependency_environment": False,
         "other_machine": False,
         "released": False,
         "city_claim": False,

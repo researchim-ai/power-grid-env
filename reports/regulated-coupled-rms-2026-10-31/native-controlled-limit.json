@@ -1,0 +1,33 @@
+{
+  "case": "controlled GENCLS, disconnected motor only",
+  "errors": [
+    {
+      "step_s": 0.004,
+      "g.delta": 4.283496639054252e-05,
+      "g.omega": 2.968557960447704e-06,
+      "g.TGOV1.valve_pu": 2.5135136992732177e-05,
+      "g.SEXS.field_pu": 2.9284673694673913e-05
+    },
+    {
+      "step_s": 0.002,
+      "g.delta": 1.0736032876879076e-05,
+      "g.omega": 7.420297083449157e-07,
+      "g.TGOV1.valve_pu": 6.298047615732605e-06,
+      "g.SEXS.field_pu": 8.526549367116054e-06
+    },
+    {
+      "step_s": 0.001,
+      "g.delta": 2.6734939180678152e-06,
+      "g.omega": 1.851522066775857e-07,
+      "g.TGOV1.valve_pu": 1.5684526079307037e-06,
+      "g.SEXS.field_pu": 6.03954447342403e-07
+    }
+  ],
+  "finest_limits": {
+    "g.delta": 0.0001,
+    "g.omega": 1e-05,
+    "g.TGOV1.valve_pu": 0.0001,
+    "g.SEXS.field_pu": 0.001
+  },
+  "passed": true
+}

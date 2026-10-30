@@ -1,0 +1,29 @@
+{
+  "case": "disconnected-motor GENCLS limit only",
+  "errors": [
+    {
+      "step_s": 0.005,
+      "g.delta": 0.00013762697852069683,
+      "g.omega": 9.413824933801607e-06
+    },
+    {
+      "step_s": 0.0025,
+      "g.delta": 3.4416955242547176e-05,
+      "g.omega": 2.3537530571271503e-06
+    },
+    {
+      "step_s": 0.00125,
+      "g.delta": 8.595684887771626e-06,
+      "g.omega": 5.887300182916277e-07
+    }
+  ],
+  "angle_error_reductions": [
+    3.998813304395928,
+    4.0039805660523164
+  ],
+  "finest_limits": {
+    "g.delta": 0.0001,
+    "g.omega": 1e-05
+  },
+  "passed": true
+}

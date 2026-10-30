@@ -64,6 +64,30 @@ def main(argv: list[str] | None = None) -> int:
 
     qualify = sub.add_parser("qualify", help="снимок готовности без заявления о выпуске")
     qualify.add_argument("--out", required=True)
+    qualify.add_argument("--profile", default="")
+    qualify.add_argument("--evidence", help="JSON index of hashed evidence artifacts")
+
+    plant = sub.add_parser("plant-study", help="замороженный набор режимов площадки")
+    plant.add_argument("--out", required=True)
+
+    run_spec = sub.add_parser("run-study", help="запуск сохранённого исследования")
+    run_spec.add_argument("spec")
+    run_spec.add_argument("--out", required=True)
+    run_spec.add_argument("--resume", action="store_true")
+    run_spec.add_argument("--max-steps", type=int)
+    run_spec.add_argument("--checkpoint-every", type=int, default=96)
+    run_spec.add_argument("--cancel-file")
+    run_spec.add_argument("--isolate", action="store_true", help="RMS worker with wall deadline")
+    run_spec.add_argument("--wall-timeout", type=float, default=None)
+
+    compare_motor = sub.add_parser("compare-motor-trace", help="сверка motor study с полной SI CSV-трассой")
+    for argument in ("study", "result", "trace", "protocol", "out"):
+        compare_motor.add_argument("--"+argument, required=True)
+
+    sensitivity = sub.add_parser("motor-sensitivity", help="ограниченный параметрический эксперимент motor study")
+    for argument in ("study", "protocol", "out"):
+        sensitivity.add_argument("--"+argument, required=True)
+    sensitivity.add_argument("--cancel-file")
 
     args = parser.parse_args(argv)
     if args.command == "import":
@@ -138,11 +162,88 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"time_s": payload["time_s"], "steps": len(payload["steps"])}, ensure_ascii=False))
         return 0
     if args.command == "qualify":
+        if args.profile:
+            from power_grid_env.evidence import qualify_profile
+
+            from power_grid_env.evidence import load_evidence
+
+            try:
+                records = load_evidence(Path(args.evidence)) if args.evidence else None
+                payload = qualify_profile(args.profile, records)
+            except (ValueError, OSError) as exc:
+                payload = {"profile": args.profile, "released": False, "verdict": "fail",
+                           "status": "invalid_evidence", "error": str(exc)}
+            write_json(Path(args.out) / "profile.json", payload)
+            print(json.dumps({"profile": payload["profile"], "released": payload["released"], "verdict": payload["verdict"]}, ensure_ascii=False))
+            return 0 if payload["verdict"] == "pass" else 1
+        if args.evidence:
+            parser.error("--evidence requires --profile")
         from power_grid_env.qualify import write_qualification
 
         payload = write_qualification(Path(args.out))
         print(json.dumps({"released": payload["released"]}, ensure_ascii=False))
         return 0
+    if args.command == "plant-study":
+        from power_grid_env.plant_study import run_plant_study
+
+        payload = run_plant_study()
+        write_json(Path(args.out) / "plant-study.json", payload)
+        print(json.dumps({"verdict": payload["verdict"], "scenarios": payload["scenario_count"], "profile_released": payload["profile_released"]}, ensure_ascii=False))
+        return 0 if payload["verdict"] == "pass" else 1
+    if args.command == "motor-sensitivity":
+        from power_grid_env.motor_sensitivity import MotorSensitivityProtocol, run_motor_sensitivity
+        from power_grid_env.study_spec import StudySpec
+        try:
+            spec = StudySpec.model_validate_json(Path(args.study).read_text())
+            protocol = MotorSensitivityProtocol.model_validate_json(Path(args.protocol).read_text())
+            result = run_motor_sensitivity(spec, protocol, Path(args.out),
+                cancelled=(lambda: Path(args.cancel_file).exists()) if args.cancel_file else None)
+        except (OSError, ValueError, TypeError) as exc:
+            result = {"completed": False, "all_cases_within_limits": False, "status": "rejected", "error": str(exc)}
+            print(str(exc)[:4000], file=sys.stderr)
+        print(json.dumps({k:result[k] for k in ("completed", "all_cases_within_limits", "status")}, ensure_ascii=False))
+        if result['status'] in {'cancelled', 'total_timeout'}:
+            return 3
+        return 0 if result['completed'] and result['all_cases_within_limits'] else 2
+
+    if args.command == "compare-motor-trace":
+        from power_grid_env.motor_trace import MotorTraceProtocol, compare_motor_trace
+        from power_grid_env.study_spec import StudySpec
+        try:
+            spec = StudySpec.model_validate_json(Path(args.study).read_text())
+            result = json.loads(Path(args.result).read_text())
+            protocol = MotorTraceProtocol.model_validate_json(Path(args.protocol).read_text())
+            comparison = compare_motor_trace(spec, result, Path(args.trace), protocol)
+        except (OSError, ValueError, TypeError, KeyError) as exc:
+            comparison = {"completed": False, "passed": False, "status": "rejected", "error": str(exc)}
+        write_json(Path(args.out), comparison)
+        print(json.dumps({"passed": comparison["passed"], "status": comparison["status"]}, ensure_ascii=False))
+        return 0 if comparison["passed"] else 2
+
+    if args.command == "run-study":
+        from power_grid_env.study_spec import run_study_document
+
+        qsts = False
+        try:
+            payload = json.loads(Path(args.spec).read_text(encoding="utf-8"))
+            if not isinstance(payload, dict):
+                raise ValueError("study document must be an object")
+            qsts = payload.get("study", payload.get("kind")) == "qsts"
+            report = run_study_document(payload, out=Path(args.out) if qsts else None,
+                                        resume=args.resume, max_steps=args.max_steps,
+                                        checkpoint_every=args.checkpoint_every, isolate=args.isolate, wall_timeout_s=args.wall_timeout,
+                                        cancelled=(lambda: Path(args.cancel_file).exists()) if args.cancel_file else None)
+        except (OSError, ValueError, RuntimeError) as exc:
+            report = {"solved": False, "completed": False, "status": "failed", "error": str(exc)}
+        # Never replace an existing successful result on a failed resume/open.
+        if not qsts:
+            write_json(Path(args.out), report)
+        elif report.get("status") in {"failed", "rejected"}:
+            write_json(Path(args.out) / "error.json", report)
+        print(json.dumps({"solved": report["solved"], "status": report["status"]}, ensure_ascii=False))
+        if report.get("status") in {"paused", "cancelled"}:
+            return 3
+        return 0 if report.get("completed", report["solved"]) else 2
     return 2
 
 

@@ -1,0 +1,104 @@
+{
+  "schema_version": "power-grid-env.industrial-delivery/v1",
+  "date": "2026-10-30",
+  "baseline_commit": "92da6aeb65d320472dc573f56ed8560c82c0836a",
+  "code_sha256": "ec799120b8ca09f3f2c5b1c70576b00e385b1d8cc79367708caf4b84f54ee079",
+  "environment": {
+    "python": "3.12.9 | packaged by Anaconda, Inc. | (main, Feb  6 2025, 18:56:27) [GCC 11.2.0]",
+    "platform": "Linux-6.17.0-22-generic-x86_64-with-glibc2.39",
+    "packages": {
+      "numpy": "2.2.6",
+      "scipy": "1.15.2",
+      "pydantic": "2.11.7",
+      "opendssdirect.py": "0.9.4",
+      "dss-python": "0.15.7",
+      "pytest": "9.1.1"
+    }
+  },
+  "verification": {
+    "full_run": {
+      "tests": 263,
+      "passed": 262,
+      "failed": 1,
+      "reason": "sandbox socket PermissionError"
+    },
+    "http_retry_outside_sandbox": "passed",
+    "additional_tests_passed": [
+      "test_reusing_native_context_clears_network_and_frequency_between_runs",
+      "test_resume_preserves_delayed_controls_and_pending_measurements"
+    ],
+    "final_targeted_run_passed": 18,
+    "current_collection": 265,
+    "single_full_green_run": false,
+    "wheel_real_pf_smoke": "passed",
+    "qsts_final": {
+      "verdict": "pass",
+      "evidence": "synthetic_runtime_and_same_engine_consistency",
+      "cases": [
+        {
+          "case": "radial",
+          "days": 30,
+          "step_s": 900,
+          "intervals": 2880,
+          "full_run_s": 12.989510254999914,
+          "demand_error_wh": 7.450580596923828e-08,
+          "final_voltage_error_pu": 0.0,
+          "continuation_byte_identical": true,
+          "retained_trace_steps": 2,
+          "retained_history_steps": 1,
+          "code_sha256": "ec799120b8ca09f3f2c5b1c70576b00e385b1d8cc79367708caf4b84f54ee079",
+          "study_sha256": "34afb97816cfc964f05cfc25c1e6e5a29d00f96074e75a592e452407216c8128",
+          "verdict": "pass"
+        },
+        {
+          "case": "mesh",
+          "days": 30,
+          "step_s": 900,
+          "intervals": 2880,
+          "full_run_s": 12.725440367999909,
+          "demand_error_wh": 7.450580596923828e-08,
+          "final_voltage_error_pu": 0.0,
+          "continuation_byte_identical": true,
+          "retained_trace_steps": 2,
+          "retained_history_steps": 1,
+          "code_sha256": "ec799120b8ca09f3f2c5b1c70576b00e385b1d8cc79367708caf4b84f54ee079",
+          "study_sha256": "0d8ac1f75ec69230ae6e331939137aa255985d3f919414351864ff2cb2fdcd17",
+          "verdict": "pass"
+        }
+      ],
+      "process_peak_rss_kib_linux": 141068,
+      "rss_is_process_lifetime_peak": true,
+      "repeats": 1,
+      "field_validated": false,
+      "two_external_feeders_qualified": false,
+      "competitive_superiority_proven": false
+    },
+    "cli_example": "completed",
+    "schema_export": "passed",
+    "git_diff_check": "passed"
+  },
+  "implemented": [
+    "full_pf_results",
+    "streaming_qsts",
+    "verified_atomic_checkpoints",
+    "resume_cancel_single_writer",
+    "bounded_ordered_parallel_solves",
+    "private_native_context_reuse",
+    "strict_evidence_metrics_and_artifacts",
+    "wheel_pf_smoke",
+    "linux_python_ci_matrix"
+  ],
+  "remaining": [
+    "two_external_feeders_full_production_qsts",
+    "general_network_to_andes_adapter",
+    "independent_rms_trajectories",
+    "network_normative_short_circuit_and_coordination",
+    "field_measurements",
+    "clean_dependency_install",
+    "disk_quotas_and_job_api",
+    "matched_competitive_benchmarks"
+  ],
+  "industrial_profile_released": false,
+  "competitive_superiority_proven": false,
+  "field_validated": false
+}

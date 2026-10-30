@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-30",
+  "code_sha256": "596d5148857bdac7b4cb8e7bc96ac16a419001366113f5c1c6f37daed4b867b0",
+  "tests": {
+    "tests": 404,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "features": [
+    "unified sparse generator/motor algebraic solve and jointly integrated states",
+    "PV and optional loaded-motor initialization",
+    "motor thermal trips and generator mechanical input steps on shared event boundaries"
+  ],
+  "study": "coupled_rms",
+  "backend": "scipy",
+  "generator_model": "fixed internal voltage GENCLS, zero stator R, speed-independent stator",
+  "independent_SI_cases": 6,
+  "reference": "reference.json",
+  "maximum_reference_errors": {
+    "m.q_var": 0.00927503890125081,
+    "source.p_w": 0.0275841245893389,
+    "m.speed_pu": 1.9553991759124756e-09,
+    "g.q_var": 0.0023154853843152523,
+    "g.omega": 3.7107139583270055e-10,
+    "g.current_pu": 6.3418210682897325e-09,
+    "source.q_var": 0.007619679410709068,
+    "g.p_w": 0.018182322499342263,
+    "m.e_real_pu": 2.6558344412563883e-09,
+    "m.e_imag_pu": 7.927204281887867e-09,
+    "m.bus_voltage_pu": 3.5467939696331996e-10,
+    "m.p_w": 0.03623260045424104,
+    "m.thermal_level": 3.47656431420873e-10,
+    "g.delta": 3.108222790260129e-09,
+    "m.current_pu": 3.372093071440929e-08
+  },
+  "maximum_kcl_residual_pu": 3.5704330589399866e-14,
+  "maximum_power_balance_residual_pu": 3.879023683162917e-14,
+  "native_check": "native-generator-limit.json",
+  "native_angle_error_reductions": [
+    3.998813304395928,
+    4.0039805660523164
+  ],
+  "transformer_snapshot_groups": [
+    "Dyn11",
+    "YNd1",
+    "Dyn5"
+  ],
+  "worker_smoke": "thermal-worker.json",
+  "versions": {
+    "python": "3.12.9",
+    "scipy": "1.15.2",
+    "numpy": "2.2.6",
+    "andes": "2.0.0"
+  },
+  "industrial_profile_qualified": false,
+  "field_validated": false,
+  "competitive_superiority_proven": false,
+  "limitations": [
+    "no GENROU/AVR/governor/PSS in the coupled profile",
+    "external slack required; no generator trip/reclose/islanding",
+    "no dynamic generator Q/current/field limits",
+    "one PV generator per canonical bus; no parallel reactive sharing",
+    "independent mixed reference covers one generator and one motor; multi-generator dynamic corpus still open",
+    "synthetic parameters only; no target equipment qualification",
+    "not OS sandbox or memory quota"
+  ]
+}

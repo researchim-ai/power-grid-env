@@ -1,0 +1,53 @@
+{
+  "completed": true,
+  "passed": true,
+  "status": "within_tolerance",
+  "study_id": "thermal-cold_trip",
+  "motor_id": "m",
+  "samples": 201,
+  "metrics": {
+    "current_a": {
+      "maximum_absolute_error": 2.2812190536569688e-07,
+      "rmse": 3.0204354497010496e-08,
+      "absolute_tolerance": 0.1,
+      "passed": true
+    },
+    "voltage_ll_v": {
+      "maximum_absolute_error": 2.41056113736704e-07,
+      "rmse": 3.269529203215852e-08,
+      "absolute_tolerance": 1.0,
+      "passed": true
+    },
+    "speed_pu": {
+      "maximum_absolute_error": 2.289152201129241e-11,
+      "rmse": 5.022030264607482e-12,
+      "absolute_tolerance": 2e-05,
+      "passed": true
+    }
+  },
+  "code_sha256": "a8b1aac9c2fbb3bb67c6e27ca2ff4b3cd29d9ea6093fa277ec73c8374d08c9d4",
+  "network_sha256": "cd377acee996d81bd1e5e8d1893d83dfd9145f98f5f0d42f773b647c43921dae",
+  "simulation_sha256": "3ca2a70fd0a1a5ec5232c11432757d3aaa58c2b9e9f688fecb12d8268a2fc4f1",
+  "protocol_sha256": "fdd2833fa30ae8b88786c7cd7f48839557bc77fda33cdf944ee7c8ccf75a118b",
+  "protocol": {
+    "schema_version": "power-grid-env.motor-trace/v1",
+    "study_id": "thermal-cold_trip",
+    "motor_id": "m",
+    "dataset_id": "synthetic-SI-rotor-flux-cold-trip-v1",
+    "source_uri": "benchmarks/thermal_motor_reference.py",
+    "source_type": "synthetic_reference",
+    "csv_sha256": "a95e4f67f52ce256bde86158826851eb6a1035f9cdcc121b5b1890b93aec6e61",
+    "used_for_parameter_fitting": false,
+    "time_offset_s": 0.0,
+    "maximum_sample_gap_s": 0.011,
+    "tolerances": {
+      "current_a": 0.1,
+      "voltage_ll_v": 1.0,
+      "speed_pu": 2e-05
+    }
+  },
+  "event_sampling": "right-continuous post-event limit at exact switching timestamps",
+  "provenance_authenticated": false,
+  "industrial_profile_qualified": false,
+  "field_validated": false
+}

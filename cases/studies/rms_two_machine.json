@@ -1,0 +1,567 @@
+{
+  "schema_version": "power-grid-env.study/v1",
+  "id": "two-machine",
+  "study": "rms",
+  "backend": "andes",
+  "network": {
+    "schema_version": "power-grid-env.network/v1",
+    "id": "multi",
+    "name": "Multi",
+    "s_base_va": 100000000.0,
+    "frequency_hz": 50.0,
+    "voltage_levels": [
+      {
+        "id": "vl0",
+        "nominal_ll_v": 110000.0,
+        "substation_id": null,
+        "s_base_va": null
+      }
+    ],
+    "connectivity_nodes": [
+      {
+        "id": "src",
+        "voltage_level_id": "vl0",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "x": null,
+        "y": null
+      },
+      {
+        "id": "g1",
+        "voltage_level_id": "vl0",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "x": null,
+        "y": null
+      },
+      {
+        "id": "g2",
+        "voltage_level_id": "vl0",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "x": null,
+        "y": null
+      }
+    ],
+    "terminals": [
+      {
+        "id": "source:src",
+        "equipment_id": "source",
+        "connectivity_node_id": "src",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "a:src",
+        "equipment_id": "a",
+        "connectivity_node_id": "src",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "a:g1",
+        "equipment_id": "a",
+        "connectivity_node_id": "g1",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "b:g1",
+        "equipment_id": "b",
+        "connectivity_node_id": "g1",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "b:g2",
+        "equipment_id": "b",
+        "connectivity_node_id": "g2",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "c:src",
+        "equipment_id": "c",
+        "connectivity_node_id": "src",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "c:g2",
+        "equipment_id": "c",
+        "connectivity_node_id": "g2",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "g1:g1",
+        "equipment_id": "g1",
+        "connectivity_node_id": "g1",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "g2:g2",
+        "equipment_id": "g2",
+        "connectivity_node_id": "g2",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "load:g2",
+        "equipment_id": "load",
+        "connectivity_node_id": "g2",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      }
+    ],
+    "lines": [
+      {
+        "id": "a",
+        "terminal_from": "a:src",
+        "terminal_to": "a:g1",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "length_m": 1000.0,
+        "r_ohm": [
+          [
+            0.3,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.3,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.3
+          ]
+        ],
+        "x_ohm": [
+          [
+            8.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            8.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            8.0
+          ]
+        ],
+        "b_siemens": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "rating_a": 400.0,
+        "emergency_rating_a": null,
+        "emergency_duration_s": null,
+        "kron_reduction": "forbidden",
+        "temperature_c": null,
+        "resistance_alpha_per_c": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "Z1 и взаимное сопротивление заданы аналитически"
+        }
+      },
+      {
+        "id": "b",
+        "terminal_from": "b:g1",
+        "terminal_to": "b:g2",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "length_m": 1000.0,
+        "r_ohm": [
+          [
+            0.2,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.2,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.2
+          ]
+        ],
+        "x_ohm": [
+          [
+            5.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            5.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            5.0
+          ]
+        ],
+        "b_siemens": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "rating_a": 400.0,
+        "emergency_rating_a": null,
+        "emergency_duration_s": null,
+        "kron_reduction": "forbidden",
+        "temperature_c": null,
+        "resistance_alpha_per_c": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "Z1 и взаимное сопротивление заданы аналитически"
+        }
+      },
+      {
+        "id": "c",
+        "terminal_from": "c:src",
+        "terminal_to": "c:g2",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "length_m": 1000.0,
+        "r_ohm": [
+          [
+            0.2,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.2,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.2
+          ]
+        ],
+        "x_ohm": [
+          [
+            10.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            10.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            10.0
+          ]
+        ],
+        "b_siemens": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "rating_a": 400.0,
+        "emergency_rating_a": null,
+        "emergency_duration_s": null,
+        "kron_reduction": "forbidden",
+        "temperature_c": null,
+        "resistance_alpha_per_c": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "Z1 и взаимное сопротивление заданы аналитически"
+        }
+      }
+    ],
+    "switches": [],
+    "transformers": [],
+    "loads": [
+      {
+        "id": "load",
+        "terminal_id": "load:g2",
+        "connection": "wye",
+        "grounding": {
+          "kind": "solid",
+          "r_ohm": null,
+          "x_ohm": null
+        },
+        "model": "constant_pq",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "p_w": {
+          "A": 3333333.3333333335,
+          "B": 3333333.3333333335,
+          "C": 3333333.3333333335
+        },
+        "q_var": {
+          "A": 666666.6666666666,
+          "B": 666666.6666666666,
+          "C": 666666.6666666666
+        },
+        "rated_kv": null,
+        "opendss_model": null,
+        "zip_z": null,
+        "zip_i": null,
+        "zip_p": null,
+        "zip_zq": null,
+        "zip_iq": null,
+        "zip_pq": null,
+        "vmin_pu": 0.0,
+        "vmax_pu": 1.5,
+        "critical": false,
+        "priority": 0,
+        "cold_load_multiplier": null,
+        "cold_load_tau_s": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": null
+        }
+      }
+    ],
+    "sources": [
+      {
+        "id": "source",
+        "terminal_id": "source:src",
+        "ll_v": 110000.0,
+        "angle_a_rad": 0.0,
+        "r_ohm": 0.1,
+        "x_ohm": 2.0,
+        "r0_ohm": null,
+        "x0_ohm": null,
+        "is_slack": true,
+        "participation": null,
+        "phase_pu": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "балансный источник прямой последовательности"
+        }
+      }
+    ],
+    "generators": [
+      {
+        "id": "g1",
+        "terminal_id": "g1:g1",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "mode": "pv",
+        "p_w": 30000000.0,
+        "q_var": 0.0,
+        "v_set_pu": 1.02,
+        "q_min_var": -100000000.0,
+        "q_max_var": 100000000.0,
+        "participation": null,
+        "ll_v": 110000.0,
+        "inertia_s": null,
+        "x_d_pu": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": null
+        }
+      },
+      {
+        "id": "g2",
+        "terminal_id": "g2:g2",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "mode": "pv",
+        "p_w": 20000000.0,
+        "q_var": 0.0,
+        "v_set_pu": 1.01,
+        "q_min_var": -100000000.0,
+        "q_max_var": 100000000.0,
+        "participation": null,
+        "ll_v": 110000.0,
+        "inertia_s": null,
+        "x_d_pu": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": null
+        }
+      }
+    ],
+    "inverters": [],
+    "storages": [],
+    "shunts": [],
+    "neutral_grounds": [],
+    "meters": [],
+    "study_faults": [],
+    "harmonics": [],
+    "assumptions": [],
+    "omissions": [],
+    "provenance": {
+      "source": "authored-analytical-case",
+      "quality": "nameplate",
+      "timestamp": null,
+      "uncertainty": null,
+      "note": null
+    }
+  },
+  "requested_motors": [],
+  "scenario": null,
+  "rms": {
+    "duration_s": 0.3,
+    "step_s": 0.005,
+    "tolerance": 1e-8,
+    "machines": [
+      {
+        "generator_id": "g1",
+        "rated_va": 100000000.0,
+        "inertia_s": 4.0,
+        "x_d_prime_pu": 0.3,
+        "damping_pu": 0.0
+      },
+      {
+        "generator_id": "g2",
+        "rated_va": 100000000.0,
+        "inertia_s": 4.0,
+        "x_d_prime_pu": 0.3,
+        "damping_pu": 0.0
+      }
+    ],
+    "events": [
+      {
+        "time_s": 0.1,
+        "kind": "load_scale",
+        "equipment_id": "load",
+        "value": 2.0
+      }
+    ]
+  },
+  "options": {
+    "tolerance": 1e-10,
+    "max_iterations": 80,
+    "max_outer": 20,
+    "apply_regulators": true,
+    "inverter_current_limit_model": false,
+    "approximate_phase_shift": false
+  }
+}

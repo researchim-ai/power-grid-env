@@ -1,0 +1,7 @@
+{
+  "method": "Lossless SMIB analytic swing frequency",
+  "expected_rad_per_s": 8.401494234228753,
+  "max_error_rad_per_s": 7.536518253914437e-08,
+  "tolerance_rad_per_s": 1e-06,
+  "passed": true
+}

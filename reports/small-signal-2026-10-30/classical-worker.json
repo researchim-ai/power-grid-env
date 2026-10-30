@@ -1,0 +1,147 @@
+{
+  "modes": [
+    {
+      "id": "mode_000",
+      "real_per_s": 0.0,
+      "imag_rad_per_s": -8.40149415886357,
+      "frequency_hz": 1.3371393247408228,
+      "damping_ratio": -0.0,
+      "participation": [
+        {
+          "state": "g.delta",
+          "factor": 0.5
+        },
+        {
+          "state": "g.omega",
+          "factor": 0.5
+        }
+      ]
+    },
+    {
+      "id": "mode_001",
+      "real_per_s": 0.0,
+      "imag_rad_per_s": 8.40149415886357,
+      "frequency_hz": 1.3371393247408228,
+      "damping_ratio": -0.0,
+      "participation": [
+        {
+          "state": "g.delta",
+          "factor": 0.5
+        },
+        {
+          "state": "g.omega",
+          "factor": 0.5
+        }
+      ]
+    }
+  ],
+  "spectral_abscissa_per_s": 0.0,
+  "linear_stability": "marginal_or_numerically_near_axis",
+  "eigenpair_residual": 1.7676065596538397e-19,
+  "eigenvector_condition_number": 37.3932611769469,
+  "participation_status": "computed_biorthogonal_magnitude_normalized_per_mode",
+  "stability_tolerance_per_s": 1e-08,
+  "solved": true,
+  "completed": true,
+  "status": "completed",
+  "time_domain_simulated": false,
+  "backend": "andes",
+  "backend_version": "2.0.0",
+  "study": "small_signal",
+  "scope": {
+    "ok": true,
+    "errors": [],
+    "model": "balanced_synchronous_machines",
+    "limitations": [
+      "positive sequence only",
+      "GENCLS is reduced order; GENROU uses transient/subtransient rotor states with algebraic stator",
+      "load is constant PQ during TDS",
+      "no switch operation or island qualification",
+      "no motor or converter dynamics",
+      "no field validation"
+    ]
+  },
+  "initial": {
+    "bus_voltage_pu": {
+      "bus_25a6634263c1b1f6": 1.0143099446463175,
+      "bus_3b6a765ede676559": 1.05
+    },
+    "bus_angle_rad": {
+      "bus_25a6634263c1b1f6": 0.04931458598508382,
+      "bus_3b6a765ede676559": 0.14334757446912938
+    }
+  },
+  "init_residual": 8.881784197001252e-16,
+  "mapping": {
+    "buses": {
+      "bus_25a6634263c1b1f6": 1,
+      "bus_3b6a765ede676559": 2
+    },
+    "lines": {
+      "line": "line_0"
+    },
+    "loads": {},
+    "machines": {
+      "g": "machine_0"
+    },
+    "machine_models": {
+      "g": "GENCLS"
+    },
+    "static_generators": {
+      "g": "pv_0"
+    },
+    "transformers": {},
+    "governors": {},
+    "exciters": {},
+    "stabilizers": {}
+  },
+  "state_names": [
+    "g.delta",
+    "g.omega"
+  ],
+  "state_matrix_per_s": [
+    [
+      0.0,
+      314.1592653589793
+    ],
+    [
+      -0.22467936452793605,
+      0.0
+    ]
+  ],
+  "controller_boundary_flags": [],
+  "linearization": "T^-1 (fx - fy gy^-1 gx); algebraic state elimination",
+  "participation_note": "Normalized modal state attribution, not energy or transient stability proof",
+  "code_sha256": "86c84f8770f15d1795cf1c695252c1b8661c6194558f19369e595ad13b5f45f2",
+  "network_sha256": "73199a389c9e5b35c1d0933e354cd5dc6608adb389e5951439e8d3c204e9739d",
+  "settings": {
+    "duration_s": 0.4,
+    "step_s": 0.005,
+    "tolerance": 1e-08,
+    "machines": [
+      {
+        "model": "GENCLS",
+        "generator_id": "g",
+        "rated_va": 100000000.0,
+        "inertia_s": 4.0,
+        "x_d_prime_pu": 0.3,
+        "damping_pu": 0.0,
+        "governor": null,
+        "exciter": null,
+        "stabilizer": null
+      }
+    ],
+    "events": [],
+    "faults": []
+  },
+  "industrial_profile_qualified": false,
+  "field_validated": false,
+  "study_id": "small-signal-classical",
+  "execution": {
+    "mode": "isolated_process",
+    "elapsed_s": 0.5315899009983696,
+    "timeout_s": 30.0,
+    "max_result_bytes": 64000000,
+    "os_sandbox": false
+  }
+}

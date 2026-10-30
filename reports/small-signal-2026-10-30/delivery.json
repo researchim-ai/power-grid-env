@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-30",
+  "code_sha256": "86c84f8770f15d1795cf1c695252c1b8661c6194558f19369e595ad13b5f45f2",
+  "tests": {
+    "tests": 304,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "features": [
+    "GENCLS/GENROU operating-point DAE eigenanalysis",
+    "normalized biorthogonal modal participation",
+    "limiter-boundary and degenerate-mode diagnostics",
+    "direct and isolated CLI"
+  ],
+  "numerical_reference": "reference.json",
+  "classical_reference": "classical-reference.json",
+  "limitations": [
+    "8 machines / 256 dynamic states; dense eigenanalysis",
+    "local linearization only",
+    "GENSAL not implemented",
+    "no field qualification or OS/memory sandbox"
+  ],
+  "industrial_profile_qualified": false,
+  "field_validated": false
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": "power-grid-env.motor-trace/v1",
+  "study_id": "thermal-cold_trip",
+  "motor_id": "m",
+  "dataset_id": "synthetic-SI-rotor-flux-cold-trip-v1",
+  "source_uri": "benchmarks/thermal_motor_reference.py",
+  "source_type": "synthetic_reference",
+  "csv_sha256": "a95e4f67f52ce256bde86158826851eb6a1035f9cdcc121b5b1890b93aec6e61",
+  "used_for_parameter_fitting": false,
+  "time_offset_s": 0.0,
+  "maximum_sample_gap_s": 0.011,
+  "tolerances": {
+    "current_a": 0.1,
+    "voltage_ll_v": 1.0,
+    "speed_pu": 0.00002
+  }
+}

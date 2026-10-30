@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class Scenario(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
     schema_version: str = "power-grid-env.scenario/v1"
     id: str
@@ -41,6 +41,8 @@ class Scenario(BaseModel):
 
     @model_validator(mode="after")
     def _bounds(self) -> "Scenario":
+        if any(delay < 0 for delay in self.meter_delay_s.values()):
+            raise ValueError("meter delays must be nonnegative")
         if self.control_interval_s <= 0:
             raise ValueError("control_interval_s должен быть положительным")
         if self.horizon_s <= 0:

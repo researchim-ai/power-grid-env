@@ -1,0 +1,74 @@
+{
+  "date": "2026-10-30",
+  "code_sha256": "10c78a2f4357572900e17cd4bedba00c5b0db80bc9ebced59db5f2b989d683ac",
+  "tests": {
+    "tests": 388,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "features": [
+    "frozen OAT/Cartesian parameter points",
+    "per-point/total execution deadlines and bounded retained artifacts",
+    "fixed speed/current/voltage and sampled connected-recovery criteria",
+    "invalid/missing/failed points make assessment inconclusive"
+  ],
+  "independent_parameter_points": 7,
+  "reference": "reference.json",
+  "experiment": "experiment/run.json",
+  "maximum_reference_errors": {
+    "speed_pu": 3.814145665970159e-09,
+    "e_real_pu": 1.1310058112279364e-08,
+    "e_imag_pu": 6.094312665627655e-09,
+    "current_pu": 5.185737306234728e-08,
+    "bus_voltage_pu": 3.333621156897948e-10,
+    "p_w": 0.026090487837791443,
+    "q_var": 0.05317313061095774
+  },
+  "sampled_envelope": {
+    "m": {
+      "final_speed_pu": {
+        "minimum": 0.9838225445067559,
+        "maximum": 0.9891301087961547,
+        "available_cases": 7
+      },
+      "minimum_sampled_bus_voltage_pu": {
+        "minimum": 0.4882354391949791,
+        "maximum": 0.4897188843520871,
+        "available_cases": 7
+      },
+      "peak_sampled_current_pu": {
+        "minimum": 4.146656780932727,
+        "maximum": 4.351528392295544,
+        "available_cases": 7
+      },
+      "recovery_window_start_s": {
+        "minimum": 0.56,
+        "maximum": 0.56,
+        "available_cases": 7
+      },
+      "recovery_confirmed_s": {
+        "minimum": 0.71,
+        "maximum": 0.71,
+        "available_cases": 7
+      },
+      "recovery_delay_s": {
+        "minimum": 0.20999999999999996,
+        "maximum": 0.20999999999999996,
+        "available_cases": 7
+      }
+    }
+  },
+  "all_sampled_cases_within_declared_limits": true,
+  "interval_wide_robustness_proven": false,
+  "industrial_profile_qualified": false,
+  "field_validated": false,
+  "limitations": [
+    "finite declared samples and synthetic parameter ranges only",
+    "no probability or confidence interval",
+    "sampled extrema/recovery, not continuous monitor",
+    "independent operating-point initialization at each point",
+    "no OS memory/disk quota or hard real-time guarantee",
+    "no target-equipment parameter validation"
+  ]
+}

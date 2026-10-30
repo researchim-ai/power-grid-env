@@ -1,0 +1,40 @@
+{
+  "verdict": "pass",
+  "reference": "analytic lossless SMIB PF and independent scipy RK45",
+  "cases": [
+    {
+      "step_s": 0.01,
+      "angle_error_rad": 5.964551996084921e-06,
+      "speed_error_pu": 1.790698147541292e-07,
+      "pf_angle_error_rad": 5.563764032823215e-09,
+      "init_residual": 8.881784197001252e-16,
+      "code_sha256": "19ca171b763c1684ea3a67272cee8dc8796191df03e3dacc64a2c9346d23995f",
+      "network_sha256": "e55a5dc0c37d410350c1a8bada0a7d413000ecd9b0e7f5afeedcaa39a86c43c7"
+    },
+    {
+      "step_s": 0.005,
+      "angle_error_rad": 1.503741312081086e-06,
+      "speed_error_pu": 4.465685399246411e-08,
+      "pf_angle_error_rad": 5.563764032823215e-09,
+      "init_residual": 8.881784197001252e-16,
+      "code_sha256": "19ca171b763c1684ea3a67272cee8dc8796191df03e3dacc64a2c9346d23995f",
+      "network_sha256": "e55a5dc0c37d410350c1a8bada0a7d413000ecd9b0e7f5afeedcaa39a86c43c7"
+    },
+    {
+      "step_s": 0.0025,
+      "angle_error_rad": 3.912586473142632e-07,
+      "speed_error_pu": 9.14338027513395e-09,
+      "pf_angle_error_rad": 5.563764032823215e-09,
+      "init_residual": 8.881784197001252e-16,
+      "code_sha256": "19ca171b763c1684ea3a67272cee8dc8796191df03e3dacc64a2c9346d23995f",
+      "network_sha256": "e55a5dc0c37d410350c1a8bada0a7d413000ecd9b0e7f5afeedcaa39a86c43c7"
+    }
+  ],
+  "step_error_ratios": [
+    3.966474784037386,
+    3.8433433290313066
+  ],
+  "industrial_profile_qualified": false,
+  "field_validated": false,
+  "scope": "one declared classical SMIB; no regulator/motor qualification"
+}

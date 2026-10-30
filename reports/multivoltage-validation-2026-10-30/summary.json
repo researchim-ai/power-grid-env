@@ -1,0 +1,61 @@
+{
+  "verdict": "pass",
+  "code_sha256": "ee7052d1e623da66f7bc335c87efb194908064ff97cd96eaf4fba3e95d58616d",
+  "transformer_cases": [
+    {
+      "group": "YNyn0",
+      "tap_hv": 1.0,
+      "tap_lv": 1.0,
+      "max_voltage_gap_pu": 2.0697129565760974e-09,
+      "max_angle_gap_rad": 2.710919145415547e-09,
+      "dae_init_residual": 5.434194760844946e-14,
+      "completed": true
+    },
+    {
+      "group": "Dyn11",
+      "tap_hv": 1.0,
+      "tap_lv": 1.025,
+      "max_voltage_gap_pu": 2.0236423647901347e-09,
+      "max_angle_gap_rad": 2.578407265474425e-09,
+      "dae_init_residual": 2.3154811401582265e-12,
+      "completed": true
+    },
+    {
+      "group": "YNd1",
+      "tap_hv": 1.025,
+      "tap_lv": 1.0,
+      "max_voltage_gap_pu": 3.639211709760559e-09,
+      "max_angle_gap_rad": 1.8304316951045507e-09,
+      "dae_init_residual": 8.828493491819245e-12,
+      "completed": true
+    },
+    {
+      "group": "Dyn5",
+      "tap_hv": 1.0,
+      "tap_lv": 1.0,
+      "max_voltage_gap_pu": 2.0900741137808154e-09,
+      "max_angle_gap_rad": 2.6573512279526312e-09,
+      "dae_init_residual": 5.0796172823552865e-14,
+      "completed": true
+    },
+    {
+      "group": "YNd5",
+      "tap_hv": 1.0,
+      "tap_lv": 1.0,
+      "max_voltage_gap_pu": 1.241159952591886e-09,
+      "max_angle_gap_rad": 2.166680168613766e-09,
+      "dae_init_residual": 5.0796172823552865e-14,
+      "completed": true
+    }
+  ],
+  "pv_regression_closed": true,
+  "clock5_phase_mapping_fixed": true,
+  "field_validated": false,
+  "industrial_profile_qualified": false,
+  "limitations": [
+    "balanced two-winding RMS",
+    "zero magnetization and no-load loss",
+    "no dynamic LTC",
+    "no general regulator or motor qualification"
+  ]
+}

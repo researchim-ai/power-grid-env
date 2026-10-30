@@ -1,0 +1,40 @@
+{
+  "files": [
+    {
+      "path": "delivery.json",
+      "sha256": "d58cf4688e4f143b99da5f9709686c31e20fcdeaa840d62c6a2f8ca8036d6925"
+    },
+    {
+      "path": "saturated/summary.json",
+      "sha256": "a7cbec712e7a8c9e6b7d47abcb72129a971dbd0ade68b893b86ca3d05cd96750"
+    },
+    {
+      "path": "saturated/trajectory-0.0005.json",
+      "sha256": "444ad05ea3148b347b17e606e2abecc0a32fe1c3b0e1a36b98fc51692c2abf7a"
+    },
+    {
+      "path": "saturated/trajectory-0.001.json",
+      "sha256": "4e99531eba89730e7a31ec8c0bc99e7678d7aea80198c779e91343e12ee20d27"
+    },
+    {
+      "path": "tests.xml",
+      "sha256": "c640649cc56061f656d9ff368cbca1d4b4cd439e7e3f57451363f28608321bca"
+    },
+    {
+      "path": "unsaturated/summary.json",
+      "sha256": "86569894b50dc7703e237c05c4babc114a8b1f0696d5df52517c8fdaa8d8af73"
+    },
+    {
+      "path": "unsaturated/trajectory-0.0005.json",
+      "sha256": "e1b88947ef978db1df9275167c7e625fe2f5a1fd1cbbed0dd942b6f43101884d"
+    },
+    {
+      "path": "unsaturated/trajectory-0.001.json",
+      "sha256": "8e458905e1bd58fd3f7fc1bae5f49a310021e38004dc88ce59473e9406a314b1"
+    },
+    {
+      "path": "worker-smoke.json",
+      "sha256": "d78e1696a88f5166c21f6533dd16e7d0b677256f0ad689068502ae0e2f3a1d84"
+    }
+  ]
+}

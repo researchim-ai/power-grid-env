@@ -29,7 +29,11 @@ def compile_scope(network: Network, study: StudyName) -> dict[str, Any]:
             errors.append("harmonic: нет частотной модели")
         else:
             for component in network.harmonics:
-                supported.append(f"harmonic:{component.order}:{component.quality}")
+                if not component.bus_id or not component.phases:
+                    errors.append(f"порядок {component.order}: спектр не привязан к узлу и фазам")
+                    blocked.append({"id": f"harmonic:{component.order}", "reason": "спектр не привязан к узлу и фазам"})
+                    continue
+                supported.append(f"harmonic:{component.order}:{component.bus_id}:{''.join(component.phases)}")
                 if component.quality == "declared":
                     warnings.append(f"порядок {component.order}: спектр объявлен, это не измерение")
                 else:

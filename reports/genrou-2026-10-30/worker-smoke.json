@@ -1,0 +1,15 @@
+{
+  "completed": true,
+  "execution": {
+    "mode": "isolated_process",
+    "elapsed_s": 1.5154939540007035,
+    "timeout_s": 30.0,
+    "max_result_bytes": 64000000,
+    "os_sandbox": false
+  },
+  "machine_models": {
+    "g": "GENROU"
+  },
+  "control_limit_violations": [],
+  "code_sha256": "05145376d69f3281d5615c4e6bfd9df221086940aae36e92b71c9345174595e5"
+}

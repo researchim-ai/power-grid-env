@@ -1,0 +1,17 @@
+{
+  "benchmarks/genrou_reference.py": "27d1f0a784afbf1d7c6f94cb1dc77cb15fd8cea511df157a84aefffc6d70438d",
+  "benchmarks/small_signal_reference.py": "6e89212ab46295ad76c509318042aa19b914db7c7d8f6af675c046ffef05bd89",
+  "cases/studies/small_signal_classical.json": "7a1f10ad25a155e6c3be3afc10bf6caafca1dd6120a23815c79636d4b7592ff8",
+  "cases/studies/small_signal_genrou.json": "371e6e87f5c7b9cb191a93242d4546fb594a3feee2323467d033e7086ae72a26",
+  "cases/studies/small_signal_genrou_saturated.json": "4bbf54016a2b611c8d6d74e7e51e5bee8939e46cc16dd1995a3d7f0c020e91f8",
+  "docs/SMALL_SIGNAL_RU.md": "5ed06e19372d564bf31d2759470b845ba0a738c7aa302b3e16a7a8067fa6e17f",
+  "power_grid_env/small_signal.py": "38a232920c76e2f7800754d50b4140b91ea915999a36875c2dd29e166825ae82",
+  "reports/small-signal-2026-10-30/classical-reference.json": "adeaa8e8cb90687c537b59029295f4812e7b12055ffb210fbe3cb1a4e5f15047",
+  "reports/small-signal-2026-10-30/classical-worker.json": "5db8db81d4d136885b1d73060c093d6e4748e203338ce4237d9e28bd5eaf2aab",
+  "reports/small-signal-2026-10-30/delivery.json": "5450e4a4136fb6d3bbee2908f4c1853fdc47d68310acbf123cd7f7a741ac45fd",
+  "reports/small-signal-2026-10-30/genrou.json": "b0c82cbd962607dd4a5744ae6916c0e2cbcf91f99cdd6cca4b8485749504dec2",
+  "reports/small-signal-2026-10-30/genrou_saturated.json": "d96bcbd497072db04404a7302b5a2a3b0b948c8db030c905a08315d06afaadb4",
+  "reports/small-signal-2026-10-30/pytest.xml": "f71266da7025b755a9ca1d7c26e2ec457fe7342be42f6144aecb97c4314cd5b7",
+  "reports/small-signal-2026-10-30/reference.json": "f03cbf6ddf5c02f5424994bc53c3e7de415ee2a3c65fe656b3b59df9b6674587",
+  "tests/test_small_signal.py": "0ed0241cb6ef5053092080042fe8bbe7fd636910ff22d9c507944bd49e8fdeb0"
+}

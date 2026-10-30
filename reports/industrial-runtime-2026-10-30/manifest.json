@@ -1,0 +1,40 @@
+{
+  "files": [
+    {
+      "path": "advanced-studies.json",
+      "sha256": "63ca0d07fe5ba198cc7d9e0a734f2c215a2a76c090da6bdfa0af53dd0c7e3882"
+    },
+    {
+      "path": "after-context-fix.json",
+      "sha256": "4414285e793e44c2a49272ceb7c66d20fe4dfc532ca85f258e9159812f4a5cc8"
+    },
+    {
+      "path": "before-context-fix.json",
+      "sha256": "2076f90ea924cb4b9bb45db8c3246f99e1037d392e6a1aa8bec3d4481284b880"
+    },
+    {
+      "path": "delivery.json",
+      "sha256": "c4a814c7391c30d817fc41a6e388c7886a50587361962bf14180d3da7dcb625f"
+    },
+    {
+      "path": "final-context-fix.json",
+      "sha256": "001332bb224f7ee9f9eba42cc59ae8e136d9e38ab0a3eb0135c7864f208ef7c6"
+    },
+    {
+      "path": "http-retry.xml",
+      "sha256": "e683599a3885248ebdfd3deeaa830e7cfb018b4971c80b2d23dbda37c03a313d"
+    },
+    {
+      "path": "industrial-dynamic-studies.json",
+      "sha256": "b2c4a2d04682bfc4d483cfcabc847c99e76639847c5e5f27960d6bba0d19b116"
+    },
+    {
+      "path": "industrial-network-studies.json",
+      "sha256": "9d97d49bdcb01c8a8a77424f86e4d3ddb78d52249907412a71dcd5817eb24004"
+    },
+    {
+      "path": "tests.xml",
+      "sha256": "2d8c50ea7578dc7f9f82317c5d677bfed9c787edb3e853336bf0a4d97359cfc8"
+    }
+  ]
+}

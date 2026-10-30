@@ -1,0 +1,415 @@
+{
+  "schema_version": "power-grid-env.motor-sensitivity-result/v1",
+  "completed": true,
+  "status": "completed",
+  "all_cases_within_limits": true,
+  "engineering_assessment": "within_sampled_limits",
+  "expected_cases": 7,
+  "attempted_cases": 7,
+  "cases": [
+    {
+      "id": "case-000",
+      "nominal": true,
+      "factors": {
+        "inertia": 1.0,
+        "rotor": 1.0,
+        "grid": 1.0
+      },
+      "numerically_completed": true,
+      "within_limits": true,
+      "observations": {
+        "m": {
+          "metrics": {
+            "final_speed_pu": 0.9864681428274644,
+            "minimum_sampled_bus_voltage_pu": 0.48897754520042674,
+            "peak_sampled_current_pu": 4.239720507265345,
+            "connected_at_end": true,
+            "recovery_window_start_s": 0.56,
+            "recovery_confirmed_s": 0.71,
+            "recovery_delay_s": 0.20999999999999996
+          },
+          "checks": {
+            "final_speed": true,
+            "bus_voltage": true,
+            "current": true,
+            "connected": true,
+            "recovery": true
+          },
+          "within_limits": true
+        }
+      },
+      "delta_from_baseline": {
+        "m": {
+          "final_speed_pu": 0.0,
+          "minimum_sampled_bus_voltage_pu": 0.0,
+          "peak_sampled_current_pu": 0.0,
+          "recovery_window_start_s": 0.0,
+          "recovery_confirmed_s": 0.0,
+          "recovery_delay_s": 0.0
+        }
+      },
+      "study_sha256": "7ba1829a93f76221c865898b79e10ff9d0d4dff37571da286837366bb62c6421",
+      "status": "completed"
+    },
+    {
+      "id": "case-001",
+      "nominal": false,
+      "factors": {
+        "inertia": 0.8,
+        "rotor": 1.0,
+        "grid": 1.0
+      },
+      "numerically_completed": true,
+      "within_limits": true,
+      "observations": {
+        "m": {
+          "metrics": {
+            "final_speed_pu": 0.9864732379440218,
+            "minimum_sampled_bus_voltage_pu": 0.48824163313762203,
+            "peak_sampled_current_pu": 4.351528392295544,
+            "connected_at_end": true,
+            "recovery_window_start_s": 0.56,
+            "recovery_confirmed_s": 0.71,
+            "recovery_delay_s": 0.20999999999999996
+          },
+          "checks": {
+            "final_speed": true,
+            "bus_voltage": true,
+            "current": true,
+            "connected": true,
+            "recovery": true
+          },
+          "within_limits": true
+        }
+      },
+      "delta_from_baseline": {
+        "m": {
+          "final_speed_pu": 5.0951165573298596e-06,
+          "minimum_sampled_bus_voltage_pu": -0.0007359120628047111,
+          "peak_sampled_current_pu": 0.11180788503019823,
+          "recovery_window_start_s": 0.0,
+          "recovery_confirmed_s": 0.0,
+          "recovery_delay_s": 0.0
+        }
+      },
+      "study_sha256": "e06db78998d46a4925e5130db80f4878ababd88277e4a0b20a98c48b0a895a30",
+      "status": "completed"
+    },
+    {
+      "id": "case-002",
+      "nominal": false,
+      "factors": {
+        "inertia": 1.2,
+        "rotor": 1.0,
+        "grid": 1.0
+      },
+      "numerically_completed": true,
+      "within_limits": true,
+      "observations": {
+        "m": {
+          "metrics": {
+            "final_speed_pu": 0.9864717276476505,
+            "minimum_sampled_bus_voltage_pu": 0.48958267082146323,
+            "peak_sampled_current_pu": 4.14715528007798,
+            "connected_at_end": true,
+            "recovery_window_start_s": 0.56,
+            "recovery_confirmed_s": 0.71,
+            "recovery_delay_s": 0.20999999999999996
+          },
+          "checks": {
+            "final_speed": true,
+            "bus_voltage": true,
+            "current": true,
+            "connected": true,
+            "recovery": true
+          },
+          "within_limits": true
+        }
+      },
+      "delta_from_baseline": {
+        "m": {
+          "final_speed_pu": 3.5848201860311235e-06,
+          "minimum_sampled_bus_voltage_pu": 0.0006051256210364842,
+          "peak_sampled_current_pu": -0.09256522718736537,
+          "recovery_window_start_s": 0.0,
+          "recovery_confirmed_s": 0.0,
+          "recovery_delay_s": 0.0
+        }
+      },
+      "study_sha256": "5b4c948f5c78c857a371692d549d1ab441e38890dfa60eb286a9fb96fe64a6e7",
+      "status": "completed"
+    },
+    {
+      "id": "case-003",
+      "nominal": false,
+      "factors": {
+        "inertia": 1.0,
+        "rotor": 0.8,
+        "grid": 1.0
+      },
+      "numerically_completed": true,
+      "within_limits": true,
+      "observations": {
+        "m": {
+          "metrics": {
+            "final_speed_pu": 0.9891301087961547,
+            "minimum_sampled_bus_voltage_pu": 0.48842332407909833,
+            "peak_sampled_current_pu": 4.327867485941337,
+            "connected_at_end": true,
+            "recovery_window_start_s": 0.56,
+            "recovery_confirmed_s": 0.71,
+            "recovery_delay_s": 0.20999999999999996
+          },
+          "checks": {
+            "final_speed": true,
+            "bus_voltage": true,
+            "current": true,
+            "connected": true,
+            "recovery": true
+          },
+          "within_limits": true
+        }
+      },
+      "delta_from_baseline": {
+        "m": {
+          "final_speed_pu": 0.002661965968690283,
+          "minimum_sampled_bus_voltage_pu": -0.0005542211213284132,
+          "peak_sampled_current_pu": 0.08814697867599186,
+          "recovery_window_start_s": 0.0,
+          "recovery_confirmed_s": 0.0,
+          "recovery_delay_s": 0.0
+        }
+      },
+      "study_sha256": "05d606d299b95f1a550932a693cf9922c0051b38eaa0868649d7a5c8f9329f3d",
+      "status": "completed"
+    },
+    {
+      "id": "case-004",
+      "nominal": false,
+      "factors": {
+        "inertia": 1.0,
+        "rotor": 1.2,
+        "grid": 1.0
+      },
+      "numerically_completed": true,
+      "within_limits": true,
+      "observations": {
+        "m": {
+          "metrics": {
+            "final_speed_pu": 0.9838225445067559,
+            "minimum_sampled_bus_voltage_pu": 0.48957236561862394,
+            "peak_sampled_current_pu": 4.146656780932727,
+            "connected_at_end": true,
+            "recovery_window_start_s": 0.56,
+            "recovery_confirmed_s": 0.71,
+            "recovery_delay_s": 0.20999999999999996
+          },
+          "checks": {
+            "final_speed": true,
+            "bus_voltage": true,
+            "current": true,
+            "connected": true,
+            "recovery": true
+          },
+          "within_limits": true
+        }
+      },
+      "delta_from_baseline": {
+        "m": {
+          "final_speed_pu": -0.002645598320708542,
+          "minimum_sampled_bus_voltage_pu": 0.000594820418197195,
+          "peak_sampled_current_pu": -0.09306372633261883,
+          "recovery_window_start_s": 0.0,
+          "recovery_confirmed_s": 0.0,
+          "recovery_delay_s": 0.0
+        }
+      },
+      "study_sha256": "f170315f9412aebd5cb48fec26388e155f3dde9136a508ce2c423fe7cb02e90a",
+      "status": "completed"
+    },
+    {
+      "id": "case-005",
+      "nominal": false,
+      "factors": {
+        "inertia": 1.0,
+        "rotor": 1.0,
+        "grid": 0.8
+      },
+      "numerically_completed": true,
+      "within_limits": true,
+      "observations": {
+        "m": {
+          "metrics": {
+            "final_speed_pu": 0.9864755263979283,
+            "minimum_sampled_bus_voltage_pu": 0.4897188843520871,
+            "peak_sampled_current_pu": 4.243348806996127,
+            "connected_at_end": true,
+            "recovery_window_start_s": 0.56,
+            "recovery_confirmed_s": 0.71,
+            "recovery_delay_s": 0.20999999999999996
+          },
+          "checks": {
+            "final_speed": true,
+            "bus_voltage": true,
+            "current": true,
+            "connected": true,
+            "recovery": true
+          },
+          "within_limits": true
+        }
+      },
+      "delta_from_baseline": {
+        "m": {
+          "final_speed_pu": 7.383570463925793e-06,
+          "minimum_sampled_bus_voltage_pu": 0.0007413391516603585,
+          "peak_sampled_current_pu": 0.0036282997307814924,
+          "recovery_window_start_s": 0.0,
+          "recovery_confirmed_s": 0.0,
+          "recovery_delay_s": 0.0
+        }
+      },
+      "study_sha256": "786a7b1785d2db7428eec83439758d26a1924901457ad0e3ebd0c88a480a32c9",
+      "status": "completed"
+    },
+    {
+      "id": "case-006",
+      "nominal": false,
+      "factors": {
+        "inertia": 1.0,
+        "rotor": 1.0,
+        "grid": 1.2
+      },
+      "numerically_completed": true,
+      "within_limits": true,
+      "observations": {
+        "m": {
+          "metrics": {
+            "final_speed_pu": 0.9864607629870211,
+            "minimum_sampled_bus_voltage_pu": 0.4882354391949791,
+            "peak_sampled_current_pu": 4.23608129423925,
+            "connected_at_end": true,
+            "recovery_window_start_s": 0.56,
+            "recovery_confirmed_s": 0.71,
+            "recovery_delay_s": 0.20999999999999996
+          },
+          "checks": {
+            "final_speed": true,
+            "bus_voltage": true,
+            "current": true,
+            "connected": true,
+            "recovery": true
+          },
+          "within_limits": true
+        }
+      },
+      "delta_from_baseline": {
+        "m": {
+          "final_speed_pu": -7.37984044330009e-06,
+          "minimum_sampled_bus_voltage_pu": -0.0007421060054476625,
+          "peak_sampled_current_pu": -0.003639213026095156,
+          "recovery_window_start_s": 0.0,
+          "recovery_confirmed_s": 0.0,
+          "recovery_delay_s": 0.0
+        }
+      },
+      "study_sha256": "7e2f741be19313997ae4e45e71cc570f4792985394dc102f10fd153ffe469f57",
+      "status": "completed"
+    }
+  ],
+  "code_sha256": "10c78a2f4357572900e17cd4bedba00c5b0db80bc9ebced59db5f2b989d683ac",
+  "base_study_sha256": "7269e5cdc7bb6e7c68d09641b0ea111a16e1d38e487b25e2376719a2f0a3b623",
+  "protocol_sha256": "faac818597f9dd705ae657cf74c8aae0fd2adec85a74aa0f30f3c6084cd9179e",
+  "protocol": {
+    "schema_version": "power-grid-env.motor-sensitivity/v1",
+    "id": "loaded-motor-sag-parameter-screen",
+    "design": "one_at_a_time",
+    "axes": [
+      {
+        "id": "inertia",
+        "parameter": "inertia_s",
+        "equipment_id": "m",
+        "factors": [
+          0.8,
+          1.0,
+          1.2
+        ]
+      },
+      {
+        "id": "rotor",
+        "parameter": "rotor_r_pu",
+        "equipment_id": "m",
+        "factors": [
+          0.8,
+          1.0,
+          1.2
+        ]
+      },
+      {
+        "id": "grid",
+        "parameter": "source_series_impedance",
+        "equipment_id": "source",
+        "factors": [
+          0.8,
+          1.0,
+          1.2
+        ]
+      }
+    ],
+    "observations": [
+      {
+        "motor_id": "m",
+        "minimum_final_speed_pu": 0.95,
+        "minimum_bus_voltage_pu": 0.4,
+        "maximum_current_pu": 8.0,
+        "require_connected_at_end": true,
+        "recovery": {
+          "from_s": 0.5,
+          "minimum_speed_pu": 0.95,
+          "dwell_s": 0.15,
+          "maximum_delay_s": 0.7
+        }
+      }
+    ],
+    "per_case_timeout_s": 30.0,
+    "total_timeout_s": 300.0,
+    "maximum_output_bytes": 128000000
+  },
+  "elapsed_s": 2.6800161050000497,
+  "scope_note": "Finite declared samples only; no probability, interval-wide or global robustness guarantee",
+  "industrial_profile_qualified": false,
+  "field_validated": false,
+  "sampled_envelope": {
+    "m": {
+      "final_speed_pu": {
+        "minimum": 0.9838225445067559,
+        "maximum": 0.9891301087961547,
+        "available_cases": 7
+      },
+      "minimum_sampled_bus_voltage_pu": {
+        "minimum": 0.4882354391949791,
+        "maximum": 0.4897188843520871,
+        "available_cases": 7
+      },
+      "peak_sampled_current_pu": {
+        "minimum": 4.146656780932727,
+        "maximum": 4.351528392295544,
+        "available_cases": 7
+      },
+      "recovery_window_start_s": {
+        "minimum": 0.56,
+        "maximum": 0.56,
+        "available_cases": 7
+      },
+      "recovery_confirmed_s": {
+        "minimum": 0.71,
+        "maximum": 0.71,
+        "available_cases": 7
+      },
+      "recovery_delay_s": {
+        "minimum": 0.20999999999999996,
+        "maximum": 0.20999999999999996,
+        "available_cases": 7
+      }
+    }
+  }
+}

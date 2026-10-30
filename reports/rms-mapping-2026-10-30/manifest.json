@@ -1,0 +1,36 @@
+{
+  "files": [
+    {
+      "path": "delivery.json",
+      "sha256": "16db987f6f8c2d93c220bcdcb930cb10659c8a1fdba681b13f0714c5b6ffadfe"
+    },
+    {
+      "path": "known-pv-pf-limitation.json",
+      "sha256": "54d49e2ee9f9927e46e5d116258fa343a8d2ecb0510350fb364224c6b241b292"
+    },
+    {
+      "path": "summary.json",
+      "sha256": "edc2c474cec6d3913677ef9a6278182e3da54edc6ef25cfa2faf6afc65c35ba7"
+    },
+    {
+      "path": "tests.xml",
+      "sha256": "d749dd36c5e71c5d8ed8c5cba491c2f90b7abde081967cb6b17955d194580b13"
+    },
+    {
+      "path": "trajectory-0.0025.json",
+      "sha256": "efe0b4898ef9318f887e4bf05c9541ee1490e77bad891deb2561f97c1a316f87"
+    },
+    {
+      "path": "trajectory-0.005.json",
+      "sha256": "12f39a3d01d43ed0921b3f999705eaa6b0db7ddc6ea8d962a3a4ab825cdddb65"
+    },
+    {
+      "path": "trajectory-0.01.json",
+      "sha256": "3abef1b689f0e2dcb292fab03b3c76176737f051e0515cb0631663f674665f0b"
+    },
+    {
+      "path": "two-machine-trajectory.json",
+      "sha256": "5d5dad31138798f58eeb0bf2a8582e4960accd0fec8816d60c8b882598ca8a16"
+    }
+  ]
+}

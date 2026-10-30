@@ -1,0 +1,35 @@
+{
+  "status": "numerically_not_converged",
+  "diagnostics": {
+    "attempts": [
+      {
+        "algorithm": "newton",
+        "converged": false,
+        "iterations": 80
+      },
+      {
+        "algorithm": "normal",
+        "converged": false,
+        "iterations": 80
+      },
+      {
+        "continuation": 0.5,
+        "converged": false,
+        "iterations": 80
+      }
+    ],
+    "physical_condition": "solver_did_not_converge",
+    "collapse": false,
+    "kcl_residual_pu": 2.2869084175310768e-11,
+    "pq_setpoint_error_pu": 0.050000000023467016,
+    "solved_taps": {},
+    "forming_over_rating": [],
+    "forming_limited": [],
+    "approximations": []
+  },
+  "warnings": [
+    "численная несходимость сохранена как диагностика; это не заключение о коллапсе"
+  ],
+  "case": "cases/studies/rms_two_machine.json",
+  "interpretation": "DSS native PV iteration not converged; independent PV/PQ Newton and ANDES PF agree within 1e-6 in the regression. Not physical collapse."
+}

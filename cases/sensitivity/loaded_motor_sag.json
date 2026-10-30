@@ -1,0 +1,18 @@
+{
+  "schema_version": "power-grid-env.motor-sensitivity/v1",
+  "id": "loaded-motor-sag-parameter-screen",
+  "design": "one_at_a_time",
+  "axes": [
+    {"id": "inertia", "parameter": "inertia_s", "equipment_id": "m", "factors": [0.8, 1.0, 1.2]},
+    {"id": "rotor", "parameter": "rotor_r_pu", "equipment_id": "m", "factors": [0.8, 1.0, 1.2]},
+    {"id": "grid", "parameter": "source_series_impedance", "equipment_id": "source", "factors": [0.8, 1.0, 1.2]}
+  ],
+  "observations": [
+    {"motor_id": "m", "minimum_final_speed_pu": 0.95, "minimum_bus_voltage_pu": 0.4,
+     "maximum_current_pu": 8.0, "require_connected_at_end": true,
+     "recovery": {"from_s": 0.5, "minimum_speed_pu": 0.95, "dwell_s": 0.15, "maximum_delay_s": 0.7}}
+  ],
+  "per_case_timeout_s": 30.0,
+  "total_timeout_s": 300.0,
+  "maximum_output_bytes": 128000000
+}

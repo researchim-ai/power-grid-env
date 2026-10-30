@@ -1,0 +1,24 @@
+{
+  "code_sha256": "05145376d69f3281d5615c4e6bfd9df221086940aae36e92b71c9345174595e5",
+  "full_tests_passed": 298,
+  "single_full_run": true,
+  "reference_source_sha256": "04a688f4576e31840f2cd8f1f7c575eef29be45bbc00a4afee7e7fc8de822caf",
+  "implemented": [
+    "GENROU_parameter_contract",
+    "six_state_channels",
+    "disabled_and_quadratic_saturation",
+    "mixed_GENCLS_GENROU_dispatch",
+    "Ra_copper_loss_and_MVA_base_checks",
+    "controller_and_worker_coupling"
+  ],
+  "reference_scope": "independent equilibrium and six-state fault trajectory on declared SMIB without regulators",
+  "regulated_GENROU_scope": "functional integration and isolated/direct equality, not a separate full coupled oracle",
+  "industrial_profile_qualified": false,
+  "field_validated": false,
+  "next": [
+    "GENSAL",
+    "motors_converters",
+    "external_dynamic_corpus",
+    "parameter_provenance"
+  ]
+}

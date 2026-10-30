@@ -1,0 +1,151 @@
+{
+  "cases": [
+    {
+      "case": "cases/studies/induction_start.json",
+      "case_sha256": "b478b67c71d583514389e0d61cd35c867a8e2132e278690bdae9f510c0d7ae26",
+      "maximum_errors": {
+        "m": {
+          "speed_pu": 2.360358464237322e-09,
+          "e_real_pu": 7.609333496638726e-09,
+          "e_imag_pu": 4.906807071769492e-09,
+          "current_pu": 3.442404117315334e-08,
+          "bus_voltage_pu": 2.2249968534282516e-10,
+          "p_w": 0.025935161160305142,
+          "q_var": 0.03727994789369404
+        }
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "e_real_pu": 2e-05,
+        "e_imag_pu": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05,
+        "p_w": 100.0,
+        "q_var": 100.0
+      },
+      "passed": true
+    },
+    {
+      "case": "cases/studies/induction_sag_restart.json",
+      "case_sha256": "747ec6b38ba6a14ce2d51ec090286da1b0a3dbea0248924276c0c996079cc490",
+      "maximum_errors": {
+        "m": {
+          "speed_pu": 3.6056899688219346e-09,
+          "e_real_pu": 7.609333496638726e-09,
+          "e_imag_pu": 5.509758038702017e-09,
+          "current_pu": 3.442404117315334e-08,
+          "bus_voltage_pu": 2.2249968534282516e-10,
+          "p_w": 0.028700009919703007,
+          "q_var": 0.03727994789369404
+        }
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "e_real_pu": 2e-05,
+        "e_imag_pu": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05,
+        "p_w": 100.0,
+        "q_var": 100.0
+      },
+      "passed": true
+    },
+    {
+      "case": "cases/studies/induction_contactor_restart.json",
+      "case_sha256": "8087bc5e2fbc499a7e15449a14ea0e34bf49202a8a7f96e137de0b94281ffb67",
+      "maximum_errors": {
+        "m": {
+          "speed_pu": 2.360358464237322e-09,
+          "e_real_pu": 1.2635406609895483e-08,
+          "e_imag_pu": 8.163184073151086e-09,
+          "current_pu": 3.442404117315334e-08,
+          "bus_voltage_pu": 2.2249968534282516e-10,
+          "p_w": 0.03878422477282584,
+          "q_var": 0.03727994789369404
+        }
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "e_real_pu": 2e-05,
+        "e_imag_pu": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05,
+        "p_w": 100.0,
+        "q_var": 100.0
+      },
+      "passed": true
+    },
+    {
+      "case": "cases/studies/induction_group_simultaneous.json",
+      "case_sha256": "569c7ef6531e2cf9fa3ba4dfc5ea523f24cb317c8cd4ba16a6446a225e286fbb",
+      "maximum_errors": {
+        "m": {
+          "speed_pu": 4.535125053273248e-11,
+          "e_real_pu": 2.23225630948537e-09,
+          "e_imag_pu": 1.7481517552986325e-09,
+          "current_pu": 6.846562428108882e-09,
+          "bus_voltage_pu": 8.766231074375241e-10,
+          "p_w": 0.005430998106021434,
+          "q_var": 0.0017838915809988976
+        },
+        "m2": {
+          "speed_pu": 4.53507509323714e-11,
+          "e_real_pu": 2.2322564499979713e-09,
+          "e_imag_pu": 1.7481519495876618e-09,
+          "current_pu": 6.846556210859944e-09,
+          "bus_voltage_pu": 8.766231074375241e-10,
+          "p_w": 0.0054309997940436006,
+          "q_var": 0.0017838876228779554
+        }
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "e_real_pu": 2e-05,
+        "e_imag_pu": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05,
+        "p_w": 100.0,
+        "q_var": 100.0
+      },
+      "passed": true
+    },
+    {
+      "case": "cases/studies/induction_group_staggered.json",
+      "case_sha256": "7d4b7df7dd418078e16ca3c58d7710f28da02932a299cf95bb3d5d1bfcf47d1c",
+      "maximum_errors": {
+        "m": {
+          "speed_pu": 5.720300788603083e-09,
+          "e_real_pu": 1.3828814648952914e-08,
+          "e_imag_pu": 1.0023572555306615e-08,
+          "current_pu": 6.104013960950283e-08,
+          "bus_voltage_pu": 3.056947806001631e-09,
+          "p_w": 0.03738910716492683,
+          "q_var": 0.03906909213401377
+        },
+        "m2": {
+          "speed_pu": 1.7538802632444117e-09,
+          "e_real_pu": 6.656286299921987e-09,
+          "e_imag_pu": 7.40386774111812e-09,
+          "current_pu": 3.635745216001851e-08,
+          "bus_voltage_pu": 3.056947806001631e-09,
+          "p_w": 0.027006050571799278,
+          "q_var": 0.01875319634564221
+        }
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "e_real_pu": 2e-05,
+        "e_imag_pu": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05,
+        "p_w": 100.0,
+        "q_var": 100.0
+      },
+      "passed": true
+    }
+  ],
+  "reference_sha256": "85e383468a2f38f2a00043966e136620d5d6a51828c4d9c1f74adbe9a410b7cb",
+  "method": "Independent SI rotor-flux ODE; physical coupled stator/rotor circuit; DOP853",
+  "field_validated": false,
+  "industrial_profile_qualified": false
+}

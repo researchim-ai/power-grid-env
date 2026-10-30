@@ -1,0 +1,42 @@
+{
+  "verdict": "pass",
+  "evidence": "synthetic_runtime_and_same_engine_consistency",
+  "cases": [
+    {
+      "case": "radial",
+      "days": 30,
+      "step_s": 900,
+      "intervals": 2880,
+      "full_run_s": 12.989510254999914,
+      "demand_error_wh": 7.450580596923828e-08,
+      "final_voltage_error_pu": 0.0,
+      "continuation_byte_identical": true,
+      "retained_trace_steps": 2,
+      "retained_history_steps": 1,
+      "code_sha256": "ec799120b8ca09f3f2c5b1c70576b00e385b1d8cc79367708caf4b84f54ee079",
+      "study_sha256": "34afb97816cfc964f05cfc25c1e6e5a29d00f96074e75a592e452407216c8128",
+      "verdict": "pass"
+    },
+    {
+      "case": "mesh",
+      "days": 30,
+      "step_s": 900,
+      "intervals": 2880,
+      "full_run_s": 12.725440367999909,
+      "demand_error_wh": 7.450580596923828e-08,
+      "final_voltage_error_pu": 0.0,
+      "continuation_byte_identical": true,
+      "retained_trace_steps": 2,
+      "retained_history_steps": 1,
+      "code_sha256": "ec799120b8ca09f3f2c5b1c70576b00e385b1d8cc79367708caf4b84f54ee079",
+      "study_sha256": "0d8ac1f75ec69230ae6e331939137aa255985d3f919414351864ff2cb2fdcd17",
+      "verdict": "pass"
+    }
+  ],
+  "process_peak_rss_kib_linux": 141068,
+  "rss_is_process_lifetime_peak": true,
+  "repeats": 1,
+  "field_validated": false,
+  "two_external_feeders_qualified": false,
+  "competitive_superiority_proven": false
+}

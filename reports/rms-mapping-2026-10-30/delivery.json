@@ -1,0 +1,17 @@
+{
+  "code_sha256": "19ca171b763c1684ea3a67272cee8dc8796191df03e3dacc64a2c9346d23995f",
+  "tests": 271,
+  "full_run_passed": true,
+  "scope": "canonical balanced GENCLS adapter",
+  "status": "regression_verified_not_industrial_qualified",
+  "next": [
+    "transformer_and_multivoltage_mapping",
+    "canonical_regulators",
+    "fault_clearing",
+    "process_deadline",
+    "independent_external_dynamic_corpus",
+    "DSS_PV_iteration_regression"
+  ],
+  "field_validated": false,
+  "industrial_profile_released": false
+}

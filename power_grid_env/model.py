@@ -237,6 +237,8 @@ class Generator(BaseModel):
     p_w: float
     q_var: float = 0.0
     v_set_pu: float | None = None
+    v_min_pu: float = Field(default=0.9, gt=0)
+    v_max_pu: float = Field(default=1.1, gt=0)
     q_min_var: float | None = None
     q_max_var: float | None = None
     participation: float | None = None
@@ -348,6 +350,8 @@ class HarmonicComponent(BaseModel):
     current_a: float = Field(ge=0.0)
     angle_deg: float = 0.0
     quality: Literal["declared", "measured"] = "declared"
+    bus_id: str | None = None
+    phases: list[Literal["A", "B", "C", "N"]] = Field(default_factory=list)
 
 
 class Omission(BaseModel):
@@ -663,9 +667,13 @@ def validate_network_rules(network: Network) -> list[str]:
 
     for generator in network.generators:
         need_terminal(generator.terminal_id, generator.id, generator.phases)
+        if generator.v_min_pu > generator.v_max_pu:
+            errors.append(f"{generator.id}: invalid voltage model band")
         if generator.mode == "pv":
             if generator.v_set_pu is None or generator.q_min_var is None or generator.q_max_var is None:
                 errors.append(f"{generator.id}: PV требует уставку напряжения и пределы Q")
+            elif not generator.v_min_pu <= generator.v_set_pu <= generator.v_max_pu:
+                errors.append(f"{generator.id}: PV setpoint outside voltage model band")
             elif generator.q_min_var > generator.q_max_var:
                 errors.append(f"{generator.id}: пределы Q переставлены")
 

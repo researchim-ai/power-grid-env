@@ -1,0 +1,191 @@
+"""Independent physical common-bus generator/motor SI reference.
+
+One source, one transposed line, one classical generator and one motor. Solves
+physical stator/rotor/generator currents together; never calls production
+network stamps, initialization, model constants or state derivatives.
+"""
+from pathlib import Path
+import argparse
+import cmath
+import math
+import numpy as np
+from scipy.integrate import solve_ivp
+from scipy.optimize import root
+from power_grid_env.study_spec import StudySpec,run_study
+from power_grid_env.report import write_json,sha256_file
+from benchmarks.induction_reference import mechanical_torque_reference
+
+
+def reference(spec,report):
+    n,specification=spec.network,spec.coupled
+    assert len(n.generators)==len(n.lines)==len(n.sources)==len(specification.motors)==len(specification.machines)==1
+    assert not(n.loads or n.transformers or n.inverters or n.shunts)
+    m=specification.motors[0];g=n.generators[0];machine=specification.machines[0];source=n.sources[0];line=n.lines[0]
+    terminals={t.id:t.connectivity_node_id for t in n.terminals}
+    assert terminals[g.terminal_id]==m.node_id and terminals[source.terminal_id]!=m.node_id
+    assert not np.any(line.b_siemens)
+    wb=2*math.pi*n.frequency_hz;vb=m.rated_ll_v/math.sqrt(3);ib=m.rated_va/(3*vb)
+    gb=g.ll_v/math.sqrt(3);gib=machine.rated_va/(3*gb)
+    zb=m.rated_ll_v**2/m.rated_va
+    rs=m.stator_r_pu*zb;rr=m.rotor_r_pu*zb
+    lm=m.magnetizing_x_pu*zb/wb;ls=(m.stator_x_pu+m.magnetizing_x_pu)*zb/wb;lr=(m.rotor_x_pu+m.magnetizing_x_pu)*zb/wb
+    zline=complex(line.r_ohm[0][0]-line.r_ohm[0][1],line.x_ohm[0][0]-line.x_ohm[0][1])
+    zs=complex(source.r_ohm,source.x_ohm);feed=zs+zline
+    xg=machine.x_d_prime_pu*g.ll_v**2/machine.rated_va
+    es=source.ll_v/math.sqrt(3)*cmath.exp(1j*source.angle_a_rad)
+    steady=specification.operating_point is not None
+    def initial_current(voltage,speed):
+        if not m.connected:return 0j,0j
+        if not steady:
+            istator=voltage/complex(rs,wb*(ls-lm*lm/lr))
+            return istator,-lm/lr*istator
+        slip=1-speed
+        rotor=complex(rr/slip,wb*(lr-lm)) if abs(slip)>1e-14 else complex(np.inf,0.)
+        parallel=1/(1/(1j*wb*lm)+1/rotor)
+        istator=voltage/(complex(rs,wb*(ls-lm))+parallel)
+        return istator,-istator*parallel/rotor
+    def initial_error(values):
+        voltage=g.v_set_pu*gb*cmath.exp(1j*values[0]);speed=values[1] if steady and m.connected else 0.
+        istator,irotor=initial_current(voltage,speed)
+        ig=istator-(es-voltage)/feed
+        error=[((3*voltage*np.conj(ig)).real-g.p_w)/machine.rated_va]
+        if steady and m.connected:
+            torque=-3*wb*lm*(irotor*np.conj(istator)).imag/m.rated_va
+            error.append(torque-mechanical_torque_reference(m,speed))
+        return error
+    guess=[source.angle_a_rad,.99] if steady and m.connected else [source.angle_a_rad]
+    solved=root(initial_error,guess,tol=1e-11)
+    assert solved.success and max(abs(np.array(initial_error(solved.x))))<1e-9,solved.message
+    voltage=g.v_set_pu*gb*cmath.exp(1j*solved.x[0]);speed=solved.x[1] if steady and m.connected else 0.
+    if steady and m.connected:assert specification.operating_point.minimum_speed_pu<=speed<=1.
+    istator,irotor=initial_current(voltage,speed)
+    ig=istator-(es-voltage)/feed;eg=voltage+1j*xg*ig
+    flux=lm*istator+lr*irotor
+    theta=m.thermal.initial_level if m.thermal else 0.
+    if steady and specification.operating_point.thermal_state=='equilibrium' and m.thermal:theta=(abs(istator)/ib)**2
+    state=np.array([flux.real,flux.imag,speed,np.angle(eg),1.,theta])
+    connected=m.connected;latched=False;scale=1.;load_scale=1.;pm=g.p_w/machine.rated_va
+    emag=abs(eg)
+    def algebraic(x):
+        eg=emag*cmath.exp(1j*x[3]);flux=complex(x[0],x[1])
+        matrix=np.array([[rs+1j*wb*ls+feed,1j*wb*lm,-feed],[lm,lr,0.],[feed,0.,-feed-1j*xg]])
+        rhs=np.array([es*scale,flux,es*scale-eg])
+        if not connected:
+            matrix[0]=[1.,0.,0.];rhs[0]=0.
+        im,ir,ig=np.linalg.solve(matrix,rhs)
+        voltage=es*scale-feed*(im-ig)
+        return im,ir,ig,voltage,eg
+    def derivative(time,x):
+        im,ir,ig,voltage,eg=algebraic(x)
+        df=-rr*ir-1j*wb*(1-x[2])*complex(x[0],x[1])
+        te=-3*wb*lm*(ir*np.conj(im)).imag/m.rated_va
+        pe=3*(eg*np.conj(ig)).real/machine.rated_va
+        dtheta=((abs(im)/ib)**2-x[5])/m.thermal.time_constant_s if m.thermal else 0.
+        return [df.real,df.imag,(te-load_scale*mechanical_torque_reference(m,x[2]))/(2*m.inertia_s),
+                wb*(x[4]-1),(pm-pe-machine.damping_pu*(x[4]-1))/(2*machine.inertia_s),dtheta]
+    def trip(time,x):return x[5]-m.thermal.trip_level
+    trip.terminal=True;trip.direction=1
+    event_map={}
+    for event in specification.events:event_map.setdefault(event.time_s,[]).append(event)
+    boundaries=[0.,*sorted(event_map),specification.duration_s]
+    segments=[];changes=[];trip_time=None
+    for left,right in zip(boundaries,boundaries[1:]):
+        cursor=left
+        while cursor<right:
+            sol=solve_ivp(derivative,(cursor,right),state,method='DOP853',rtol=2e-11,atol=1e-12,
+                          max_step=min(.0005,specification.step_s/2),dense_output=True,
+                          events=trip if m.thermal and not latched else None)
+            assert sol.success,sol.message
+            end=float(sol.t[-1]);segments.append((cursor,end,sol.sol,connected,scale,load_scale,pm))
+            state=sol.y[:,-1];triggered=sol.status==1
+            scheduled=event_map.get(right,[]) if end==right else []
+            if triggered:connected=False;latched=True;trip_time=end
+            for event in scheduled:
+                if event.kind=='source_voltage':scale=event.value
+                elif event.kind=='load_torque_scale':load_scale=event.value
+                elif event.kind=='generator_mechanical_step':pm+=event.value
+                elif event.kind=='motor_open':connected=False
+                elif not latched:connected=True
+            if triggered or scheduled:changes.append(end)
+            assert end>cursor or triggered
+            cursor=end
+    channels={m.id+'.'+k:[] for k in ['speed_pu','e_real_pu','e_imag_pu','current_pu','bus_voltage_pu','p_w','q_var']}
+    channels.update({g.id+'.'+k:[] for k in ['delta','omega','p_w','q_var','current_pu']})
+    channels[source.id+'.p_w']=[];channels[source.id+'.q_var']=[]
+    if m.thermal:channels[m.id+'.thermal_level']=[]
+    for t,side in zip(report['time_s'],report['sample_side']):
+        nearby=next((change for change in changes if abs(change-t)<1e-6),None)
+        at=t if nearby is None else nearby
+        candidates=[segment for segment in segments if segment[0]-1e-12<=at<=segment[1]+1e-12]
+        segment=candidates[0] if side=='pre_event' else candidates[-1]
+        left,right,interpolant,connected,scale,load_scale,pm=segment
+        x=interpolant(min(right,max(left,at)));im,ir,ig,voltage,eg=algebraic(x)
+        em=1j*wb*lm/lr*complex(x[0],x[1])/vb
+        sm=3*voltage*np.conj(im);sg=3*voltage*np.conj(ig)
+        vsource=es*scale-zs*(im-ig);ssource=3*vsource*np.conj(im-ig)
+        values={m.id+'.speed_pu':x[2],m.id+'.e_real_pu':em.real,m.id+'.e_imag_pu':em.imag,
+                m.id+'.current_pu':abs(im)/ib,m.id+'.bus_voltage_pu':abs(voltage)/vb,m.id+'.p_w':sm.real,m.id+'.q_var':sm.imag,
+                g.id+'.delta':x[3],g.id+'.omega':x[4],g.id+'.p_w':sg.real,g.id+'.q_var':sg.imag,g.id+'.current_pu':abs(ig)/gib,
+                source.id+'.p_w':ssource.real,source.id+'.q_var':ssource.imag}
+        if m.thermal:values[m.id+'.thermal_level']=x[5]
+        for key,value in values.items():channels[key].append(float(value))
+    return {'channels':channels,'trip_time_s':trip_time}
+
+
+def native_generator_limit():
+    """Optional comparison with ANDES in the disconnected-motor limit."""
+    from power_grid_env.rms_study import RMSSettings,RMSEvent
+    spec=StudySpec.model_validate_json(Path('cases/studies/coupled_generator_step.json').read_text())
+    spec.coupled.motors[0].connected=False
+    actual=run_study(spec)
+    assert actual['completed'],actual
+    native=spec.model_copy(deep=True);native.study='rms';native.backend='andes';native.coupled=None
+    native.rms=RMSSettings(duration_s=spec.coupled.duration_s,step_s=.005,machines=spec.coupled.machines,
+        events=[RMSEvent(time_s=.2,kind='mechanical_step',equipment_id='g',value=.05)])
+    t=np.array(actual['time_s']);keep=np.r_[np.diff(t)!=0,True]
+    errors=[]
+    for h in [.005,.0025,.00125]:
+        native.rms.step_s=h;reference=run_study(native)
+        assert reference['completed'],reference
+        row={'step_s':h}
+        for key in ['g.delta','g.omega']:
+            sampled=np.interp(t[keep],reference['time_s'],reference['channels'][key])
+            row[key]=float(max(abs(np.array(actual['channels'][key])[keep]-sampled)))
+        errors.append(row)
+    reductions=[errors[i]['g.delta']/errors[i+1]['g.delta'] for i in range(2)]
+    passed=errors[-1]['g.delta']<1e-4 and errors[-1]['g.omega']<1e-5 and all(3.4<x<4.6 for x in reductions)
+    return dict(case='disconnected-motor GENCLS limit only',errors=errors,angle_error_reductions=reductions,
+                finest_limits={'g.delta':1e-4,'g.omega':1e-5},passed=passed)
+
+
+def main():
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--out',type=Path,required=True);parser.add_argument('--check-andes',action='store_true');args=parser.parse_args()
+    checks=[]
+    for name in ['hold','motor_load_step','generator_step','voltage_sag','cold_start','thermal_trip']:
+        path=Path('cases/studies/coupled_'+name+'.json');spec=StudySpec.model_validate_json(path.read_text())
+        result=run_study(spec)
+        if not result.get('completed'):raise RuntimeError(result)
+        independent=reference(spec,result)
+        errors={key:float(max(abs(np.array(values)-result['channels'][key]))) for key,values in independent['channels'].items()}
+        limits={key:100. if key.endswith(('.p_w','.q_var')) else 1e-5 if key.endswith(('.omega','.speed_pu','.delta')) else 1e-4 for key in errors}
+        actual_trip=next((e['time_s'] for e in result['event_log'] if e['kind']=='thermal_trip'),None)
+        expected_trip=independent['trip_time_s']
+        trip_agrees=(actual_trip is None)==(expected_trip is None)
+        trip_error=abs(actual_trip-expected_trip) if actual_trip is not None and expected_trip is not None else None
+        passed=all(errors[key]<=limits[key] for key in errors) and trip_agrees and (trip_error is None or trip_error<=1e-6)
+        write_json(args.out/(name+'.json'),result)
+        write_json(args.out/(name+'-reference.json'),dict(time_s=result['time_s'],sample_side=result['sample_side'],**independent))
+        checks.append(dict(case=str(path),case_sha256=sha256_file(path),maximum_errors=errors,limits=limits,
+                           trip_time_error_s=trip_error,trip_time_tolerance_s=1e-6,passed=passed))
+    write_json(args.out/'reference.json',dict(cases=checks,reference_sha256=sha256_file(Path(__file__)),
+        load_reference_sha256=sha256_file(Path('benchmarks/induction_reference.py')),
+        method='Independent SI stator/rotor/generator 3x3 circuit, PV/shaft initialization and DOP853 hybrid trajectory',
+        field_validated=False,industrial_profile_qualified=False))
+    if args.check_andes:
+        native=native_generator_limit();write_json(args.out/'native-generator-limit.json',native)
+        if not native['passed']:raise SystemExit(1)
+    print([(c['case'],c['passed'],c['maximum_errors']['g.omega']) for c in checks])
+    if not all(c['passed'] for c in checks):raise SystemExit(1)
+
+
+if __name__=='__main__':main()

@@ -1,0 +1,13 @@
+{
+  "study_id": "canonical-rms",
+  "completed": true,
+  "execution": {
+    "mode": "isolated_process",
+    "elapsed_s": 1.424379191998014,
+    "timeout_s": 30.0,
+    "max_result_bytes": 64000000,
+    "os_sandbox": false
+  },
+  "code_sha256": "1d6b1dee14cbf263b5bf6e6fa01e42b46fedfe08743da128bdf213cef40918d5",
+  "control_limit_violations": []
+}

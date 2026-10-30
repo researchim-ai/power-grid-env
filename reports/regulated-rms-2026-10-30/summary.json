@@ -1,0 +1,31 @@
+{
+  "verdict": "pass",
+  "reference": "independent coupled network/swing/TGOV1/SEXS/IEEEST SciPy RK45",
+  "cases": [
+    {
+      "step_s": 0.002,
+      "errors": {
+        "delta_rad": 1.8623524072336473e-06,
+        "omega_pu": 2.771065514828308e-07,
+        "field_pu": 0.0002512559487617416,
+        "valve_pu": 1.439022057625472e-06
+      },
+      "verdict": "pass",
+      "code_sha256": "1d6b1dee14cbf263b5bf6e6fa01e42b46fedfe08743da128bdf213cef40918d5"
+    },
+    {
+      "step_s": 0.001,
+      "errors": {
+        "delta_rad": 4.5516911434395624e-07,
+        "omega_pu": 6.612169800579437e-08,
+        "field_pu": 6.281527604334869e-05,
+        "valve_pu": 3.8709054728247594e-07
+      },
+      "verdict": "pass",
+      "code_sha256": "1d6b1dee14cbf263b5bf6e6fa01e42b46fedfe08743da128bdf213cef40918d5"
+    }
+  ],
+  "field_validated": false,
+  "industrial_profile_qualified": false,
+  "scope": "declared lossless reduced-order one-machine controller and fault fixture"
+}

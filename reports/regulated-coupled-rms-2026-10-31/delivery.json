@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-31",
+  "code_sha256": "b3edf78846e43a8de0d794d6a5ccd2554c42c30f4760f80235a49278d57f42ac",
+  "tests": {
+    "tests": 420,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "study": "coupled_rms",
+  "backend": "scipy",
+  "features": [
+    "shared GENCLS/motor network with optional TGOV1/SEXS",
+    "strict interior controller/PV/shaft initialization and limiter-aware Jacobian",
+    "machine-base power and additive governor/voltage reference steps",
+    "projected anti-windup outputs with accepted-mesh/raw-state guard and recovery"
+  ],
+  "independent_SI_and_transfer_function_cases": 6,
+  "reference": "reference.json",
+  "maximum_reference_errors": {
+    "g.current_pu": 3.026678613293754e-07,
+    "source.q_var": 0.542839041328989,
+    "m.p_w": 0.06271285959519446,
+    "m.q_var": 0.09401341591728851,
+    "g.p_w": 0.06608323671389371,
+    "m.e_real_pu": 8.296406450725158e-09,
+    "g.TGOV1.turbine_state_pu": 7.995250461689807e-09,
+    "g.q_var": 0.6595106436870992,
+    "m.bus_voltage_pu": 1.8467934070898195e-08,
+    "m.e_imag_pu": 1.3721505959241043e-08,
+    "m.current_pu": 5.803179070618114e-08,
+    "g.TGOV1.valve_pu": 4.101680600721025e-08,
+    "source.p_w": 0.0596309436368756,
+    "m.speed_pu": 3.205265275418867e-09,
+    "m.thermal_level": 2.9228341968945415e-10,
+    "g.TGOV1.output_pu": 8.749889202075423e-09,
+    "g.SEXS.filter_pu": 1.4371014517289282e-09,
+    "g.delta": 1.036942761864501e-08,
+    "g.omega": 8.880240986997023e-10,
+    "g.SEXS.field_pu": 1.1249587750228329e-07
+  },
+  "maximum_kcl_residual_pu": 3.5704330589399866e-14,
+  "maximum_power_balance_residual_pu": 3.618307394007555e-14,
+  "maximum_raw_controller_state_overshoot": 4.402966424787991e-08,
+  "native_check": "native-controlled-limit.json",
+  "native_angle_error_reductions": [
+    3.9898318943108975,
+    4.015731176466716
+  ],
+  "worker_smoke": "limits-worker.json",
+  "schema_examples_validated": 6,
+  "versions": {
+    "python": "3.12.9",
+    "numpy": "2.2.6",
+    "scipy": "1.15.2",
+    "andes": "2.0.0"
+  },
+  "industrial_profile_qualified": false,
+  "field_validated": false,
+  "competitive_superiority_proven": false,
+  "limitations": [
+    "GENCLS only; no coupled GENROU/PSS",
+    "external slack and fixed topology; no generator trip or islanding",
+    "no continuous limiter extremum certification; raw overshoot checked on accepted mesh and saved samples",
+    "no dynamic generator current/Q limits or saturation",
+    "independent mixed reference limited to one generator/motor; multi-generator smoke only",
+    "synthetic equipment parameters; no OEM/held-out measured validation",
+    "worker not OS security sandbox or memory quota"
+  ]
+}

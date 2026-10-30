@@ -1,0 +1,35 @@
+{
+  "status": "converged",
+  "diagnostics": {
+    "attempts": [
+      {
+        "algorithm": "newton",
+        "converged": false,
+        "iterations": 80
+      },
+      {
+        "algorithm": "normal",
+        "converged": false,
+        "iterations": 80
+      },
+      {
+        "pv_refinement": 1,
+        "algorithm": "normal",
+        "converged": true,
+        "iterations": 41,
+        "load_fraction": 1.0
+      }
+    ],
+    "physical_condition": "solved",
+    "collapse": false,
+    "kcl_residual_pu": 9.681564629159715e-12,
+    "pq_setpoint_error_pu": 9.647049009799957e-12,
+    "solved_taps": {},
+    "forming_over_rating": [],
+    "forming_limited": [],
+    "approximations": []
+  },
+  "script": "Clear\nSet DefaultBaseFrequency=50\nNew Circuit.cfa119f8dd2bd basekv=110 pu=1.0 phases=3 bus1=b35a63c28b3d9 angle=0\nEdit Vsource.source r1=0.1 x1=2 basekv=110 pu=1.0 angle=0 bus1=b35a63c28b3d9.1.2.3\nSet controlmode=off\nSet tolerance=1.0e-10\nSet maxiterations=80\nNew Line.l86f7e437faa5 phases=3 bus1=b35a63c28b3d9.1.2.3 bus2=b30f0766096a4.1.2.3 length=1 units=km normamps=400\n~ rmatrix=[0.3 | 0 0.3 | 0 0 0.3]\n~ xmatrix=[8 | 0 8 | 0 0 8]\n~ cmatrix=[0 | 0 0 | 0 0 0]\nNew Line.le9d71f5ee7c9 phases=3 bus1=b30f0766096a4.1.2.3 bus2=b07a3d533db86.1.2.3 length=1 units=km normamps=400\n~ rmatrix=[0.2 | 0 0.2 | 0 0 0.2]\n~ xmatrix=[5 | 0 5 | 0 0 5]\n~ cmatrix=[0 | 0 0 | 0 0 0]\nNew Line.l84a516841ba7 phases=3 bus1=b35a63c28b3d9.1.2.3 bus2=b07a3d533db86.1.2.3 length=1 units=km normamps=400\n~ rmatrix=[0.2 | 0 0.2 | 0 0 0.2]\n~ xmatrix=[10 | 0 10 | 0 0 10]\n~ cmatrix=[0 | 0 0 | 0 0 0]\nNew Load.d5dbc716c4600 bus1=b07a3d533db86.1.2.3 phases=3 conn=wye kv=110 kw=10000 kvar=2000 model=1 vminpu=0 vmaxpu=1.5\nNew Generator.ga46e558d11cb bus1=b30f0766096a4.1.2.3 phases=3 kv=110 kw=30000 model=3 vpu=1.02 vminpu=0.9 vmaxpu=1.1 minkvar=-100000 maxkvar=100000\nNew Generator.g077564fb0432 bus1=b07a3d533db86.1.2.3 phases=3 kv=110 kw=20000 model=3 vpu=1.01 vminpu=0.9 vmaxpu=1.1 minkvar=-100000 maxkvar=100000\nSet voltagebases=[110]\nCalcvoltagebases\nSolve",
+  "source_case": "cases/studies/rms_two_machine.json",
+  "code_sha256": "ee7052d1e623da66f7bc335c87efb194908064ff97cd96eaf4fba3e95d58616d"
+}

@@ -1,0 +1,172 @@
+{
+  "cases": [
+    {
+      "case": "case-000",
+      "parameter_mapping_correct": true,
+      "maximum_errors": {
+        "speed_pu": 3.6699453476174426e-09,
+        "e_real_pu": 1.0884210865924615e-08,
+        "e_imag_pu": 4.888656646162559e-09,
+        "current_pu": 4.8317812417764117e-08,
+        "bus_voltage_pu": 3.333621156897948e-10,
+        "p_w": 0.023698414908722043,
+        "q_var": 0.051296780817210674
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "e_real_pu": 2e-05,
+        "e_imag_pu": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05,
+        "p_w": 100.0,
+        "q_var": 100.0
+      },
+      "passed": true
+    },
+    {
+      "case": "case-001",
+      "parameter_mapping_correct": true,
+      "maximum_errors": {
+        "speed_pu": 3.567805717530348e-09,
+        "e_real_pu": 3.7019100007640304e-09,
+        "e_imag_pu": 5.181039319790415e-09,
+        "current_pu": 2.133057142028605e-08,
+        "bus_voltage_pu": 1.1745870942547754e-10,
+        "p_w": 0.023524703457951546,
+        "q_var": 0.016888477141037583
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "e_real_pu": 2e-05,
+        "e_imag_pu": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05,
+        "p_w": 100.0,
+        "q_var": 100.0
+      },
+      "passed": true
+    },
+    {
+      "case": "case-002",
+      "parameter_mapping_correct": true,
+      "maximum_errors": {
+        "speed_pu": 2.1911679137787132e-09,
+        "e_real_pu": 6.93242385718662e-09,
+        "e_imag_pu": 6.094312665627655e-09,
+        "current_pu": 3.9470372525940434e-08,
+        "bus_voltage_pu": 2.2528334753246781e-10,
+        "p_w": 0.023652566480450332,
+        "q_var": 0.03093213983811438
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "e_real_pu": 2e-05,
+        "e_imag_pu": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05,
+        "p_w": 100.0,
+        "q_var": 100.0
+      },
+      "passed": true
+    },
+    {
+      "case": "case-003",
+      "parameter_mapping_correct": true,
+      "maximum_errors": {
+        "speed_pu": 2.7677488079191903e-09,
+        "e_real_pu": 7.206877650212107e-09,
+        "e_imag_pu": 4.5064769971236984e-09,
+        "current_pu": 3.6359954602716016e-08,
+        "bus_voltage_pu": 2.2598856119770971e-10,
+        "p_w": 0.020119669032283127,
+        "q_var": 0.033225664868950844
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "e_real_pu": 2e-05,
+        "e_imag_pu": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05,
+        "p_w": 100.0,
+        "q_var": 100.0
+      },
+      "passed": true
+    },
+    {
+      "case": "case-004",
+      "parameter_mapping_correct": true,
+      "maximum_errors": {
+        "speed_pu": 2.0960456703633668e-09,
+        "e_real_pu": 4.741348647030463e-09,
+        "e_imag_pu": 4.260882008333411e-09,
+        "current_pu": 2.4885916882766423e-08,
+        "bus_voltage_pu": 1.509171676516985e-10,
+        "p_w": 0.02089332602918148,
+        "q_var": 0.021262683672830462
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "e_real_pu": 2e-05,
+        "e_imag_pu": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05,
+        "p_w": 100.0,
+        "q_var": 100.0
+      },
+      "passed": true
+    },
+    {
+      "case": "case-005",
+      "parameter_mapping_correct": true,
+      "maximum_errors": {
+        "speed_pu": 3.814145665970159e-09,
+        "e_real_pu": 1.1310058112279364e-08,
+        "e_imag_pu": 5.241173078873729e-09,
+        "current_pu": 5.185737306234728e-08,
+        "bus_voltage_pu": 3.260920422576419e-10,
+        "p_w": 0.026090487837791443,
+        "q_var": 0.05317313061095774
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "e_real_pu": 2e-05,
+        "e_imag_pu": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05,
+        "p_w": 100.0,
+        "q_var": 100.0
+      },
+      "passed": true
+    },
+    {
+      "case": "case-006",
+      "parameter_mapping_correct": true,
+      "maximum_errors": {
+        "speed_pu": 3.0606438494729105e-09,
+        "e_real_pu": 9.060451833242666e-09,
+        "e_imag_pu": 4.502342526579994e-09,
+        "current_pu": 3.892465549881763e-08,
+        "bus_voltage_pu": 2.9351643338060285e-10,
+        "p_w": 0.022063775220885873,
+        "q_var": 0.0428058838006109
+      },
+      "limits": {
+        "speed_pu": 2e-05,
+        "e_real_pu": 2e-05,
+        "e_imag_pu": 2e-05,
+        "current_pu": 0.0001,
+        "bus_voltage_pu": 1e-05,
+        "p_w": 100.0,
+        "q_var": 100.0
+      },
+      "passed": true
+    }
+  ],
+  "base_study_sha256": "3ab3ad10dd7cbca77ae515261eec05dcf59cd850ebc94e29b523c61a31172db8",
+  "protocol_file_sha256": "7b19abe673e97adff564dcb15f8c5a58ccab11ee7a037c834a37b71adcb6684c",
+  "benchmark_sha256": "ceb9c528c753b2c68dbc2c80de45bc14583e99d2677e2ee90b152e52b7c87c95",
+  "independent_reference_sha256": "20cb5c7e20dbf59c6a605948c33a297e977a3daf271393565ba24918e4dfdddc",
+  "method": "Independent T-circuit equilibrium and SI flux DOP853 at every declared parameter point",
+  "field_validated": false,
+  "industrial_profile_qualified": false
+}
