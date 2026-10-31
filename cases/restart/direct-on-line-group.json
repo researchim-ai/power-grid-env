@@ -1,0 +1,108 @@
+{
+  "schema_version": "power-grid-env.motor-restart/v1",
+  "id": "synthetic-dol-group-sequences",
+  "baseline_candidate_id": "staggered",
+  "candidates": [
+    {
+      "id": "simultaneous",
+      "timings": [
+        {
+          "motor_id": "m",
+          "pickup_delay_s": 0.12,
+          "minimum_off_time_s": 0.25
+        },
+        {
+          "motor_id": "m2",
+          "pickup_delay_s": 0.12,
+          "minimum_off_time_s": 0.25
+        }
+      ]
+    },
+    {
+      "id": "staggered",
+      "timings": [
+        {
+          "motor_id": "m",
+          "pickup_delay_s": 0.12,
+          "minimum_off_time_s": 0.25
+        },
+        {
+          "motor_id": "m2",
+          "pickup_delay_s": 0.25,
+          "minimum_off_time_s": 0.25
+        }
+      ]
+    },
+    {
+      "id": "late",
+      "timings": [
+        {
+          "motor_id": "m",
+          "pickup_delay_s": 0.5,
+          "minimum_off_time_s": 0.25
+        },
+        {
+          "motor_id": "m2",
+          "pickup_delay_s": 0.7,
+          "minimum_off_time_s": 0.25
+        }
+      ]
+    },
+    {
+      "id": "outside_horizon",
+      "timings": [
+        {
+          "motor_id": "m",
+          "pickup_delay_s": 1.2,
+          "minimum_off_time_s": 0.25
+        },
+        {
+          "motor_id": "m2",
+          "pickup_delay_s": 1.3,
+          "minimum_off_time_s": 0.25
+        }
+      ]
+    }
+  ],
+  "observations": [
+    {
+      "motor_id": "m",
+      "minimum_final_speed_pu": 0.95,
+      "minimum_bus_voltage_pu": 0.4,
+      "maximum_current_pu": 7.0,
+      "require_connected_at_end": true,
+      "recovery": {
+        "from_s": 0.5,
+        "minimum_speed_pu": 0.95,
+        "dwell_s": 0.1,
+        "maximum_delay_s": 0.9
+      }
+    },
+    {
+      "motor_id": "m2",
+      "minimum_final_speed_pu": 0.95,
+      "minimum_bus_voltage_pu": 0.4,
+      "maximum_current_pu": 7.0,
+      "require_connected_at_end": true,
+      "recovery": {
+        "from_s": 0.5,
+        "minimum_speed_pu": 0.95,
+        "dwell_s": 0.1,
+        "maximum_delay_s": 0.9
+      }
+    }
+  ],
+  "voltage_windows": [
+    {
+      "id": "recovery-bus",
+      "node_id": "motor",
+      "from_s": 0.5,
+      "to_s": 1.5,
+      "minimum_voltage_pu": 0.9,
+      "maximum_voltage_pu": 1.05
+    }
+  ],
+  "per_case_timeout_s": 30.0,
+  "total_timeout_s": 120.0,
+  "maximum_output_bytes": 32000000
+}

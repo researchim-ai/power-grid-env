@@ -30,6 +30,7 @@ def reference(spec,report):
     wb=2*math.pi*n.frequency_hz;vb=m.rated_ll_v/math.sqrt(3);ib=m.rated_va/(3*vb)
     gb=g.ll_v/math.sqrt(3);gib=machine.rated_va/(3*gb)
     zb=m.rated_ll_v**2/m.rated_va
+    if m.model!='single_cage':raise ValueError('this coupled SI reference is single-cage only')
     rs=m.stator_r_pu*zb;rr=m.rotor_r_pu*zb
     lm=m.magnetizing_x_pu*zb/wb;ls=(m.stator_x_pu+m.magnetizing_x_pu)*zb/wb;lr=(m.rotor_x_pu+m.magnetizing_x_pu)*zb/wb
     zline=complex(line.r_ohm[0][0]-line.r_ohm[0][1],line.x_ohm[0][0]-line.x_ohm[0][1])

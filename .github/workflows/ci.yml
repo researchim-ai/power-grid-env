@@ -24,3 +24,20 @@ jobs:
           path: |
             reports/validation/
             /tmp/pge-ci-qsts/result.json
+
+  motor-wheel-replay:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'setuptools==79.0.1' 'wheel==0.45.1'
+      - run: python -m pip install --require-hashes -r requirements/pilot-linux-py312.lock
+      - run: python -m pip download --only-binary=:all: --require-hashes -r requirements/pilot-linux-py312.lock --dest /tmp/pge-ci-wheelhouse
+      - run: python -m benchmarks.pilot_installation --work /tmp/pge-ci-pilot-work --out /tmp/pge-ci-pilot-report --wheelhouse /tmp/pge-ci-wheelhouse
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: motor-wheel-replay-linux-py312
+          path: /tmp/pge-ci-pilot-report/

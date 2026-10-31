@@ -17,6 +17,7 @@ from power_grid_env.study_spec import StudySpec, run_study
 
 def circuit_parameters(spec, motor=None):
     n, m = spec.network, motor or spec.induction.motors[0]
+    if m.model!='single_cage':raise ValueError('single-cage reference cannot discard a second rotor')
     assert len(n.lines) == len(n.sources) == 1
     assert not (n.loads or n.transformers or n.generators or n.shunts)
     line = n.lines[0]
@@ -110,6 +111,7 @@ def initial_flux_reference(spec):
 
 def rotor_flux_group_reference(spec, report):
     motors = spec.induction.motors
+    if any(m.contactor for m in motors):raise ValueError('SI reference needs independently prescribed commands, not automatic contactor passports')
     assert len({m.node_id for m in motors}) == 1, 'common receiving bus fixture required'
     parameters = [circuit_parameters(spec, m) for m in motors]
     count = len(motors)
@@ -153,6 +155,11 @@ def rotor_flux_group_reference(spec, report):
         event_map.setdefault(event.time_s, []).append(event)
     boundaries = [0., *sorted(event_map), spec.induction.duration_s]
     times, sides = np.array(report['time_s']), report['sample_side']
+    # Preserve authored pre/post limits when equivalent arithmetic produces
+    # .3 versus .2+.1; this is machine-epsilon axis normalization, not a lag fit.
+    for boundary in boundaries:
+        tied=(abs(times-boundary)<=64*np.finfo(float).eps*max(1.,abs(boundary))) & np.array([s in {'pre_event','post_event'} for s in sides])
+        times[tied]=boundary
     out = {m.id: np.zeros((len(times), 7)) for m in motors}
     state = initial_flux_reference(spec)
     for left, right in zip(boundaries, boundaries[1:]):

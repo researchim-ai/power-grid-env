@@ -17,7 +17,7 @@ from power_grid_env.model import Network
 from power_grid_env.scope import compile_scope
 
 STUDY_SCHEMA = "power-grid-env.study/v1"
-_EXECUTABLE = {("power_flow", "opendss"), ("qsts", "opendss"), ("rms", "andes"), ("small_signal", "andes"), ("motor_start", "scipy"), ("coupled_rms", "scipy")}
+_EXECUTABLE = {("power_flow", "opendss"), ("qsts", "opendss"), ("rms", "andes"), ("small_signal", "andes"), ("motor_start", "scipy"), ("coupled_rms", "scipy"), ("coupled_small_signal", "scipy")}
 
 
 class StudySpec(BaseModel):
@@ -63,13 +63,13 @@ def run_study(spec: StudySpec, solver: Callable[..., Any] | None = None, *, out=
         return _rejected("unsupported_motor")
     if (spec.study, spec.backend) not in _EXECUTABLE:
         return _rejected("unsupported_backend" if spec.backend != "opendss" else "unsupported_study")
-    if wall_timeout_s is not None or (spec.study in {"rms", "small_signal", "motor_start", "coupled_rms"} and cancelled is not None):
+    if wall_timeout_s is not None or (spec.study in {"rms", "small_signal", "motor_start", "coupled_rms", "coupled_small_signal"} and cancelled is not None):
         isolate = True
-    if isolate and spec.study not in {"rms", "small_signal", "motor_start", "coupled_rms"}:
+    if isolate and spec.study not in {"rms", "small_signal", "motor_start", "coupled_rms", "coupled_small_signal"}:
         return _rejected("process_isolation_only_for_rms")
-    if spec.coupled is not None and spec.study != "coupled_rms":
+    if spec.coupled is not None and spec.study not in {"coupled_rms","coupled_small_signal"}:
         return _rejected("coupled_settings_only_for_coupled_rms")
-    if spec.study == "coupled_rms":
+    if spec.study in {"coupled_rms","coupled_small_signal"}:
         if spec.coupled is None:
             return _rejected("coupled_settings_required")
         if spec.induction is not None or spec.rms is not None or resume or max_steps is not None or spec.scenario is not None or spec.options != SolveOptions():
@@ -81,7 +81,10 @@ def run_study(spec: StudySpec, solver: Callable[..., Any] | None = None, *, out=
         if isolate:
             from power_grid_env.rms_process import run_isolated_rms
             return run_isolated_rms(spec,timeout_s=120. if wall_timeout_s is None else wall_timeout_s,cancelled=cancelled)
-        report=run_coupled(spec.network,spec.coupled)
+        if spec.study=="coupled_small_signal":
+            from power_grid_env.coupled_small_signal import run_coupled_small_signal
+            report=run_coupled_small_signal(spec.network,spec.coupled)
+        else:report=run_coupled(spec.network,spec.coupled)
         report['study_id']=spec.id
         return report
     if spec.induction is not None and spec.study != "motor_start":

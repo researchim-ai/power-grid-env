@@ -15,7 +15,7 @@ from power_grid_env.report import write_json, sha256_file
 def reference(spec, report):
     m, wb, rs, rr, lm, ls, lr, feed, source_v = circuit_parameters(spec)
     thermal = m.thermal
-    assert thermal is not None and len(spec.induction.motors) == 1
+    assert thermal is not None and len(spec.induction.motors) == 1 and m.contactor is None
     connected, scale, latched = m.connected, 1., False
     load_scale = 1.
     vb = m.rated_ll_v/np.sqrt(3)

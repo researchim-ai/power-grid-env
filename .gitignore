@@ -221,6 +221,35 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Внешние архивы бенчмарка. В git остаются только registry, lock и отчёты.
+# Внешние данные: в git остаются registry/lock и исходные тестовые примеры.
 data/external/raw/
 data/external/processed/
+
+# Generated solver outputs, receipts, copied sources and installation archives.
+# Existing tracked reports remain tracked; new runs stay local or in CI artifacts.
+/reports/*
+!/reports/README.md
+
+# Local credentials and Codex/runtime state (not project source).
+/.aws/
+/.codex/
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+
+# Local build/download caches and scratch artifacts.
+/wheelhouse/
+/.venv-*/
+*.whl
+/*.zip
+/*.tar
+/*.tar.gz
+/*.tgz
+*.tmp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+/.idea/

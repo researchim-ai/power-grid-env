@@ -80,6 +80,20 @@ def main(argv: list[str] | None = None) -> int:
     run_spec.add_argument("--isolate", action="store_true", help="RMS worker with wall deadline")
     run_spec.add_argument("--wall-timeout", type=float, default=None)
 
+    clearing = sub.add_parser("fault-clearing", help="конечный эксперимент времён отключения coupled КЗ")
+    for argument in ("study", "protocol", "out"):
+        clearing.add_argument("--"+argument, required=True)
+    clearing.add_argument("--cancel-file")
+
+    bundle=sub.add_parser("motor-bundle",help="переносимый пакет motor study с проверкой и replay")
+    bundle_commands=bundle.add_subparsers(dest="bundle_command",required=True)
+    create=bundle_commands.add_parser("create")
+    for argument in ("study","criteria","out"):create.add_argument("--"+argument,required=True)
+    create.add_argument("--trace");create.add_argument("--trace-protocol");create.add_argument("--cancel-file")
+    for command in ("verify","replay"):
+        check=bundle_commands.add_parser(command);check.add_argument("bundle");check.add_argument("--out",required=True)
+        if command=="replay":check.add_argument("--cancel-file")
+
     compare_motor = sub.add_parser("compare-motor-trace", help="сверка motor study с полной SI CSV-трассой")
     for argument in ("study", "result", "trace", "protocol", "out"):
         compare_motor.add_argument("--"+argument, required=True)
@@ -88,6 +102,15 @@ def main(argv: list[str] | None = None) -> int:
     for argument in ("study", "protocol", "out"):
         sensitivity.add_argument("--"+argument, required=True)
     sensitivity.add_argument("--cancel-file")
+
+    restart = sub.add_parser("motor-restart",help="конечное сравнение выдержек самозапуска")
+    for argument in ("study","protocol","out"):restart.add_argument("--"+argument,required=True)
+    restart.add_argument("--cancel-file")
+
+    for name in ('motor-restart-check','motor-restart-replay'):
+        command=sub.add_parser(name,help='проверка сохранённой серии самозапуска' if name.endswith('check') else 'полный replay серии самозапуска')
+        command.add_argument('directory');command.add_argument('--out',required=True)
+        if name.endswith('replay'):command.add_argument('--cancel-file')
 
     args = parser.parse_args(argv)
     if args.command == "import":
@@ -190,6 +213,74 @@ def main(argv: list[str] | None = None) -> int:
         write_json(Path(args.out) / "plant-study.json", payload)
         print(json.dumps({"verdict": payload["verdict"], "scenarios": payload["scenario_count"], "profile_released": payload["profile_released"]}, ensure_ascii=False))
         return 0 if payload["verdict"] == "pass" else 1
+    if args.command == "motor-bundle":
+        if args.bundle_command!="create" and Path(args.out).resolve().is_relative_to(Path(args.bundle).resolve()):
+            print(json.dumps(dict(completed=False,status='rejected',error='replay/verification output must be outside sealed bundle')))
+            return 2
+        from power_grid_env.motor_bundle import MotorReplayCriteria,export_motor_bundle,verify_motor_bundle,replay_motor_bundle
+        from power_grid_env.motor_trace import MotorTraceProtocol
+        from power_grid_env.study_spec import StudySpec
+        try:
+            if args.bundle_command=="create":
+                spec=StudySpec.model_validate_json(Path(args.study).read_text())
+                criteria=MotorReplayCriteria.model_validate_json(Path(args.criteria).read_text())
+                protocol=MotorTraceProtocol.model_validate_json(Path(args.trace_protocol).read_text()) if args.trace_protocol else None
+                result=export_motor_bundle(spec,criteria,args.out,trace=args.trace,trace_protocol=protocol,
+                    cancelled=(lambda:Path(args.cancel_file).exists()) if args.cancel_file else None)
+            elif args.bundle_command=="verify":
+                _,_,_,comparison,_=verify_motor_bundle(args.bundle)
+                result=dict(completed=True,status='verified',measurement_comparison_passed=None if comparison is None else comparison['passed'],
+                    provenance_authenticated=False,industrial_profile_qualified=False,field_validated=False)
+            else:
+                result=replay_motor_bundle(args.bundle,cancelled=(lambda:Path(args.cancel_file).exists()) if args.cancel_file else None)
+        except (OSError,ValueError,TypeError,KeyError) as exc:
+            result=dict(completed=False,status='rejected',error=str(exc),industrial_profile_qualified=False,field_validated=False)
+        if args.bundle_command!="create":write_json(Path(args.out),result)
+        print(json.dumps({k:v for k,v in result.items() if k!='metrics'},ensure_ascii=False))
+        return 0 if result['completed'] and result.get('repeatable',True) and result.get('measurement_comparison_passed') is not False else 2
+
+    if args.command == "fault-clearing":
+        from power_grid_env.fault_clearing import FaultClearingProtocol,run_fault_clearing
+        from power_grid_env.study_spec import StudySpec
+        try:
+            spec=StudySpec.model_validate_json(Path(args.study).read_text())
+            protocol=FaultClearingProtocol.model_validate_json(Path(args.protocol).read_text())
+            result=run_fault_clearing(spec,protocol,args.out,
+                cancelled=(lambda:Path(args.cancel_file).exists()) if args.cancel_file else None)
+        except (OSError,ValueError,TypeError) as exc:
+            result=dict(completed=False,all_cases_within_limits=False,status='rejected',error=str(exc))
+            print(str(exc)[:4000],file=sys.stderr)
+        print(json.dumps({k:result[k] for k in ('completed','all_cases_within_limits','status')},ensure_ascii=False))
+        if result['status'] in {'cancelled','total_timeout'}:return 3
+        return 0 if result['completed'] and result['all_cases_within_limits'] else 2
+
+    if args.command in {'motor-restart-check','motor-restart-replay'}:
+        from power_grid_env.motor_restart_audit import verify_motor_restart,replay_motor_restart
+        try:
+            if args.command=='motor-restart-check':
+                root=Path(args.directory).resolve();target=Path(args.out).resolve()
+                if target==root or target.is_relative_to(root):raise ValueError('verification output must be outside original experiment')
+                result=verify_motor_restart(Path(args.directory));write_json(target,result)
+                print(json.dumps(result,ensure_ascii=False));return 0
+            result=replay_motor_restart(Path(args.directory),Path(args.out),cancelled=(lambda:Path(args.cancel_file).exists()) if args.cancel_file else None)
+            print(json.dumps({k:result[k] for k in ['completed','repeatable','status']},ensure_ascii=False))
+            if result['status'] in {'cancelled','total_timeout'}:return 3
+            return 0 if result['completed'] and result['repeatable'] else 2
+        except (OSError,ValueError,TypeError,KeyError) as exc:
+            print(str(exc)[:4000],file=sys.stderr);return 2
+
+    if args.command == "motor-restart":
+        from power_grid_env.motor_restart import MotorRestartProtocol,run_motor_restart
+        from power_grid_env.study_spec import StudySpec
+        try:
+            result=run_motor_restart(StudySpec.model_validate_json(Path(args.study).read_text()),MotorRestartProtocol.model_validate_json(Path(args.protocol).read_text()),Path(args.out),cancelled=(lambda:Path(args.cancel_file).exists()) if args.cancel_file else None)
+        except (OSError,ValueError,TypeError) as exc:
+            result=dict(completed=False,status='rejected',candidates_within_sampled_limits=[],engineering_assessment='inconclusive',error=str(exc))
+            print(str(exc)[:4000],file=sys.stderr)
+        print(json.dumps({k:result.get(k) for k in ['completed','status','candidates_within_sampled_limits','engineering_assessment']},ensure_ascii=False))
+        if result['status'] in {'cancelled','total_timeout'}:return 3
+        return 0 if result['completed'] and result.get('candidates_within_sampled_limits') else 2
+
     if args.command == "motor-sensitivity":
         from power_grid_env.motor_sensitivity import MotorSensitivityProtocol, run_motor_sensitivity
         from power_grid_env.study_spec import StudySpec

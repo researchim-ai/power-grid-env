@@ -1,0 +1,99 @@
+{
+  "scope": "Synthetic source plateaus well separated from thresholds; authored expected timer actions, no fitted event times",
+  "cases": [
+    {
+      "case": "cases/studies/motor_contactor_delayed.json",
+      "expected_automatic_actions": [
+        {
+          "time_s": 0.28,
+          "kind": "motor_open",
+          "equipment_id": "m"
+        },
+        {
+          "time_s": 0.62,
+          "kind": "motor_close",
+          "equipment_id": "m"
+        }
+      ]
+    },
+    {
+      "case": "cases/studies/motor_contactor_short_sag.json",
+      "expected_automatic_actions": []
+    },
+    {
+      "case": "cases/studies/motor_contactor_off_time.json",
+      "expected_automatic_actions": [
+        {
+          "time_s": 0.28,
+          "kind": "motor_open",
+          "equipment_id": "m"
+        },
+        {
+          "time_s": 0.98,
+          "kind": "motor_close",
+          "equipment_id": "m"
+        }
+      ]
+    },
+    {
+      "case": "cases/studies/motor_contactor_hysteresis.json",
+      "expected_automatic_actions": [
+        {
+          "time_s": 0.28,
+          "kind": "motor_open",
+          "equipment_id": "m"
+        },
+        {
+          "time_s": 0.62,
+          "kind": "motor_close",
+          "equipment_id": "m"
+        }
+      ]
+    },
+    {
+      "case": "cases/studies/motor_contactor_restart_limit.json",
+      "expected_automatic_actions": [
+        {
+          "time_s": 0.28,
+          "kind": "motor_open",
+          "equipment_id": "m"
+        },
+        {
+          "time_s": 0.62,
+          "kind": "motor_close",
+          "equipment_id": "m"
+        },
+        {
+          "time_s": 0.88,
+          "kind": "motor_open",
+          "equipment_id": "m"
+        }
+      ]
+    },
+    {
+      "case": "cases/studies/motor_contactor_staggered_group.json",
+      "expected_automatic_actions": [
+        {
+          "time_s": 0.28,
+          "kind": "motor_open",
+          "equipment_id": "m"
+        },
+        {
+          "time_s": 0.3,
+          "kind": "motor_open",
+          "equipment_id": "m2"
+        },
+        {
+          "time_s": 0.62,
+          "kind": "motor_close",
+          "equipment_id": "m"
+        },
+        {
+          "time_s": 0.75,
+          "kind": "motor_close",
+          "equipment_id": "m2"
+        }
+      ]
+    }
+  ]
+}

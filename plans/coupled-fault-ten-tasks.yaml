@@ -1,0 +1,52 @@
+schema: power-grid-env.delivery-tasks/v1
+date: '2026-10-31'
+status: complete
+document: docs/COUPLED_FAULTS_AND_CLEARING_RU.md
+report: reports/coupled-faults-final-2026-10-31/delivery.json
+tasks:
+- id: CF-01
+  title: Finite balanced fault passport and early validation
+  implementation: power_grid_env/coupled_rms.py
+  status: done
+- id: CF-02
+  title: Shared sparse shunt stamp on canonical bus voltage base
+  implementation: power_grid_env/coupled_rms.py
+  status: done
+- id: CF-03
+  title: Atomic apply clear thermal and contactor boundaries with refactor failure
+    status
+  implementation: power_grid_env/induction_network.py
+  status: done
+- id: CF-04
+  title: Physical fault current and P Q channels included in global balance
+  implementation: power_grid_env/coupled_rms.py
+  status: done
+- id: CF-05
+  title: Independent five equation physical SI mixed machine fault corpus
+  implementation: benchmarks/coupled_fault_reference.py
+  status: done
+- id: CF-06
+  title: Saturated and unsaturated ANDES limit and multi voltage ABC snapshots
+  implementation: tests/test_coupled_faults.py
+  status: done
+- id: CF-07
+  title: Frozen duration protocol and sampled finite horizon acceptance metrics
+  implementation: power_grid_env/fault_clearing.py
+  status: done
+- id: CF-08
+  title: Bounded isolated experiment runner with identity cancellation deadlines and
+    artifacts
+  implementation: power_grid_env/fault_clearing.py
+  status: done
+- id: CF-09
+  title: Fault clearing CLI and public protocol JSON schema
+  implementation: power_grid_env/cli.py
+  status: done
+- id: CF-10
+  title: Full regression documentation and hashed delivery
+  implementation: docs/COUPLED_FAULTS_AND_CLEARING_RU.md
+  status: done
+critical_clearing_time_certified: false
+industrial_profile_qualified: false
+field_validated: false
+competitive_superiority_proven: false

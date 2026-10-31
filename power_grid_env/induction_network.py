@@ -1,6 +1,8 @@
-"""Single-cage rotor dynamics coupled to an exact linear positive-sequence network.
+"""Single/two-cage rotor dynamics coupled to a linear positive-sequence network.
 
-States per motor: complex transient internal voltage E and speed omega.
+Base coordinates: effective internal stator EMF E and speed omega.
+Two-cage models add a rotor contribution through motor_cages; the scalar
+equation below applies only to the single-cage branch.
 I=(V-E)/(rs+j*x'); E'=-(1/T+j*wb*(1-omega))*E+j*(X-X')/T*I.
 2H*omega'=Re(E*conj(I))-Tfan*omega*abs(omega).
 """
@@ -30,8 +32,10 @@ def validate_induction(network, settings, *, validate_rules=True):
         errors.append('positive finite system MVA and frequency required')
     if len(topology.buses) > 2000:
         errors.append('motor network exceeds 2000-bus implementation budget')
-    samples = math.ceil(settings.duration_s / settings.step_s) + 2 * (len(settings.events) + sum(m.thermal is not None for m in settings.motors)) + 2
-    if samples * (2 * len(topology.buses) + 14 * len(settings.motors) + 6) > 2_000_000:
+    control_samples = 2*settings.maximum_contactor_transitions if any(m.contactor for m in settings.motors) else 0
+    samples = control_samples + math.ceil(settings.duration_s / settings.step_s) + 2 * (len(settings.events) + sum(m.thermal is not None for m in settings.motors)) + 2
+    motor_channels=sum(16+8*(m.model=='double_cage')+2*bool(m.thermal)+6*bool(m.contactor) for m in settings.motors)
+    if samples * (2 * len(topology.buses) + motor_channels + 6) > 2_000_000:
         errors.append('motor trace exceeds two-million-scalar budget')
     if any(set(n.phases) != set('ABC') for n in network.connectivity_nodes):
         errors.append('only ABC nodes supported')
@@ -71,7 +75,13 @@ def validate_induction(network, settings, *, validate_rules=True):
             errors.append(f'{load.id}: explicit load rated_kv not supported; use bus-base powers')
     all_ids = {x.id for group in (network.sources, network.loads, network.generators, network.lines, network.transformers, network.switches) for x in group}
     for motor in settings.motors:
-        constants = motor.constants(network.frequency_hz) if network.frequency_hz > 0 else (float('nan'),)
+        try:
+            from power_grid_env.induction import InductionMotor
+            InductionMotor.model_validate(motor.model_dump(mode='json'))
+            constants = motor.constants(network.frequency_hz) if network.frequency_hz > 0 else (float('nan'),)
+        except (ValueError,TypeError,ArithmeticError,np.linalg.LinAlgError) as exc:
+            errors.append(f'{motor.id}: invalid motor passport/constants: {exc}')
+            constants=(float('nan'),)
         factor = motor.rated_va / network.s_base_va if network.s_base_va > 0 else float('nan')
         if not all(math.isfinite(c) and c > 0 for c in (*constants, factor)):
             errors.append(f'{motor.id}: motor base/constants not numerically representable')
@@ -83,6 +93,10 @@ def validate_induction(network, settings, *, validate_rules=True):
             nominal = topology.buses[topology.node_to_bus[motor.node_id]].nominal_ll_v
             if not math.isclose(motor.rated_ll_v, nominal, rel_tol=1e-9):
                 errors.append(f'{motor.id}: motor rated voltage must equal bus base')
+    for motor in settings.motors:
+        if motor.contactor and motor.contactor.sense_node_id not in topology.node_to_bus:
+            errors.append(f'{motor.id}: unknown contactor sensing node')
+    controlled = {m.id for m in settings.motors if m.contactor}
     states = {m.id: m.connected for m in settings.motors}
     for event in sorted(settings.events, key=lambda e: e.time_s):
         if event.kind == 'source_voltage':
@@ -94,12 +108,12 @@ def validate_induction(network, settings, *, validate_rules=True):
             pass
         else:
             closed = event.kind == 'motor_close'
-            if states[event.equipment_id] == closed:
+            if event.equipment_id not in controlled and states[event.equipment_id] == closed:
                 errors.append('redundant contactor operation')
             states[event.equipment_id] = closed
-    return {'ok': not errors, 'errors': errors, 'model': 'single_cage_third_order_balanced',
+    return {'ok': not errors, 'errors': errors, 'model': 'single_or_double_cage_algebraic_stator_balanced',
             'limitations': ['algebraic stator; no EMT/inrush waveform', 'constant_z background only',
-                            'fan/viscous/quadratic/smooth friction; no hard stiction or gravity load', 'no saturation/deep-bar/VFD or winding/rotor temperature qualification',
+                            'fan/viscous/quadratic/smooth friction; no hard stiction or gravity load', 'two parallel cages optional; no saturation/frequency-dependent rotor parameters/VFD or winding/rotor temperature qualification',
                             'no synchronous generators or islanding', 'no field validation']}
 
 
@@ -148,6 +162,9 @@ class InductionNetwork:
         self.electrical_size = 3*len(settings.motors)
         self.thermal_indices = {i: self.electrical_size+j for j, i in enumerate(
             i for i, m in enumerate(settings.motors) if m.thermal is not None)}
+        from power_grid_env.motor_cages import MotorCageBank
+        self.cages=MotorCageBank(settings.motors,network.frequency_hz,self.electrical_size+len(self.thermal_indices))
+        self.motor_state_end=self.cages.end
         self.thermal_latched = np.zeros(len(settings.motors), dtype=bool)
         self.factorize()
 
@@ -158,6 +175,7 @@ class InductionNetwork:
             matrix[bus, bus] += y
         self.matrix = csc_matrix(matrix)
         self.lu = splu(self.matrix)
+        self._motor_current_response = None
 
     def electrical(self, state):
         values = np.asarray(state)[:self.electrical_size].reshape(-1, 3)
@@ -187,12 +205,13 @@ class InductionNetwork:
         derivatives = np.column_stack([de.real, de.imag, dw]).ravel()
         heating = [(abs(current[i])**2-state[address])/self.settings.motors[i].thermal.time_constant_s
                    for i, address in self.thermal_indices.items()]
-        return np.r_[derivatives, heating]
+        extra=self.cages.derivatives(state,current,derivatives)
+        return np.r_[derivatives, heating,extra]
 
     def steady_electrical(self, speed):
         """Eliminate rotor states analytically at a prescribed vector of slips."""
         wb = 2*math.pi*self.network.frequency_hz
-        response = np.array([1j*c[1]/(1+1j*wb*c[2]*(1-w)) for c, w in zip(self.constants, speed)])
+        response = self.cages.response(self.constants,speed)
         equivalent = self.zmotor+response
         admittance = np.where(self.connected, self.factors/equivalent, 0j)
         matrix = self.base_y.tolil(copy=True)
@@ -205,6 +224,19 @@ class InductionNetwork:
         internal = response*current
         torque = (internal*np.conj(current)).real
         return voltage, current, internal, torque
+
+    def scheduled_events(self):
+        return self.settings.events
+
+    def additional_passive_current(self,voltage):
+        return np.zeros(len(self.bus_names),dtype=complex)
+
+    def integration_jacobian(self):
+        return self.jacobian
+
+    def jacobian(self,time,state):
+        from power_grid_env.motor_jacobian import jacobian
+        return jacobian(self,state)
 
     def additional_channels(self):
         return {}
@@ -256,21 +288,38 @@ def run_induction(network, settings):
     return integrate_induction_model(model, scope, state, operating_point)
 
 
+def reclose_diagnostic(model, channels, motor_id):
+    i = next(i for i, m in enumerate(model.settings.motors) if m.id == motor_id)
+    terminal = complex(channels[motor_id+'.terminal_e_real_pu'][-1], channels[motor_id+'.terminal_e_imag_pu'][-1])
+    bus = model.bus_names[int(model.motor_buses[i])]
+    grid = channels[bus+'.v'][-1]*np.exp(1j*channels[bus+'.a'][-1])
+    phase_valid = abs(terminal)>1e-12 and abs(grid)>1e-12
+    return {'pre_batch_connected':bool(channels[motor_id+'.connected'][-1]),
+               'pre_batch_terminal_voltage_pu':float(abs(terminal)), 'pre_batch_bus_voltage_pu':float(abs(grid)),
+               'pre_batch_voltage_difference_pu':float(abs(grid-terminal)),
+               'pre_batch_phase_difference_rad':float(np.angle(grid*np.conj(terminal))) if phase_valid else None,
+               'phase_defined_above_voltage_pu':1e-12, 'scope':'diagnostic only; no synchronism permissive or instantaneous EMT current claim'}
+
+
 def integrate_induction_model(model, scope, state, operating_point, *, study='motor_start'):
     """Shared event/thermal integrator; extra machines use the same nodal solve."""
     network, settings = model.network, model.settings
+    from power_grid_env.motor_contactor import MotorContactorBank,ContactorControlError
+    contactors = MotorContactorBank(model,state)
     events = {}
-    for event in settings.events:
+    for event in model.scheduled_events():
         events.setdefault(event.time_s, []).append(event)
     boundaries = [0., *sorted(events), settings.duration_s]
     regular = np.arange(math.ceil(settings.duration_s/settings.step_s))*settings.step_s
     channels = {f'{m.id}.{key}': [] for m in settings.motors for key in (
-        'speed_pu', 'slip', 'e_real_pu', 'e_imag_pu', 'current_pu', 'bus_voltage_pu', 'p_w', 'q_var', 'te_pu', 'load_torque_pu', 'load_scale', 'connected')}
+        'speed_pu', 'slip', 'e_real_pu', 'e_imag_pu', 'current_pu', 'bus_voltage_pu', 'terminal_voltage_pu', 'terminal_e_real_pu', 'terminal_e_imag_pu', 'breaker_voltage_difference_pu', 'p_w', 'q_var', 'te_pu', 'load_torque_pu', 'load_scale', 'connected')}
     channels.update({f'{bus}.{key}': [] for bus in model.bus_names for key in ('v', 'a')})
     for i in model.thermal_indices:
         for key in ('thermal_level', 'thermal_latched'):
             channels[f'{settings.motors[i].id}.{key}'] = []
     channels.update(model.additional_channels())
+    channels.update(model.cages.channels(settings.motors))
+    channels.update(contactors.channels())
     times, sides, kcl = [], [], []
     event_log = []
     source_power, power_balance = [], []
@@ -281,9 +330,14 @@ def integrate_induction_model(model, scope, state, operating_point, *, study='mo
         times.append(float(time)); sides.append(side); kcl.append(mismatch)
         for i, motor in enumerate(settings.motors):
             speed = values[i, 2]
+            internal = complex(values[i, 0], values[i, 1])
+            bus_voltage = voltage[model.motor_buses[i]]
+            terminal_voltage = bus_voltage if model.connected[i] else internal
             s = voltage[model.motor_buses[i]]*np.conj(current[i])*motor.rated_va
             row = dict(speed_pu=speed, slip=1-speed, e_real_pu=values[i, 0], e_imag_pu=values[i, 1],
-                       current_pu=abs(current[i]), bus_voltage_pu=abs(voltage[model.motor_buses[i]]), p_w=s.real, q_var=s.imag, te_pu=torque[i],
+                       current_pu=abs(current[i]), bus_voltage_pu=abs(bus_voltage),
+                       terminal_voltage_pu=abs(terminal_voltage), terminal_e_real_pu=terminal_voltage.real, terminal_e_imag_pu=terminal_voltage.imag,
+                       breaker_voltage_difference_pu=abs(bus_voltage-terminal_voltage), p_w=s.real, q_var=s.imag, te_pu=torque[i],
                        load_torque_pu=motor.load_torque(speed)*model.load_scale[i], load_scale=model.load_scale[i], connected=bool(model.connected[i]))
             for key, value in row.items():
                 channels[f'{motor.id}.{key}'].append(float(value))
@@ -293,38 +347,48 @@ def integrate_induction_model(model, scope, state, operating_point, *, study='mo
         for i, bus in enumerate(model.bus_names):
             channels[f'{bus}.v'].append(float(abs(voltage[i])))
             channels[f'{bus}.a'].append(float(np.angle(voltage[i])))
+        for key,value in model.cages.signals(full_state,settings.motors,current).items():channels[key].append(value)
+        for key,value in contactors.signals(voltage,time).items():channels[key].append(value)
         additional, additional_injection = model.additional_signals(full_state, voltage)
         for key, value in additional.items():
             channels[key].append(float(value))
         source_i = model.source_y*(model.source_e*model.source_scale-voltage[model.source_bus])
         injected = voltage[model.source_bus]*np.conj(source_i)*network.s_base_va
         source_power.append(injected)
-        passive_i = model.base_y@voltage
+        passive_i = model.base_y@voltage + model.additional_passive_current(voltage)
         passive_i[model.source_bus] -= model.source_y*voltage[model.source_bus]
         passive_power = np.sum(voltage*np.conj(passive_i))*network.s_base_va
         motor_power = np.sum(voltage[model.motor_buses]*np.conj(current)*model.factors)*network.s_base_va
         power_balance.append(float(abs(injected+additional_injection-passive_power-motor_power)/network.s_base_va))
     record(0., state, 'initial')
-    nfev = 0
+    nfev = njev = nlu = 0
+    jacobian_callback = model.integration_jacobian()
     for left, right in zip(boundaries, boundaries[1:]):
         cursor = left
         while cursor < right:
             guard_indices, guards = model.thermal_guards()
+            thermal_guard_count = len(guards)
+            control_ids, control_guards = contactors.guards()
+            guards.extend(control_guards)
+            target = contactors.next_deadline(right)
             try:
-                solution = solve_ivp(model.rhs, (cursor, right), state, method='Radau',
+                solution = solve_ivp(model.rhs, (cursor, target), state, method='Radau',
                                      rtol=settings.rtol, atol=settings.atol, max_step=settings.step_s,
-                                     dense_output=True, events=guards or None)
+                                     dense_output=True, events=guards or None, jac=jacobian_callback)
             except (ValueError, RuntimeError, ArithmeticError) as exc:
                 return {'solved': True, 'completed': False, 'status': 'numerically_not_converged',
                         'solver_message': str(exc), 'scope': scope}
             nfev += solution.nfev
+            njev += getattr(solution,'njev',0); nlu += getattr(solution,'nlu',0)
             if not solution.success or not np.isfinite(solution.y).all():
                 return {'solved': True, 'completed': False, 'status': 'numerically_not_converged',
                         'solver_message': solution.message, 'scope': scope}
             model.observe_accepted_states(solution.y)
             stop = float(solution.t[-1])
             state = solution.y[:, -1]
-            triggered = {i for i, roots in zip(guard_indices, solution.t_events or []) if len(roots)}
+            triggered = {i for i, roots in zip(guard_indices, (solution.t_events or [])[:thermal_guard_count]) if len(roots)}
+            control_roots = {i for i,roots in zip(control_ids,(solution.t_events or [])[thermal_guard_count:]) if len(roots)}
+            control_boundary = bool(control_roots) or contactors.due(stop)
             if triggered:
                 # Identical relays can reach the same threshold in one root.
                 # Apply exact numerical ties atomically; do not trip merely
@@ -337,11 +401,16 @@ def integrate_induction_model(model, scope, state, operating_point, *, study='mo
                             and abs(pre_current[i])**2 > state[model.thermal_indices[i]]):
                         triggered.add(i)
             scheduled = events.get(right, []) if stop == right else []
-            sample_times = [*regular[(regular > cursor) & (regular < stop)], stop]
+            axis_epsilon = 64*np.finfo(float).eps*max(1.,abs(cursor),abs(stop))
+            sample_times = [*regular[(regular > cursor+axis_epsilon) & (regular < stop-axis_epsilon)], stop]
             sampled = solution.sol(sample_times)
             sampled[:, -1] = state
             for time, values in zip(sample_times, sampled.T):
-                record(time, values, 'pre_event' if time == stop and (triggered or scheduled) else 'regular')
+                record(time, values, 'pre_event' if time == stop and (triggered or scheduled or control_boundary) else 'regular')
+            try:
+                if control_roots:contactors.observe(stop,state,event_log,control_roots)
+            except ValueError as exc:
+                return {'solved':True,'completed':False,'status':'contactor_control_failed','solver_message':str(exc),'event_log':event_log,'scope':scope}
             for i in sorted(triggered):
                 motor = settings.motors[i]
                 model.thermal_latched[i] = True
@@ -349,7 +418,17 @@ def integrate_induction_model(model, scope, state, operating_point, *, study='mo
                 event_log.append({'time_s': stop, 'kind': 'thermal_trip', 'equipment_id': motor.id,
                                   'level': float(state[model.thermal_indices[i]]),
                                   'threshold': motor.thermal.trip_level, 'outcome': 'latched_open'})
+            batch_log_start = len(event_log)
+            manual_interlocks_refreshed = False
+            if contactors.states:scheduled = sorted(scheduled,key=lambda e:e.kind in {'motor_open','motor_close'})
             for event in scheduled:
+                if contactors.states and event.kind in {'motor_open','motor_close'} and not manual_interlocks_refreshed:
+                    try:
+                        model.factorize();contactors.observe(stop,state,event_log)
+                    except (ValueError,RuntimeError,ArithmeticError) as exc:
+                        return {'solved':True,'completed':False,'status':'contactor_control_failed','solver_message':str(exc),'event_log':event_log,'scope':scope}
+                    manual_interlocks_refreshed = True
+                reclose = reclose_diagnostic(model,channels,event.equipment_id) if event.kind=='motor_close' else None
                 additional = model.apply_additional_event(event)
                 if additional is not None:
                     event_log.append({'time_s':stop,'kind':event.kind,'equipment_id':event.equipment_id,**additional})
@@ -366,16 +445,37 @@ def integrate_induction_model(model, scope, state, operating_point, *, study='mo
                     requested = event.kind == 'motor_close'
                     if requested and model.thermal_latched[i]:
                         outcome = 'blocked_thermal_latch'
+                    elif requested and not contactors.close_permitted(i):
+                        outcome = 'blocked_undervoltage'
                     elif model.connected[i] == requested:
                         outcome = 'already_in_requested_state'
                     else:
                         model.connected[i] = requested
+                    if outcome in {'applied','already_in_requested_state'}:contactors.manual(i,event.kind,stop)
                 event_log.append({'time_s': stop, 'kind': event.kind, 'equipment_id': event.equipment_id,
-                                  'outcome': outcome})
-            if triggered or scheduled:
-                model.factorize()
-                record(stop, state, 'post_event')
-            if stop < cursor or (stop == cursor and not triggered):
+                                  'outcome': outcome, **({'reclose_diagnostic':reclose} if reclose is not None else {})})
+            if triggered or scheduled or control_boundary:
+                try:
+                    model.factorize()
+                    contactors.observe(stop,state,event_log)
+                    actions = contactors.actions(stop)
+                    for i,kind in actions:
+                        diagnostic = reclose_diagnostic(model,channels,settings.motors[i].id) if kind=='motor_close' else None
+                        model.connected[i] = kind=='motor_close'
+                        contactors.applied(i,kind,stop,event_log,diagnostic)
+                    if actions:
+                        model.factorize()
+                        contactors.observe(stop,state,event_log)
+                    record(stop, state, 'post_event')
+                    for entry in event_log[batch_log_start:]:
+                        if 'reclose_diagnostic' in entry:
+                            motor_id = entry['equipment_id']
+                            entry['reclose_diagnostic']['post_batch_current_pu'] = channels[motor_id+'.current_pu'][-1]
+                            entry['reclose_diagnostic']['post_batch_connected'] = bool(channels[motor_id+'.connected'][-1])
+                except (ValueError,RuntimeError,ArithmeticError) as exc:
+                    return {'solved':True,'completed':False,'status':'contactor_control_failed' if isinstance(exc,ContactorControlError) else 'network_refactorization_failed',
+                            'time_s':stop,'solver_message':str(exc),'event_log':event_log,'scope':scope}
+            if stop < cursor or (stop == cursor and not (triggered or control_boundary)):
                 return {'solved': True, 'completed': False, 'status': 'integration_no_progress', 'scope': scope}
             cursor = stop
     channels[network.sources[0].id+'.p_w'] = [float(s.real) for s in source_power]
@@ -407,15 +507,31 @@ def integrate_induction_model(model, scope, state, operating_point, *, study='mo
             'code_sha256': package_fingerprint(), 'network_sha256': canonical_hash(network),
             'settings': settings.model_dump(mode='json'), 'scope': scope, 'time_s': times,
             'sample_side': sides, 'channels': channels, 'motor_summary': summary, 'event_log': event_log,
+            'contactor_control': {'model':'hysteretic_voltage_contactor', 'transition_count':contactors.transitions, 'transition_budget':settings.maximum_contactor_transitions, 'initial_open_auto_start':False, 'manual_close_voltage_check':'after_nonmotor_scheduled_commands_before_manual_switches', 'automatic_action_voltage_check':'after_scheduled_commands', 'electromagnetic_coil_model':False},
             'mapping': {'motor_buses': {m.id: model.bus_names[int(bus)] for m, bus in zip(settings.motors, model.motor_buses)}},
-            'maximum_kcl_residual_pu': max_kcl, 'maximum_power_balance_residual_pu': max(power_balance), 'integration': {'method': 'Radau', 'nfev': nfev},
+            'maximum_kcl_residual_pu': max_kcl, 'maximum_power_balance_residual_pu': max(power_balance), 'integration': {'method': 'Radau', 'nfev': nfev, 'njev': njev, 'nlu': nlu, 'jacobian': 'analytic_motor_network_reduction' if jacobian_callback is not None else 'scipy_finite_difference'},
+            'motor_models': {m.id:m.model for m in settings.motors},
             'initialization': 'loaded high-speed equilibrium' if settings.operating_point else 'zero rotor flux and zero speed; explicit initial contactor states',
             'operating_point': operating_point, 'additional_validation': additional_validation,
             'units': {'e_real_pu': 'pu bus voltage', 'e_imag_pu': 'pu bus voltage',
+                      'cage1_e_real_pu':'pu motor voltage, first cage contribution real', 'cage1_e_imag_pu':'pu motor voltage, first cage contribution imaginary',
+                      'rotor1_current_pu':'rotor current referred to stator / motor rated stator current', 'rotor2_current_pu':'rotor current referred to stator / motor rated stator current',
+                      'rotor1_copper_loss_w':'W, three-phase first rotor cage resistive loss', 'rotor2_copper_loss_w':'W, three-phase second rotor cage resistive loss',
+                      'cage2_e_real_pu':'pu motor voltage, second cage contribution real', 'cage2_e_imag_pu':'pu motor voltage, second cage contribution imaginary',
                       'speed_pu': 'pu synchronous mechanical speed', 'current_pu': 'pu motor rated current', 'bus_voltage_pu': 'pu motor rated line voltage',
+                      'terminal_voltage_pu': 'pu motor rated line voltage; machine side of contactor',
+                      'terminal_e_real_pu': 'pu motor voltage, synchronous frame real part',
+                      'terminal_e_imag_pu': 'pu motor voltage, synchronous frame imaginary part',
+                      'breaker_voltage_difference_pu': 'pu motor voltage; grid minus machine phasor magnitude',
                       'te_pu': 'pu motor rated VA / synchronous mechanical speed',
                       'load_torque_pu': 'pu motor rated VA / synchronous mechanical speed',
                       'thermal_level': 'dimensionless current-squared replica; rated-current equilibrium = 1',
+                      'contactor_sensed_voltage_pu': 'pu sensing-node nominal line voltage',
+                      'contactor_voltage_available': 'hysteretic voltage-availability latch, 0/1',
+                      'contactor_pending_restart': 'automatic restart pending, 0/1',
+                      'contactor_restart_count': 'count of automatic closings in study horizon',
+                      'contactor_timer_active': '0/1; whether a finite automatic deadline is pending',
+                      'contactor_timer_remaining_s': 's to automatic deadline; zero when timer inactive',
                       'thermal_latched': '1 = latched trip; 0 = not tripped', 'v': 'pu bus voltage', 'a': 'rad', 'p_w': 'W', 'q_var': 'var'},
             'industrial_profile_qualified': False, 'field_validated': False}
     result.update(model.additional_metadata())

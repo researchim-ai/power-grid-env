@@ -13,6 +13,15 @@ def export_schemas(directory: Path) -> None:
     from power_grid_env.study_spec import StudySpec
 
     directory.mkdir(parents=True, exist_ok=True)
+    from power_grid_env.motor_bundle import MotorReplayCriteria
+    (directory / "motor-replay.schema.json").write_text(
+        json.dumps(MotorReplayCriteria.model_json_schema(), ensure_ascii=False, indent=2), encoding="utf-8")
+    from power_grid_env.fault_clearing import FaultClearingProtocol
+    (directory / "fault-clearing.schema.json").write_text(
+        json.dumps(FaultClearingProtocol.model_json_schema(), ensure_ascii=False, indent=2), encoding="utf-8")
+    from power_grid_env.motor_restart import MotorRestartProtocol
+    (directory / "motor-restart.schema.json").write_text(
+        json.dumps(MotorRestartProtocol.model_json_schema(), ensure_ascii=False, indent=2), encoding="utf-8")
     from power_grid_env.motor_sensitivity import MotorSensitivityProtocol
     (directory / "motor-sensitivity.schema.json").write_text(
         json.dumps(MotorSensitivityProtocol.model_json_schema(), ensure_ascii=False, indent=2), encoding="utf-8")

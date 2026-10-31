@@ -1,0 +1,346 @@
+{
+  "schema_version": "power-grid-env.study/v1",
+  "id": "automatic-coupled-thermal_trip",
+  "study": "coupled_rms",
+  "backend": "scipy",
+  "network": {
+    "schema_version": "power-grid-env.network/v1",
+    "id": "coupled",
+    "name": "Coupled generator and motor",
+    "s_base_va": 5000000.0,
+    "frequency_hz": 50.0,
+    "voltage_levels": [
+      {
+        "id": "vl0",
+        "nominal_ll_v": 10000.0,
+        "substation_id": null,
+        "s_base_va": null
+      }
+    ],
+    "connectivity_nodes": [
+      {
+        "id": "grid",
+        "voltage_level_id": "vl0",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "x": null,
+        "y": null
+      },
+      {
+        "id": "plant",
+        "voltage_level_id": "vl0",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "x": null,
+        "y": null
+      }
+    ],
+    "terminals": [
+      {
+        "id": "source:grid",
+        "equipment_id": "source",
+        "connectivity_node_id": "grid",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "line:grid",
+        "equipment_id": "line",
+        "connectivity_node_id": "grid",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "line:plant",
+        "equipment_id": "line",
+        "connectivity_node_id": "plant",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "g:plant",
+        "equipment_id": "g",
+        "connectivity_node_id": "plant",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      }
+    ],
+    "lines": [
+      {
+        "id": "line",
+        "terminal_from": "line:grid",
+        "terminal_to": "line:plant",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "length_m": 1000.0,
+        "r_ohm": [
+          [
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "x_ohm": [
+          [
+            3.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            3.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            3.0
+          ]
+        ],
+        "b_siemens": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "rating_a": 400.0,
+        "emergency_rating_a": null,
+        "emergency_duration_s": null,
+        "kron_reduction": "forbidden",
+        "temperature_c": null,
+        "resistance_alpha_per_c": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "Z1 и взаимное сопротивление заданы аналитически"
+        }
+      }
+    ],
+    "switches": [],
+    "transformers": [],
+    "loads": [],
+    "sources": [
+      {
+        "id": "source",
+        "terminal_id": "source:grid",
+        "ll_v": 10000.0,
+        "angle_a_rad": 0.0,
+        "r_ohm": 0.1,
+        "x_ohm": 0.3,
+        "r0_ohm": null,
+        "x0_ohm": null,
+        "is_slack": true,
+        "participation": null,
+        "phase_pu": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "балансный источник прямой последовательности"
+        }
+      }
+    ],
+    "generators": [
+      {
+        "id": "g",
+        "terminal_id": "g:plant",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "mode": "pv",
+        "p_w": 400000.0,
+        "q_var": 0.0,
+        "v_set_pu": 1.0,
+        "v_min_pu": 0.9,
+        "v_max_pu": 1.1,
+        "q_min_var": -10000000.0,
+        "q_max_var": 10000000.0,
+        "participation": null,
+        "ll_v": 10000.0,
+        "inertia_s": null,
+        "x_d_pu": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": null
+        }
+      }
+    ],
+    "inverters": [],
+    "storages": [],
+    "shunts": [],
+    "neutral_grounds": [],
+    "meters": [],
+    "study_faults": [],
+    "harmonics": [],
+    "assumptions": [],
+    "omissions": [],
+    "provenance": {
+      "source": "authored-analytical-case",
+      "quality": "nameplate",
+      "timestamp": null,
+      "uncertainty": null,
+      "note": null
+    }
+  },
+  "requested_motors": [],
+  "scenario": null,
+  "rms": null,
+  "induction": null,
+  "coupled": {
+    "duration_s": 1.2,
+    "step_s": 0.005,
+    "rtol": 1e-07,
+    "atol": 1e-09,
+    "motors": [
+      {
+        "id": "m",
+        "model": "double_cage",
+        "rotor_mutual_x_pu": 0.03,
+        "rotor2_r_pu": 0.06,
+        "rotor2_x_pu": 0.2,
+        "node_id": "plant",
+        "rated_va": 1000000.0,
+        "rated_ll_v": 10000.0,
+        "stator_r_pu": 0.02,
+        "stator_x_pu": 0.1,
+        "rotor_r_pu": 0.015,
+        "rotor_x_pu": 0.1,
+        "magnetizing_x_pu": 3.0,
+        "inertia_s": 0.3,
+        "fan_torque_pu": 0.8,
+        "mechanical_load": null,
+        "connected": true,
+        "thermal": {
+          "model": "stator_i2_replica",
+          "time_constant_s": 0.12,
+          "trip_level": 2.0,
+          "initial_level": 0.1
+        },
+        "contactor": {
+          "model": "hysteretic_voltage_contactor",
+          "sense_node_id": "grid",
+          "dropout_voltage_pu": 0.65,
+          "pickup_voltage_pu": 0.85,
+          "dropout_delay_s": 0.08,
+          "pickup_delay_s": 0.12,
+          "minimum_off_time_s": 0.25,
+          "maximum_automatic_restarts": 2
+        }
+      }
+    ],
+    "operating_point": null,
+    "maximum_contactor_transitions": 64,
+    "events": [
+      {
+        "time_s": 0.6,
+        "kind": "motor_close",
+        "equipment_id": "m",
+        "value": null
+      }
+    ],
+    "faults": [],
+    "machines": [
+      {
+        "model": "GENROU",
+        "generator_id": "g",
+        "rated_va": 8000000.0,
+        "inertia_s": 1.0,
+        "x_d_prime_pu": 0.3,
+        "damping_pu": 3.0,
+        "governor": {
+          "model": "TGOV1",
+          "R": 0.05,
+          "T1": 0.1,
+          "T2": 0.05,
+          "T3": 0.3,
+          "VMIN": 0.0,
+          "VMAX": 1.0,
+          "Dt": 0.1
+        },
+        "exciter": {
+          "model": "SEXS",
+          "TATB": 0.3,
+          "TB": 0.5,
+          "K": 20.0,
+          "TE": 0.1,
+          "EMIN": 0.2,
+          "EMAX": 4.0
+        },
+        "stabilizer": null,
+        "x_d_pu": 1.8,
+        "x_q_pu": 1.7,
+        "x_d_subtransient_pu": 0.25,
+        "x_q_prime_pu": 0.55,
+        "x_q_subtransient_pu": 0.25,
+        "leakage_pu": 0.15,
+        "armature_r_pu": 0.002,
+        "td_prime_s": 8.0,
+        "td_subtransient_s": 0.04,
+        "tq_prime_s": 0.8,
+        "tq_subtransient_s": 0.02,
+        "saturation": "disabled",
+        "saturation_s10": null,
+        "saturation_s12": null
+      }
+    ]
+  },
+  "options": {
+    "tolerance": 1e-10,
+    "max_iterations": 80,
+    "max_outer": 20,
+    "max_pv_refinements": 4,
+    "apply_regulators": true,
+    "inverter_current_limit_model": false,
+    "approximate_phase_shift": false
+  }
+}

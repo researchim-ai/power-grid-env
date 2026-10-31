@@ -5,6 +5,7 @@ must pass a declared numerical tolerance. No parameters are auto-adjusted.
 """
 from __future__ import annotations
 import numpy as np
+from power_grid_env.coupled_pss import CoupledPSS
 
 
 def limited_rate(state, rate, low, high):
@@ -16,13 +17,16 @@ def limited_rate(state, rate, low, high):
 class CoupledControllerBank:
     def __init__(self, passports, offset):
         self.passports=passports;self.offset=offset
-        self.gov={};self.avr={};self.pref={};self.vref={}
+        self.gov={};self.avr={};self.pss_addresses={};self.pref={};self.vref={}
         address=offset
         for i,machine in enumerate(passports):
             if machine.governor:
                 self.gov[i]=(address,address+1);address+=2
             if machine.exciter:
                 self.avr[i]=(address,address+1);address+=2
+            if machine.stabilizer:
+                self.pss_addresses[i]=slice(address,address+7);address+=7
+        self.pss=CoupledPSS(passports,self.pss_addresses)
         self.end=address
         self.observed_overshoot={}
 
@@ -39,6 +43,7 @@ class CoupledControllerBank:
                 return {'reason':'initial_exciter_limit_or_boundary','generator':self.passports[i].generator_id}
             self.vref[i]=float(abs(voltage[i])+field[i]/passport.K)
             state[filter_state]=field[i]/passport.K;state[field_state]=field[i]
+        for address in self.pss_addresses.values():state[address]=0.
         return None
 
     def field(self,state,fixed):
@@ -58,6 +63,9 @@ class CoupledControllerBank:
 
     def derivatives(self,state,speed,voltage):
         result=np.zeros(self.end-self.offset)
+        pss_derivatives,pss_output,_=self.pss.evaluate(state,speed,voltage)
+        for i,address in self.pss_addresses.items():
+            result[address.start-self.offset:address.stop-self.offset]=pss_derivatives[i]
         for i,(valve,lag) in self.gov.items():
             p=self.passports[i].governor
             bounded=np.clip(state[valve],p.VMIN,p.VMAX)
@@ -67,7 +75,7 @@ class CoupledControllerBank:
             result[lag-self.offset]=(bounded-state[lag])/p.T3
         for i,(filter_state,field) in self.avr.items():
             p=self.passports[i].exciter
-            error=self.vref[i]-abs(voltage[i])
+            error=self.vref[i]-abs(voltage[i])+pss_output[i]
             bounded=np.clip(state[field],p.EMIN,p.EMAX)
             rate=(p.K*(p.TATB*error+(1-p.TATB)*state[filter_state])-state[field])/p.TE
             result[filter_state-self.offset]=(error-state[filter_state])/p.TB
@@ -82,10 +90,11 @@ class CoupledControllerBank:
         for i in self.avr:
             gen=self.passports[i].generator_id
             keys.extend(gen+'.SEXS.'+key for key in ['field_pu','field_state_pu','filter_pu','reference_pu','error_pu'])
-        return keys
+        return keys+self.pss.channel_names()
 
     def signals(self,state,speed,voltage,fixed_power):
-        result={};mechanical=self.mechanical(state,speed,fixed_power)
+        _,pss_output,result=self.pss.evaluate(state,speed,voltage)
+        mechanical=self.mechanical(state,speed,fixed_power)
         for i,(valve,lag) in self.gov.items():
             p=self.passports[i].governor;gen=self.passports[i].generator_id
             values=dict(valve_pu=np.clip(state[valve],p.VMIN,p.VMAX),valve_state_pu=state[valve],
@@ -94,7 +103,7 @@ class CoupledControllerBank:
         for i,(filter_state,field) in self.avr.items():
             p=self.passports[i].exciter;gen=self.passports[i].generator_id
             values=dict(field_pu=np.clip(state[field],p.EMIN,p.EMAX),field_state_pu=state[field],
-                        filter_pu=state[filter_state],reference_pu=self.vref[i],error_pu=self.vref[i]-abs(voltage[i]))
+                        filter_pu=state[filter_state],reference_pu=self.vref[i],error_pu=self.vref[i]-abs(voltage[i])+pss_output[i])
             result.update({gen+'.SEXS.'+k:float(v) for k,v in values.items()})
         return result
 
@@ -134,5 +143,13 @@ class CoupledControllerBank:
                 limits[prefix+signal]={'lower':low,'upper':high,'minimum':float(min(bounded)),'maximum':float(max(bounded)),
                     'maximum_raw_state_overshoot':overshoot,'state_overshoot_tolerance':tolerance,
                     'within_limits':bool(min(bounded)>=low and max(bounded)<=high and overshoot<=tolerance)}
-        return {'ok':all(row['within_limits'] for row in limits.values()),'controller_limits':limits,
+        pss_limits={}
+        for i in self.pss_addresses:
+            m=self.passports[i];p=m.stabilizer;prefix=m.generator_id+'.IEEEST.'
+            limited=np.asarray(channels[prefix+'limited_pu']);output=np.asarray(channels[prefix+'output_pu']);gate=np.asarray(channels[prefix+'voltage_gate'])
+            valid=bool(np.all(limited>=p.LSMIN) and np.all(limited<=p.LSMAX) and np.all((gate==0)|(gate==1)) and np.all(output==np.where(gate,limited,0.)))
+            pss_limits[m.generator_id]={'within_limits':valid,'lower':p.LSMIN,'upper':p.LSMAX,
+                'minimum_limited_pu':float(min(limited)),'maximum_limited_pu':float(max(limited)),
+                'sampled_blocked_outputs':int(sum(gate==0))}
+        return {'ok':all(row['within_limits'] for row in [*limits.values(),*pss_limits.values()]),'controller_limits':limits,'pss_limits':pss_limits,
                 'state_check_sampling':'accepted integration mesh and saved outputs; not continuous extremum certification'}

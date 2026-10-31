@@ -1,6 +1,6 @@
-"""Balanced single-cage, third-order induction motor study passports.
+"""Balanced single-cage and physical two-parallel-cage motor passports.
 
-Stator transients, saturation, deep-bar effects and converter controls are absent.
+Stator transients, saturation, continuous skin-effect laws and converter controls are absent.
 Motor torque and all electrical pu parameters use each motor's own MVA base.
 """
 from __future__ import annotations
@@ -9,6 +9,7 @@ import math
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from power_grid_env.motor_thermal import MotorThermalProtection
+from power_grid_env.motor_contactor import MotorContactorControl
 
 
 class MotorMechanicalLoad(BaseModel):
@@ -46,6 +47,10 @@ class MotorOperatingPoint(BaseModel):
 class InductionMotor(BaseModel):
     model_config = ConfigDict(extra='forbid', allow_inf_nan=False)
     id: str = Field(min_length=1)
+    model: Literal['single_cage','double_cage'] = 'single_cage'
+    rotor_mutual_x_pu: float = Field(default=0.,ge=0)
+    rotor2_r_pu: float | None = Field(default=None,gt=0)
+    rotor2_x_pu: float | None = Field(default=None,gt=0)
     node_id: str
     rated_va: float = Field(gt=0)
     rated_ll_v: float = Field(gt=0)
@@ -59,9 +64,12 @@ class InductionMotor(BaseModel):
     mechanical_load: MotorMechanicalLoad | None = None
     connected: bool = True
     thermal: MotorThermalProtection | None = None
+    contactor: MotorContactorControl | None = None
 
     @model_validator(mode='after')
     def single_mechanical_passport(self):
+        if self.model=='double_cage' and (self.rotor2_r_pu is None or self.rotor2_x_pu is None):raise ValueError('double cage requires both second rotor parameters')
+        if self.model=='single_cage' and (self.rotor2_r_pu is not None or self.rotor2_x_pu is not None or self.rotor_mutual_x_pu!=0.):raise ValueError('second rotor parameters require explicit double_cage model')
         if (self.fan_torque_pu is None) == (self.mechanical_load is None):
             raise ValueError('supply exactly one of fan_torque_pu or mechanical_load')
         return self
@@ -72,10 +80,18 @@ class InductionMotor(BaseModel):
         return self.fan_torque_pu*speed*abs(speed)
 
     def constants(self, frequency_hz):
+        """Norton reactance and historical first-cage reference X/T values.
+
+        The final two scalars do not define two-cage dynamics; that model uses
+        the full matrix block in MotorCageBank.
+        """
         total = self.rotor_x_pu + self.magnetizing_x_pu
         x_prime = self.stator_x_pu + self.rotor_x_pu * self.magnetizing_x_pu / total
         difference = self.magnetizing_x_pu * (self.magnetizing_x_pu / total)
         tau = total / (2 * math.pi * frequency_hz * self.rotor_r_pu)
+        if self.model=='double_cage':
+            from power_grid_env.motor_cages import double_cage_coefficients
+            x_prime=double_cage_coefficients(self,frequency_hz)[0]
         return x_prime, difference, tau
 
 
@@ -104,6 +120,7 @@ class InductionSettings(BaseModel):
     atol: float = Field(default=1e-9, gt=0, le=1e-6)
     motors: list[InductionMotor] = Field(min_length=1, max_length=32)
     operating_point: MotorOperatingPoint | None = None
+    maximum_contactor_transitions: int = Field(default=64, ge=1, le=512)
     events: list[InductionEvent] = Field(default_factory=list, max_length=100)
 
     @model_validator(mode='after')

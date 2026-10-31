@@ -7,7 +7,7 @@ from scipy.sparse.linalg import splu
 MAX_EVALUATIONS=4000
 
 
-def initialize_coupled(model):
+def initialize_coupled(model,*,require_stable=True):
     settings=model.settings;requested=settings.operating_point
     steady=requested is not None
     active=np.flatnonzero(model.connected) if steady else np.array([],dtype=int)
@@ -62,7 +62,11 @@ def initialize_coupled(model):
             model.gen_voltage=abs(internal)
             model.gen_mechanical=(internal*np.conj(ig)).real
             state[:model.electrical_size]=np.column_stack([em.real,em.imag,speeds]).ravel()
-            state[model.gen_offset:model.controllers.offset]=np.column_stack([np.angle(internal),np.ones(ng)]).ravel()
+            if steady:model.cages.initialize(state,current,speeds)
+            state[model.gen_offset:model.rotor_end]=np.column_stack([np.angle(internal),np.ones(ng)]).ravel()
+            rotor=state[model.gen_offset:model.rotor_end].reshape(-1,2)
+            generator_error=model.round_rotors.initialize(state,rotor,internal,ig,model.gen_voltage)
+            if generator_error:return None,generator_error
             if steady and requested.thermal_state=='equilibrium':
                 for i,address in model.thermal_indices.items():state[address]=abs(current[i])**2
             controller_error=model.controllers.initialize(state,voltage[model.gen_buses],model.gen_voltage,model.gen_mechanical,tolerance)
@@ -70,28 +74,25 @@ def initialize_coupled(model):
             limits=[settings.motors[i].id for i,address in model.thermal_indices.items() if state[address]>=settings.motors[i].thermal.trip_level]
             if limits:return None,{'reason':'initial_thermal_limit','motors':limits}
             derivative=model.rhs(0.,state)
-            checked=np.r_[np.arange(model.electrical_size),np.arange(model.gen_offset,len(state))] if steady else np.arange(model.gen_offset,len(state))
+            checked=np.r_[np.r_[np.arange(model.electrical_size),*[np.arange(a.start,a.stop) for a in model.cages.addresses.values()]],np.arange(model.gen_offset,len(state))] if steady else np.arange(model.gen_offset,len(state))
             dynamic=float(max(abs(derivative[checked])))
             if not np.isfinite(derivative).all() or dynamic>tolerance:
                 rejected.append('original_dynamic_residual');continue
             alpha=None
             if steady:
-                indices=np.r_[[3*i+j for i in active for j in range(3)],np.arange(model.gen_offset,len(state))].astype(int)
-                jac=np.empty((len(indices),len(indices)))
-                for column,address in enumerate(indices):
-                    h=model.controllers.difference_step(state,address,1e-6*max(1.,abs(state[address])))
-                    plus,minus=state.copy(),state.copy()
-                    plus[address]+=h;minus[address]-=h
-                    jac[:,column]=(model.rhs(0.,plus)[indices]-model.rhs(0.,minus)[indices])/(2*h)
+                flags=model.controllers.pss.boundaries(state,voltage[model.gen_buses])
+                if flags:return None,{'reason':'controller_boundary_operating_point','boundaries':flags}
+                from power_grid_env.coupled_linearization import reduced_jacobian
+                jac,_=reduced_jacobian(model,state)
                 modes=np.linalg.eigvals(jac);alpha=float(max(modes.real))
-                if not np.isfinite(modes).all() or alpha>=-1e-7:
+                if not np.isfinite(modes).all() or (require_stable and alpha>=-1e-7):
                     rejected.append('unstable_or_near_axis_coupled_equilibrium');continue
             return state.copy(),{'mode':'coupled_loaded_equilibrium' if steady else 'PV_generator_with_cold_motors',
                 'evaluations':evaluations,'electrical_residual':float(max(abs(residual(values)))),
                 'checked_dynamic_residual_per_s':dynamic,'connected_machine_spectral_abscissa_per_s':alpha,
                 'thermal_state':requested.thermal_state if steady else 'passport',
                 'thermal_residual_per_s':{settings.motors[i].id:float(derivative[address]) for i,address in model.thermal_indices.items()},
-                'generator_initial':{g.id:{'internal_voltage_pu':float(abs(internal[i])),'delta_rad':float(np.angle(internal[i])),
+                'generator_initial':{g.id:{'internal_voltage_pu':float(abs(internal[i])),'field_pu':float(model.gen_voltage[i]),'model':model.gen_passports[i].model,'delta_rad':float(rotor[i,0]),
                     'p_w':float(power[i].real),'q_var':float(power[i].imag),'mechanical_power_pu':float(model.gen_mechanical[i])} for i,g in enumerate(model.generators)},
                 'branch_note':'bounded local initialization; no uniqueness/global or hybrid protection stability proof'}
     except (ValueError,RuntimeError,ArithmeticError,np.linalg.LinAlgError) as exc:

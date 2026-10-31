@@ -2,12 +2,14 @@
 from __future__ import annotations
 import json
 import math
+import os
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import time
 from power_grid_env.evidence import package_fingerprint
+from power_grid_env.paths import package_dir
 from power_grid_env.ipc import kill_process_group
 from power_grid_env.report import write_json
 from power_grid_env.model import canonical_hash
@@ -24,12 +26,13 @@ def run_isolated_rms(spec, *, timeout_s=120., cancelled=None, max_result_bytes=6
         root=Path(directory)
         write_json(root/'study.json',spec.model_dump(mode='json'))
         def over_budget():
-            return any((root/name).exists() and (root/name).stat().st_size>limit for name,limit in
-                       [('stdout.log',max_log_bytes),('stderr.log',max_log_bytes),
-                        ('result.json',max_result_bytes),('result.json.tmp',max_result_bytes)])
+            return _output_over_budget(root,max_result_bytes,max_log_bytes)
+        worker_env=os.environ.copy()
+        worker_env['PYTHONPATH']=str(package_dir().parent)
         with (root/'stdout.log').open('wb') as stdout,(root/'stderr.log').open('wb') as stderr:
             process=subprocess.Popen([sys.executable,'-m','power_grid_env.rms_worker',str(root/'study.json'),str(root/'result.json')],
-                                     stdin=subprocess.DEVNULL,stdout=stdout,stderr=stderr,start_new_session=True)
+                                     stdin=subprocess.DEVNULL,stdout=stdout,stderr=stderr,start_new_session=True,
+                                     cwd=root,env=worker_env)
             reason=None
             try:
                 while process.poll() is None:
@@ -56,13 +59,24 @@ def run_isolated_rms(spec, *, timeout_s=120., cancelled=None, max_result_bytes=6
                 if report['completed'] and (report.get('code_sha256')!=code or package_fingerprint()!=code):
                     return _failure('stale_worker_code',elapsed)
                 if report['completed'] and (report.get('network_sha256')!=canonical_hash(spec.network)
-                        or report.get('settings')!=(spec.coupled if spec.study=='coupled_rms' else spec.induction if spec.study=='motor_start' else spec.rms).model_dump(mode='json')):
+                        or report.get('settings')!=(spec.coupled if spec.study in {'coupled_rms','coupled_small_signal'} else spec.induction if spec.study=='motor_start' else spec.rms).model_dump(mode='json')):
                     return _failure('mismatched_worker_result',elapsed)
                 report['execution']={'mode':'isolated_process','elapsed_s':elapsed,'timeout_s':timeout_s,
                                      'max_result_bytes':max_result_bytes,'os_sandbox':False}
                 return report
             finally:
                 if process.poll() is None:kill_process_group(process)
+
+
+def _output_over_budget(root,max_result_bytes,max_log_bytes):
+    # The worker atomically replaces result.json.tmp with result.json. An
+    # exists()/stat() pair can observe the temporary path between those calls.
+    for name,limit in [('stdout.log',max_log_bytes),('stderr.log',max_log_bytes),
+                       ('result.json',max_result_bytes),('result.json.tmp',max_result_bytes)]:
+        try:size=(root/name).stat().st_size
+        except FileNotFoundError:continue
+        if size>limit:return True
+    return False
 
 
 def _failure(status,elapsed):

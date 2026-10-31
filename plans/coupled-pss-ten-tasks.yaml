@@ -1,0 +1,49 @@
+schema: power-grid-env.delivery-tasks/v1
+date: '2026-10-31'
+status: complete
+document: docs/COUPLED_PSS_AND_MODES_RU.md
+report: reports/coupled-pss-modes-2026-10-31/delivery.json
+tasks:
+- id: CP-01
+  title: Seven-state IEEEST MODE 1 cascade
+  implementation: power_grid_env/coupled_pss.py
+  status: done
+- id: CP-02
+  title: Output limiter strict voltage gate and independent diagnostics
+  implementation: power_grid_env/coupled_pss.py
+  status: done
+- id: CP-03
+  title: Closed loop PSS to SEXS coupling in joint RHS
+  implementation: power_grid_env/coupled_controls.py
+  status: done
+- id: CP-04
+  title: Joint equilibrium and branch-preserving controller boundary guards
+  implementation: power_grid_env/coupled_initialization.py
+  status: done
+- id: CP-05
+  title: Mixed machine and optional controller layouts
+  implementation: tests/test_coupled_pss.py
+  status: done
+- id: CP-06
+  title: Independent SI circuit and polynomial-transfer PSS reference
+  implementation: benchmarks/coupled_pss_reference.py
+  status: done
+- id: CP-07
+  title: Saturated and unsaturated ANDES motor-off convergence
+  implementation: benchmarks/coupled_pss_reference.py
+  status: done
+- id: CP-08
+  title: Joint motor generator controller eigenanalysis
+  implementation: power_grid_env/coupled_small_signal.py
+  status: done
+- id: CP-09
+  title: Study routing schemas CLI isolated worker deadline and cancel
+  implementation: power_grid_env/study_spec.py
+  status: done
+- id: CP-10
+  title: Full regression documentation and hashed delivery
+  implementation: docs/COUPLED_PSS_AND_MODES_RU.md
+  status: done
+industrial_profile_qualified: false
+field_validated: false
+competitive_superiority_proven: false

@@ -9,7 +9,7 @@ from power_grid_env.study_spec import run_study_document
 
 def main():
     payload=json.loads(Path(sys.argv[1]).read_text())
-    if (payload.get('study'),payload.get('backend')) not in {('rms','andes'),('small_signal','andes'),('motor_start','scipy'),('coupled_rms','scipy')}:
+    if (payload.get('study'),payload.get('backend')) not in {('rms','andes'),('small_signal','andes'),('motor_start','scipy'),('coupled_rms','scipy'),('coupled_small_signal','scipy')}:
         raise ValueError('worker accepts only supported dynamic studies')
     result=run_study_document(payload)
     result.setdefault('completed',False)

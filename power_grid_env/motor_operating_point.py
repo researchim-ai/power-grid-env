@@ -12,7 +12,7 @@ MAX_EVALUATIONS = 2000
 
 def initialize_motor_state(model):
     settings = model.settings
-    state = np.r_[np.zeros(model.electrical_size), [m.thermal.initial_level for m in settings.motors if m.thermal]]
+    state = np.r_[np.zeros(model.electrical_size), [m.thermal.initial_level for m in settings.motors if m.thermal],np.zeros(model.motor_state_end-model.electrical_size-len(model.thermal_indices))]
     requested = settings.operating_point
     if requested is None:
         return state, {'mode': 'cold_start', 'thermal_state': 'passport'}
@@ -54,22 +54,19 @@ def initialize_motor_state(model):
             speed[active] = values
             voltage, current, internal, _ = model.steady_electrical(speed)
             state[:model.electrical_size] = np.column_stack([internal.real, internal.imag, speed]).ravel()
+            model.cages.initialize(state,current,speed)
             if requested.thermal_state == 'equilibrium':
                 for i, address in model.thermal_indices.items():
                     state[address] = abs(current[i])**2
             # Algebraic stator elimination must agree with the ordinary RHS.
             derivative = model.rhs(0., state)
-            dynamic_residual = float(max(abs(derivative[:model.electrical_size])))
+            dynamic_indices=[*range(model.electrical_size),*[k for address in model.cages.addresses.values() for k in range(address.start,address.stop)]]
+            dynamic_residual = float(max(abs(derivative[dynamic_indices])))
             if not np.isfinite(derivative).all() or dynamic_residual > requested.tolerance:
                 rejected.append('dynamic_residual')
                 continue
-            indices = np.array([3*i+j for i in active for j in range(3)])
-            jacobian = np.empty((len(indices), len(indices)))
-            for column, address in enumerate(indices):
-                h = 1e-6*max(1., abs(state[address]))
-                plus, minus = state.copy(), state.copy()
-                plus[address] += h; minus[address] -= h
-                jacobian[:, column] = (model.rhs(0., plus)[indices]-model.rhs(0., minus)[indices])/(2*h)
+            indices = np.array([*[3*i+j for i in active for j in range(3)],*[k for i,address in model.cages.addresses.items() if i in active for k in range(address.start,address.stop)]])
+            jacobian = model.jacobian(0.,state)[np.ix_(indices,indices)]
             modes = np.linalg.eigvals(jacobian)
             abscissa = float(max(modes.real))
             if not np.isfinite(modes).all() or abscissa >= -1e-7:

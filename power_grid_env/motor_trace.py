@@ -36,6 +36,7 @@ class MotorTraceProtocol(BaseModel):
     source_type: Literal['synthetic_reference', 'published_reference', 'field_measurement']
     csv_sha256: str = Field(pattern='^[0-9a-f]{64}$')
     used_for_parameter_fitting: bool
+    voltage_measurement_location: Literal['grid_side','motor_side'] = 'grid_side'
     time_offset_s: float = 0.
     maximum_sample_gap_s: float = Field(gt=0)
     tolerances: TraceTolerances
@@ -71,7 +72,7 @@ def _read_csv(path, expected_sha):
     return values
 
 
-def validate_motor_result(spec, report, motor_id):
+def validate_motor_result(spec, report, motor_id, voltage_measurement_location='grid_side'):
     """Validate identity, horizon and channels; return time and SI I/U/speed."""
     if spec.study != 'motor_start' or spec.backend != 'scipy' or spec.induction is None or spec.coupled is not None:
         raise ValueError('motor_start/scipy study required')
@@ -97,12 +98,14 @@ def validate_motor_result(spec, report, motor_id):
     channels = report.get('channels', {})
     if not isinstance(channels, dict):
         raise ValueError('simulation channels must be a mapping')
+    if voltage_measurement_location not in {'grid_side','motor_side'}:raise ValueError('unknown voltage measurement location')
+    voltage_channel = 'terminal_voltage_pu' if voltage_measurement_location=='motor_side' else 'bus_voltage_pu'
     arrays = []
-    for suffix, factor in [('current_pu', ibase), ('bus_voltage_pu', motor.rated_ll_v), ('speed_pu', 1.)]:
+    for suffix, factor in [('current_pu', ibase), (voltage_channel, motor.rated_ll_v), ('speed_pu', 1.)]:
         values = np.asarray(channels.get(motor_id+'.'+suffix, []), dtype=float)
         if values.shape != time.shape or not np.isfinite(values).all():
             raise ValueError('missing/nonfinite simulation channel: '+suffix)
-        if suffix in {'current_pu','bus_voltage_pu'} and np.any(values<0):
+        if suffix in {'current_pu','bus_voltage_pu','terminal_voltage_pu'} and np.any(values<0):
             raise ValueError('negative simulated RMS channel: '+suffix)
         with np.errstate(over='ignore', invalid='ignore'):
             scaled = values*factor
@@ -128,7 +131,7 @@ def compare_motor_trace(spec, report, csv_path, protocol):
         protocol = MotorTraceProtocol.model_validate(protocol)
     if protocol.study_id != spec.id:
         raise ValueError('protocol study ID mismatch')
-    time, simulation = validate_motor_result(spec, report, protocol.motor_id)
+    time, simulation = validate_motor_result(spec, report, protocol.motor_id, protocol.voltage_measurement_location)
     measured = _read_csv(csv_path, protocol.csv_sha256)
     measured[:, 0] += protocol.time_offset_s
     target = measured[:, 0]

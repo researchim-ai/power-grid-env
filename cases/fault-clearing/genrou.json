@@ -1,0 +1,12 @@
+{
+  "schema_version": "power-grid-env.fault-clearing/v1",
+  "fault_id": "fault",
+  "durations_s": [0.05, 0.1, 0.2],
+  "final_dwell_s": 0.2,
+  "maximum_angle_excursion_rad": 0.5,
+  "maximum_speed_deviation_pu": 0.05,
+  "motors": [{"motor_id": "m", "minimum_speed_pu": 0.9, "minimum_voltage_pu": 0.95, "require_connected": true}],
+  "per_case_timeout_s": 30,
+  "total_timeout_s": 120,
+  "maximum_output_bytes": 16000000
+}

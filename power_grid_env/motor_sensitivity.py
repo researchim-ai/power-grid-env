@@ -23,9 +23,10 @@ from power_grid_env.study_spec import STUDY_SCHEMA, StudySpec, run_study
 from power_grid_env.results import SolveOptions
 
 RESERVED_METADATA_BYTES = 256_000
+MAX_ARTIFACT_BYTES = 64_000_000
 Factor = Annotated[float, Field(gt=0, le=1000)]
 Parameter = Literal['inertia_s', 'stator_r_pu', 'stator_x_pu', 'rotor_r_pu', 'rotor_x_pu',
-                    'magnetizing_x_pu', 'mechanical_torque', 'thermal_time_constant_s',
+                    'magnetizing_x_pu', 'rotor2_r_pu', 'rotor2_x_pu', 'rotor_mutual_x_pu', 'mechanical_torque', 'thermal_time_constant_s',
                     'thermal_trip_level', 'source_series_impedance', 'line_series_impedance']
 
 
@@ -100,6 +101,7 @@ def _target(spec, axis):
     target = next((item for item in items if item.id == axis.equipment_id), None)
     if target is None:
         raise ValueError('unknown parameter target: '+axis.id)
+    if axis.parameter in {'rotor2_r_pu','rotor2_x_pu','rotor_mutual_x_pu'} and target.model!='double_cage':raise ValueError('second-cage parameter requires double_cage passport')
     if axis.parameter.startswith('thermal_') and target.thermal is None:
         raise ValueError('thermal parameter requires an explicit thermal passport')
     return target
@@ -178,6 +180,7 @@ def build_parameter_points(spec, protocol):
 
 def _assess(spec, report, observation):
     times, physical = validate_motor_result(spec,report,observation.motor_id)
+    if max(np.diff(times))>spec.induction.step_s+1e-10:raise ValueError('incomplete sampled assessment grid')
     motor = next(m for m in spec.induction.motors if m.id==observation.motor_id)
     ibase = motor.rated_va/(np.sqrt(3)*motor.rated_ll_v)
     if not math.isfinite(ibase) or ibase<=0:
@@ -222,23 +225,31 @@ def _encoded(payload):
 
 def run_motor_sensitivity(spec, protocol, out, *, cancelled=None):
     """Run frozen points sequentially with per-point/total deadlines and disk budget."""
-    started = time.monotonic()
+    started=time.monotonic()
     protocol = MotorSensitivityProtocol.model_validate(protocol.model_dump(mode='json') if isinstance(protocol,MotorSensitivityProtocol) else protocol)
     spec = StudySpec.model_validate(spec.model_dump(mode='json'))
     points = build_parameter_points(spec,protocol)
+    return run_frozen_motor_points(spec,protocol,out,points,cancelled=cancelled,started=started)
+
+
+def run_frozen_motor_points(spec,protocol,out,points,*,cancelled=None,result_kind='motor-sensitivity',extra_assess=None,extra_snapshot=None,metadata_budget=RESERVED_METADATA_BYTES,started=None,environment_snapshot=None,environment_provider=None):
+    """Shared bounded executor for internally built, already frozen motor points."""
+    started=time.monotonic() if started is None else started
+    if not 1<=len(points)<=32 or any(p['id']!=f'case-{i:03d}' for i,p in enumerate(points)):raise ValueError('invalid internal point inventory')
     root = Path(out)
+    if root.is_symlink() or (root.exists() and not root.is_dir()):raise ValueError('ordinary output directory required')
     if root.exists() and any(root.iterdir()):
         raise ValueError('sensitivity output directory must be new or empty')
     root.mkdir(parents=True,exist_ok=True)
     lock = (root/'.sensitivity.lock').open('x')
-    remaining = protocol.maximum_output_bytes-RESERVED_METADATA_BYTES
+    remaining = protocol.maximum_output_bytes-metadata_budget
     artifacts, rows = {}, []
     code = package_fingerprint()
     stop = None
     def persist(relative,payload):
         nonlocal remaining
         data = _encoded(payload)
-        if len(data)>remaining:
+        if len(data)>remaining or len(data)>MAX_ARTIFACT_BYTES:
             return False
         path = root/relative; path.parent.mkdir(parents=True,exist_ok=True)
         temporary = path.with_suffix(path.suffix+'.tmp')
@@ -249,16 +260,19 @@ def run_motor_sensitivity(spec, protocol, out, *, cancelled=None):
         complete = len(rows)==len(points) and all(r['numerically_completed'] for r in rows) and status=='completed'
         within = complete and all(r['within_limits'] for r in rows)
         engineering = 'within_sampled_limits' if within else 'outside_sampled_limits' if complete else 'inconclusive'
-        return {'schema_version':'power-grid-env.motor-sensitivity-result/v1','completed':complete,'status':status,
+        return {'schema_version':'power-grid-env.'+result_kind+'-result/v1','completed':complete,'status':status,
                 'all_cases_within_limits':within,'engineering_assessment':engineering,
                 'expected_cases':len(points),'attempted_cases':len(rows),'cases':rows,
                 'code_sha256':code,'base_study_sha256':canonical_hash(spec),'protocol_sha256':canonical_hash(protocol),
                 'protocol':protocol.model_dump(mode='json'),'elapsed_s':time.monotonic()-started,
+                **({'environment_sha256':hashlib.sha256(_encoded(environment_snapshot)).hexdigest()} if environment_snapshot is not None else {}),
                 'scope_note':'Finite declared samples only; no probability, interval-wide or global robustness guarantee',
-                'industrial_profile_qualified':False,'field_validated':False}
+                'industrial_profile_qualified':False,'field_validated':False,
+                **(extra_snapshot(rows,complete) if extra_snapshot is not None else {})}
     try:
         if not persist('base-study.json',spec.model_dump(mode='json')) or not persist('protocol.json',protocol.model_dump(mode='json')):
             stop = 'output_budget_exceeded'
+        if stop is None and environment_snapshot is not None and not persist('environment.json',environment_snapshot):stop='output_budget_exceeded'
         for point in points:
             if stop:
                 break
@@ -269,7 +283,9 @@ def run_motor_sensitivity(spec, protocol, out, *, cancelled=None):
                 stop='total_timeout'; break
             if package_fingerprint()!=code:
                 stop='stale_code'; break
-            row = {k:point[k] for k in ('id','nominal','factors')}
+            if environment_provider is not None and environment_provider()!=environment_snapshot:
+                stop='stale_runtime'; break
+            row = {k:v for k,v in point.items() if k not in {'study','error'}}
             row.update(numerically_completed=False,within_limits=False,observations=None,delta_from_baseline=None)
             variant = point['study']
             if variant is None:
@@ -290,8 +306,9 @@ def run_motor_sensitivity(spec, protocol, out, *, cancelled=None):
                     if report.get('code_sha256')!=code:
                         raise ValueError('result code changed during experiment')
                     assessed = {o.motor_id:_assess(variant,report,o) for o in protocol.observations}
+                    extra = extra_assess(variant,report,protocol) if extra_assess is not None else {}
                     row.update(numerically_completed=True,observations=assessed,
-                               within_limits=all(o['within_limits'] for o in assessed.values()))
+                               within_limits=all(o['within_limits'] for o in assessed.values()) and extra.get('additional_within_limits',True),**extra)
                 except (ValueError,TypeError,KeyError) as exc:
                     row.update(status='invalid_result',error=str(exc)[:400])
             else:
@@ -308,12 +325,13 @@ def run_motor_sensitivity(spec, protocol, out, *, cancelled=None):
                     row['delta_from_baseline'][motor] = {key:float(value-baseline[key]) for key,value in observation['metrics'].items()
                         if type(value) in (float,int) and type(baseline.get(key)) in (float,int)}
             journal = _encoded(snapshot('running'))
-            if len(journal)<=RESERVED_METADATA_BYTES//2:
+            if len(journal)<=metadata_budget//2:
                 temporary=root/'run.json.tmp';temporary.write_bytes(journal);temporary.replace(root/'run.json')
         if stop is None:
             stop='completed' if all(r['numerically_completed'] for r in rows) else 'partial_failure'
         if package_fingerprint()!=code:
             stop='stale_code'
+        if environment_provider is not None and environment_provider()!=environment_snapshot:stop='stale_runtime'
         result = snapshot(stop)
         envelope = {}
         for o in protocol.observations:
@@ -325,8 +343,11 @@ def run_motor_sensitivity(spec, protocol, out, *, cancelled=None):
         result['sampled_envelope'] = envelope
         manifest = {**artifacts,'run.json':hashlib.sha256(_encoded(result)).hexdigest()}
         payload, manifest_bytes = _encoded(result), _encoded(manifest)
-        if len(payload)+len(manifest_bytes)>RESERVED_METADATA_BYTES:
-            result = {'completed':False,'status':'metadata_budget_exceeded','all_cases_within_limits':False,'engineering_assessment':'inconclusive'}
+        if len(payload)+len(manifest_bytes)>metadata_budget:
+            result = {'completed':False,'status':'metadata_budget_exceeded','all_cases_within_limits':False,'engineering_assessment':'inconclusive',
+                      'code_sha256':code,'base_study_sha256':canonical_hash(spec),'protocol_sha256':canonical_hash(protocol),
+                      'industrial_profile_qualified':False,'field_validated':False,
+                      **(extra_snapshot([],False) if extra_snapshot is not None else {})}
             payload=_encoded(result);manifest_bytes=_encoded({**artifacts,'run.json':hashlib.sha256(payload).hexdigest()})
         (root/'run.json.tmp').write_bytes(payload);(root/'run.json.tmp').replace(root/'run.json')
         (root/'manifest.json').write_bytes(manifest_bytes)
@@ -337,7 +358,7 @@ def run_motor_sensitivity(spec, protocol, out, *, cancelled=None):
         try:
             payload = _encoded(result)
             manifest_bytes = _encoded({**artifacts,'run.json':hashlib.sha256(payload).hexdigest()})
-            if len(payload)+len(manifest_bytes)<=RESERVED_METADATA_BYTES:
+            if len(payload)+len(manifest_bytes)<=metadata_budget:
                 (root/'run.json.tmp').write_bytes(payload);(root/'run.json.tmp').replace(root/'run.json')
                 (root/'manifest.json').write_bytes(manifest_bytes)
         except OSError:
