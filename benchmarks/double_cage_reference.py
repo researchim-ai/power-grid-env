@@ -131,17 +131,28 @@ def reference(spec,report,*,hybrid_runner=None,generator_factory=None):
         for e in s.events:
             if e.kind not in {'source_voltage','load_torque_scale','motor_open','motor_close'}:raise ValueError('unsupported independent group event')
             if e.equipment_id not in ([source.id] if e.kind=='source_voltage' else [m.id for m in motors]):raise ValueError('independent group event target missing')
-        def get_context():return dict(connected=connected.copy(),latched=latched.copy(),scale=scale,load_scale=load_scale.copy())
+        proxy=None
+        def get_context():
+            extra={} if proxy is None else {k:v.copy() for k,v in proxy.cfg.items() if k=='reference_controller_modes'}
+            return dict(connected=connected.copy(),latched=latched.copy(),scale=scale,load_scale=load_scale.copy(),**extra)
         def set_context(cfg):
             nonlocal connected,latched,scale,load_scale
             connected=cfg['connected'].copy();latched=cfg['latched'].copy();scale=cfg['scale'];load_scale=cfg['load_scale'].copy();rebuild()
+            if proxy is not None:proxy.cfg={k:v.copy() if isinstance(v,np.ndarray) else v for k,v in cfg.items()}
         def sensed(x,i):
             stator,rotor,v,torque,ig=electrical(x)
             value=v if motors[i].contactor.sense_node_id==motor_node else source_v*scale-complex(source.r_ohm,source.x_ohm)*(sum(stator)-ig)
             return abs(value)/parameters[i]['vbase']
         def heating(x):return np.array([(abs(current)/p['ibase'])**2 for current,p in zip(electrical(x)[0],parameters)])
         rebuild()
-        segments,changes,trips,hybrid=hybrid_runner(settings=s,state=state,rhs=rhs,voltage=sensed,heating=heating,thermal_indices=thermal,get_context=get_context,set_context=set_context)
+        extras={};active_rhs=rhs
+        if generator:
+            from types import SimpleNamespace
+            from benchmarks.controller_reference_bounds import attach
+            proxy=attach(SimpleNamespace(cfg={},generator_ports=lambda:[(0,generator,generator_slice)],rhs=rhs,electrical=lambda x:(np.array([electrical(x)[2]]),)))
+            active_rhs=proxy.rhs
+            extras=dict(extra_guards=proxy.extra_guards,extra_apply=proxy.extra_apply,after_commands=proxy.after_commands)
+        segments,changes,trips,hybrid=hybrid_runner(settings=s,state=state,rhs=active_rhs,voltage=sensed,heating=heating,thermal_indices=thermal,get_context=get_context,set_context=set_context,**extras)
     else:
         events={}
         for e in s.events:events.setdefault(e.time_s,[]).append(e)

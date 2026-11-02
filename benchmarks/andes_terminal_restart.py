@@ -3,6 +3,7 @@
 This is explicitly NOT stock ANDES u=0 coasting. Native differential laws and
 integrator are preserved; only Id/Iq algebraic constraints are switched to zero.
 """
+from benchmarks.event_sampling import native_sample_sides
 from pathlib import Path
 import argparse,math
 import numpy as np
@@ -68,7 +69,7 @@ def compare(spec,steps=STEPS,out=None):
             rows.append(dict(step_s=step,passed=False,failure=native));continue
         validate_event_samples(native,spec.coupled)
         if set(native['channels'])!=set(limits) or not native.get('stock_generated_cache_unchanged') or not native['terminal_adaptation']['differential_equations_unchanged']:raise ValueError('adapted native inventory/law/cache mismatch')
-        errors={k:float(max(abs(sample_native(native,actual['time_s'],actual['sample_side'],k)-actual['channels'][k]))) for k in limits}
+        errors={k:float(max(abs(sample_native(native,actual['time_s'],native_sample_sides(actual),k)-actual['channels'][k]))) for k in limits}
         coast=coast_check(spec,native)
         rows.append(dict(step_s=step,errors=errors,passed=bool(all(np.isfinite(errors[k]) and errors[k]<=v for k,v in limits.items()) and coast['passed']),coast=coast,
             initial_motor_rhs=native['initial_motor_rhs'],initial_nonmotor_rhs=native['initial_nonmotor_rhs'],initial_algebraic_residual_pu=native['initial_algebraic_residual_pu']))

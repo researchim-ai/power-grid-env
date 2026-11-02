@@ -1,0 +1,2 @@
+# Optional independent benchmark only; Python >=3.12. Not a runtime dependency.
+motulator==0.19.0 --hash=sha256:f2aae0c1d0caf435f0bb9d7b87eda781bc4e4bc9fc7439122fb1b64fd42448eb

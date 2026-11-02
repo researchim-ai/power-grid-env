@@ -4,11 +4,12 @@ No production control or network solver is used. Voltage and thermal-state
 addresses come from the independent winding circuit, not production layout.
 """
 import math
+from time import monotonic
 import numpy as np
 from scipy.integrate import solve_ivp
 
 
-def run(*,settings,state,rhs,voltage,heating,thermal_indices,get_context,set_context):
+def run(*,settings,state,rhs,voltage,heating,thermal_indices,get_context,set_context,event_handler=None,extra_guards=None,extra_apply=None,after_commands=None):
     motors=settings.motors;cfg=get_context();controls={};time=0.;log=[];segments=[];changes=[];trips={};transitions=0
     for i,m in enumerate(motors):
         if m.contactor:
@@ -38,7 +39,10 @@ def run(*,settings,state,rhs,voltage,heating,thermal_indices,get_context,set_con
                 emit(i,'contactor_voltage_available' if c['available'] else 'contactor_voltage_unavailable',time,outcome='hysteresis_transition')
             if cfg['latched'][i] and c['pending']:
                 c['pending']=False;emit(i,'contactor_restart_cancelled',time,outcome='thermal_latch')
+    attempts=0;started=monotonic()
     while time<settings.duration_s:
+        attempts+=1
+        if attempts>20000 or monotonic()-started>120.:raise ValueError('independent hybrid work budget exceeded')
         right=min([t for t in timeline if t>time]+[settings.duration_s])
         target=min([right,*[deadline(i) for i in controls]])
         if target<=time:raise ValueError('independent group deadline did not advance')
@@ -51,10 +55,12 @@ def run(*,settings,state,rhs,voltage,heating,thermal_indices,get_context,set_con
             threshold=motors[i].contactor.dropout_voltage_pu if c['available'] else motors[i].contactor.pickup_voltage_pu
             def crossing(t,x,i=i,threshold=threshold):return voltage(x,i)-threshold
             crossing.terminal=True;crossing.direction=-1 if c['available'] else 1;guards.append(crossing);names.append(('voltage',i))
-        snapshot=dict(latched=cfg['latched'].copy(),controls={i:c.copy() for i,c in controls.items()})
-        sol=solve_ivp(rhs,(time,target),state,method='DOP853',rtol=2e-11,atol=1e-12,max_step=min(.0005,settings.step_s/2),dense_output=True,events=guards or None)
+        if extra_guards:
+            for key,guard in extra_guards(state):guards.append(guard);names.append(('extra',key))
+        snapshot=dict(extra_context={k:(v.copy() if hasattr(v,'copy') else v) for k,v in cfg.items() if k not in {'connected','latched','scale','load_scale'}},latched=cfg['latched'].copy(),controls={i:c.copy() for i,c in controls.items()})
+        sol=solve_ivp(rhs,(time,target),state.copy(),method='DOP853',rtol=2e-11,atol=1e-12,max_step=min(.0005,settings.step_s/2),dense_output=True,events=guards or None)
         if not sol.success:raise ValueError('independent group physical integration failed')
-        end=float(sol.t[-1]);state=sol.y[:,-1]
+        end=float(sol.t[-1]);state=sol.y[:,-1].copy()
         segments.append((time,end,sol.sol,cfg['connected'].copy(),cfg['scale'],cfg['load_scale'].copy(),snapshot))
         roots={name for name,values in zip(names,sol.t_events or []) if len(values)}
         eps=16*np.finfo(float).eps*max(1.,abs(end))
@@ -71,11 +77,16 @@ def run(*,settings,state,rhs,voltage,heating,thermal_indices,get_context,set_con
         for i in sorted(thermal_roots):
             cfg['connected'][i]=False;cfg['latched'][i]=True;trips[motors[i].id]=end
             emit(i,'thermal_trip',end,outcome='latched_open')
+        if extra_apply and any(kind=='extra' for kind,i in roots):
+            log.extend(extra_apply({i for kind,i in roots if kind=='extra'},end,state,cfg))
         set_context(cfg)
         for e in scheduled:
             if e.kind=='source_voltage':cfg['scale']=e.value
             elif e.kind=='load_torque_scale':cfg['load_scale'][next(i for i,m in enumerate(motors) if m.id==e.equipment_id)]=e.value
-            elif e.kind not in {'motor_open','motor_close'}:raise ValueError('unsupported independent group event')
+            elif e.kind not in {'motor_open','motor_close'}:
+                if event_handler is None:raise ValueError('unsupported independent group event')
+                details=event_handler(e,cfg) or {}
+                entry=dict(time_s=float(end),kind=e.kind,equipment_id=e.equipment_id,outcome='applied',value=e.value);entry.update(details);log.append(entry)
         set_context(cfg)
         manual=[e for e in scheduled if e.kind in {'motor_open','motor_close'}]
         if manual:observe(end)
@@ -102,6 +113,8 @@ def run(*,settings,state,rhs,voltage,heating,thermal_indices,get_context,set_con
                 else:
                     c['restarts']+=1;c['pending']=False;emit(i,kind,end,cause='automatic_restart',outcome='applied')
             if actions:set_context(cfg);observe(end)
+            if after_commands:
+                log.extend(after_commands(end,state,cfg));set_context(cfg)
             changes.append(end)
         if end<=time and not roots:raise ValueError('independent group ODE did not advance')
         time=end

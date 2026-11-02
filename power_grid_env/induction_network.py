@@ -30,8 +30,8 @@ def validate_induction(network, settings, *, validate_rules=True):
         errors.append('generators/DER/shunts/neutral/faults/harmonics/omissions unsupported')
     if not math.isfinite(network.s_base_va) or network.s_base_va <= 0 or not math.isfinite(network.frequency_hz) or network.frequency_hz <= 0:
         errors.append('positive finite system MVA and frequency required')
-    if len(topology.buses) > 2000:
-        errors.append('motor network exceeds 2000-bus implementation budget')
+    if len(topology.buses) > settings.runtime_limits.maximum_network_buses:
+        errors.append(f'motor network exceeds {settings.runtime_limits.maximum_network_buses}-bus implementation budget')
     control_samples = 2*settings.maximum_contactor_transitions if any(m.contactor for m in settings.motors) else 0
     samples = control_samples + math.ceil(settings.duration_s / settings.step_s) + 2 * (len(settings.events) + sum(m.thermal is not None for m in settings.motors)) + 2
     motor_channels=sum(16+8*(m.model=='double_cage')+2*bool(m.thermal)+6*bool(m.contactor) for m in settings.motors)
@@ -244,6 +244,12 @@ class InductionNetwork:
     def additional_signals(self, state, voltage):
         return {}, 0j
 
+    def after_discrete_commands(self,time,state,event_log):pass
+
+    def additional_guards(self,state=None):return [],[]
+
+    def apply_guard_events(self,ids,time,state,event_log):pass
+
     def apply_additional_event(self, event):
         return None
 
@@ -302,6 +308,19 @@ def reclose_diagnostic(model, channels, motor_id):
 
 
 def integrate_induction_model(model, scope, state, operating_point, *, study='motor_start'):
+    from power_grid_env.runtime_limits import IntegrationBudget,RuntimeLimitExceeded
+    budget=IntegrationBudget(model.settings.runtime_limits)
+    try:
+        result=_integrate_induction_model(model,scope,state,operating_point,study=study,budget=budget)
+        budget.check_time()
+    except RuntimeLimitExceeded as exc:
+        result=dict(solved=True,completed=False,status='runtime_limit_exceeded',reason=exc.resource,
+                    resource_limit=dict(resource=exc.resource,limit=exc.limit,attempted=exc.attempted),scope=scope)
+    result['runtime_budget']=budget.report()
+    return result
+
+
+def _integrate_induction_model(model, scope, state, operating_point, *, study, budget):
     """Shared event/thermal integrator; extra machines use the same nodal solve."""
     network, settings = model.network, model.settings
     from power_grid_env.motor_contactor import MotorContactorBank,ContactorControlError
@@ -324,6 +343,7 @@ def integrate_induction_model(model, scope, state, operating_point, *, study='mo
     event_log = []
     source_power, power_balance = [], []
     def record(time, values, side):
+        budget.record(len(channels)+8)
         voltage, current, torque, mismatch = model.electrical(values)
         full_state = values
         values = values[:model.electrical_size].reshape(-1, 3)
@@ -363,6 +383,7 @@ def integrate_induction_model(model, scope, state, operating_point, *, study='mo
     record(0., state, 'initial')
     nfev = njev = nlu = 0
     jacobian_callback = model.integration_jacobian()
+    counted_rhs=budget.rhs(model.rhs)
     for left, right in zip(boundaries, boundaries[1:]):
         cursor = left
         while cursor < right:
@@ -370,9 +391,10 @@ def integrate_induction_model(model, scope, state, operating_point, *, study='mo
             thermal_guard_count = len(guards)
             control_ids, control_guards = contactors.guards()
             guards.extend(control_guards)
+            extra_ids,extra_guards=model.additional_guards(state);guards.extend(extra_guards)
             target = contactors.next_deadline(right)
             try:
-                solution = solve_ivp(model.rhs, (cursor, target), state, method='Radau',
+                solution = solve_ivp(counted_rhs, (cursor, target), state, method='Radau',
                                      rtol=settings.rtol, atol=settings.atol, max_step=settings.step_s,
                                      dense_output=True, events=guards or None, jac=jacobian_callback)
             except (ValueError, RuntimeError, ArithmeticError) as exc:
@@ -386,9 +408,12 @@ def integrate_induction_model(model, scope, state, operating_point, *, study='mo
             model.observe_accepted_states(solution.y)
             stop = float(solution.t[-1])
             state = solution.y[:, -1]
+            endpoint_epsilon=64*np.finfo(float).eps*max(1.,abs(stop),abs(target))
+            if abs(stop-target)<=endpoint_epsilon:stop=float(target)
             triggered = {i for i, roots in zip(guard_indices, (solution.t_events or [])[:thermal_guard_count]) if len(roots)}
-            control_roots = {i for i,roots in zip(control_ids,(solution.t_events or [])[thermal_guard_count:]) if len(roots)}
-            control_boundary = bool(control_roots) or contactors.due(stop)
+            control_roots = {i for i,roots in zip(control_ids,(solution.t_events or [])[thermal_guard_count:thermal_guard_count+len(control_ids)]) if len(roots)}
+            extra_roots={i for i,roots in zip(extra_ids,(solution.t_events or [])[thermal_guard_count+len(control_ids):]) if len(roots)}
+            control_boundary = bool(extra_roots) or bool(control_roots) or contactors.due(stop)
             if triggered:
                 # Identical relays can reach the same threshold in one root.
                 # Apply exact numerical ties atomically; do not trip merely
@@ -418,6 +443,8 @@ def integrate_induction_model(model, scope, state, operating_point, *, study='mo
                 event_log.append({'time_s': stop, 'kind': 'thermal_trip', 'equipment_id': motor.id,
                                   'level': float(state[model.thermal_indices[i]]),
                                   'threshold': motor.thermal.trip_level, 'outcome': 'latched_open'})
+            if triggered or scheduled or control_boundary:budget.event_batch()
+            model.apply_guard_events(extra_roots,stop,state,event_log)
             batch_log_start = len(event_log)
             manual_interlocks_refreshed = False
             if contactors.states:scheduled = sorted(scheduled,key=lambda e:e.kind in {'motor_open','motor_close'})
@@ -457,6 +484,7 @@ def integrate_induction_model(model, scope, state, operating_point, *, study='mo
             if triggered or scheduled or control_boundary:
                 try:
                     model.factorize()
+                    model.after_discrete_commands(stop,state,event_log)
                     contactors.observe(stop,state,event_log)
                     actions = contactors.actions(stop)
                     for i,kind in actions:
@@ -465,6 +493,7 @@ def integrate_induction_model(model, scope, state, operating_point, *, study='mo
                         contactors.applied(i,kind,stop,event_log,diagnostic)
                     if actions:
                         model.factorize()
+                        model.after_discrete_commands(stop,state,event_log)
                         contactors.observe(stop,state,event_log)
                     record(stop, state, 'post_event')
                     for entry in event_log[batch_log_start:]:

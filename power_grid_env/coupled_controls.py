@@ -61,7 +61,7 @@ class CoupledControllerBank:
             values[i]=p.T2/p.T3*bounded+(1-p.T2/p.T3)*state[lag]-p.Dt*(speed[i]-1)
         return values
 
-    def derivatives(self,state,speed,voltage):
+    def derivatives(self,state,speed,voltage,voltage_bias=None):
         result=np.zeros(self.end-self.offset)
         pss_derivatives,pss_output,_=self.pss.evaluate(state,speed,voltage)
         for i,address in self.pss_addresses.items():
@@ -75,7 +75,7 @@ class CoupledControllerBank:
             result[lag-self.offset]=(bounded-state[lag])/p.T3
         for i,(filter_state,field) in self.avr.items():
             p=self.passports[i].exciter
-            error=self.vref[i]-abs(voltage[i])+pss_output[i]
+            error=self.vref[i]-abs(voltage[i])+pss_output[i]-(0. if voltage_bias is None else voltage_bias[i])
             bounded=np.clip(state[field],p.EMIN,p.EMAX)
             rate=(p.K*(p.TATB*error+(1-p.TATB)*state[filter_state])-state[field])/p.TE
             result[filter_state-self.offset]=(error-state[filter_state])/p.TB
@@ -92,7 +92,7 @@ class CoupledControllerBank:
             keys.extend(gen+'.SEXS.'+key for key in ['field_pu','field_state_pu','filter_pu','reference_pu','error_pu'])
         return keys+self.pss.channel_names()
 
-    def signals(self,state,speed,voltage,fixed_power):
+    def signals(self,state,speed,voltage,fixed_power,voltage_bias=None):
         _,pss_output,result=self.pss.evaluate(state,speed,voltage)
         mechanical=self.mechanical(state,speed,fixed_power)
         for i,(valve,lag) in self.gov.items():
@@ -103,7 +103,7 @@ class CoupledControllerBank:
         for i,(filter_state,field) in self.avr.items():
             p=self.passports[i].exciter;gen=self.passports[i].generator_id
             values=dict(field_pu=np.clip(state[field],p.EMIN,p.EMAX),field_state_pu=state[field],
-                        filter_pu=state[filter_state],reference_pu=self.vref[i],error_pu=self.vref[i]-abs(voltage[i])+pss_output[i])
+                        filter_pu=state[filter_state],reference_pu=self.vref[i],error_pu=self.vref[i]-abs(voltage[i])+pss_output[i]-(0. if voltage_bias is None else voltage_bias[i]))
             result.update({gen+'.SEXS.'+k:float(v) for k,v in values.items()})
         return result
 

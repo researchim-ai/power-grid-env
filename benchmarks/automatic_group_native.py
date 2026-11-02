@@ -3,6 +3,7 @@
 The native machines and common electrical network are independent. Commanding
 stator switches from SI decisions is NOT a native closed-loop controller test.
 """
+from benchmarks.event_sampling import native_sample_sides
 from pathlib import Path
 import argparse,math
 import numpy as np

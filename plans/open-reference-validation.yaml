@@ -1,0 +1,178 @@
+schema: power-grid-env.open-reference-validation/v1
+date: '2026-11-02'
+objective: reproducible_open_source_modeler_with_declared_accuracy_and_scope
+own_hardware_required: false
+user_site_data_required_for_open_source_release: false
+published_measurements_required_for_every_model: false
+site_specific_design_approval_implied_by_release: false
+status: in_progress
+release_gates:
+  - declared_model_equations_parameters_scope_and_exclusions
+  - analytic_limits_power_balance_and_numerical_convergence
+  - independent_cross_simulator_cases_with_matched_physics_and_units
+  - immutable_public_case_origins_versions_and_artifact_hashes
+  - failure_and_negative_cases_without_silent_scope_substitution
+  - reproducible_installation_and_automated_regression
+  - measured_runtime_memory_and_supported_scale
+  - documented_API_error_semantics_and_licensing
+validation_tracks:
+  analytic:
+    required: true
+    targets: [steady_motor_circuit, conservation, limiting_cases, time_constants, signs_and_units]
+  cross_simulator:
+    required: true
+    engines: [ANDES_2_0_0, motulator_0_19_0]
+    rule: compare_equivalent_physics_before_comparing_different_model_orders
+  published_experiments:
+    required_for_open_source_release: false
+    status: source_eligibility_and_selective_metric_validation
+    rule: missing_speed_does_not_invalidate_a_calibrated_current_only_comparison
+    prohibited: [invented_calibration, fitted_test_case_parameters, invented_timebase, claiming_unmeasured_metrics]
+  private_site_acceptance:
+    required_for_open_source_release: false
+    status: outside_current_project_delivery
+    responsibility: future_user_or_integration_partner_for_specific_application
+current_reference_cases:
+  - id: AALTO_IM_2K2_STEADY
+    source: https://aalto-electric-drives.github.io/motulator/drive_examples/grid_connection/plot_2kw_im_dol.html
+    software: motulator
+    version: 0.19.0
+    software_license: MIT
+    parameters: published_inverse_gamma_unsaturated_2_2_kW_motor
+    test: benchmarks/motulator_motor_validation.py
+    lock: requirements/motulator-reference.lock
+    reference_type: independently_computed_sinusoidal_steady_state_not_measurement
+    operating_points: 168
+    covers: [locked_rotor, motoring, synchronism, regeneration, voltage_scaling, frequency_change, rotor_referral, power_base_change]
+    does_not_cover: [instantaneous_DOL_current, stator_DC_transient, saturation, measured_startup_time]
+  - id: ANDES_MULTIBUS_DOL
+    software: ANDES
+    version: 2.0.0
+    test: benchmarks/multibus_prestart_validation.py
+    cases: 5
+    native_steps_s: [0.00025, 0.000125, 0.0000625]
+    covers: [DOL, initially_open_stators, simultaneous_start, staggered_start, generator_regulators, Dyn5]
+    next: generator_limits_and_multiple_generators
+  - id: ANDES_MULTIBUS_DOL_RESTART
+    software: ANDES
+    version: 2.0.0
+    test: benchmarks/multibus_restart_validation.py
+    audit: benchmarks/multibus_restart_audit.py
+    cases: 6
+    native_runs: 18
+    report: reports/multibus-restart-final-2026-11-02/delivery.json
+    covers: [completed_DOL_before_dip, coast, minimum_off_time, manual_inhibit, retry_exhaustion, thermal_latch]
+    analytic_references: [fan_coast_speed, single_cage_open_EMF_magnitude]
+    full_collection_tests_verified: 1007
+  - id: ANDES_MULTI_GENROU
+    software: ANDES
+    version: 2.0.0
+    test: benchmarks/multigen_validation.py
+    audit: benchmarks/multigen_audit.py
+    cases: 8
+    native_runs: 24
+    generators: [2, 3, 4]
+    report: reports/multigen-final-2026-11-02/delivery.json
+    covers: [joint_PV_motor_initialization, targeted_TGOV1_SEXS, own_VA_bases, machine_and_passport_order, network_base_invariance, DOL_with_two_generators]
+    resume: immutable_protocol_and_raw_cache_revalidation
+queued_references:
+  - id: MODELICA_IMC_DOL
+    source: https://git.openmodelica.org/Documentation/Modelica.Electrical.Machines.Examples.InductionMachines.IMC_DOL.html
+    status: official_example_identified_not_executed
+    before_acceptance: [pin_MSL_and_solver_versions, establish_parameter_and_transform_conventions, preregister_RMS_vs_EMT_metrics, run_native_example_without_equation_changes]
+  - id: PUBLISHED_EXPERIMENTS
+    sources_document: docs/PUBLIC_DOL_DATA_ACQUISITION_RU.md
+    status: supplementary_evidence_not_release_blocker
+next:
+  - generator_dynamic_limits_and_multi_machine_breaker_reference_cases
+  - publish_self_contained_case_manifests_and_optional_reference_jobs
+  - independently_validate_motor_stator_transients_before_claiming_EMT_accuracy
+  - benchmark_large_sparse_networks_and_record_supported_scale
+  - pin_and_execute_Modelica_reference_cases
+
+generator_stator_thermal:
+  report: reports/generator-thermal-final-2026-11-02/delivery.json
+  protected_full_SI_cases: 6
+  negative_cases: 3
+  unprotected_ANDES_preopening_runs: 18
+  protected_ANDES_post_trip_runs: 0
+  supplemental_DOL_window_s: 0.8
+  analytical_heating_and_cooling: verified
+  same_host_frozen_replay: exact
+  independent_host: false
+  measured_data_required: false
+
+generator_excitation:
+  report: reports/generator-excitation-final-2026-11-02/delivery.json
+  validator: benchmarks/generator_excitation_validation.py
+  full_protected_SI_pairs: 11
+  negative_cases: 4
+  native_field_reaction_reference: ANDES_GENROU_XadIfd
+  native_version: 2.0.0
+  native_cases: [hold, voltage_step, saturated]
+  native_runs: 9
+  native_OEL_feedback_runs: 0
+  maximum_native_field_reaction_error_pu: 5.903510791327449e-9
+  maximum_controller_boundary_time_error_s: 4.2164627345187e-9
+  initial_protocol_and_source_hashes: immutable
+  field_current_in_amperes_inferred: false
+  OEL_standard_or_manufacturer_equivalence_claimed: false
+  next: independent_native_closed_loop_standard_OEL_and_UEL
+
+industrial_sequence_references:
+  report: reports/industrial-delivery-2026-11-02/delivery.json
+  field_thermal:
+    cases: 7
+    independent_model: SI_winding_coordinates_and_transfer_blocks
+    analytic_model: post_quench_matrix_exponential_and_quadratic_heat_lift
+    native_protected_runs: 0
+    manufacturer_curve_claim: false
+  full_stator:
+    software: motulator
+    version: 0.19.0
+    pinned_wheel_sha256: f2aae0c1d0caf435f0bb9d7b87eda781bc4e4bc9fc7439122fb1b64fd42448eb
+    cases: 6
+    independent_coordinates: original_Gamma_model_vs_primary_T_flux_matrix
+    source: https://aalto-electric-drives.github.io/motulator/drive_examples/grid_connection/plot_2kw_im_dol.html
+    published_electrical_parameters_only: true
+    inertia_load_and_source_resistance: authored_benchmark_parameters
+    general_network_EMT_qualified: false
+  scale:
+    cases: 10
+    maximum_nodes: 10000
+    duration_s: 0.02
+    oracle: physical_series_reduction_and_2x2_root_leaf_solve
+    full_dynamic_trajectory_oracle: false
+  installation:
+    report: reports/industrial-clean-install-2026-11-02/qualification.json
+    separate_clean_venvs: 2
+    same_host: true
+    independent_host_verified: false
+  remaining:
+  - standard_OEL_UEL_with_actual_native_feedback
+  - meshed_long_duration_multi_machine_scale
+  - independent_host_and_platform_matrix
+  - general_network_EMT_unbalance_saturation_converters
+
+executed_modelica_references:
+  - id: OPENIPSL_MNLEX2
+    model: MNLEX2_OpenIPSL_3_1_0
+    compiler: OpenModelica_1_27_2
+    integrator: DASSL
+    library: Modelica_Standard_Library_4_0_0
+    OpenIPSL_commit: 0ee96c3bcf71330916fbaba60a82eeaac5e1ffb5
+    archive_lock: requirements/modelica-reference.json
+    report: reports/mnlex2-final-2026-11-02/delivery.json
+    original_component_cases: 8
+    native_runs: 24
+    native_tolerances: [1.0e-8, 1.0e-10, 1.0e-12]
+    native_component_equations_unmodified: true
+    equilibrium_initial_condition_override_explicit: true
+    primary_event_times_not_inputs: true
+    independent_query_clock_no_feedback: true
+    native_network_feedback_qualified: false
+    full_network_separate_SI_cases: 11
+    published_manufacturer_settings_claim: false
+    own_hardware_required: false
+    same_host_only: true
+    next: actual_native_closed_loop_generator_and_standard_OEL_timing

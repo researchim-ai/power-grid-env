@@ -14,6 +14,8 @@ EPS=np.finfo(float).eps
 
 
 def thermal_step(level,heat0,heat1,duration,tau):
+    if not all(math.isfinite(v) for v in (level,heat0,heat1,duration,tau)):
+        raise ValueError('finite thermal inputs required')
     if duration<0 or tau<=0:raise ValueError('positive thermal time scale required')
     if duration==0:return float(level)
     q=duration/tau;one=-math.expm1(-q)
@@ -28,9 +30,13 @@ class NativeLoop:
         self.ctx=ctx;self.a=ctx['system'];self.settings=self.spec.coupled if self.spec.coupled else self.spec.induction
         self.motors=self.settings.motors;self.closed=np.array([m.connected for m in self.motors],dtype=bool);self.latched=np.zeros(len(self.motors),dtype=bool)
         self.controls={};self.thermal={};self.log=[];self.transitions=0;self.records=[];self.aux={};self.accepted=0;self.probes=0;self.rollbacks=0;self.maximum_g=ctx['initial_residual']
-        n=self.spec.network;source=n.sources[0];line=n.lines[0]
-        self.zs=complex(source.r_ohm,source.x_ohm);self.zl=complex(line.r_ohm[0][0]-line.r_ohm[0][1],line.x_ohm[0][0]-line.x_ohm[0][1])
-        if abs(self.zs+self.zl)==0:raise ValueError('online native sensing requires nonzero total branch impedance')
+        n=self.spec.network;source=n.sources[0]
+        self.voltage_reader=ctx.get('node_voltage_reader')
+        self.source_base_v=ctx.get('source_voltage_base_v',self.motors[0].rated_ll_v)
+        if self.voltage_reader is None:
+            line=n.lines[0]
+            self.zs=complex(source.r_ohm,source.x_ohm);self.zl=complex(line.r_ohm[0][0]-line.r_ohm[0][1],line.x_ohm[0][0]-line.x_ohm[0][1])
+            if abs(self.zs+self.zl)==0:raise ValueError('online native sensing requires nonzero total branch impedance')
         terminals={t.id:t.connectivity_node_id for t in n.terminals};self.source_node=terminals[source.terminal_id];self.plant_node=self.motors[0].node_id
         self.layout={m.id:(m,model,name,ctx['addresses'][m.id]) for m,model,name in ctx['layout']}
         volts=self.voltages();heating=self.heating()
@@ -77,8 +83,8 @@ class NativeLoop:
                 # preserves exact thermal ties without coalescing nearby levels.
                 for root_time,kind,i,index in crossings:
                     if (kind,i) in roots:continue
-                    if kind==first[1]:
-                        tol=64*EPS*(max(abs(theta1[i]),abs(theta1[first[2]]),1.) if kind=='thermal' else 1.)
+                    if kind==first[1]=='thermal':
+                        tol=64*EPS*max(abs(theta1[i]),abs(theta1[first[2]]),1.)
                         if abs(residuals[index]-residuals[first[3]])<=tol:roots.append((kind,i))
                     elif abs(root_time-first[0])<=8*EPS*max(1.,abs(end)):roots.append((kind,i))
             self.thermal=theta1;self.accepted+=1;self.a.TDS.custom_event=False;self.a.b_update(self.a.exist.pflow_tds)
@@ -101,6 +107,7 @@ class NativeLoop:
         return dict(records=self.records,maximum_accepted_algebraic_residual_pu=self.maximum_g,accepted_steps=self.accepted,metadata=metadata)
 
     def voltages(self):
+        if self.voltage_reader is not None:return self.voltage_reader()
         a=self.a;es=a.Bus.v.v[0]*np.exp(1j*a.Bus.a.v[0]);vp=a.Bus.v.v[1]*np.exp(1j*a.Bus.a.v[1]);vs=es-self.zs*(es-vp)/(self.zs+self.zl)
         return {self.source_node:float(abs(vs)),self.plant_node:float(abs(vp))}
 
@@ -119,7 +126,7 @@ class NativeLoop:
         self.a.TDS.h=right-left;self.a.dae.t[...]=right
         if not self.a.TDS.itm_step():raise ValueError('native online implicit trial failed')
         residual=float(max(abs(self.a.dae.g)))
-        if not math.isfinite(residual) or residual>1e-8:raise ValueError('native online algebraic residual limit')
+        if not math.isfinite(residual) or residual>1e-8:raise ValueError(f'native online algebraic residual limit: {residual!r} at {right!r}')
         self.maximum_g=max(self.maximum_g,residual);heat1=self.heating()
         return {i:thermal_step(value,heat0[i],heat1[i],right-left,self.motors[i].thermal.time_constant_s) for i,value in theta0.items()}
 
@@ -163,6 +170,20 @@ class NativeLoop:
         if not np.array_equal(before,self.a.dae.x):raise ValueError('native online projection changed differential states')
         self.maximum_g=max(self.maximum_g,res);self.a.TDS.custom_event=True
 
+    def apply_generator_control(self,event,time):
+        controls=self.ctx.get('generator_controls')
+        if controls is None:
+            if len(self.spec.network.generators)!=1 or event.equipment_id!=self.spec.network.generators[0].id:raise ValueError('explicit generator control mapping required')
+            p=next(p for p in self.spec.coupled.machines if p.generator_id==event.equipment_id)
+            controls={event.equipment_id:dict(governor_index=0,exciter_index=0,factor=p.rated_va/self.spec.network.s_base_va)}
+        if event.equipment_id not in controls:raise ValueError('unknown native generator control target')
+        def references():
+            return {key:dict(governor=float(self.a.TGOV1.pref0.v[v['governor_index']])/v['factor'],voltage=float(self.a.SEXS.vref0.v[v['exciter_index']])) for key,v in controls.items()}
+        before=references();target=controls[event.equipment_id]
+        if event.kind=='governor_step':self.a.TGOV1.pref0.v[target['governor_index']]+=event.value*target['factor']
+        else:self.a.SEXS.vref0.v[target['exciter_index']]+=event.value
+        if self.ctx.get('generator_controls') is not None:self.log.append(dict(time_s=float(time),kind=event.kind,equipment_id=event.equipment_id,value=event.value,outcome='applied',references_before=before,references_after=references()))
+
     def handle(self,time,roots,scheduled):
         voltage_roots=[i for kind,i in roots if kind=='voltage']
         if voltage_roots:self.observe(time,voltage_roots)
@@ -170,9 +191,8 @@ class NativeLoop:
             if kind=='thermal':self.closed[i]=False;self.latched[i]=True;self.emit(i,'thermal_trip',time,outcome='latched_open')
         self.project()
         for e in scheduled:
-            if e.kind=='source_voltage':self.a.Slack.v0.v[0]=self.spec.network.sources[0].ll_v/self.motors[0].rated_ll_v*e.value
-            elif e.kind=='governor_step':self.a.TGOV1.pref0.v[0]+=e.value*self.spec.coupled.machines[0].rated_va/self.spec.network.s_base_va
-            elif e.kind=='voltage_reference_step':self.a.SEXS.vref0.v[0]+=e.value
+            if e.kind=='source_voltage':self.a.Slack.v0.v[0]=self.spec.network.sources[0].ll_v/self.source_base_v*e.value
+            elif e.kind in {'governor_step','voltage_reference_step'}:self.apply_generator_control(e,time)
             elif e.kind not in {'motor_open','motor_close'}:raise ValueError('unsupported native controller event')
         self.project();manual=[e for e in scheduled if e.kind in {'motor_open','motor_close'}]
         if manual:self.observe(time)

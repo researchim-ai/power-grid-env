@@ -47,6 +47,26 @@ def test_pre_and_post_source_voltage_are_distinct():
     assert r['time_s']==native['time_s'] and r['sample_side']==native['sample_side']
 
 
+def test_endogenous_event_requires_registered_sides_without_changing_case_identity():
+    spec,native,_=fixture()
+    native['time_s'][3:3]=[.35,.35]
+    native['sample_side'][3:3]=['pre_event','post_event']
+    for values in native['channels'].values():values[3:3]=[values[2],values[2]]
+    with pytest.raises(ValueError):reconstruct_terminals(spec,native)
+    result=reconstruct_terminals(spec,native,additional_event_times=[.35])
+    assert result['time_s']==native['time_s']
+    assert native['case_sha256']==canonical_hash(spec)
+    native['sample_side'][3]='regular'
+    with pytest.raises(ValueError):reconstruct_terminals(spec,native,additional_event_times=[.35])
+
+
+@pytest.mark.parametrize('time',[0.,-.1,1.3,float('nan'),float('inf')])
+def test_invalid_endogenous_event_time_is_rejected(time):
+    spec,native,_=fixture()
+    with pytest.raises(ValueError,match='event time'):
+        reconstruct_terminals(spec,native,additional_event_times=[time])
+
+
 @pytest.mark.parametrize('fault',['case','incomplete','power','port_voltage','nonfinite','missing_event_side','missing_channel'])
 def test_corrupted_or_inconsistent_measurement_cannot_be_promoted(fault):
     spec,native,_=fixture()

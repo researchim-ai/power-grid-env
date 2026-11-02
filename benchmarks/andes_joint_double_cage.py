@@ -1,4 +1,5 @@
 """Four preregistered active GENROU/Motor5 cold-start cases, native step refinement."""
+from benchmarks.event_sampling import native_sample_sides,native_sample_indices
 from pathlib import Path
 import argparse,math
 import numpy as np
@@ -40,6 +41,7 @@ def validate_event_samples(report,settings):
     times=np.asarray(report['time_s']);sides=np.asarray(report['sample_side'])
     if times.ndim!=1 or len(times)<2 or sides.shape!=times.shape or not np.isfinite(times).all() or np.any(np.diff(times)<0) or abs(times[0])>1e-12 or abs(times[-1]-settings.duration_s)>1e-12:raise ValueError('incomplete joint sample timeline')
     instants={e.time_s for e in settings.events}
+    instants.update(e['time_s'] for e in report.get('event_log',[]) if e['kind'].startswith('controller_limit_'))
     for at in instants:
         found=sides[abs(times-at)<1e-12]
         if list(found)!=['pre_event','post_event']:raise ValueError('scheduled joint event sides missing or duplicated')
@@ -66,7 +68,10 @@ def compare(spec,steps=STEPS,out=None):
             rows.append(dict(step_s=step,passed=False,failure=native));continue
         validate_event_samples(native,spec.coupled)
         if set(native['channels'])!=set(limits):raise ValueError('native joint channel inventory mismatch')
-        errors={k:float(max(abs(sample_native(native,actual['time_s'],actual['sample_side'],k)-actual['channels'][k]))) for k in limits}
+        selected=native_sample_indices(actual,spec.coupled.step_s)
+        semantic_sides=native_sample_sides(actual)
+        times=[actual['time_s'][i] for i in selected];sides=[semantic_sides[i] for i in selected]
+        errors={k:float(max(abs(sample_native(native,times,sides,k)-np.asarray(actual['channels'][k])[selected]))) for k in limits}
         rows.append(dict(step_s=step,errors=errors,passed=all(np.isfinite(errors[k]) and errors[k]<=limit for k,limit in limits.items()),initial_algebraic_residual_pu=native['initial_algebraic_residual_pu'],initial_generator_controller_rhs=native['initial_nonmotor_rhs'],seed_voltage_replacement_error_pu=native['seed_voltage_replacement_error_pu']))
         if out is not None:write_json(out/f'andes-{step}.json',native)
     convergence=all('errors' in row for row in rows) and all(rows[-1]['errors'][k]<rows[0]['errors'][k] for k in [m.id+'.speed_pu',g.id+'.delta'])

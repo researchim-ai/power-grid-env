@@ -8,8 +8,9 @@ from benchmarks.induction_reference import mechanical_torque_reference
 
 
 class Generator:
-    def __init__(self,network,settings,feed,source_v,motor_steady,cold_current):
+    def _configure(self,network,settings):
         if len(network.generators)!=1 or len(settings.machines)!=1:raise ValueError('one independent group generator required')
+        self.field_enabled=True
         self.g=network.generators[0];self.p=settings.machines[0];p=self.p;g=self.g
         if p.model=='GENROU' and p.x_d_subtransient_pu!=p.x_q_subtransient_pu:raise ValueError('independent group requires isotropic subtransient stator')
         if g.mode!='pv':raise ValueError('independent group generator requires PV initialization')
@@ -24,6 +25,9 @@ class Generator:
         gov,avr=p.governor,p.exciter
         self.Ag,self.Bg,self.Cg,self.Dg=[float(x.item()) for x in signal.tf2ss([gov.T2,1.],[gov.T3,1.])]
         self.Aa,self.Ba,self.Ca,self.Da=[float(x.item()) for x in signal.tf2ss([avr.TATB*avr.TB,1.],[avr.TB,1.])]
+
+    def __init__(self,network,settings,feed,source_v,motor_steady,cold_current):
+        self._configure(network,settings);p=self.p;g=self.g
         magnitude=g.v_set_pu*self.vbase;self.speeds=np.zeros(len(settings.motors))
         if settings.operating_point:
             # The PV magnitude fixes each motor's torque-speed curve; currents
@@ -44,8 +48,17 @@ class Generator:
             return [(3*(v*np.conj(ig)).real-g.p_w)/p.rated_va]
         solved=root(phase_error,[cmath.phase(source_v)],tol=1e-11)
         if max(abs(np.array(phase_error(solved.x))))>1e-9:raise ValueError('independent group PV phase root failed')
-        self.voltage=magnitude*cmath.exp(1j*solved.x[0]);ig=sum(currents(self.voltage))-(source_v-self.voltage)/feed;eg=self.voltage+self.z*ig
+        self.voltage=magnitude*cmath.exp(1j*solved.x[0]);ig=sum(currents(self.voltage))-(source_v-self.voltage)/feed
+        self.initialize_terminal(self.voltage,ig)
+
+    @classmethod
+    def at_terminal(cls,network,settings,voltage,current):
+        result=cls.__new__(cls);result._configure(network,settings);result.initialize_terminal(voltage,current);return result
+
+    def initialize_terminal(self,voltage,ig):
+        p=self.p;g=self.g;gov=p.governor;avr=p.exciter;self.voltage=voltage;eg=voltage+self.z*ig
         q_initial=float((3*self.voltage*np.conj(ig)).imag)
+        self.initial_q_var=q_initial
         if (g.q_min_var is not None and q_initial<g.q_min_var) or (g.q_max_var is not None and q_initial>g.q_max_var):raise ValueError('independent group generator initial Q limit')
         def dq(delta):
             emf=eg/self.vbase*cmath.exp(-1j*delta);current=ig/self.ibase*cmath.exp(-1j*delta)
@@ -67,6 +80,9 @@ class Generator:
         p=self.p;return self.gd1*x[6]+self.gd2*(p.x_d_prime_pu-p.leakage_pu)*x[8],self.gq1*x[7]+(1-self.gq1)*x[9]
     def emf(self,x):
         pd,pq=self.flux(x);return complex(pd,-pq)*self.vbase*cmath.exp(1j*x[0])
+    def field_voltage(self,x):
+        return float(np.clip(x[5],self.p.exciter.EMIN,self.p.exciter.EMAX)) if self.field_enabled else 0.
+
     def rhs(self,x,current,voltage):
         p=self.p;gov=p.governor;avr=p.exciter;pd,pq=self.flux(x);eq,ed,psid,psiq=x[6:10]
         own=current/self.ibase*cmath.exp(-1j*x[0]);id_,iq=-own.imag,own.real;se=saturation_curve(p,math.hypot(pd,pq))
@@ -79,12 +95,12 @@ class Generator:
         if (x[5]>=avr.EMAX and df>0) or (x[5]<=avr.EMIN and df<0):df=0.
         pe=3*(self.emf(x)*np.conj(current)).real/p.rated_va
         return np.array([self.wb*(x[1]-1),(power-pe-p.damping_pu*(x[1]-1))/(2*p.inertia_s),dr,self.Ag*x[3]+self.Bg*valve,self.Aa*x[4]+self.Ba*error,df,
-            (np.clip(x[5],avr.EMIN,avr.EMAX)-ad)/p.td_prime_s,-aq/p.tq_prime_s,
+            (self.field_voltage(x)-ad)/p.td_prime_s,-aq/p.tq_prime_s,
             (eq-psid-(p.x_d_prime_pu-p.leakage_pu)*id_)/p.td_subtransient_s,(ed-psiq+(p.x_q_prime_pu-p.leakage_pu)*iq)/p.tq_subtransient_s])
     def signals(self,x,current,voltage):
         p=self.p;gov=p.governor;avr=p.exciter;pd,pq=self.flux(x);power=3*voltage*np.conj(current)
         values=dict(delta=x[0],omega=x[1],p_w=power.real,q_var=power.imag,current_pu=abs(current)/self.ibase,
-            e1q=x[6],e1d=x[7],e2d=x[8],e2q=x[9],psi2d=pd,psi2q=pq,Se=saturation_curve(p,math.hypot(pd,pq)),field_pu=np.clip(x[5],avr.EMIN,avr.EMAX))
+            e1q=x[6],e1d=x[7],e2d=x[8],e2q=x[9],psi2d=pd,psi2q=pq,Se=saturation_curve(p,math.hypot(pd,pq)),field_pu=self.field_voltage(x))
         values.update({'TGOV1.valve_pu':np.clip(x[2],gov.VMIN,gov.VMAX),'TGOV1.turbine_state_pu':x[3]/gov.T3,
             'TGOV1.output_pu':self.Cg*x[3]+self.Dg*np.clip(x[2],gov.VMIN,gov.VMAX)-gov.Dt*(x[1]-1),
             'SEXS.field_pu':np.clip(x[5],avr.EMIN,avr.EMAX),'SEXS.filter_pu':x[4]/avr.TB})

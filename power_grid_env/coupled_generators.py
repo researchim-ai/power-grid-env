@@ -69,6 +69,20 @@ class RoundRotorBank:
                 pq+(m.x_q_subtransient_pu-m.leakage_pu)*iq]
         return None
 
+    def field_reaction(self,state,rotor,current):
+        """GENROU Xad*Ifd on the declared machine excitation base, signed.
+
+        Reconstructs rotor magnetizing reaction independently of applied voltage;
+        dE'q/dt=(Efd-Xad*Ifd)/Td'. No ampere base is inferred.
+        """
+        result=np.full(len(self.passports),np.nan)
+        for i,address in self.addresses.items():
+            m=self.passports[i];gd1,gd2,_,_,_=self.coefficients[i]
+            eq,_,psid,_=state[address];pd,pq=self.fluxes(state,i)
+            id_=-(current[i]*np.exp(-1j*rotor[i,0])).imag
+            result[i]=eq+(m.x_d_pu-m.x_d_prime_pu)*(gd1*id_-gd2*psid+gd2*eq)+saturation(m,math.hypot(pd,pq))*pd
+        return result
+
     def derivatives(self,state,rotor,current,field):
         derivative=np.zeros(self.end-self.offset)
         for i,address in self.addresses.items():

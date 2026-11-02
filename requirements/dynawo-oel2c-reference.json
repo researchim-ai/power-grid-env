@@ -1,0 +1,93 @@
+{
+  "schema": "power-grid-env.dynawo-reference/v1",
+  "commit": "b932ef89dedb5db3138c5ca7d6c0cc26c49f6546",
+  "files": {
+    "AUTHORS.txt": {
+      "sha256": "c14a83bf70bdfe0aa3142036b9f610804f97f7db26e2597120287e9e893ab164",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/AUTHORS.txt"
+    },
+    "LICENSE.txt": {
+      "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/LICENSE.txt"
+    },
+    "dynawo/sources/Models/Modelica/Dynawo/Electrical/Controls/Machines/OverExcitationLimiters/Standard/BaseClasses/OelActivation.mo": {
+      "sha256": "cc13e3beb2f3722d8d5a37c2c303ece63e43756433b595e1845c7562b0ca2845",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/dynawo/sources/Models/Modelica/Dynawo/Electrical/Controls/Machines/OverExcitationLimiters/Standard/BaseClasses/OelActivation.mo"
+    },
+    "dynawo/sources/Models/Modelica/Dynawo/Electrical/Controls/Machines/OverExcitationLimiters/Standard/BaseClasses/OelReferenceCurrent.mo": {
+      "sha256": "611d5a4b6470f79ede85c4178f2008043c846aa8be19be5de10b797bd7f6d94a",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/dynawo/sources/Models/Modelica/Dynawo/Electrical/Controls/Machines/OverExcitationLimiters/Standard/BaseClasses/OelReferenceCurrent.mo"
+    },
+    "dynawo/sources/Models/Modelica/Dynawo/Electrical/Controls/Machines/OverExcitationLimiters/Standard/BaseClasses/package.mo": {
+      "sha256": "a24da54c0f60473263fd8b1d5a5b970c045a88055c0dedc182389b2813c2881b",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/dynawo/sources/Models/Modelica/Dynawo/Electrical/Controls/Machines/OverExcitationLimiters/Standard/BaseClasses/package.mo"
+    },
+    "dynawo/sources/Models/Modelica/Dynawo/Electrical/Controls/Machines/OverExcitationLimiters/Standard/Oel2c.mo": {
+      "sha256": "d03707f58eb7ae152afd81f821451ef8c4cf7deca870e87d9786d620a0e3ad5b",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/dynawo/sources/Models/Modelica/Dynawo/Electrical/Controls/Machines/OverExcitationLimiters/Standard/Oel2c.mo"
+    },
+    "dynawo/sources/Models/Modelica/Dynawo/Electrical/Controls/Machines/OverExcitationLimiters/Standard/package.mo": {
+      "sha256": "47e804faf2be70bb3390056e68e5d4a84f8fe40fb91be45b21098c11ac7c2c15",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/dynawo/sources/Models/Modelica/Dynawo/Electrical/Controls/Machines/OverExcitationLimiters/Standard/package.mo"
+    },
+    "dynawo/sources/Models/Modelica/Dynawo/Electrical/Controls/Machines/OverExcitationLimiters/package.mo": {
+      "sha256": "88b16beff911bfba78723891c340dfd64eb78a263ebd1e35aa1f752625c2a7f9",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/dynawo/sources/Models/Modelica/Dynawo/Electrical/Controls/Machines/OverExcitationLimiters/package.mo"
+    },
+    "dynawo/sources/Models/Modelica/Dynawo/Electrical/Controls/Machines/package.mo": {
+      "sha256": "f9958adbac52c4d26cc251ceb52a39899fc0db40f5c2eb9be3ed1fda2ab157c1",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/dynawo/sources/Models/Modelica/Dynawo/Electrical/Controls/Machines/package.mo"
+    },
+    "dynawo/sources/Models/Modelica/Dynawo/Electrical/Controls/package.mo": {
+      "sha256": "43f488811d77a49f51bc0a6b74d4553cccf05583960bce386770870ed5d0f48c",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/dynawo/sources/Models/Modelica/Dynawo/Electrical/Controls/package.mo"
+    },
+    "dynawo/sources/Models/Modelica/Dynawo/Electrical/package.mo": {
+      "sha256": "1cb3cee8ecfb6f15d50dc405ed5c5c7c3e244eaa1d896fe99a42362052691783",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/dynawo/sources/Models/Modelica/Dynawo/Electrical/package.mo"
+    },
+    "dynawo/sources/Models/Modelica/Dynawo/NonElectrical/Blocks/Continuous/Power.mo": {
+      "sha256": "9f9527d686ef46dd9d6472231231e467f96a49074daa5b24dbf32ebe4e0eadf8",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/dynawo/sources/Models/Modelica/Dynawo/NonElectrical/Blocks/Continuous/Power.mo"
+    },
+    "dynawo/sources/Models/Modelica/Dynawo/NonElectrical/Blocks/Continuous/package.mo": {
+      "sha256": "87eea02b13df9db8e4ae972c4a9a65a05142deb77f8342173bb7da2f54e810b6",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/dynawo/sources/Models/Modelica/Dynawo/NonElectrical/Blocks/Continuous/package.mo"
+    },
+    "dynawo/sources/Models/Modelica/Dynawo/NonElectrical/Blocks/NonLinear/LimitedLeadLag.mo": {
+      "sha256": "019fe888b287a1b6a40599a9248f37b02de2d1f94a037ce850994cf5772203a2",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/dynawo/sources/Models/Modelica/Dynawo/NonElectrical/Blocks/NonLinear/LimitedLeadLag.mo"
+    },
+    "dynawo/sources/Models/Modelica/Dynawo/NonElectrical/Blocks/NonLinear/package.mo": {
+      "sha256": "0f7949a21ba45221f68d1300799dac16581a93aa245a56341cc48eeb14327e7f",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/dynawo/sources/Models/Modelica/Dynawo/NonElectrical/Blocks/NonLinear/package.mo"
+    },
+    "dynawo/sources/Models/Modelica/Dynawo/NonElectrical/Blocks/package.mo": {
+      "sha256": "5997e43e2ba138f3e853586dc429914c0d85702adde45f2004a7a8aeb8c18656",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/dynawo/sources/Models/Modelica/Dynawo/NonElectrical/Blocks/package.mo"
+    },
+    "dynawo/sources/Models/Modelica/Dynawo/NonElectrical/package.mo": {
+      "sha256": "159ddaec8931cdc5effa478c36b5803767a39b60ee7839ed0c0bd40cc606d8c7",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/dynawo/sources/Models/Modelica/Dynawo/NonElectrical/package.mo"
+    },
+    "dynawo/sources/Models/Modelica/Dynawo/Types.mo": {
+      "sha256": "4465ca5beeb2f658b81676ed8a2decfafbf684264693c75b2e9c7343b7d2326d",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/dynawo/sources/Models/Modelica/Dynawo/Types.mo"
+    },
+    "dynawo/sources/Models/Modelica/Dynawo/package.mo": {
+      "sha256": "2c10d3ea0dbbe866a1176584129592fd01c155e2904376927f2c0d039d075966",
+      "url": "https://raw.githubusercontent.com/dynawo/dynawo/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/dynawo/sources/Models/Modelica/Dynawo/package.mo"
+    }
+  },
+  "MSL": {
+    "filename": "MSL-3.2.3.zip",
+    "url": "https://codeload.github.com/modelica/ModelicaStandardLibrary/zip/refs/tags/v3.2.3",
+    "sha256": "eaab0f7863d7272a09fffd26fda9ac6712f8ab15920d23933558e34f260fa379"
+  },
+  "fmpy": {
+    "version": "0.3.27",
+    "filename": "fmpy-0.3.27-py3-none-any.whl",
+    "url": "https://files.pythonhosted.org/packages/3f/f6/524fab535e287fc4d39736602cb69b4d9622a795d6c5da397f8039ed4c38/fmpy-0.3.27-py3-none-any.whl",
+    "sha256": "0c2c270dd39e4303e7200dd62626f4d80e76cda4a2ca3a8e542bd4f70522eddf"
+  }
+}

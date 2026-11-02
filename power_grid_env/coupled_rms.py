@@ -17,6 +17,12 @@ from power_grid_env.induction_network import InductionNetwork,validate_induction
 from power_grid_env.rms_study import ClassicalMachine, RoundRotorMachine, RMSFault
 from power_grid_env.coupled_generators import RoundRotorBank
 from power_grid_env.coupled_controls import CoupledControllerBank
+from power_grid_env.controller_boundaries import ControllerBoundaries
+from power_grid_env.generator_field_thermal import GeneratorFieldThermalProtection,FieldThermalBank
+from power_grid_env.generator_excitation import OverexcitationLimiter,ExcitationLimiterBank
+from power_grid_env.generator_underexcitation import UnderexcitationLimiter,MinimumExcitationBank
+from power_grid_env.generator_oel2c import OEL2CPassport,OEL2CBank,CHANNELS as OEL2C_CHANNELS
+from power_grid_env.generator_thermal import GeneratorThermalProtection,GeneratorThermalBank
 from power_grid_env.model import validate_network_rules
 from power_grid_env.topology import compile_topology
 
@@ -45,6 +51,11 @@ class FaultTransition:
 
 
 class CoupledSettings(InductionSettings):
+    generator_field_thermal: list[GeneratorFieldThermalProtection] = Field(default_factory=list,max_length=8)
+    oel2c_limiters: list[OEL2CPassport] = Field(default_factory=list,max_length=8)
+    underexcitation_limiters: list[UnderexcitationLimiter] = Field(default_factory=list,max_length=8)
+    overexcitation_limiters: list[OverexcitationLimiter] = Field(default_factory=list,max_length=8)
+    generator_thermal: list[GeneratorThermalProtection] = Field(default_factory=list,max_length=8)
     faults: list[CoupledFault] = Field(default_factory=list,max_length=100)
     machines: list[ClassicalMachine | RoundRotorMachine] = Field(min_length=1,max_length=8)
     events: list[CoupledEvent] = Field(default_factory=list,max_length=100)
@@ -70,7 +81,7 @@ def validate_coupled(network,settings):
     projection=network.model_copy(deep=True)
     removed={g.terminal_id for g in projection.generators}
     projection.generators=[];projection.terminals=[t for t in projection.terminals if t.id not in removed]
-    motor_settings=InductionSettings.model_validate({k:v for k,v in settings.model_dump(mode='json').items() if k not in {'machines','faults'}} | {
+    motor_settings=InductionSettings.model_validate({k:v for k,v in settings.model_dump(mode='json').items() if k not in {'machines','faults','generator_thermal','overexcitation_limiters','generator_field_thermal','underexcitation_limiters','oel2c_limiters'}} | {
         'events':[e.model_dump(mode='json') for e in settings.events if e.kind not in {'generator_mechanical_step','governor_step','voltage_reference_step','generator_open',*LINE_EVENTS}]})
     scope=validate_induction(projection,motor_settings,validate_rules=False)
     errors.extend(scope['errors'])
@@ -91,6 +102,52 @@ def validate_coupled(network,settings):
         errors.append('one synchronous-machine passport per canonical generator required')
     if any(m.id in generators for m in settings.motors):
         errors.append('motor ID collides with canonical generator')
+    field_ids=[]
+    oel_by_id={p.generator_id:p for p in settings.overexcitation_limiters}
+    for p in settings.generator_field_thermal:
+        try:GeneratorFieldThermalProtection.model_validate(p.model_dump())
+        except ValueError as exc:errors.append('invalid field thermal passport: '+str(exc))
+        field_ids.append(p.generator_id);m=passports.get(p.generator_id)
+        if m is None or m.model!='GENROU':errors.append('field thermal protection requires an existing GENROU')
+        if p.initialization=='specified' and p.initial_level>=p.trip_level:errors.append('initial field thermal level must be below trip')
+        other=oel_by_id.get(p.generator_id)
+        if other and not math.isclose(other.rated_field_reaction_pu,p.rated_field_reaction_pu,rel_tol=1e-12):errors.append('OEL and rotor thermal rated field bases must agree')
+    if len(set(field_ids))!=len(field_ids) or len(field_ids)>8:errors.append('unique field thermal passports required')
+    oel_ids=[]
+    for p in settings.overexcitation_limiters:
+        try:OverexcitationLimiter.model_validate(p.model_dump())
+        except ValueError as exc:errors.append('invalid OEL passport: '+str(exc))
+        oel_ids.append(p.generator_id)
+        m=passports.get(p.generator_id)
+        if m is None or m.model!='GENROU' or m.exciter is None:errors.append('OEL requires an existing GENROU with SEXS')
+    if len(set(oel_ids))!=len(oel_ids) or len(oel_ids)>8:errors.append('unique OEL passports required')
+    uel_ids=[]
+    for p in settings.underexcitation_limiters:
+        try:UnderexcitationLimiter.model_validate(p.model_dump())
+        except ValueError as exc:errors.append('invalid UEL passport: '+str(exc))
+        uel_ids.append(p.generator_id);m=passports.get(p.generator_id)
+        if m is None or m.model!='GENROU' or m.exciter is None:errors.append('UEL requires an existing GENROU with SEXS')
+    if len(set(uel_ids))!=len(uel_ids) or len(uel_ids)>8:errors.append('unique UEL passports required')
+    if settings.operating_point and any(p.initialization!='inactive_equilibrium' for p in settings.underexcitation_limiters):errors.append('UEL loaded operating point requires inactive_equilibrium initialization')
+    oel2c_ids=[]
+    for p in settings.oel2c_limiters:
+        try:OEL2CPassport.model_validate(p.model_dump())
+        except ValueError as exc:errors.append('invalid OEL2C passport: '+str(exc))
+        oel2c_ids.append(p.generator_id);m=passports.get(p.generator_id)
+        if m is None or m.model!='GENROU' or m.exciter is None:errors.append('OEL2C requires an existing GENROU with SEXS')
+        if p.generator_id in oel_by_id:errors.append('one OEL implementation per generator required')
+        field=next((q for q in settings.generator_field_thermal if q.generator_id==p.generator_id),None)
+        if field and not math.isclose(p.rated_field_reaction_pu,field.rated_field_reaction_pu,rel_tol=1e-12):errors.append('OEL2C and field thermal rated field bases must agree')
+    if len(set(oel2c_ids))!=len(oel2c_ids) or len(oel2c_ids)>8:errors.append('unique OEL2C passports required')
+    if settings.oel2c_limiters and settings.operating_point:errors.append('OEL2C dynawo_startup is not a full loaded equilibrium profile')
+    thermal_ids=[]
+    for p in settings.generator_thermal:
+        try:GeneratorThermalProtection.model_validate(p.model_dump())
+        except ValueError as exc:errors.append('invalid generator thermal passport: '+str(exc))
+        thermal_ids.append(p.generator_id)
+        if p.generator_id not in generators:errors.append('unknown generator thermal target')
+        if p.initialization=='specified' and p.initial_level>=p.trip_level:errors.append('initial generator thermal level must be below trip')
+    if len(set(thermal_ids))!=len(thermal_ids) or len(thermal_ids)>8:errors.append('unique generator thermal passports required')
     buses=[]
     for gen in network.generators:
         if gen.terminal_id not in topology.terminal_bus:
@@ -148,7 +205,7 @@ def validate_coupled(network,settings):
     errors.extend(validate_line_events(network,topology,settings.events))
     samples=(2*settings.maximum_contactor_transitions if any(m.contactor for m in settings.motors) else 0)+math.ceil(settings.duration_s/settings.step_s)+2*(len(settings.events)+2*len(settings.faults)+len(settings.motors))+2
     motor_channels=sum(16+8*(m.model=='double_cage')+2*bool(m.thermal)+6*bool(m.contactor) for m in settings.motors)
-    if samples*(2*len(topology.buses)+motor_channels+42*len(settings.machines)+4*len(settings.faults)+9*len(network.lines)+6)>2_000_000:
+    if samples*(2*len(topology.buses)+motor_channels+42*len(settings.machines)+2*len(settings.generator_thermal)+(len(OEL2C_CHANNELS)+2)*len(settings.oel2c_limiters)+8*len(settings.underexcitation_limiters)+6*len(settings.overexcitation_limiters)+4*len(settings.generator_field_thermal)+4*len(settings.faults)+9*len(network.lines)+6)>2_000_000:
         errors.append('coupled trace exceeds two-million-scalar budget')
     return {'ok':not errors,'errors':errors,'model':'coupled_synchronous_generators_single_or_double_cage_motors',
             'limitations':['positive sequence and algebraic stators','GENCLS/GENROU with fixed field or SEXS and optional IEEEST MODE=1',
@@ -175,6 +232,12 @@ class CoupledNetwork(InductionNetwork):
         self.rotor_end=self.gen_offset+2*len(self.generators)
         self.round_rotors=RoundRotorBank(self.gen_passports,self.rotor_end)
         self.controllers=CoupledControllerBank(self.gen_passports,self.round_rotors.end)
+        self.generator_thermal=GeneratorThermalBank(self,self.controllers.end)
+        self.excitation_limiters=ExcitationLimiterBank(self,self.generator_thermal.end)
+        self.field_thermal=FieldThermalBank(self,self.excitation_limiters.end)
+        self.underexcitation_limiters=MinimumExcitationBank(self,self.field_thermal.end)
+        self.oel2c=OEL2CBank(self,self.underexcitation_limiters.end)
+        self.controller_boundaries=ControllerBoundaries(self)
         self.fault_passports={f.id:f for f in settings.faults}
         self.fault_buses={f.id:lookup[self.topology.node_to_bus[f.node_id]] for f in settings.faults}
         self.active_faults=set()
@@ -193,9 +256,15 @@ class CoupledNetwork(InductionNetwork):
         for bus,y in enumerate(self.fault_y):matrix[bus,bus]+=y
         self.matrix=csc_matrix(matrix);self.lu=splu(self.matrix)
 
+    def excitation_bias(self,state):
+        return self.excitation_limiters.bias(state)-self.underexcitation_limiters.output(state)-self.oel2c.output(state)
+
+    def field_voltage(self,state):
+        return self.controllers.field(state,self.gen_voltage)*self.field_thermal.field_enabled
+
     def generator_internal(self,state):
         rotor=state[self.gen_offset:self.rotor_end].reshape(-1,2)
-        return self.round_rotors.internal(state,rotor,self.controllers.field(state,self.gen_voltage))
+        return self.round_rotors.internal(state,rotor,self.field_voltage(state))
 
     def generator_currents(self,state,voltage):
         internal=self.generator_internal(state)
@@ -227,9 +296,12 @@ class CoupledNetwork(InductionNetwork):
         derivative=np.array([[2*math.pi*self.network.frequency_hz*(rotor[i,1]-1),
             (mechanical[i]-electrical[i]-m.damping_pu*(rotor[i,1]-1))/(2*m.inertia_s)]
             for i,m in enumerate(self.gen_passports)])
-        return np.r_[motor,derivative.ravel(),
-            self.round_rotors.derivatives(state,rotor,generator_current,self.controllers.field(state,self.gen_voltage)),
-            self.controllers.derivatives(state,rotor[:,1],self.generator_terminal_voltage(state,voltage))]
+        return self.controller_boundaries.derivative(np.r_[motor,derivative.ravel(),
+            self.round_rotors.derivatives(state,rotor,generator_current,self.field_voltage(state)),
+            self.controllers.derivatives(state,rotor[:,1],self.generator_terminal_voltage(state,voltage),self.excitation_bias(state)),
+            self.generator_thermal.derivatives(state,generator_current),
+            self.excitation_limiters.derivatives(state,generator_current),
+            self.field_thermal.derivatives(state,generator_current),self.underexcitation_limiters.derivatives(state),self.oel2c.derivatives(state,generator_current)])
 
     def static_electrical(self,speed,generator_internal,*,steady):
         response=self.cages.response(self.constants,speed) if steady else np.zeros(len(speed),dtype=complex)
@@ -247,7 +319,7 @@ class CoupledNetwork(InductionNetwork):
 
     def initial_state(self):
         return np.r_[np.zeros(self.electrical_size),[m.thermal.initial_level for m in self.settings.motors if m.thermal],np.zeros(self.motor_state_end-self.electrical_size-len(self.thermal_indices)),
-                     np.tile([0.,1.],len(self.generators)),np.zeros(self.controllers.end-self.rotor_end)]
+                     np.tile([0.,1.],len(self.generators)),np.zeros(self.oel2c.end-self.rotor_end)]
 
     def scheduled_events(self):
         transitions=[FaultTransition(t,kind,f.id) for f in self.settings.faults
@@ -261,7 +333,7 @@ class CoupledNetwork(InductionNetwork):
     def additional_channels(self):
         channels = {g.id+'.'+key:[] for g in self.generators for key in ('delta','omega','rotor_frequency_hz','p_w','q_var','current_pu',
             'bus_voltage_pu','electrical_power_pu','mechanical_power_pu','connected','terminal_voltage_pu','terminal_angle_rad')}
-        channels.update({key:[] for key in self.controllers.channel_names()+self.round_rotors.channel_names()})
+        channels.update({key:[] for key in self.controllers.channel_names()+self.round_rotors.channel_names()+self.generator_thermal.channel_names()+self.excitation_limiters.channel_names()+self.field_thermal.channel_names()+self.underexcitation_limiters.channel_names()+self.oel2c.channel_names()})
         channels.update({key:[] for key in self.lines.channels()})
         channels.update({f.id+'.'+key:[] for f in self.settings.faults for key in ['active','current_a','p_w','q_var']})
         return channels
@@ -273,9 +345,14 @@ class CoupledNetwork(InductionNetwork):
         electrical=(self.generator_internal(state)*np.conj(current)).real
         mechanical=self.controllers.mechanical(state,rotor[:,1],self.gen_mechanical)
         terminal=self.generator_terminal_voltage(state,voltage)
-        signals=self.controllers.signals(state,rotor[:,1],terminal,self.gen_mechanical)
-        signals.update(self.round_rotors.signals(state,self.controllers.field(state,self.gen_voltage)))
+        signals=self.controllers.signals(state,rotor[:,1],terminal,self.gen_mechanical,self.excitation_bias(state))
+        signals.update(self.round_rotors.signals(state,self.field_voltage(state)))
         signals.update(self.lines.signals(voltage))
+        signals.update(self.generator_thermal.signals(state))
+        signals.update(self.excitation_limiters.signals(state,current))
+        signals.update(self.field_thermal.signals(state,current))
+        signals.update(self.underexcitation_limiters.signals(state))
+        signals.update(self.oel2c.signals(state,current))
         for fault in self.settings.faults:
             bus=self.fault_buses[fault.id]
             ll=self.topology.buses[self.bus_names[bus]].nominal_ll_v
@@ -292,11 +369,35 @@ class CoupledNetwork(InductionNetwork):
             signals.update({g.id+'.'+k:float(v) for k,v in values.items()})
         return signals,complex(sum(power))
 
+    def after_discrete_commands(self,time,state,event_log):
+        self.oel2c.apply(set(),time,state,event_log)
+        self.underexcitation_limiters.refresh(time,state,event_log)
+        self.controller_boundaries.refresh(time,state,event_log)
+
+    def additional_guards(self,state=None):
+        ids,guards=self.generator_thermal.guards()
+        field_ids,field_guards=self.field_thermal.guards()
+        more,extra=self.controller_boundaries.guards(state)
+        uel_ids,uel_guards=self.underexcitation_limiters.guards(state)
+        oel_ids,oel_guards=self.oel2c.guards(state)
+        return [('thermal',i) for i in ids]+field_ids+more+uel_ids+oel_ids,guards+field_guards+extra+uel_guards+oel_guards
+
+    def apply_guard_events(self,ids,time,state,event_log):
+        reaction=None
+        if self.field_thermal.entries and ids:
+            v=self.electrical(state)[0];current=self.generator_currents(state,v)
+            reaction=self.field_thermal.reaction(state,current)
+        self.generator_thermal.apply({key[1] for key in ids if key[0]=='thermal'},time,state,event_log)
+        if reaction is not None:self.field_thermal.apply(ids,time,state,event_log,reaction)
+        self.oel2c.apply({key for key in ids if key[0]=='oel2c'},time,state,event_log)
+        self.underexcitation_limiters.apply({key for key in ids if key[0]=='uel'},time,state,event_log)
+        self.controller_boundaries.apply({key for key in ids if key[0]=='controller'},time,state,event_log)
+
     def apply_additional_event(self,event):
         if event.kind=='generator_open':
             i=next(i for i,g in enumerate(self.generators) if g.id==event.equipment_id)
-            self.gen_connected[i]=False
-            return {'outcome':'applied','connected':False,'semantics':'electrical breaker only; rotor, governor, field and PSS continue; sensing on machine side'}
+            was_closed=bool(self.gen_connected[i]);self.gen_connected[i]=False
+            return {'outcome':'applied' if was_closed else 'already_in_requested_state','connected':False,'semantics':'electrical breaker only; rotor, governor, field and PSS continue; sensing on machine side'}
 
         switched=self.lines.apply(event)
         if switched is not None:return switched
@@ -324,12 +425,34 @@ class CoupledNetwork(InductionNetwork):
 
     def observe_accepted_states(self,states):
         self.controllers.observe_accepted_states(states)
+        self.excitation_limiters.observe(states)
+        self.underexcitation_limiters.observe(states)
+        self.oel2c.observe(states)
 
     def validate_additional_channels(self,channels):
-        return self.controllers.validate_channels(channels,self.settings.rtol,self.settings.atol)
+        result=self.controllers.validate_channels(channels,self.settings.rtol,self.settings.atol)
+        oel=self.excitation_limiters.validate(channels,self.settings.rtol,self.settings.atol)
+        result['overexcitation_limits']=oel['limits'];result['ok']=result['ok'] and oel['ok']
+        uel=self.underexcitation_limiters.validate(channels,self.settings.rtol,self.settings.atol)
+        result['underexcitation_limits']=uel['limits'];result['ok']=result['ok'] and uel['ok']
+        oel2c=self.oel2c.validate(channels,self.settings.rtol,self.settings.atol)
+        result['oel2c_limits']=oel2c['limits'];result['ok']=result['ok'] and oel2c['ok']
+        return result
 
     def additional_metadata(self):
-        return {'initialization':'PV-initialized synchronous generators; '+('loaded motor equilibrium' if self.settings.operating_point else 'cold motor flux and speed'),
+        return {'oel2c_model':'pinned Dynawo OEL2C with declared upper-cap numerical guard v1 / MSL 3.2.3 eight-state component; nonpositive SEXS input summation; explicit internal startup, not full equilibrium',
+                'oel2c_passports':[p.model_dump(mode='json') for p in self.settings.oel2c_limiters],
+                'underexcitation_model':'MNLEX2 circle on own machine VA base; positive AVR summation; OpenIPSL 3.1.0 raw lag and reversal reset semantics',
+                'underexcitation_initialization':'explicit inactive raw-lag equilibrium or zero-output raw-lag startup; active/boundary initial circle rejected',
+                'underexcitation_passports':[p.model_dump(mode='json') for p in self.settings.underexcitation_limiters],
+                'generator_field_thermal_model':'normalized GENROU field I-squared replica; stator opens and impressed field voltage becomes zero; flux/current memory persists; no OEM temperature claim',
+                'generator_field_thermal_passports':[p.model_dump(mode='json') for p in self.settings.generator_field_thermal],
+                'controller_boundary_model':'continuous entry/release guards shared across coupled profiles',
+                'overexcitation_model':'GENROU Xad*Ifd divided by explicit rated reaction; filtered magnitude and bounded droop AVR error subtraction; engineering model, not IEEE/OEM OEL',
+                'overexcitation_passports':[p.model_dump(mode='json') for p in self.settings.overexcitation_limiters],
+                'generator_thermal_model':'own-rated-RMS-current squared first-order replica; latched electrical opening; no temperature or OEM relay equivalence',
+                'generator_thermal_passports':[p.model_dump(mode='json') for p in self.settings.generator_thermal],
+                'initialization':'PV-initialized synchronous generators; '+('loaded motor equilibrium' if self.settings.operating_point else 'cold motor flux and speed'),
                 'generator_mapping':{g.id:self.bus_names[int(bus)] for g,bus in zip(self.generators,self.gen_buses)},
                 'generator_units':{'delta':'rad','omega':'pu synchronous speed','rotor_frequency_hz':'rotor electrical Hz, not bus frequency',
                     'terminal_voltage_pu':'machine-side terminal pu; equals open-circuit EMF when breaker open','terminal_angle_rad':'wrapped machine-side phase radians',

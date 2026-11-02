@@ -1,4 +1,5 @@
 """Re-evaluate true contactor sensing on the sealed native physical corpus."""
+from benchmarks.event_sampling import native_sample_sides
 from pathlib import Path
 import argparse,json
 import numpy as np

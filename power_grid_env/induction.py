@@ -4,6 +4,7 @@ Stator transients, saturation, continuous skin-effect laws and converter control
 Motor torque and all electrical pu parameters use each motor's own MVA base.
 """
 from __future__ import annotations
+from power_grid_env.runtime_limits import RuntimeLimits
 
 import math
 from typing import Literal
@@ -113,6 +114,7 @@ class InductionEvent(BaseModel):
 
 
 class InductionSettings(BaseModel):
+    runtime_limits: RuntimeLimits = Field(default_factory=RuntimeLimits)
     model_config = ConfigDict(extra='forbid', allow_inf_nan=False)
     duration_s: float = Field(default=5., gt=0, le=60)
     step_s: float = Field(default=.005, gt=0)

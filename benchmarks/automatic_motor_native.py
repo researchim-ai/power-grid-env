@@ -3,6 +3,7 @@
 Controller decisions and thermal trip times come from the independent SI loop,
 never production event logs. This is not a native closed-loop controller test.
 """
+from benchmarks.event_sampling import native_sample_sides
 from pathlib import Path
 import argparse,math
 import numpy as np

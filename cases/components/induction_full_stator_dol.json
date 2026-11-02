@@ -1,0 +1,27 @@
+{
+  "stator_r_ohm": 3.7,
+  "rotor_r_ohm": 2.326869806094183,
+  "stator_self_h": 0.245,
+  "rotor_self_h": 0.2481994459833795,
+  "mutual_h": 0.23578947368421055,
+  "pole_pairs": 2,
+  "inertia_kg_m2": 0.015,
+  "locked_rotor": false,
+  "fan_nm_per_rad_s2": 0.0005673986283970915,
+  "source_r_ohm": 0.05,
+  "source_l_h": 0.0,
+  "source_ll_rms_v": 400.0,
+  "frequency_hz": 50.0,
+  "source_phase_rad": 0.0,
+  "duration_s": 0.5,
+  "step_s": 0.00025,
+  "rtol": 1e-09,
+  "atol": 1e-11,
+  "runtime_limits": {
+    "maximum_network_buses": 2000,
+    "maximum_rhs_evaluations": 2000000,
+    "maximum_event_batches": 1024,
+    "maximum_retained_scalars": 2000000,
+    "maximum_integration_wall_s": 120.0
+  }
+}

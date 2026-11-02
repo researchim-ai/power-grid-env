@@ -1,5 +1,9 @@
 name: ci
 on: [pull_request, workflow_dispatch]
+env:
+  OPENBLAS_NUM_THREADS: '1'
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -13,7 +17,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: pip install 'setuptools>=68' wheel
-      - run: pip install -e ".[dev]"
+      - run: pip install -e ".[dev]" "andes==2.0.0"
       - run: pytest
       - run: python -m power_grid_env.cli validate
       - run: python -m power_grid_env.cli run-study cases/studies/qsts_runtime.json --out /tmp/pge-ci-qsts
@@ -34,10 +38,52 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install 'setuptools==79.0.1' 'wheel==0.45.1'
       - run: python -m pip install --require-hashes -r requirements/pilot-linux-py312.lock
-      - run: python -m pip download --only-binary=:all: --require-hashes -r requirements/pilot-linux-py312.lock --dest /tmp/pge-ci-wheelhouse
+      - run: >-
+          python -m pip download --only-binary=:all: --require-hashes
+          -r requirements/pilot-linux-py312.lock --dest /tmp/pge-ci-wheelhouse
       - run: python -m benchmarks.pilot_installation --work /tmp/pge-ci-pilot-work --out /tmp/pge-ci-pilot-report --wheelhouse /tmp/pge-ci-wheelhouse
+      - name: Exercise new component CLIs from both clean wheels
+        env:
+          OPENBLAS_NUM_THREADS: '1'
+          OMP_NUM_THREADS: '1'
+          MKL_NUM_THREADS: '1'
+        run: |
+          python - <<'PYCODE'
+          import json, os, subprocess
+          from pathlib import Path
+          repo = Path(os.environ['GITHUB_WORKSPACE'])
+          work = Path('/tmp/pge-ci-pilot-work')
+          out = Path('/tmp/pge-ci-component-report')
+          for label in ['a', 'b']:
+              python = work / ('venv-' + label) / 'bin/python'
+              target = out / label
+              target.mkdir(parents=True)
+              commands = [
+                  ['-m', 'power_grid_env.cli', 'run-study', str(repo / 'cases/studies/generator_field_cold.json'), '--out', str(target / 'field.json')],
+                  ['-m', 'power_grid_env.stator_transient', str(repo / 'cases/components/induction_full_stator_dol.json'), '--out', str(target / 'stator.json')],
+                  ['-m', 'power_grid_env.cli', 'run-study', str(repo / 'cases/studies/generator_underexcitation_recovery.json'), '--out', str(target / 'uel.json')],
+                  ['-m', 'power_grid_env.cli', 'run-study', str(repo / 'cases/studies/generator_oel2c_UEL_coordination.json'), '--out', str(target / 'oel2c.json')],
+                  ['-m', 'power_grid_env.motor_assessment', str(repo / 'cases/studies/multibus_motor_runup3s.json'), '--criteria', str(repo / 'cases/criteria/motor_start_acceptance.json'), '--out', str(target / 'motor')],
+              ]
+              for index, args in enumerate(commands):
+                  with (target / f'{index}.log').open('w') as log:
+                      subprocess.run([str(python), *args], cwd='/tmp', env={k: v for k, v in os.environ.items() if k != 'PYTHONPATH'}, check=True, stdout=log, stderr=subprocess.STDOUT)
+          for name in ['field.json', 'stator.json', 'uel.json', 'oel2c.json', 'motor/trace.json']:
+              left, right = [json.loads((out / label / name).read_text()) for label in ['a', 'b']]
+              assert left['completed'] and right['completed']
+              for key in ['code_sha256', 'time_s', 'channels', 'event_log']:
+                  if key in left:
+                      assert left[key] == right[key], (name, key)
+          for label in ['a', 'b']:
+              assert json.loads((out / label / 'motor/assessment.json').read_text())['passed']
+              assert max(json.loads((out / label / 'uel.json').read_text())['channels']['g2.UEL.output_pu']) > .001
+              assert min(json.loads((out / label / 'oel2c.json').read_text())['channels']['g2.OEL2C.output_pu']) < -.001
+          (out / 'summary.json').write_text(json.dumps({'passed': True, 'clean_venvs': 2, 'exact_component_replay': True}) + '\n')
+          PYCODE
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: motor-wheel-replay-linux-py312
-          path: /tmp/pge-ci-pilot-report/
+          path: |
+            /tmp/pge-ci-pilot-report/
+            /tmp/pge-ci-component-report/

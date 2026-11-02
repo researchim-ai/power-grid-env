@@ -1,0 +1,442 @@
+name: Native online motor-control corpus
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-online:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]' 'andes==2.0.0'
+      - name: Record runtime
+        run: |
+          mkdir -p reports/native-online-ci
+          python -VV > reports/native-online-ci/python.txt
+          python -m pip freeze > reports/native-online-ci/pip-freeze.txt
+          python -m pip check
+      - name: Generate unmodified native code cache
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import tempfile
+          import andes
+          assert andes.__version__ == '2.0.0'
+          cache = Path(tempfile.gettempdir()) / 'power-grid-env-andes-pycode'
+          system = andes.System(no_output=True, default_config=True, pycode_path=str(cache))
+          system.prepare(quick=True, nomp=True)
+          PY
+      - name: Test rollback, event comparison and online controls
+        run: >-
+          python -m pytest -q
+          tests/test_native_closed_loop.py
+          tests/test_native_online_validation.py
+          tests/test_native_terminal_measurements.py
+          tests/test_multibus_motor_reference.py
+          tests/test_multibus_motor_audit.py
+          tests/test_multivoltage_rms.py
+          tests/test_multibus_loaded.py
+          tests/test_multibus_loaded_audit.py
+          tests/test_multibus_prestart.py
+          tests/test_native_motor_group.py
+          tests/test_independent_group_invariants.py
+          --junitxml=reports/native-online-ci/tests.xml
+      - name: Run all registered cases at three native steps
+        run: python -u -m benchmarks.native_online_validation --out reports/native-online-ci/corpus
+      - name: Run multisection multivoltage motor corpus
+        run: python -u -m benchmarks.multibus_motor_validation --out reports/native-online-ci/multibus
+      - name: Audit multivoltage evidence and cross-case invariants
+        run: python -m benchmarks.multibus_motor_audit --root reports/native-online-ci/multibus
+      - name: Run loaded multisection motor and generator corpus
+        run: python -u -m benchmarks.multibus_loaded_validation --out reports/native-online-ci/loaded
+      - name: Audit loaded initial states and physical current closure
+        run: python -m benchmarks.multibus_loaded_audit --root reports/native-online-ci/loaded
+      - name: Run prestart and direct-on-line motor energization corpus
+        run: python -u -m benchmarks.multibus_prestart_validation --out reports/native-online-ci/prestart
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-online-linux-py312
+          path: reports/native-online-ci/
+          retention-days: 30
+
+  published-motor-reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      MPLCONFIGDIR: /tmp/pge-motulator-mpl
+      PGE_MOTULATOR_WHEEL: reports/published-motor-ci/wheels/motulator-0.19.0-py3-none-any.whl
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]'
+      - name: Fetch hash-pinned independent motor simulator
+        run: >-
+          python -m pip download --no-deps --require-hashes
+          -r requirements/motulator-reference.lock
+          --dest reports/published-motor-ci/wheels
+      - name: Install the verified wheel without changing project dependencies
+        run: >-
+          python -m pip install --no-deps --no-index
+          --find-links reports/published-motor-ci/wheels
+          --require-hashes -r requirements/motulator-reference.lock
+      - name: Verify parameter referrals, signs, units and independent native equations
+        run: >-
+          python -m pytest -q tests/test_motulator_motor_validation.py
+          --junitxml=reports/published-motor-ci/tests.xml
+      - name: Compare all 168 preregistered operating points
+        run: >-
+          python -m benchmarks.motulator_motor_validation
+          --wheel reports/published-motor-ci/wheels/motulator-0.19.0-py3-none-any.whl
+          --out reports/published-motor-ci/corpus
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: published-motor-reference-py312
+          path: reports/published-motor-ci/
+          retention-days: 30
+
+  native-restart:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]' 'andes==2.0.0'
+      - name: Generate stock native cache
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import tempfile
+          import andes
+          assert andes.__version__ == '2.0.0'
+          cache = Path(tempfile.gettempdir()) / 'power-grid-env-andes-pycode'
+          andes.System(no_output=True, default_config=True, pycode_path=str(cache)).prepare(quick=True, nomp=True)
+          PY
+      - name: Test restart physics, protection and exact rollback
+        run: >-
+          python -m pytest -q tests/test_multibus_restart.py tests/test_native_closed_loop.py
+          --junitxml=reports/native-restart-ci/tests.xml
+      - name: Run all six restart cases at three native steps
+        run: python -u -m benchmarks.multibus_restart_validation --out reports/native-restart-ci/corpus
+      - name: Reaudit raw physics and protection evidence
+        run: python -m benchmarks.multibus_restart_audit --root reports/native-restart-ci/corpus
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-restart-linux-py312
+          path: reports/native-restart-ci/
+          retention-days: 30
+
+  native-multigen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]' 'andes==2.0.0'
+      - name: Generate stock native cache
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import tempfile
+          import andes
+          assert andes.__version__ == '2.0.0'
+          cache = Path(tempfile.gettempdir()) / 'power-grid-env-andes-pycode'
+          andes.System(no_output=True, default_config=True, pycode_path=str(cache)).prepare(quick=True, nomp=True)
+          PY
+      - name: Test joint initialization, targeted controls and safe resume
+        run: >-
+          python -m pytest -q tests/test_multigen.py tests/test_multibus_loaded.py
+          tests/test_native_closed_loop.py
+          --junitxml=reports/native-multigen-ci/tests.xml
+      - name: Compare all multigen cases at three native steps
+        run: python -u -m benchmarks.multigen_validation --out reports/native-multigen-ci/corpus
+      - name: Reaudit every machine, control event and physical current balance
+        run: python -m benchmarks.multigen_audit --root reports/native-multigen-ci/corpus
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-multigen-linux-py312
+          path: reports/native-multigen-ci/
+          retention-days: 30
+
+  generator-stator-thermal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]' 'andes==2.0.0'
+      - name: Generate stock native code for explicitly unprotected baselines
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import tempfile
+          import andes
+          assert andes.__version__ == '2.0.0'
+          cache = Path(tempfile.gettempdir()) / 'power-grid-env-andes-pycode'
+          andes.System(no_output=True, default_config=True, pycode_path=str(cache)).prepare(quick=True, nomp=True)
+          PY
+      - name: Test thermal law, electrical-only trips and shared event ordering
+        run: >-
+          python -m pytest -q tests/test_generator_thermal.py tests/test_generator_open.py
+          tests/test_coupled_faults.py tests/test_motor_thermal.py
+          --junitxml=reports/generator-thermal-ci/tests.xml
+      - name: Compare full protected SI and strictly pre-opening ANDES
+        run: >-
+          python -u -m benchmarks.generator_thermal_validation
+          --out reports/generator-thermal-ci/corpus --batch-size 6
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: generator-stator-thermal-linux-py312
+          path: reports/generator-thermal-ci/
+          retention-days: 30
+
+  generator-excitation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]' 'andes==2.0.0'
+      - name: Prepare unmodified ANDES cache
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import tempfile
+          import andes
+          assert andes.__version__ == '2.0.0'
+          cache = Path(tempfile.gettempdir()) / 'power-grid-env-andes-pycode'
+          andes.System(no_output=True, default_config=True, pycode_path=str(cache)).prepare(quick=True, nomp=True)
+          PY
+      - name: Test field reaction, feedback and exact controller boundaries
+        run: >-
+          python -m pytest tests/test_generator_excitation.py tests/test_generator_thermal.py
+          tests/test_coupled_controls.py -k 'not native_ANDES'
+          --junitxml=reports/generator-excitation-ci/tests.xml
+      - name: Full SI feedback corpus and separate native field-current references
+        run: >-
+          python -u -m benchmarks.generator_excitation_validation
+          --out reports/generator-excitation-ci/corpus --batch-size 11 --native-batch-size 3
+      - name: Require completed evidence
+        run: >-
+          python -c "import json; s=json.load(open('reports/generator-excitation-ci/corpus/summary.json')); assert s['passed'] and s['status']=='complete' and s['native_OEL_feedback_runs']==0"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: generator-excitation-linux-py312
+          path: reports/generator-excitation-ci/
+          retention-days: 30
+
+  industrial-sequence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      MPLCONFIGDIR: /tmp/industrial-mpl
+      PGE_MOTULATOR_WHEEL: /tmp/industrial-motulator/motulator-0.19.0-py3-none-any.whl
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]' 'andes==2.0.0'
+      - name: Install hash-pinned optional waveform oracle
+        run: |
+          python -m pip download --no-deps --require-hashes -r requirements/motulator-reference.lock --dest /tmp/industrial-motulator
+          python -m pip install --no-deps --no-index --find-links /tmp/industrial-motulator --require-hashes -r requirements/motulator-reference.lock
+      - name: Prepare stock native code
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import tempfile
+          import andes
+          assert andes.__version__ == '2.0.0'
+          andes.System(no_output=True, default_config=True, pycode_path=str(Path(tempfile.gettempdir()) / 'power-grid-env-andes-pycode')).prepare(quick=True, nomp=True)
+          PY
+      - name: Test runtime caps, global events, field memory, acceptance and waveforms
+        run: >-
+          python -m pytest tests/test_runtime_integrity.py tests/test_generator_field_thermal.py
+          tests/test_motor_assessment.py tests/test_rms_scalability.py tests/test_stator_transient.py
+          tests/test_automatic_motor_group.py tests/test_independent_group_invariants.py
+          --junitxml=reports/industrial-sequence-ci/tests.xml
+      - name: Validate rotor field heating and quenching
+        run: python -u -m benchmarks.generator_field_validation --out reports/industrial-sequence-ci/field
+      - name: Requalify feedback and separate native field reaction
+        run: >-
+          python -u -m benchmarks.generator_excitation_validation
+          --out reports/industrial-sequence-ci/excitation --batch-size 11 --native-batch-size 3
+      - name: Validate actual start acceptance and deliberate failures
+        run: python -u -m benchmarks.motor_acceptance_validation --out reports/industrial-sequence-ci/acceptance
+      - name: Measure sparse RMS with all-node physical oracle
+        run: python -u -m benchmarks.rms_scalability --out reports/industrial-sequence-ci/scale --sizes 16 128 1000 2000 10000
+      - name: Validate full-stator waveforms against original native equations
+        run: >-
+          python -u -m benchmarks.stator_transient_reference
+          --out reports/industrial-sequence-ci/stator --wheel "$PGE_MOTULATOR_WHEEL"
+      - name: Require all corpus results
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for name in ['field', 'excitation', 'acceptance', 'scale', 'stator']:
+              result = json.loads((Path('reports/industrial-sequence-ci') / name / 'summary.json').read_text())
+              assert result['passed'], name
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: industrial-sequence-linux-py312
+          path: reports/industrial-sequence-ci/
+          retention-days: 30
+
+  mnlex2-openmodelica:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PGE_OPENMODELICA_ROOT: /tmp/pge-modelica-reference
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y build-essential liblapack-dev libexpat1-dev libcurl4t64 zip unzip
+      - run: python -m pip install -e '.[dev]' 'andes==2.0.0'
+      - name: Prepare optional hash-pinned rootless Modelica runtime
+        run: python -m benchmarks.modelica_reference_setup --root "$PGE_OPENMODELICA_ROOT" --fetch
+      - name: Verify limiter semantics and independent network feedback
+        run: >-
+          python -m pytest tests/test_generator_underexcitation.py tests/test_mnlex2_native_reference.py
+          tests/test_generator_excitation.py tests/test_generator_field_thermal.py
+          tests/test_runtime_integrity.py tests/test_independent_group_invariants.py
+          --junitxml=reports/mnlex2-ci/tests.xml
+      - name: Execute original Modelica limiter with three native tolerances
+        run: python -u -m benchmarks.mnlex2_native_reference --out reports/mnlex2-ci/native --root "$PGE_OPENMODELICA_ROOT"
+      - name: Execute complete independent SI feedback and negative cases
+        run: python -u -m benchmarks.generator_underexcitation_validation --out reports/mnlex2-ci/network
+      - name: Require complete evidence
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for name in ['native', 'network']:
+              assert json.loads((Path('reports/mnlex2-ci') / name / 'summary.json').read_text())['passed'], name
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mnlex2-openmodelica-linux-py312
+          path: reports/mnlex2-ci/
+          retention-days: 30
+
+  oel2c-modelica-feedback:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PGE_DYNAWO_REFERENCE_ROOT: /tmp/pge-oel2c-reference
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y build-essential liblapack-dev libexpat1-dev libcurl4t64 zip unzip
+      - run: python -m pip install -e '.[dev]' 'andes==2.0.0'
+      - name: Prepare hash-pinned optional native dependencies
+        run: |
+          python -m benchmarks.modelica_reference_setup --root "$PGE_DYNAWO_REFERENCE_ROOT" --fetch
+          python -m benchmarks.dynawo_reference_setup --root "$PGE_DYNAWO_REFERENCE_ROOT" --fetch
+      - name: Require primary, native and reference-independence tests
+        run: >-
+          python -m pytest tests/test_oel2c.py tests/test_oel2c_native.py
+          tests/test_generator_underexcitation.py tests/test_generator_field_thermal.py
+          tests/test_generator_thermal.py tests/test_runtime_integrity.py
+          --junitxml=reports/oel2c-ci/tests.xml
+      - name: Compare full block states with DASSL at three tolerances
+        run: python -u -m benchmarks.oel2c_native_reference --out reports/oel2c-ci/component --root "$PGE_DYNAWO_REFERENCE_ROOT"
+      - name: Compare native limiter feedback with independent SI plant
+        run: python -u -m benchmarks.generator_oel2c_validation --out reports/oel2c-ci/network --root "$PGE_DYNAWO_REFERENCE_ROOT"
+      - name: Require complete evidence
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for name in ['component', 'network']:
+              assert json.loads((Path('reports/oel2c-ci') / name / 'summary.json').read_text())['passed'], name
+          PY
+      - name: Retain source variant and licenses beside generated native artifacts
+        if: always()
+        run: |
+          python - <<'PYCODE'
+          import os, shutil
+          from pathlib import Path
+          root = Path(os.environ['PGE_DYNAWO_REFERENCE_ROOT'])
+          out = Path('reports/oel2c-ci/reference-sources')
+          for name in ['dynawo-source', 'dynawo-cap-guard-v1']:
+              if (root / name).is_dir():
+                  shutil.copytree(root / name, out / name, dirs_exist_ok=True)
+          for source, name in [
+              (Path('requirements/dynawo-oel2c-reference.json'), 'reference-lock.json'),
+              (Path('docs/OEL2C_VALIDATION_RU.md'), 'OEL2C_VALIDATION_RU.md'),
+              (root / 'libraries/ModelicaStandardLibrary-3.2.3/LICENSE', 'MSL-LICENSE'),
+              (root / 'fmpy/fmpy-0.3.27.dist-info/licenses/LICENSE.txt', 'FMPy-LICENSE.txt'),
+          ]:
+              if source.is_file():
+                  out.mkdir(parents=True, exist_ok=True)
+                  shutil.copyfile(source, out / name)
+          PYCODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: oel2c-native-feedback-linux-py312
+          path: reports/oel2c-ci/
+          retention-days: 30

@@ -17,7 +17,9 @@ _SKIP=object()
 def _clone(value):
     if isinstance(value,np.ndarray):
         return value.copy() if value.dtype.kind!='O' else _SKIP
-    if value is None or isinstance(value,(str,bool,numbers.Number,np.generic)):
+    if value is None or isinstance(value,(str,bool,int,float,complex,np.generic)):
+        return value
+    if isinstance(value,numbers.Number):
         return copy.deepcopy(value)
     if isinstance(value,(list,tuple)):
         items=[_clone(x) for x in value]
@@ -48,7 +50,7 @@ class NativeCheckpoint:
         def take(obj,key,label):
             if not hasattr(obj,key):return
             original=getattr(obj,key);saved=_clone(original)
-            if saved is not _SKIP:self.items.append((obj,key,original,saved,label))
+            if saved is not _SKIP:self.items.append([obj,key,original,saved,label])
         for key in ['x','y','f','g','b','t']:take(system.dae,key,'dae.'+key)
         for key in self.TDS_FIELDS:take(system.TDS,key,'tds.'+key)
         for name,model in system.exist.pflow_tds.items():
@@ -63,18 +65,24 @@ class NativeCheckpoint:
                 for attr in list(vars(block)):take(block,attr,name+'.discrete.'+key+'.'+attr)
         self.layout=[(obj,key,label) for obj,key,_,_,label in self.items]
         self._expected_digest=None
+        self._capture_valid=True
 
     def capture(self):
-        items=[]
-        for obj,key,label in self.layout:
-            original=getattr(obj,key);saved=_clone(original)
-            if saved is _SKIP:raise ValueError('native checkpoint value changed type: '+label)
-            items.append((obj,key,original,saved,label))
-        self.items=items;self._expected_digest=None
+        self._capture_valid=False;self._expected_digest=None
+        for item in self.items:
+            obj,key,_,saved,label=item;original=getattr(obj,key)
+            if isinstance(original,np.ndarray) and isinstance(saved,np.ndarray) and original.dtype==saved.dtype and original.shape==saved.shape:
+                np.copyto(saved,original)
+            else:
+                saved=_clone(original)
+                if saved is _SKIP:raise ValueError('native checkpoint value changed type: '+label)
+            item[2]=original;item[3]=saved
+        self._capture_valid=True
         return self
 
     @property
     def expected_digest(self):
+        if not self._capture_valid:raise ValueError('incomplete native checkpoint capture')
         if self._expected_digest is None:
             h=hashlib.sha256()
             for _,_,_,saved,label in self.items:h.update(label.encode());h.update(_hash(saved))
@@ -90,6 +98,7 @@ class NativeCheckpoint:
         return h.hexdigest()
 
     def restore(self):
+        if not self._capture_valid:raise ValueError('incomplete native checkpoint capture')
         for obj,key,original,saved,label in self.items:
             if isinstance(original,np.ndarray):
                 if original.shape!=saved.shape:raise ValueError('native rollback resized an array: '+label)

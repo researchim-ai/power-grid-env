@@ -15,6 +15,11 @@ from benchmarks.double_cage_andes_limits import native5_coordinates
 
 
 def scope(spec,terminal_adapter=False):
+    if spec.coupled and spec.coupled.oel2c_limiters:raise ValueError('OEL2C feedback requires independent validation; stock ANDES OEL2C is outside this adapter')
+    if spec.coupled and spec.coupled.underexcitation_limiters:raise ValueError('MNLEX2 feedback requires independent SI; stock native closed-loop UEL is not qualified')
+    if spec.coupled and spec.coupled.generator_field_thermal:raise ValueError('field thermal trip and zero field voltage require the independent SI reference')
+    if spec.coupled and spec.coupled.overexcitation_limiters:raise ValueError('OEL feedback requires the independent excitation SI reference; native OEL is not qualified')
+    if spec.coupled and spec.coupled.generator_thermal:raise ValueError('generator thermal electrical-trip semantics require the protected SI reference; native comparison is pre-trip only')
     if spec.study!='coupled_rms' or spec.backend!='scipy' or spec.coupled is None:raise ValueError('coupled_rms/scipy required')
     n,s=spec.network,spec.coupled
     if any(len(x)!=1 for x in [n.sources,n.lines,n.generators,s.motors,s.machines]) or len(n.connectivity_nodes)!=2:raise ValueError('one source, line, generator and motor on two nodes required')
@@ -58,7 +63,7 @@ def _native_run(spec,step,terminal_adapter,cache):
     if not math.isfinite(step) or not 1e-5<=step<=.01:raise ValueError('native step budget')
     # Reuse the analytic circuit mapping, never a simulated trajectory/state.
     data=spec.model_dump(mode='json');data['study']='motor_start';data['coupled']=None
-    data['induction']=spec.coupled.model_dump(mode='json',exclude={'machines','faults','events'});data['induction']['events']=[]
+    data['induction']=spec.coupled.model_dump(mode='json',exclude={'machines','faults','events','generator_thermal','overexcitation_limiters','generator_field_thermal','underexcitation_limiters','oel2c_limiters'});data['induction']['events']=[]
     mapped,mapping=native5_coordinates(StudySpec.model_validate(data))
     n,s=spec.network,spec.coupled;m=mapped.induction.motors[0];machine=s.machines[0];g=n.generators[0];src=n.sources[0];line=n.lines[0]
     from power_grid_env.andes_rms import ensure_andes_importable

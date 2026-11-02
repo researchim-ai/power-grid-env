@@ -1,0 +1,52 @@
+{
+  "schema": "power-grid-env.modelica-reference/v1",
+  "openipsl_commit": "0ee96c3bcf71330916fbaba60a82eeaac5e1ffb5",
+  "openmodelica_version": "1.27.2",
+  "modelica_version": "4.0.0",
+  "packages": {
+    "omc": {
+      "version": "1.27.2-1",
+      "url": "https://build.openmodelica.org/apt/pool/contrib-noble/omc_1.27.2-1_amd64.deb",
+      "sha256": "9412556112cf0b9deb320b1f4b1eaafe35583fbac0d0b9f07f8a427fbf9fac77",
+      "filename": "omc_1.27.2-1_amd64.deb"
+    },
+    "omc-common": {
+      "version": "1.27.2-1",
+      "url": "https://build.openmodelica.org/apt/pool/contrib-noble/omc-common_1.27.2-1_all.deb",
+      "sha256": "60fcc5440971973de268e5488f2c87f8651d4d1d87d494ae00f892cab6abd666",
+      "filename": "omc-common_1.27.2-1_all.deb"
+    },
+    "libomc": {
+      "version": "1.27.2-1",
+      "url": "https://build.openmodelica.org/apt/pool/contrib-noble/libomc_1.27.2-1_amd64.deb",
+      "sha256": "e865df120e960f716e12440104636980cfb5b4a24e112a1ab747551d3d5742d0",
+      "filename": "libomc_1.27.2-1_amd64.deb"
+    },
+    "libomcsimulation": {
+      "version": "1.27.2-1",
+      "url": "https://build.openmodelica.org/apt/pool/contrib-noble/libomcsimulation_1.27.2-1_amd64.deb",
+      "sha256": "be399546f799e5239f9e6feac4739fcc2aa5df93d2ee75cafe2a1c0e049003d2",
+      "filename": "libomcsimulation_1.27.2-1_amd64.deb"
+    },
+    "libomniorb4-3t64": {
+      "url": "https://archive.ubuntu.com/ubuntu/pool/universe/o/omniorb-dfsg/libomniorb4-3t64_4.3.2+ds1-1.1build2_amd64.deb",
+      "sha256": "201fc734774adcf79737f92725d44c1690e8f40e4902cfe6d914ef698be5a576",
+      "filename": "libomniorb4-3t64_4.3.2+ds1-1.1build2_amd64.deb"
+    },
+    "libomnithread4": {
+      "url": "https://archive.ubuntu.com/ubuntu/pool/universe/o/omniorb-dfsg/libomnithread4_4.3.2+ds1-1.1build2_amd64.deb",
+      "sha256": "a7b0d6e74ea55400d61d6ca27a791f5a1aebca8f64e1b87b8bef6777fb1342fe",
+      "filename": "libomnithread4_4.3.2+ds1-1.1build2_amd64.deb"
+    },
+    "OpenIPSL-3.1.0": {
+      "url": "https://codeload.github.com/OpenIPSL/OpenIPSL/zip/0ee96c3bcf71330916fbaba60a82eeaac5e1ffb5",
+      "sha256": "3c95f428c24e8843c9f6a8ee980b6603990f24cfddf1781c782cdcdef5109c19",
+      "filename": "OpenIPSL-3.1.0.zip"
+    },
+    "MSL-4.0.0": {
+      "url": "https://codeload.github.com/modelica/ModelicaStandardLibrary/zip/refs/tags/v4.0.0",
+      "sha256": "592a9ff50abba3421a588dc4179d93fe0f11eeda52210f05ef4003863433730f",
+      "filename": "MSL-4.0.0.zip"
+    }
+  }
+}

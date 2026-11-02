@@ -1,0 +1,15 @@
+{
+  "protection": {
+    "generator_id": "g2",
+    "time_constant_s": 30.0,
+    "trip_level": 1.0,
+    "initialization": "specified",
+    "initial_level": 0.2
+  },
+  "initial_level": 0.2,
+  "segments": [
+    {"duration_s": 2.0, "current_pu": 2.0},
+    {"duration_s": 10.0, "current_pu": 0.5},
+    {"duration_s": 2.0, "current_pu": 2.0}
+  ]
+}

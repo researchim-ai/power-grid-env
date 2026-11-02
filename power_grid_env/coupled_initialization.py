@@ -73,8 +73,19 @@ def initialize_coupled(model,*,require_stable=True):
             if controller_error:return None,controller_error
             limits=[settings.motors[i].id for i,address in model.thermal_indices.items() if state[address]>=settings.motors[i].thermal.trip_level]
             if limits:return None,{'reason':'initial_thermal_limit','motors':limits}
+            thermal_error=model.generator_thermal.initialize(state,ig)
+            if thermal_error:return None,thermal_error
+            excitation_error=model.excitation_limiters.initialize(state,ig)
+            if excitation_error:return None,excitation_error
+            uel_error=model.underexcitation_limiters.initialize(state)
+            if uel_error:return None,uel_error
+            field_error=model.field_thermal.initialize(state,ig)
+            if field_error:return None,field_error
+            oel2c_error=model.oel2c.initialize(state,ig)
+            if oel2c_error:return None,oel2c_error
             derivative=model.rhs(0.,state)
-            checked=np.r_[np.r_[np.arange(model.electrical_size),*[np.arange(a.start,a.stop) for a in model.cages.addresses.values()]],np.arange(model.gen_offset,len(state))] if steady else np.arange(model.gen_offset,len(state))
+            checked=np.r_[np.r_[np.arange(model.electrical_size),*[np.arange(a.start,a.stop) for a in model.cages.addresses.values()]],np.arange(model.gen_offset,model.controllers.end)] if steady else np.arange(model.gen_offset,model.controllers.end)
+            if steady:checked=np.r_[checked,np.arange(model.underexcitation_limiters.offset,model.underexcitation_limiters.end)]
             dynamic=float(max(abs(derivative[checked])))
             if not np.isfinite(derivative).all() or dynamic>tolerance:
                 rejected.append('original_dynamic_residual');continue
@@ -94,6 +105,7 @@ def initialize_coupled(model,*,require_stable=True):
                 'thermal_residual_per_s':{settings.motors[i].id:float(derivative[address]) for i,address in model.thermal_indices.items()},
                 'generator_initial':{g.id:{'internal_voltage_pu':float(abs(internal[i])),'field_pu':float(model.gen_voltage[i]),'model':model.gen_passports[i].model,'delta_rad':float(rotor[i,0]),
                     'p_w':float(power[i].real),'q_var':float(power[i].imag),'mechanical_power_pu':float(model.gen_mechanical[i])} for i,g in enumerate(model.generators)},
+                'oel2c_initialization':'dynawo_startup; internal limiter states may be nonstationary' if settings.oel2c_limiters else None,
                 'branch_note':'bounded local initialization; no uniqueness/global or hybrid protection stability proof'}
     except (ValueError,RuntimeError,ArithmeticError,np.linalg.LinAlgError) as exc:
         return None,{'reason':'coupled_initialization_search_failed','error':str(exc),'evaluations':evaluations}

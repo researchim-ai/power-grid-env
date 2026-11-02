@@ -10,7 +10,7 @@ from scipy.integrate import solve_ivp
 KEYS=('connected','contactor_sensed_voltage_pu','contactor_voltage_available','contactor_pending_restart','contactor_restart_count','contactor_timer_active','contactor_timer_remaining_s')
 
 
-def run(*,settings,motor,state,rhs,voltage,get_context,set_context):
+def run(*,settings,motor,state,rhs,voltage,get_context,set_context,extra_guards=None,extra_apply=None,after_commands=None):
     p=motor.contactor
     if p is None:raise ValueError('independent contactor passport required')
     cfg=get_context();v=voltage(state)
@@ -51,6 +51,8 @@ def run(*,settings,motor,state,rhs,voltage,get_context,set_context):
         def crossing(t,x):return voltage(x)-threshold
         crossing.terminal=True;crossing.direction=-1 if control['available'] else 1
         guards.append(crossing);guard_names.append('voltage')
+        if extra_guards:
+            for key,guard in extra_guards(state):guards.append(guard);guard_names.append(('extra',key))
         before=dict(control,latched=cfg['latched'])
         sol=solve_ivp(rhs,(time,target),state,method='DOP853',rtol=2e-11,atol=1e-12,max_step=min(.0005,settings.step_s/2),dense_output=True,events=guards)
         if not sol.success:raise ValueError('independent physical ODE failed: '+sol.message)
@@ -64,6 +66,9 @@ def run(*,settings,motor,state,rhs,voltage,get_context,set_context):
         if 'thermal' in roots:
             cfg['latched']=True;cfg['connected']=False;trip_time=end
             set_context(cfg);emit('thermal_trip',end,outcome='latched_open')
+        if extra_apply:
+            roots_extra={name[1] for name in roots if isinstance(name,tuple) and name[0]=='extra'}
+            if roots_extra:log.extend(extra_apply(roots_extra,end,state,cfg));set_context(cfg)
         # Exogenous changes precede manual interlock evaluation and timed actions.
         for e in scheduled:
             if e.kind=='source_voltage':cfg['scale']=e.value
@@ -92,6 +97,8 @@ def run(*,settings,motor,state,rhs,voltage,get_context,set_context):
                     cfg['connected']=True;control['pending']=False;control['restarts']+=1
                     emit('motor_close',end,cause='automatic_restart',outcome='applied')
                 set_context(cfg);observe(end)
+            if after_commands:
+                log.extend(after_commands(end,state,cfg));set_context(cfg)
             changes.append(end)
         if end<=time and not roots:raise ValueError('independent physical integration did not advance')
         time=end

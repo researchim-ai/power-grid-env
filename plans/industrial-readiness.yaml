@@ -1,10 +1,10 @@
 schema: power-grid-env.readiness/v1
-date: '2026-11-01'
-document: docs/NATIVE_SOURCE_TERMINAL_SENSING_RU.md
+date: '2026-11-02'
+document: docs/OEL2C_VALIDATION_RU.md
 status: in_progress
 released: false
 competitive_superiority_proven: false
-field_validation: waiting_for_data
+field_validation: optional_published_measurement_track_not_release_blocker
 items:
 - id: IN-00
   title: Реестр доказательств и профиль
@@ -70,8 +70,8 @@ items:
     вне checkout. Импорт worker привязан к пакету родителя и private cwd. Другой host, целевая release-среда и независимый
     инженерный replay ещё не квалифицированы; hosted multi-tenant OS isolation не заявлена.
 - id: IN-11
-  status: waiting_for_data
-  progress: "Пользователь не располагает паспортом/осциллограммами; агент ищет открытые данные. LIAS MCSA-DC скачан и проверен: три записи U/I/скорости, CC BY 4.0, pinned SHA256. Обнаружено противоречие единиц скорости и отсутствие подтверждённого пуска; натурная квалификация остаётся закрытой. Очередь источников и протокол: docs/PUBLIC_DOL_DATA_ACQUISITION_RU.md; отчёт reports/lias-motor-data-2026-10-31/eligibility.json."
+  status: in_progress
+  progress: "Own hardware and user-site recordings are not required for open-source release. Analytic checks, independent simulators and public versioned benchmarks are the main validation path. Published measurements are supplementary and can validate individual calibrated channels. Added 168 steady operating points of the published Aalto 2.2-kW motor against unchanged motulator 0.19.0 and the analytic T circuit; ANDES remains the matched RMS dynamic reference. Policy: plans/open-reference-validation.yaml; details: docs/OPEN_REFERENCE_VALIDATION_RU.md."
 - id: IN-12
   status: planned
 runtime_delivery:
@@ -178,17 +178,38 @@ induction_motor_delivery:
   - external_motor_data
   - converters
 latest_verified_delivery:
-  report: reports/native-terminal-sensing-2026-11-01/delivery.json
-  baseline_full_tests_passed: 731
-  supplemental_baseline_tests_passed: 45
-  native_terminal_observer_tests_passed: 16
-  current_suite_tests_verified_total: 792
-  native_trajectories_reused: 48
-  new_native_integrations: 0
+  report: reports/generator-excitation-final-2026-11-02/delivery.json
+  document: docs/GENERATOR_EXCITATION_LIMITS_RU.md
+  previous_delivery: reports/generator-capability-2026-11-02/delivery.json
+  current_suite_tests_collected: 1152
+  current_targeted_tests_verified: 481
+  new_tests_verified: 64
+  regression_tests_verified: 1088
+  full_current_collection_run: true
+  current_suite_tests_verified: 1152
+  full_collection_execution: bounded_file_batches_with_local_loopback_retest
+  single_pytest_process: false
+  previous_full_collection_tests_verified: 1007
+  qualified_native_field_reaction_runs: 9
+  qualified_native_OEL_feedback_runs: 0
+  qualified_primary_SI_pairs: 11
+  expected_initialization_rejections: 1
+  expected_scope_rejections: 3
+  raw_protected_trajectories_reaudited: 22
+  accepted_native_steps: 168000
+  maximum_native_field_reaction_error_pu: 5.903510791327449e-9
+  maximum_controller_boundary_time_error_s: 4.2164627345187e-9
+  frozen_source_input_files: 412
+  exact_same_host_frozen_primary_SI_replay_from_tmp: true
+  exact_legacy_primary_SI_channels_clocks_events_replay: true
   new_installations_this_stage: 0
-  native_closed_loop_controller_qualified: false
+  primary_physics_changed: true
+  own_hardware_required: false
+  user_site_measurements_required_for_open_source_release: false
+  standard_or_OEM_OEL_qualified: false
   industrial_profile_qualified: false
   field_validated: false
+  independent_host_verified: false
 motor_thermal_delivery:
   document: docs/MOTOR_THERMAL_AND_VALIDATION_RU.md
   report: reports/motor-thermal-2026-10-30/
@@ -201,6 +222,7 @@ motor_thermal_delivery:
   industrial_profile_qualified: false
   field_validated: false
 first_pilot_acceptance:
+  scope: optional_site_specific_pilot_not_open_source_release_gate
   status: engineering_prototype_not_pilot_qualified
   target_use_case: offline_balanced_industrial_motor_start_restart_assessment
   calendar_commitment: not_estimated_without_target_equipment_and_data
@@ -751,8 +773,8 @@ native_group_physical_validation:
   output_sample_budget_preflight_verified: true
   adapter_producer_identity_verified: true
   next:
-  - native_closed_loop_group_controller_and_thermal_acceptance
-  - multibus_multivoltage_industrial_group_reference
+  - prestart_equilibrium_with_initially_disconnected_motor_energization
+  - independent_measured_multisection_industrial_group_reference
   - calibrated_withheld_DOL_and_restart_measurements
   - independent_host_and_engineer_replay
   native_closed_loop_group_controller_qualified: false
@@ -766,6 +788,178 @@ ampere_metadata_audit:
   metadata_declares_license: CC-BY-3.0
   startup_records_confirmed: false
   column_order_differs_between_subsets: true
+  field_validated: false
+
+native_online_control_regression:
+  date: '2026-11-01'
+  status: passed_targeted_regression_not_full_corpus_acceptance
+  report: reports/native-online-regression-2026-11-01/summary.json
+  targeted_unique_tests_passed: 75
+  full_suite_run: false
+  online_control_cases: [generator_feedback, grid_thermal_tie, grid_thermal_near]
+  native_step_s: 0.000125
+  commands_computed_from_native_measurements: true
+  production_controller_calls_forbidden_in_feedback_test: true
+  independent_SI_feedback_time_tolerance_s: 0.000001
+  exact_and_near_thermal_ties_verified: true
+  native_limiter_checkpoint_replay_verified: true
+  stock_cache_audited_on_failed_driver: true
+  finite_thermal_inputs_required: true
+  next:
+  - full_online_control_corpus_at_three_native_steps_with_frozen_event_and_channel_limits
+  - independent_host_replay_and_calibrated_DOL_measurements
+  stock_native_controller_qualified: false
+  native_closed_loop_group_controller_qualified: false
+  field_validated: false
+  industrial_profile_qualified: false
+
+native_online_corpus_validation:
+  date: '2026-11-01'
+  status: passed_declared_custom_online_driver_corpus
+  document: docs/NATIVE_GROUP_VALIDATION_RU.md
+  report: reports/native-online-corpus-v2-2026-11-01/delivery.json
+  preregistered_cases: 16
+  fresh_native_runs: 48
+  fresh_production_and_SI_pairs: 16
+  native_steps_s: [0.00025, 0.000125, 0.0000625]
+  accepted_native_steps: 565624
+  native_root_rollbacks: 121
+  maximum_fine_event_time_error_s: 0.00000014238522871856674
+  event_time_limit_s: 0.000001
+  maximum_fine_normalized_error: 0.6024957402817055
+  maximum_algebraic_residual_pu: 0.000000006777358563248015
+  algebraic_residual_limit_pu: 0.00000001
+  custom_online_native_driver_verified: true
+  commands_computed_before_oracle_logs: true
+  frozen_source_files: 200
+  same_host_frozen_replays: 1
+  frozen_replay_channels_clocks_and_events_exact: true
+  independent_host_replay: false
+  new_installations: 0
+  full_regression: verified_854_tests_with_one_local_socket_retest
+  full_regression_report: reports/native-online-full-suite-2026-11-01/summary.json
+  full_regression_single_clean_run: false
+  manual_ci_workflow: .github/workflows/native-online.yml
+  ci_host_execution_verified: false
+  next:
+  - continuous_guard_crossings_between_distinct_sensing_nodes
+  - multi_generator_multibus_independent_reference
+  - calibrated_withheld_DOL_and_restart_measurements
+  - independent_host_and_engineer_replay
+  stock_native_controller_qualified: false
+  industrial_profile_qualified: false
+  field_validated: false
+
+multibus_motor_validation:
+  date: '2026-11-02'
+  status: passed_declared_six_node_cold_grid_subset
+  document: docs/MULTIBUS_MOTOR_VALIDATION_RU.md
+  report: reports/multibus-corpus-v4-2026-11-02/delivery.json
+  physical_nodes: 6
+  voltage_levels_kv: [110, 10, 0.4, 0.69]
+  transformers: 3
+  motors_at_distinct_nodes: 3
+  preregistered_cases: 9
+  fresh_native_runs: 27
+  fresh_production_and_SI_pairs: 9
+  native_steps_s: [0.00025, 0.000125, 0.0000625]
+  accepted_native_steps: 352803
+  native_root_rollbacks: 13
+  maximum_fine_event_time_error_s: 0.000000010450088195820828
+  event_time_limit_s: 0.000001
+  maximum_fine_normalized_error: 0.4107590002853101
+  maximum_native_algebraic_residual_pu: 0.000000000055322330050344704
+  additional_physical_current_KCL_maximum_pu: 0.000000024194521146805172
+  additional_physical_current_KCL_limit_pu: 0.000001
+  native_system_base_invariance_error: 0.00000000002499137788543507
+  system_base_invariance_limit: 0.0000001
+  cold_runup_duration_s: 3
+  cold_runup_final_speed_above_0_95_in_all_three_methods: true
+  transformer_clock_and_tap_initialization_verified: true
+  native_branch_regularization_analytically_compensated: true
+  native_branch_equations_and_services_unchanged: true
+  exact_physical_branch_admittances_verified: true
+  mixed_sensing_node_voltage_bases_verified: true
+  native_calls_to_primary_and_SI_trajectory_forbidden_in_tests: true
+  frozen_source_files: 201
+  same_host_frozen_replays: 1
+  frozen_replay_channels_phasors_clocks_events_exact: true
+  targeted_tests_verified: 164
+  current_full_collection_tests_collected: 911
+  full_current_collection_run: false
+  previous_full_collection_tests_verified: 854
+  new_installations: 0
+  ci_workflow_prepared: .github/workflows/native-online.yml
+  ci_host_execution_verified: false
+  independent_host_replay: false
+  next:
+  - prestart_equilibrium_and_authored_motor_energization_with_generator_state_preserved
+  - continuous_distinct_node_voltage_guard_crossing_cases
+  - zero_voltage_energization_and_deenergized_section_cases
+  - larger_external_multisection_corpus_with_explicit_scope
+  - calibrated_withheld_DOL_and_restart_measurements
+  - independent_host_and_engineer_replay
+  stock_native_controller_qualified: false
+  industrial_profile_qualified: false
+  field_validated: false
+
+multibus_loaded_generator_validation:
+  date: '2026-11-02'
+  status: passed_declared_loaded_and_joint_cold_snapshot_subset
+  document: docs/MULTIBUS_LOADED_GENERATOR_VALIDATION_RU.md
+  report: reports/multibus-loaded-final-2026-11-02/delivery.json
+  physical_nodes: 6
+  voltage_levels_kv: [110, 10, 0.4, 0.69]
+  motors: 3
+  generators: 1
+  generator_model: GENROU_TGOV1_SEXS
+  generator_locations_verified: [section_b_10_kV, lv_b_0_69_kV_Dyn5]
+  positive_cases: 9
+  expected_initialization_rejections: 3
+  fresh_positive_native_runs: 27
+  negative_native_attempts: 3
+  fresh_production_and_SI_pairs: 9
+  native_steps_s: [0.00025, 0.000125, 0.0000625]
+  accepted_native_steps: 352803
+  native_root_rollbacks: 15
+  maximum_fine_normalized_error: 0.4450082585427672
+  maximum_fine_event_error_s: 0.00000009565897185481731
+  maximum_native_G_pu: 0.000000000028140739738446996
+  maximum_physical_current_KCL_pu: 0.000000006048859776234824
+  maximum_initial_equilibrium_rhs: 0.000000000004262368236140901
+  maximum_initial_motor_speed_disagreement_pu: 0.00000000000019617640845126516
+  maximum_initial_generator_Q_disagreement_var: 0.00000005168840289115906
+  stationary_hold_drift_verified: true
+  thermal_equilibrium_uses_local_current: true
+  passport_thermal_transient_allowed_at_mechanical_equilibrium: true
+  independent_native_and_SI_operating_points: true
+  checkpoint_buffers_reused_with_exact_rollback: true
+  incomplete_native_trace_remains_failure: true
+  external_native_timeout_s: 120
+  long_cold_external_native_timeout_s: 240
+  native_timeout_registered_before_final_corpus: true
+  frozen_source_files: 212
+  same_host_frozen_replays: 1
+  frozen_loaded_generator_replay_exact: true
+  legacy_cold_replay_exact: true
+  current_targeted_tests_verified: 216
+  current_full_collection_tests_collected: 948
+  full_current_collection_run: false
+  previous_full_collection_tests_verified: 854
+  new_installations: 0
+  ci_workflow_prepared: .github/workflows/native-online.yml
+  ci_host_execution_verified: false
+  independent_host_replay: false
+  cold_case_is_joint_PV_initial_snapshot: true
+  true_prestart_disconnected_motor_energization_verified: false
+  next:
+  - prestart_equilibrium_with_initially_disconnected_motors_and_authored_energization
+  - zero_voltage_sections_and_generator_state_continuity
+  - multiple_generators_and_independent_controller_setpoint_events
+  - calibrated_withheld_DOL_and_restart_measurements
+  - independent_host_and_engineer_replay
+  stock_native_controller_qualified: false
+  industrial_profile_qualified: false
   field_validated: false
 
 native_source_terminal_observer:
@@ -786,3 +980,430 @@ native_source_terminal_observer:
   native_closed_loop_controller_qualified: false
   field_validated: false
   industrial_profile_qualified: false
+
+multibus_prestart_DOL_validation:
+  date: '2026-11-02'
+  status: passed_declared_initially_disconnected_DOL_subset
+  document: docs/MULTIBUS_PRESTART_DOL_VALIDATION_RU.md
+  report: reports/multibus-prestart-v1-2026-11-02/delivery.json
+  positive_cases: 5
+  fresh_native_integrations: 15
+  fresh_production_and_SI_pairs: 5
+  raw_traces_reaudited_from_frozen_sources: 25
+  motors: 3
+  physical_nodes: 6
+  voltage_levels_kv: [110, 10, 0.4, 0.69]
+  maximum_generators: 1
+  generator_model: GENROU_TGOV1_SEXS
+  simultaneous_start_generator_rated_va: 2000000
+  true_prestart_disconnected_motor_energization_verified: true
+  simultaneous_and_staggered_energization_verified: true
+  generator_LV_Dyn5_location_verified: true
+  native_steps_s: [0.00025, 0.000125, 0.0000625]
+  accepted_native_steps: 190400
+  native_root_rollbacks: 0
+  maximum_fine_normalized_error: 0.05397187386968483
+  maximum_native_G_pu: 9.786615962070755e-14
+  maximum_physical_current_KCL_pu: 2.639352997739518e-13
+  maximum_initial_generator_rhs: 1.5787371410169726e-13
+  maximum_initial_generator_Q_disagreement_var: 1.2502823665272444e-7
+  maximum_prestart_state_drift: 5.1958437552457326e-14
+  maximum_differential_state_jump: 0.0
+  three_second_simultaneous_final_motor_speeds_pu: [0.9920423265456028, 0.9901595572062308, 0.9920576624316655]
+  exact_same_host_frozen_native_replay: true
+  exact_legacy_cold_and_loaded_replays: true
+  current_targeted_tests_verified: 232
+  current_full_collection_tests_collected: 964
+  full_current_collection_run: false
+  new_installations: 0
+  native_timeout_s: 240
+  primary_physics_changed: false
+  initially_disconnected_loaded_equilibrium_in_reference_scope: false
+  next:
+  - supply_dip_after_completed_DOL_start_and_autonomous_restart_with_protection_inhibits
+  - generator_dynamic_current_thermal_and_excitation_limiters
+  - multiple_generators_and_independent_controller_setpoint_events
+  - initially_disconnected_loaded_equilibrium_and_zero_voltage_sections
+  - calibrated_withheld_DOL_and_restart_measurements
+  - independent_host_and_engineer_replay
+  ci_workflow_prepared: .github/workflows/native-online.yml
+  ci_host_execution_verified: false
+  independent_host_replay: false
+  stock_native_controller_qualified: false
+  industrial_profile_qualified: false
+  field_validated: false
+
+open_reference_validation:
+  policy: plans/open-reference-validation.yaml
+  document: docs/OPEN_REFERENCE_VALIDATION_RU.md
+  own_hardware_required: false
+  user_site_measurements_required_for_open_source_release: false
+  published_measurements: supplementary_metric_specific_track
+  main_release_evidence: analytic_independent_simulator_and_reproducible_public_benchmarks
+  motulator_reference:
+    version: 0.19.0
+    license: MIT
+    lock: requirements/motulator-reference.lock
+    report: reports/motulator-steady-final-v2-2026-11-02/delivery.json
+    published_motor: Aalto_2_2_kW_inverse_gamma
+    steady_operating_points: 168
+    reference_software_sources_unchanged: true
+    dynamics_or_measurements_qualified: false
+  next:
+  - supply_dip_and_protected_restart_after_completed_DOL
+  - matched_Modelica_reference_with_pinned_solver_and_library
+  - independently_verified_stator_transients_before_EMT_claims
+  - sparse_scale_runtime_memory_and_portability_benchmarks
+
+multibus_DOL_restart_validation:
+  date: '2026-11-02'
+  status: passed_declared_DOL_dip_coast_protected_restart_subset
+  document: docs/MULTIBUS_DOL_RESTART_VALIDATION_RU.md
+  report: reports/multibus-restart-final-2026-11-02/delivery.json
+  positive_cases: 6
+  qualified_native_runs: 18
+  qualified_primary_SI_pairs: 6
+  raw_traces_reaudited: 30
+  independent_references: [SI_winding_DOP853, ANDES_2_0_0_native_dynamics, analytic_open_stator_coast]
+  cases: [grid_restart, gen_restart, gen_lv_restart, manual_inhibit, restart_limit, thermal_inhibit]
+  native_steps_s: [0.00025, 0.000125, 0.0000625]
+  native_timeout_s: 300
+  accepted_native_steps: 504006
+  root_rollbacks: 15
+  maximum_fine_normalized_error: 0.3007542445668948
+  maximum_event_time_error_s: 4.5798884532044504e-8
+  maximum_native_G_pu: 3.598848770447948e-11
+  maximum_initial_Q_error_var: 1.2502823665272444e-7
+  maximum_differential_state_jump: 0.0
+  maximum_open_current_pu: 1.892499843791151e-20
+  maximum_analytic_coast_speed_error_pu: 4.247923124367503e-9
+  maximum_analytic_single_cage_emf_error_pu: 7.0751988455464154e-6
+  maximum_physical_KCL_pu: 8.710038734414228e-9
+  frozen_source_files: 200
+  exact_same_host_frozen_native_replay: true
+  initial_monolithic_corpus_interrupted: true
+  completed_cases_preserved_and_remaining_cases_recomputed_with_identical_protocol: true
+  partial_case_promoted: false
+  limits_changed: false
+  new_tests_verified: 21
+  full_collection_tests_verified: 1007
+  skipped_tests: 0
+  localhost_permission_retest: true
+  primary_physics_changed: false
+  own_hardware_required: false
+  field_validated: false
+  independent_host_verified: false
+  ci_job_prepared: native-restart
+  ci_host_execution_verified: false
+  next:
+  - generator_dynamic_current_thermal_and_excitation_limiters
+  - multiple_generators_and_independent_controller_setpoint_events
+  - sparse_scale_memory_runtime_and_portability_benchmarks
+  - matched_pinned_Modelica_and_stator_transient_references
+
+multiple_generator_validation:
+  date: '2026-11-02'
+  status: passed_declared_two_three_four_GENROU_subset
+  document: docs/MULTI_GENERATOR_VALIDATION_RU.md
+  report: reports/multigen-final-2026-11-02/delivery.json
+  generators_verified: [2, 3, 4]
+  independent_adapter_maximum_generators: 4
+  generator_model: GENROU_TGOV1_SEXS_without_PSS
+  distinct_PV_nodes_required: true
+  positive_cases: 8
+  expected_initial_Q_rejections: 1
+  expected_scope_rejections: 3
+  qualified_native_runs: 24
+  raw_traces_reaudited: 40
+  native_steps_s: [0.00025, 0.000125, 0.0000625]
+  accepted_native_steps: 224000
+  maximum_fine_normalized_error: 0.053842644930135464
+  maximum_event_time_error_s: 0.0
+  maximum_native_G_pu: 3.000000248221113e-11
+  maximum_initial_Q_error_var: 8.347553375642747e-6
+  maximum_physical_KCL_pu: 4.3858499199543626e-11
+  maximum_state_jump: 0.0
+  maximum_control_delta_error_pu: 1.3877787807814457e-17
+  maximum_metamorphic_normalized_error: 1.3933298959045715e-9
+  control_events_addressed_by_generator_id: true
+  generator_own_power_base_conversion_verified: true
+  independent_passport_and_generator_order_tests: true
+  loaded_joint_PV_motor_initialization: true
+  true_initially_open_stator_DOL_with_two_generators: true
+  benchmark_resume_requires_identical_protocol_inputs_limits_and_producer: true
+  cached_cases_rehashed_and_recompared_before_acceptance: true
+  partial_case_promoted: false
+  frozen_source_files: 210
+  exact_same_host_control_replay: true
+  exact_previous_cold_and_loaded_native_and_SI_replays: true
+  current_targeted_tests_verified: 312
+  current_full_collection_tests_collected: 1034
+  full_current_collection_run: false
+  previous_full_collection_tests_verified: 1007
+  ci_job_prepared: native-multigen
+  ci_host_execution_verified: false
+  primary_physics_changed: false
+  own_hardware_required: false
+  field_validated: false
+  independent_host_verified: false
+  next:
+  - dynamic_generator_current_thermal_and_excitation_limiters
+  - independently_verified_generator_breaker_events_with_multiple_machines
+  - sparse_scale_memory_runtime_and_portability_benchmarks
+  - pinned_Modelica_and_stator_transient_reference_cases
+
+generator_stator_thermal_delivery:
+  report: reports/generator-thermal-final-2026-11-02/delivery.json
+  document: docs/GENERATOR_STATOR_THERMAL_RU.md
+  primary_physics_changed: true
+  protected_cases: 6
+  rejected_inputs: 3
+  native_unprotected_preopening_runs: 18
+  native_protected_post_trip_runs: 0
+  supplemental_motor_start_window_s: 0.8
+  targeted_tests_verified: 393
+  new_tests_verified: 30
+  regression_tests_verified: 363
+  full_current_collection_run: false
+  previous_full_collection_tests_verified: 1007
+  own_hardware_required: false
+  field_validated: false
+  independent_host_verified: false
+  ci_host_execution_verified: false
+  next:
+  - physically_defined_generator_current_and_excitation_limiters
+  - independent_native_protected_breaker_reference
+  - sparse_scale_memory_runtime_portability_benchmarks
+
+generator_thermal_capability:
+  implementation: power_grid_env/generator_capability.py
+  example: cases/studies/generator_thermal_duty.json
+  report: reports/generator-capability-2026-11-02/delivery.json
+  scope: prescribed_piecewise_constant_current_I2_replica
+  functions: [time_to_trip, current_ceiling, cooling_time, duty_admissibility]
+  limits: [not_OEM_capability_curve, not_OEL_UEL, no_network_feedback]
+  next: physical_excitation_current_base_and_independent_limiter_reference
+
+generator_excitation_delivery:
+  report: reports/generator-excitation-final-2026-11-02/delivery.json
+  document: docs/GENERATOR_EXCITATION_LIMITS_RU.md
+  model: field_current_droop_override
+  actual_GENROU_field_reaction: Xad_Ifd
+  field_current_normalization: explicitly_declared_rated_field_reaction
+  closed_loop: filtered_field_magnitude_and_bounded_droop_bias_subtracted_from_AVR_input
+  full_SI_cases: 11
+  native_field_reaction_cases: 3
+  native_step_refinements_per_case: 3
+  native_OEL_feedback_runs: 0
+  exact_controller_limits: opt_in_with_explicit_OEL_profile
+  continuous_bound_entry_and_release: true
+  atomic_command_and_immediate_release: true
+  raw_state_overshoot_cannot_be_hidden_by_output_clipping: true
+  mixed_GENCLS_GENROU_and_four_generator_layout_tests: true
+  new_tests_verified: 64
+  related_regression_tests_verified: 417
+  full_collection_tests_verified: 1152
+  full_collection_skips: 0
+  full_collection_unresolved_failures: 0
+  ci_job_prepared: generator-excitation
+  ci_host_execution_verified: false
+  next:
+  - migrate_exact_controller_boundaries_to_legacy_profiles_with_independent_requalification
+  - rotor_thermal_model_with_explicit_field_current_and_thermal_passports
+  - standard_OEL_and_UEL_models_with_native_closed_loop_oracles
+  - dynamic_output_and_transition_resource_limits_for_large_hybrid_studies
+  - sparse_scale_runtime_memory_and_clean_install_portability_benchmarks
+
+industrial_sequence_delivery:
+  report: reports/industrial-delivery-2026-11-02/delivery.json
+  document: docs/INDUSTRIAL_SEQUENCE_RU.md
+  code_sha256: 2269bf28205df5e81da4bf80faacf1b3fe10cc44ec5177b76a31655c939f08e3
+  industrial_profile_qualified: false
+  full_collection_tests_verified: 1229
+  full_collection_skips: 0
+  full_collection_unresolved_failures: 0
+  new_tests_since_excitation_stage: 77
+  clean_component_CLI_exact_replay: true
+  CI_component_script_locally_verified: true
+  ci_host_execution_verified: false
+  own_hardware_required: false
+  blocks:
+  - id: 1
+    status: implemented
+    scope: global_TGOV1_SEXS_complementarity_atomic_events_and_integration_resource_budgets
+    next: larger_hybrid_fault_and_cancellation_stress_corpus
+  - id: 2
+    status: partially_implemented
+    scope: GENROU_field_I2_replica_stator_open_and_zero_impressed_field_voltage
+    full_SI_cases: 7
+    analytic_oracle: rotor_flux_matrix_exponential_and_quadratic_thermal_lift
+    next: standard_OEL_UEL_closed_loop_native_oracles
+  - id: 3
+    status: implemented
+    scope: explicit_sampled_motor_start_restart_acceptance_and_CLI_artifacts
+    acceptance_cases: 6
+    next: extended_public_motor_mechanism_and_disturbance_matrix
+  - id: 4
+    status: partially_implemented
+    scope: fresh_process_radial_motor_and_GENCLS_all_node_algebraic_oracle
+    measured_maximum_nodes: 10000
+    duration_s: 0.02
+    next: meshed_networks_long_runup_and_many_dynamic_machines
+  - id: 5
+    status: candidate_checks_passed
+    scope: deterministic_wheel_offline_hash_locked_two_clean_Linux_venvs
+    report: reports/industrial-clean-install-2026-11-02/qualification.json
+    next: independent_CI_host_and_supported_platform_matrix
+  - id: 6
+    status: partially_implemented
+    scope: balanced_constant_inductance_full_stator_rotor_flux_component
+    native_reference: motulator_0_19_0_original_Gamma_machine_and_mechanics_RHS
+    native_cases: 6
+    next: network_EMT_coupling_unbalance_saturation_and_converters
+  next_execution_order:
+  - standard_OEL_UEL_equations_public_parameters_and_pinned_reference_engine
+  - meshed_long_runup_multi_motor_scale_corpus_with_fixed_accuracy_limits
+  - independent_CI_candidate_installation_and_trace_replay
+  - full_stator_component_to_general_network_EMT_interface
+  - unbalanced_sources_and_machine_saturation_with_independent_oracles
+  - converter_models_and_multirate_coupling_after_network_EMT_validation
+
+mnlex2_delivery:
+  report: reports/mnlex2-final-2026-11-02/delivery.json
+  document: docs/MNLEX2_VALIDATION_RU.md
+  model: MNLEX2_OpenIPSL_3_1_0
+  full_collection_tests_verified: 1290
+  full_collection_skips: 0
+  full_collection_unresolved_failures: 0
+  new_tests_since_industrial_sequence: 61
+  code_sha256: 01722a88d003a07e2cc235ebac32820aac655046e31bc1baf7383525d2093bbc
+  full_network_SI_cases: 11
+  rejected_inputs: 6
+  original_Modelica_component_cases: 8
+  original_Modelica_component_runs: 24
+  native_solver: OpenModelica_1_27_2_DASSL
+  OpenIPSL_commit: 0ee96c3bcf71330916fbaba60a82eeaac5e1ffb5
+  native_tolerances: [1.0e-8, 1.0e-10, 1.0e-12]
+  native_network_feedback_qualified: false
+  raw_lag_semantics: clipped_output_unbounded_state_and_inward_rate_reinitialization
+  equilibrium_initialization: explicit_inactive_raw_lag_equilibrium
+  cold_initialization: explicit_zero_output_startup
+  own_hardware_required: false
+  standard_OEL_timing_qualified: false
+  industrial_profile_qualified: false
+  competitive_superiority_proven: false
+  candidate_clean_venvs: 2
+  candidate_same_host: true
+  independent_host_verified: false
+  ci_host_execution_verified: false
+  next:
+  - specific_standard_OEL_with_executable_delay_and_recovery_equations
+  - native_closed_loop_generator_UEL_reference
+  - extended_meshed_long_runup_scale_corpus
+  - independent_CI_host_candidate_installation
+  - general_network_EMT_coupling
+
+oel2c_delivery:
+  model: OEL2C_Dynawo_cap_guard_v1_SEXS_summation
+  full_collection_tests_verified: 1375
+  full_collection_test_files: 103
+  new_tests_since_MNLEX2: 85
+  full_collection_skips: 0
+  full_collection_unresolved_failures: 0
+  simultaneous_clock_cancellation_priority_verified: true
+  implementation: Dynawo.Electrical.Controls.Machines.OverExcitationLimiters.Standard.Oel2c
+  source_commit: b932ef89dedb5db3138c5ca7d6c0cc26c49f6546
+  source: https://github.com/dynawo/dynawo/blob/b932ef89dedb5db3138c5ca7d6c0cc26c49f6546/dynawo/sources/Models/Modelica/Dynawo/Electrical/Controls/Machines/OverExcitationLimiters/Standard/Oel2c.mo
+  license: MPL-2.0
+  status: implemented_and_independently_validated_for_declared_cold_profile
+  document: docs/OEL2C_VALIDATION_RU.md
+  report: reports/oel2c-final-v3-2026-11-02/delivery.json
+  code_sha256: 680b8e341210b1431eea1bdc78169bb45ef0f907f1f8a9802de216bd15dc21bf
+  source_variant: explicit_OelActivation_upper_cap_recognition_band_v1
+  original_sources_unchanged: true
+  unmodified_original_variant_qualified: false
+  original_source_diagnostic_runs: 3
+  component_cases: 9
+  native_component_comparison_runs: 27
+  independent_SI_network_cases: 13
+  native_closed_feedback_runs: 39
+  native_limiter_in_network_feedback: true
+  network_master: FMI_2_Model_Exchange_CVODE_FMPy_0_3_27
+  whole_stock_Dynawo_network_qualified: false
+  rejected_inputs: 8
+  initialization: explicit_dynawo_startup_not_full_equilibrium
+  connection: nonpositive_SEXS_summation_not_takeover
+  joint_UEL_initialization: explicit_zero_output_startup
+  field_current_base: explicit_rated_GENROU_reaction_not_inferred_amperes
+  candidate_clean_venvs: 2
+  candidate_same_host: true
+  deterministic_wheel_builds: 2
+  exact_installed_CLI_replay: true
+  exact_frozen_primary_and_native_feedback_replay: true
+  independent_host_verified: false
+  remote_CI_execution_verified: false
+  own_hardware_required: false
+  industrial_profile_qualified: false
+  competitive_superiority_proven: false
+  next:
+  - consistent_loaded_OEL2C_stationary_initialization_with_native_reference
+  - explicit_takeover_AVR_variants_and_joint_OEL_UEL_PSS_fault_corpus
+  - longer_motor_runup_and_thermal_recovery_with_meshed_networks
+  - many_machine_sparse_dynamic_scaling_with_all_node_reference
+  - independent_CI_host_clean_install_and_public_reference_replay
+  - general_network_EMT_coupling_and_unbalanced_converter_physics
+
+oel2c_followup_execution:
+  order_is_sequential: true
+  blocks:
+  - id: EX-01
+    title: Полная стационарная инициализация возбуждения
+    status: planned
+    deliver:
+    - explicit_loaded_initialization_variant_distinct_from_dynawo_startup
+    - jointly_solved_network_rotor_AVR_limiter_and_clock_modes
+    - independently_initialized_native_Modelica_comparison
+    acceptance:
+    - all_declared_stationary_state_derivatives_and_KCL_within_preregistered_limits
+    - no_hidden_reference_or_current_base_retuning
+    - inactive_boundary_active_and_infeasible_start_cases
+    - negative_inputs_fail_without_partial_success_trace
+  - id: EX-02
+    title: Точка подключения AVR и гибридные воздействия
+    status: planned
+    depends_on: EX-01
+    deliver:
+    - separately_named_summation_and_takeover_connection_profiles
+    - version_pinned_open_native_AVR_model_and_dependency_closure
+    - joint_OEL_UEL_PSS_fault_clearing_and_protection_matrix
+    acceptance:
+    - native_regulators_in_closed_feedback_not_only_open_loop_replay
+    - independently_found_entry_release_cancellation_and_trip_event_sides
+    - compare_internal_states_actual_field_current_and_all_node_complex_voltages
+    - explicit_out_of_scope_for_unimplemented_AVR_or_manufacturer_variants
+  - id: EX-03
+    title: Длительный пуск и масштабирование динамической сети
+    status: planned
+    depends_on: EX-02
+    deliver:
+    - meshed_motor_runup_restart_and_excitation_recovery_corpus
+    - independently_chosen_machine_node_and_motor_count_matrix
+    - measured_runtime_memory_solver_work_and_trajectory_error
+    acceptance:
+    - full_declared_runup_and_cooling_horizons_not_only_short_hold_windows
+    - all_node_reference_and_physical_balance_for_each_scale_point
+    - honest_failure_on_budget_exhaustion_or_nonconvergence
+    - no_competitive_superiority_claim_without_matched_public_comparison
+  - id: EX-04
+    title: Независимая воспроизводимая поставка
+    status: planned
+    depends_on: EX-03
+    deliver:
+    - executed_remote_CI_on_supported_platform_matrix
+    - frozen_sources_hash_locked_install_and_public_reference_replay
+    - declared_supported_profile_and_machine_readable_failure_inventory
+    acceptance:
+    - independent_host_receipts_with_dependency_and_platform_identity
+    - complete_collected_test_inventory_without_silent_skips
+    - source_variant_and_dependency_licenses_retained_with_native_artifacts
+    - public_reference_data_sufficient_own_lab_hardware_not_required

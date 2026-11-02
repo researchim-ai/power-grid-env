@@ -155,17 +155,25 @@ def reference(spec,report,*,hybrid_runner=None):
         return result+([df[1].real,df[1].imag] if cages==2 else [])
     hybrid=None
     if hybrid_runner is not None:
-        def get_context():return dict(connected=connected,latched=latched,scale=scale,load_scale=load_scale,pm=pm,vref=vref)
+        from types import SimpleNamespace
+        from benchmarks.controller_reference_bounds import attach_layout
+        def gov_rate(x):return (pm-(x[4]-1)/gov.R-x[6])/gov.T1
+        def avr_rate(x):
+            error=vref-abs(algebraic(x)[3])/gb
+            return (avr.K*(Ca*x[8]+Da*error)-x[9])/avr.TE
+        proxy=attach_layout(SimpleNamespace(cfg={},rhs=derivative),[(6,g.id,'TGOV1',gov.VMIN,gov.VMAX,gov_rate),(9,g.id,'SEXS',avr.EMIN,avr.EMAX,avr_rate)])
+        def get_context():return dict(connected=connected,latched=latched,scale=scale,load_scale=load_scale,pm=pm,vref=vref,reference_controller_modes=proxy.cfg['reference_controller_modes'].copy())
         def set_context(cfg):
             nonlocal connected,latched,scale,load_scale,pm,vref
             connected,latched,scale,load_scale,pm,vref=[cfg[k] for k in ['connected','latched','scale','load_scale','pm','vref']]
+            proxy.cfg={k:v.copy() if isinstance(v,np.ndarray) else v for k,v in cfg.items()}
         source_node=terminals[source.terminal_id]
         if m.contactor.sense_node_id not in {m.node_id,source_node}:raise ValueError('independent reference sensing node outside circuit')
         if any(level.nominal_ll_v!=m.rated_ll_v for level in n.voltage_levels):raise ValueError('independent controller requires common nominal voltage base')
         def sensed(x):
             im,ir,ig,voltage,eg=algebraic(x)
             return abs(voltage if m.contactor.sense_node_id==m.node_id else es*scale-zs*(im-ig))/vb
-        segments,changes,trip_time,hybrid=hybrid_runner(settings=specification,motor=m,state=state,rhs=derivative,voltage=sensed,get_context=get_context,set_context=set_context)
+        segments,changes,trip_time,hybrid=hybrid_runner(settings=specification,motor=m,state=state,rhs=proxy.rhs,voltage=sensed,get_context=get_context,set_context=set_context,extra_guards=proxy.extra_guards,extra_apply=proxy.extra_apply,after_commands=proxy.after_commands)
     else:
         def trip(time,x):return x[5]-m.thermal.trip_level
         trip.terminal=True;trip.direction=1

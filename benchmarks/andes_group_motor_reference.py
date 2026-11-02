@@ -18,6 +18,11 @@ from benchmarks.andes_motor_terminal import initial_motor,equations
 
 
 def scope(spec):
+    if spec.coupled and spec.coupled.oel2c_limiters:raise ValueError('OEL2C feedback requires independent validation; stock ANDES OEL2C is outside this adapter')
+    if spec.coupled and spec.coupled.underexcitation_limiters:raise ValueError('MNLEX2 feedback requires independent SI; stock native closed-loop UEL is not qualified')
+    if spec.coupled and spec.coupled.generator_field_thermal:raise ValueError('field thermal trip and zero field voltage require the independent SI reference')
+    if spec.coupled and spec.coupled.overexcitation_limiters:raise ValueError('OEL feedback requires the independent excitation SI reference; native OEL is not qualified')
+    if spec.coupled and spec.coupled.generator_thermal:raise ValueError('generator thermal electrical-trip semantics require the protected SI reference; native comparison is pre-trip only')
     if spec.study not in {'coupled_rms','motor_start'} or spec.backend!='scipy':raise ValueError('motor_start or coupled_rms/scipy required')
     n,s=spec.network,spec.coupled if spec.coupled else spec.induction
     coupled=spec.study=='coupled_rms'
@@ -48,7 +53,7 @@ def scope(spec):
 def coordinates(spec):
     settings=spec.coupled if spec.coupled else spec.induction
     d=spec.model_dump(mode='json');d['study']='motor_start';d['coupled']=None
-    d['induction']=settings.model_dump(mode='json',exclude={'machines','faults','events'});d['induction']['events']=[]
+    d['induction']=settings.model_dump(mode='json',exclude={'machines','faults','events','generator_thermal','overexcitation_limiters','generator_field_thermal','underexcitation_limiters','oel2c_limiters'});d['induction']['events']=[]
     rows=[]
     for m in settings.motors:
         one=dict(d);one['induction']=dict(d['induction'],motors=[m.model_dump(mode='json')]);single=StudySpec.model_validate(one)
@@ -212,11 +217,13 @@ def worker(spec,step,*,driver=None):
     scope(spec);stock=Path(tempfile.gettempdir())/'power-grid-env-andes-pycode'
     if not (stock/'Motor5.py').is_file() or not (stock/'Motor3.py').is_file():raise ValueError('qualify stock native code cache first')
     hashes={p.name:sha256_file(p) for p in stock.glob('*.py')}
-    with tempfile.TemporaryDirectory(prefix='pge-group-pycode-') as tmp:
-        cache=Path(tmp)
-        for p in stock.glob('*.py'):shutil.copyfile(p,cache/p.name)
-        result=native_run(spec,step,cache,driver=driver)
-    if hashes!={p.name:sha256_file(p) for p in stock.glob('*.py')}:raise ValueError('stock code cache changed')
+    try:
+        with tempfile.TemporaryDirectory(prefix='pge-group-pycode-') as tmp:
+            cache=Path(tmp)
+            for p in stock.glob('*.py'):shutil.copyfile(p,cache/p.name)
+            result=native_run(spec,step,cache,driver=driver)
+    finally:
+        if hashes!={p.name:sha256_file(p) for p in stock.glob('*.py')}:raise ValueError('stock code cache changed')
     result['stock_generated_cache_unchanged']=True;return result
 
 
