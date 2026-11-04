@@ -13,7 +13,12 @@
     "tests/test_motor_bundle.py",
     "tests/test_coupled_rms.py",
     "tests/test_ex03.py",
-    "tests/test_release_remote.py"
+    "tests/test_release_remote.py",
+    "tests/test_coupled_jacobian.py",
+    "tests/test_genrou_jacobian.py",
+    "tests/test_pss_droop_jacobian.py",
+    "tests/test_esst1a_jacobian.py",
+    "tests/test_protection_jacobian.py"
   ],
   "collection_contract": "Collect all tests; every node outside the required files is explicitly outside_profile, never passed. Required setup, call and teardown must pass without skips or xfail.",
   "scope": [

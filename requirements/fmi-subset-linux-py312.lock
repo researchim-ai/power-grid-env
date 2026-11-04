@@ -1,0 +1,3 @@
+# FMI2 Model Exchange/CVODE subset only; install after pilot-linux-py312.lock.
+# FMPy source wheel is separately hash-pinned in esst1a-reference.json.
+lxml==6.1.2 --hash=sha256:9477e14217c212e6023c994a71a1a349db19b0e10fd5bf189666b281ae63b1fd

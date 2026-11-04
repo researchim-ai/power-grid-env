@@ -468,8 +468,20 @@ class CoupledNetwork(InductionNetwork):
         return {'outcome':'applied','value':event.value,'units':'additive pu voltage' if event.kind=='voltage_reference_step' else 'additive pu on generator VA base'}
 
     def integration_jacobian(self):
-        # Full synchronous-machine/controller Jacobian is a separate implementation.
-        return None
+        from power_grid_env.coupled_jacobian import callback
+        classical = callback(self)
+        if classical is not None:return classical
+        from power_grid_env.genrou_jacobian import callback as round_callback
+        round_rotor = round_callback(self)
+        if round_rotor is not None:return round_rotor
+        from power_grid_env.pss_droop_jacobian import callback as excitation_callback
+        excitation = excitation_callback(self)
+        if excitation is not None:return excitation
+        from power_grid_env.esst1a_jacobian import callback as esst_callback
+        esst = esst_callback(self)
+        if esst is not None:return esst
+        from power_grid_env.protection_jacobian import callback as protection_callback
+        return protection_callback(self)
 
     def observe_accepted_states(self,states):
         self.controllers.observe_accepted_states(states)

@@ -19,11 +19,22 @@ from benchmarks.induction_reference import mechanical_torque_reference
 from benchmarks.genrou_reference import saturation_curve
 
 
-def reference(spec,report=None,*,linearize=False):
+def reference(spec,report=None,*,linearize=False,allow_droop=False):
     n,specification=spec.network,spec.coupled
     assert len(n.generators)==len(n.lines)==len(n.sources)==len(specification.motors)==len(specification.machines)==1
     assert not(n.loads or n.transformers or n.inverters or n.shunts)
     m=specification.motors[0];g=n.generators[0];machine=specification.machines[0];source=n.sources[0];line=n.lines[0]
+    if any((specification.underexcitation_limiters,specification.oel2c_limiters,specification.generator_field_thermal,
+            specification.generator_thermal,specification.esst1a_exciters,specification.takeover_oels)):
+        raise ValueError('single-machine PSS oracle excludes these protection/excitation profiles')
+    if any(e.kind not in {'source_voltage','load_torque_scale','governor_step','voltage_reference_step','motor_open','motor_close'} for e in specification.events):
+        raise ValueError('unsupported event in single-machine PSS oracle')
+    droop=None
+    if specification.overexcitation_limiters:
+        if not allow_droop or linearize:raise ValueError('droop feedback requires explicit transient oracle opt-in')
+        if len(specification.overexcitation_limiters)!=1 or machine.model!='GENROU':raise ValueError('one GENROU droop limiter required')
+        droop=specification.overexcitation_limiters[0]
+        if droop.generator_id!=g.id or droop.model!='field_current_droop_override':raise ValueError('droop oracle target/variant mismatch')
     gov,avr=machine.governor,machine.exciter
     p=machine.stabilizer
     assert p is not None and p.MODE==1
@@ -104,8 +115,13 @@ def reference(spec,report=None,*,linearize=False):
     denominator=np.polymul([p.A2,p.A1,1.],[p.A4,p.A3,1.]);denominator=np.polymul(denominator,[p.T2,1.]);denominator=np.polymul(denominator,[p.T4,1.]);denominator=np.polymul(denominator,[p.T6,1.])
     Ap,Bp,Cp,Dp=signal.tf2ss(numerator,denominator)
     state=np.r_[state,np.zeros(len(Ap))]
+    pss_end=len(state)
+    if droop:
+        initial_measurement=abs(initial_field)/droop.rated_field_reaction_pu
+        if initial_measurement>=droop.current_limit_pu:raise ValueError('independent droop initialization is not inactive')
+        state=np.r_[state,initial_measurement,0.]
     def pss_output(x,voltage):
-        raw=float((Cp@x[14:]).item()+Dp.item()*(x[4]-1.))
+        raw=float((Cp@x[14:pss_end]).item()+Dp.item()*(x[4]-1.))
         limited=float(np.clip(raw,p.LSMIN,p.LSMAX));gate=p.VCL<abs(voltage)/gb<p.VCU
         return raw,limited,limited if gate else 0.,float(gate)
     connected=m.connected;latched=False;scale=1.;load_scale=1.;pm=initial_power
@@ -143,6 +159,7 @@ def reference(spec,report=None,*,linearize=False):
         valve_rate=(pm-(x[4]-1)/gov.R-x[6])/gov.T1
         if (x[6]>=gov.VMAX and valve_rate>0) or (x[6]<=gov.VMIN and valve_rate<0):valve_rate=0.
         error=vref-abs(voltage)/gb+pss_output(x,voltage)[2]
+        if droop:error-=float(np.clip(x[pss_end+1],0.,droop.maximum_voltage_bias_pu))
         field_rate=(avr.K*(Ca*x[8]+Da*error)-x[9])/avr.TE
         if (x[9]>=avr.EMAX and field_rate>0) or (x[9]<=avr.EMIN and field_rate<0):field_rate=0.
         if round_rotor:
@@ -155,10 +172,15 @@ def reference(spec,report=None,*,linearize=False):
             rotor_rates=[(np.clip(x[9],avr.EMIN,avr.EMAX)-ad)/machine.td_prime_s,-aq/machine.tq_prime_s,
                 (eq-psid-(xd1-xl)*id_)/machine.td_subtransient_s,(ed-psiq+(xq1-xl)*iq)/machine.tq_subtransient_s]
         else:rotor_rates=[0.,0.,0.,0.]
+        droop_rates=[]
+        if droop:
+            measured,bias=x[pss_end:pss_end+2]
+            target=min(droop.maximum_voltage_bias_pu,max(0.,droop.feedback_gain_pu*(measured-droop.current_limit_pu)))
+            droop_rates=[(abs(ad)/droop.rated_field_reaction_pu-measured)/droop.measurement_time_s,(target-bias)/droop.bias_time_s]
         return [df.real,df.imag,(te-load_scale*mechanical_torque_reference(m,x[2]))/(2*m.inertia_s),
                 wb*(x[4]-1),(pout-pe-machine.damping_pu*(x[4]-1))/(2*machine.inertia_s),dtheta,
                 valve_rate,Ag*x[7]+Bg*valve,Aa*x[8]+Ba*error,field_rate,
-                *rotor_rates,*(Ap@x[14:]+Bp.ravel()*(x[4]-1.))]
+                *rotor_rates,*(Ap@x[14:pss_end]+Bp.ravel()*(x[4]-1.)),*droop_rates]
     if linearize:
         assert not specification.events and not specification.faults
         indices=[0,1,2,3,4,6,7,8,9]+(list(range(10,14)) if round_rotor else [])+list(range(14,len(state)))
@@ -206,6 +228,7 @@ def reference(spec,report=None,*,linearize=False):
     channels.update({g.id+'.'+key:[] for key in ['TGOV1.valve_pu','TGOV1.turbine_state_pu','TGOV1.output_pu','SEXS.field_pu','SEXS.filter_pu']})
     channels.update({g.id+'.IEEEST.'+key:[] for key in ['sig','raw_pu','limited_pu','output_pu','voltage_gate']})
     channels.update({f.id+'.'+key:[] for f in specification.faults for key in ['active','current_a','p_w','q_var']})
+    if droop:channels.update({g.id+'.OEL.'+key:[] for key in ['field_reaction_pu','field_current_pu','measured_current_pu','bias_pu','bias_state_pu','current_limit_pu']})
     channels[source.id+'.p_w']=[];channels[source.id+'.q_var']=[]
     if m.thermal:channels[m.id+'.thermal_level']=[]
     for t,side in zip(report['time_s'],report['sample_side']):
@@ -239,9 +262,15 @@ def reference(spec,report=None,*,linearize=False):
             values.update({f.id+'.active':float(f.id in active_faults),f.id+'.current_a':abs(fi),f.id+'.p_w':sf.real,f.id+'.q_var':sf.imag})
         raw,limited,output,gate=pss_output(x,voltage)
         values.update({g.id+'.IEEEST.'+key:float(value) for key,value in zip(['sig','raw_pu','limited_pu','output_pu','voltage_gate'],[x[4]-1.,raw,limited,output,gate])})
+        if droop:
+            curr=ig/gib*cmath.exp(-1j*x[3]);direct=-curr.imag
+            reaction=x[10]+(xd-xd1)*(gd1*direct-gd2*x[12]+gd2*x[10])+saturation_curve(machine,math.hypot(pd,pq))*pd
+            values.update({g.id+'.OEL.'+key:float(value) for key,value in zip(
+                ['field_reaction_pu','field_current_pu','measured_current_pu','bias_pu','bias_state_pu','current_limit_pu'],
+                [reaction,abs(reaction)/droop.rated_field_reaction_pu,x[pss_end],np.clip(x[pss_end+1],0.,droop.maximum_voltage_bias_pu),x[pss_end+1],droop.current_limit_pu])})
         if m.thermal:values[m.id+'.thermal_level']=x[5]
         for key,value in values.items():channels[key].append(float(value))
-    return {'channels':channels,'trip_time_s':trip_time}
+    return {'channels':channels,'trip_time_s':trip_time,'independent_physical_SI':True,'droop_OEL_in_closed_feedback':droop is not None}
 
 
 def native_controlled_limit(saturated=False):

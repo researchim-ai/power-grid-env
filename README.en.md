@@ -224,3 +224,29 @@ tests outside the profile are listed separately and never counted as passed.
 Source, wheel and test inventory identities are bound in an execution receipt.
 Independent release qualification remains pending an actual remote CI run and
 verification of artifact provenance. Local installations do not establish it.
+
+Fixed-field GENCLS networks now use an [analytic coupled Jacobian](docs/COUPLED_JACOBIAN_RU.md)
+with single/double-cage motors and thermal replicas. It includes mutual machine
+sensitivities and invalidates the network response after switching. GENROU and
+controller extensions are described below.
+
+
+The [piecewise analytic GENROU/TGOV1/SEXS Jacobian](docs/GENROU_JACOBIAN_RU.md)
+extends this path to saturation, declared controller limit branches, mixed
+GENCLS/GENROU networks and stator thermal trips. Further profiles cover PSS, authored droop OEL, ESST1A, MNLEX2 and rotor I² protection; OEL2C
+retains finite differences. Event saltation matrices are
+outside this derivative contract.
+
+
+The [IEEEST and droop-OEL analytic profile](docs/PSS_DROOP_JACOBIAN_RU.md)
+adds seven PSS states, strict voltage gating, and authored two-state field-current
+feedback. A separate physical SI circuit and polynomial PSS realization check
+the joint closed loop. This authored OEL does not claim IEEE/OEM equivalence.
+
+
+The [ESST1A and absolute PI-OEL analytic profile](docs/ESST1A_JACOBIAN_RU.md)
+adds five exciter-state derivatives, selectors, moving rectifier bounds and
+back-calculation. A pinned OpenIPSL/MSL model in an independent SI network
+checks this profile. UEL/OEL2C remain outside this analytic path.
+
+MNLEX2 and rotor I² protection now have analytic derivatives coupled to AVR/PSS/PI-OEL: [NA-05 scope and reproduction](docs/PROTECTION_JACOBIAN_RU.md).

@@ -1692,3 +1692,108 @@ oel2c_boundary_policy:
   exact_frozen_primary_and_native_replay: true
   code_sha256: 21c03c5945ba7fe59f940c459906f2d79552aa18296f9aab485596f8eb5270dd
   wheel_sha256: 9b67c94fa730dab8d2fedc4b24334a5f7b082e6d3517b48b8b5d19e226e06249
+
+
+classical_jacobian_followup:
+  id: NA-01
+  status: done_for_declared_classical_subset
+  qualification_report: reports/na01-qualified-v2-2026-11-04/summary.json
+  comparisons: 22
+  fresh_workers: 44
+  actual_signed_remote_run: pending
+  scope: analytic_GENCLS_single_and_double_cage_motor_network_reduction
+  document: docs/COUPLED_JACOBIAN_RU.md
+  full_GENROU_controller_Jacobian: not_implemented
+  physical_equations_changed: false
+  remote_release_gate: EX-04_still_requires_actual_signed_run
+  acceptance:
+  - all_state_derivatives_match_central_differences_in_each_declared_topology
+  - independent_SI_trajectory_checks_for_six_single_machine_cases
+  - fresh_process_analytic_vs_FD_complete_trace_and_event_comparisons
+  - measured_actual_RHS_calls_including_FD_calls_not_only_scipy_nfev
+  - no_claim_of_universal_analytic_Jacobian_or_competitor_superiority
+
+
+round_rotor_jacobian_followup:
+  id: NA-02
+  status: done_for_declared_piecewise_subset
+  qualification_report: reports/na02-qualified-2026-11-04/summary.json
+  registered_cases: 15
+  comparisons: 30
+  fresh_workers: 60
+  scope: piecewise_analytic_GENROU_TGOV1_SEXS_network_reduction
+  document: docs/GENROU_JACOBIAN_RU.md
+  physical_equations_changed: false
+  analytic_controller_modes: [interior, outward_limited, inward_return, held]
+  exact_clip_corner: explicit_zero_outward_generalized_slope
+  event_saltation_matrices: not_implemented
+  PSS_OEL_UEL_ESST1A_field_thermal_Jacobians: not_implemented
+  unsupported_profile_method: existing_scipy_finite_difference
+  remote_release_gate: EX-04_still_requires_actual_signed_run
+  acceptance:
+  - all_coordinates_match_finite_differences_inside_declared_smooth_branches
+  - one_sided_outward_derivatives_at_exact_clipping_corners
+  - independent_physical_GENROU_winding_trajectory_checks
+  - fresh_worker_whole_trace_and_controller_event_identity_comparisons
+  - actual_RHS_work_counts_and_no_universal_speedup_claim
+
+
+pss_droop_jacobian_followup:
+  id: NA-03
+  status: done_for_declared_PSS_droop_subset
+  qualification_report: reports/na03-qualified-2026-11-04/summary.json
+  algorithm_comparisons: 50
+  fresh_workers: 100
+  scope: piecewise_analytic_IEEEST_MODE1_SEXS_authored_field_current_droop_OEL
+  document: docs/PSS_DROOP_JACOBIAN_RU.md
+  registered_algorithm_cases: 25
+  physical_equations_changed: false
+  PSS_gate_derivative: frozen_strict_current_branch_not_jump_derivative
+  clip_corner_derivative: explicit_zero_outward_generalized_slope
+  zero_field_reaction_abs_derivative: explicit_zero_generalized_slope
+  joint_independent_oracle: physical_SI_windings_polynomial_PSS_and_own_droop_feedback
+  oracle_joint_cases: [hold, fault, saturated_fault, voltage_gate]
+  oracle_joint_breaker_supported: false
+  IEEE_or_OEM_OEL_equivalence: not_claimed
+  UEL_OEL2C_ESST1A_field_thermal_Jacobians: not_implemented
+  saltation_matrices: not_implemented
+  remote_release_gate: EX-04_still_requires_actual_signed_run
+
+
+esst1a_jacobian_followup:
+  id: NA-04
+  status: done_for_declared_ESST1A_PI_subset
+  qualification_report: reports/na04-qualified-v2-2026-11-04/summary.json
+  native_report: reports/na04-native-2026-11-04/summary.json
+  algorithm_comparisons: 56
+  fresh_algorithm_workers: 112
+  native_comparisons: 20
+  scope: piecewise_analytic_ESST1A_absolute_PI_OEL_network_reduction
+  document: docs/ESST1A_JACOBIAN_RU.md
+  registered_algorithm_cases: 28
+  native_cases: 10
+  native_tolerances: [1.0e-12, 1.0e-13]
+  native_reference: pinned_OpenIPSL_ESST1A_and_MSL_PI_PSS_in_independent_SI_network
+  analytic_PI_model: FieldCurrentPI_AbsoluteTakeover_v1
+  no_uel_case_variants: explicitly_named_distinct_StudySpecs_not_silent_adapter_removal
+  primary_equations_changed: false
+  reset_derivatives_or_saltation_matrices: not_implemented
+  native_ESST_gate_reset_clock_certification: not_claimed
+  UEL_OEL2C_field_thermal_and_mixed_droop_profiles: existing_FD
+  remote_release_gate: EX-04_still_requires_actual_signed_run
+
+protection_jacobian_followup:
+  id: NA-05
+  status: implemented_for_declared_continuous_protection_subset
+  qualification_status: read_bound_report_for_exact_producer
+  scope: continuous_MNLEX2_and_field_I2_with_SEXS_ESST1A_PSS_droop_PI
+  document: docs/PROTECTION_JACOBIAN_RU.md
+  algorithm_report: reports/na05-qualified-2026-11-05/summary.json
+  independent_SI_report: reports/na05-uel-si-2026-11-05/summary.json
+  native_report: reports/na05-native-2026-11-05/summary.json
+  registered_algorithm_cases: 27
+  native_cases: 6
+  primary_equations_changed: false
+  OEL2C_analytic: pending_separate_clock_and_active_set_derivation
+  saltation_matrices: not_implemented
+  remote_release_gate: EX-04_still_requires_actual_signed_run

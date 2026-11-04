@@ -53,9 +53,9 @@ def test_analytic_integration_matches_finite_difference_solver_including_trip(mo
             assert max(abs(np.asarray(a['channels'][key])-b['channels'][key]))<tolerance,key
 
 
-def test_joint_generator_profile_keeps_full_finite_difference_jacobian():
+def test_joint_PSS_profile_uses_declared_excitation_analytic_path():
     s=StudySpec.model_validate_json(Path('cases/studies/pss_coupled_fault.json').read_text());r=run_study(s)
-    assert r['completed'] and r['integration']['jacobian']=='scipy_finite_difference'
+    assert r['completed'] and r['integration']['jacobian']=='piecewise_analytic_IEEEST_droop_OEL_network_reduction'
 
 
 @pytest.mark.parametrize('group',['Dyn11','YNd1','Dyn5'])

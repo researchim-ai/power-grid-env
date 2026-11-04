@@ -538,7 +538,7 @@ def _integrate_induction_model(model, scope, state, operating_point, *, study, b
             'sample_side': sides, 'channels': channels, 'motor_summary': summary, 'event_log': event_log,
             'contactor_control': {'model':'hysteretic_voltage_contactor', 'transition_count':contactors.transitions, 'transition_budget':settings.maximum_contactor_transitions, 'initial_open_auto_start':False, 'manual_close_voltage_check':'after_nonmotor_scheduled_commands_before_manual_switches', 'automatic_action_voltage_check':'after_scheduled_commands', 'electromagnetic_coil_model':False},
             'mapping': {'motor_buses': {m.id: model.bus_names[int(bus)] for m, bus in zip(settings.motors, model.motor_buses)}},
-            'maximum_kcl_residual_pu': max_kcl, 'maximum_power_balance_residual_pu': max(power_balance), 'integration': {'method': 'Radau', 'nfev': nfev, 'njev': njev, 'nlu': nlu, 'jacobian': 'analytic_motor_network_reduction' if jacobian_callback is not None else 'scipy_finite_difference'},
+            'maximum_kcl_residual_pu': max_kcl, 'maximum_power_balance_residual_pu': max(power_balance), 'integration': {'method': 'Radau', 'nfev': nfev, 'njev': njev, 'nlu': nlu, 'jacobian': getattr(jacobian_callback,'jacobian_kind','analytic_motor_network_reduction') if jacobian_callback is not None else 'scipy_finite_difference'},
             'motor_models': {m.id:m.model for m in settings.motors},
             'initialization': 'loaded high-speed equilibrium' if settings.operating_point else 'zero rotor flux and zero speed; explicit initial contactor states',
             'operating_point': operating_point, 'additional_validation': additional_validation,
