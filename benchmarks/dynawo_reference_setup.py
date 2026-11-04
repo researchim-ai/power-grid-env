@@ -30,6 +30,7 @@ def prepare(root,fetch=False):
             target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(urllib.request.urlopen(item['url'],timeout=30).read())
         if sha(target)!=item['sha256']:raise ValueError('changed pinned Dynawo source')
     install_guarded_copy(root)
+    install_equilibrium_copy(root)
     return verify(root)
 
 
@@ -51,7 +52,10 @@ def verify(root):
                 target=root/folder/n
                 if not target.is_file() or sha(target)!=hashlib.sha256(z.read(n)).hexdigest():raise ValueError('changed installed reference file: '+n)
                 count+=1
-    return dict(base_runtime=base,dynawo_commit=lock['commit'],modelica_version='3.2.3',fmpy_version=lock['fmpy']['version'],verified_additional_files=count,reference_variant='cap-guard-v1',activation_guard_sha256=sha(root/'dynawo-cap-guard-v1'/PATCH_FILE),lock_sha256=sha(LOCK))
+    result=dict(base_runtime=base,dynawo_commit=lock['commit'],modelica_version='3.2.3',fmpy_version=lock['fmpy']['version'],verified_additional_files=count,reference_variant='cap-guard-v1',activation_guard_sha256=sha(root/'dynawo-cap-guard-v1'/PATCH_FILE),lock_sha256=sha(LOCK))
+    if (root/'dynawo-equilibrium-guard-v2').exists():
+        verify_equilibrium_copy(root);result['equilibrium_guard_v2_sha256']=sha(root/'dynawo-equilibrium-guard-v2'/PATCH_FILE)
+    return result
 
 
 PATCH_FILE='dynawo/sources/Models/Modelica/Dynawo/Electrical/Controls/Machines/OverExcitationLimiters/Standard/BaseClasses/OelActivation.mo'
@@ -83,10 +87,37 @@ def verify_guarded_copy(root):
     if actual!=expected:raise ValueError('unregistered guarded Modelica source')
 
 
+
+def equilibrium_bytes(name,original):
+    changed=guarded_bytes(name,original)
+    if name!=PATCH_FILE:return changed
+    text=changed.decode()
+    for old,new in [('  //Input variables','  parameter Types.CurrentModulePu ICmpTolPu=1e-8 "Explicit numerical current-comparison band, equilibrium guard v2";\n\n  //Input variables'),('timer.u = IActPu > IRefPu;','timer.u = IActPu > IRefPu + ICmpTolPu;'),('timer1.u = IRefPu > IActPu + IThOffPu;','timer1.u = IRefPu > IActPu + IThOffPu + ICmpTolPu;')]:
+        if text.count(old)!=1:raise ValueError('unexpected equilibrium guard patch base')
+        text=text.replace(old,new)
+    return text.encode()
+
+
+def install_equilibrium_copy(root):
+    root=Path(root);lock=json.loads(LOCK.read_text())
+    for name in lock['files']:
+        target=root/'dynawo-equilibrium-guard-v2'/name;target.parent.mkdir(parents=True,exist_ok=True)
+        target.write_bytes(equilibrium_bytes(name,(root/'dynawo-source'/name).read_bytes()))
+
+
+def verify_equilibrium_copy(root):
+    root=Path(root);lock=json.loads(LOCK.read_text())
+    for name in lock['files']:
+        path=root/'dynawo-equilibrium-guard-v2'/name
+        if not path.is_file() or path.read_bytes()!=equilibrium_bytes(name,(root/'dynawo-source'/name).read_bytes()):raise ValueError('changed equilibrium-guard-v2 reference: '+name)
+    actual={str(p.relative_to(root/'dynawo-equilibrium-guard-v2')) for p in (root/'dynawo-equilibrium-guard-v2').rglob('*.mo')}
+    if actual!={k for k in lock['files'] if k.endswith('.mo')}:raise ValueError('unregistered equilibrium-guard Modelica source')
+
+
 def library_paths(root,variant='guarded'):
 
     root=Path(root).resolve();msl=root/'libraries/ModelicaStandardLibrary-3.2.3'
-    return [msl/'Complex.mo',msl/'ModelicaServices/package.mo',msl/'Modelica/package.mo',root/('dynawo-cap-guard-v1' if variant=='guarded' else 'dynawo-source')/PREFIX/'Dynawo/package.mo']
+    return [msl/'Complex.mo',msl/'ModelicaServices/package.mo',msl/'Modelica/package.mo',root/({'guarded':'dynawo-cap-guard-v1','original':'dynawo-source','equilibrium':'dynawo-equilibrium-guard-v2'}[variant])/PREFIX/'Dynawo/package.mo']
 
 
 if __name__=='__main__':

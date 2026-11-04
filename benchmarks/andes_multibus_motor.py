@@ -35,6 +35,7 @@ def native_branch_input(z):
 
 def scope(spec,step):
     if spec.coupled and any(e.kind=='generator_open' for e in spec.coupled.events):raise ValueError('native generator electrical-only opening is outside this adapter scope')
+    if spec.coupled and spec.coupled.esst1a_exciters:raise ValueError('ESST1A is outside this ANDES adapter')
     if spec.coupled and spec.coupled.oel2c_limiters:raise ValueError('OEL2C feedback requires independent validation; stock ANDES OEL2C is outside this adapter')
     if spec.coupled and spec.coupled.underexcitation_limiters:raise ValueError('MNLEX2 feedback requires independent SI; stock native closed-loop UEL is not qualified')
     if spec.coupled and spec.coupled.generator_field_thermal:raise ValueError('field thermal trip and zero field voltage require the independent SI reference')

@@ -397,7 +397,7 @@ jobs:
           python -m benchmarks.dynawo_reference_setup --root "$PGE_DYNAWO_REFERENCE_ROOT" --fetch
       - name: Require primary, native and reference-independence tests
         run: >-
-          python -m pytest tests/test_oel2c.py tests/test_oel2c_native.py
+          python -m pytest tests/test_oel2c.py tests/test_oel2c_native.py tests/test_oel2c_equilibrium.py tests/test_oel2c_active_equilibrium.py tests/test_oel2c_regulating.py tests/test_oel2c_selected.py tests/test_oel2c_boundary.py
           tests/test_generator_underexcitation.py tests/test_generator_field_thermal.py
           tests/test_generator_thermal.py tests/test_runtime_integrity.py
           --junitxml=reports/oel2c-ci/tests.xml
@@ -413,6 +413,28 @@ jobs:
           for name in ['component', 'network']:
               assert json.loads((Path('reports/oel2c-ci') / name / 'summary.json').read_text())['passed'], name
           PY
+      - name: Verify loaded OEL2C initial states and native feedback
+        run: python -u -m benchmarks.generator_oel2c_loaded_validation --out reports/oel2c-ci/loaded --root "$PGE_DYNAWO_REFERENCE_ROOT"
+      - name: Require loaded corpus
+        run: python -c "import json; assert json.load(open('reports/oel2c-ci/loaded/summary.json'))['passed']"
+      - name: Verify explicit active OEL2C and AVR initial references
+        run: python -u -m benchmarks.generator_oel2c_active_validation --out reports/oel2c-ci/active --root "$PGE_DYNAWO_REFERENCE_ROOT"
+      - name: Require active corpus
+        run: python -c "import json; assert json.load(open('reports/oel2c-ci/active/summary.json'))['passed']"
+      - name: Current-constrained equilibrium and conditional native spectra
+        run: python -u -m benchmarks.generator_oel2c_regulating_validation --out reports/oel2c-ci/regulating --root "$PGE_DYNAWO_REFERENCE_ROOT"
+      - name: Require current-regulating qualification
+        run: python -c "import json; assert json.load(open('reports/oel2c-ci/regulating/summary.json'))['passed']"
+      - name: Selected stationary active sets and explicit memory
+        run: python -u -m benchmarks.generator_oel2c_selected_validation --out reports/oel2c-ci/selected --root "$PGE_DYNAWO_REFERENCE_ROOT"
+      - name: Require selected stationary qualification
+        run: python -c "import json; assert json.load(open('reports/oel2c-ci/selected/summary.json'))['passed']"
+      - name: Coincident stationary guards in independent native network
+        run: python -u -m benchmarks.generator_oel2c_boundary_validation --out reports/oel2c-ci/boundary --root "$PGE_DYNAWO_REFERENCE_ROOT"
+      - name: Native derivatives and observables at independent guard witnesses
+        run: python -u -m benchmarks.oel2c_boundary_component --out reports/oel2c-ci/boundary-component --root "$PGE_DYNAWO_REFERENCE_ROOT"
+      - name: Require finite boundary evidence
+        run: python -c "import json; assert all(json.load(open('reports/oel2c-ci/'+name+'/summary.json'))['passed'] for name in ['boundary','boundary-component'])"
       - name: Retain source variant and licenses beside generated native artifacts
         if: always()
         run: |
@@ -421,12 +443,17 @@ jobs:
           from pathlib import Path
           root = Path(os.environ['PGE_DYNAWO_REFERENCE_ROOT'])
           out = Path('reports/oel2c-ci/reference-sources')
-          for name in ['dynawo-source', 'dynawo-cap-guard-v1']:
+          for name in ['dynawo-source', 'dynawo-cap-guard-v1', 'dynawo-equilibrium-guard-v2']:
               if (root / name).is_dir():
                   shutil.copytree(root / name, out / name, dirs_exist_ok=True)
           for source, name in [
               (Path('requirements/dynawo-oel2c-reference.json'), 'reference-lock.json'),
               (Path('docs/OEL2C_VALIDATION_RU.md'), 'OEL2C_VALIDATION_RU.md'),
+              (Path('docs/OEL2C_EQUILIBRIUM_RU.md'), 'OEL2C_EQUILIBRIUM_RU.md'),
+              (Path('docs/OEL2C_ACTIVE_EQUILIBRIUM_RU.md'), 'OEL2C_ACTIVE_EQUILIBRIUM_RU.md'),
+              (Path('docs/OEL2C_CURRENT_REGULATION_RU.md'), 'OEL2C_CURRENT_REGULATION_RU.md'),
+              (Path('docs/OEL2C_SELECTED_EQUILIBRIUM_RU.md'), 'OEL2C_SELECTED_EQUILIBRIUM_RU.md'),
+              (Path('docs/OEL2C_BOUNDARY_POLICY_RU.md'), 'OEL2C_BOUNDARY_POLICY_RU.md'),
               (root / 'libraries/ModelicaStandardLibrary-3.2.3/LICENSE', 'MSL-LICENSE'),
               (root / 'fmpy/fmpy-0.3.27.dist-info/licenses/LICENSE.txt', 'FMPy-LICENSE.txt'),
           ]:
@@ -439,4 +466,157 @@ jobs:
         with:
           name: oel2c-native-feedback-linux-py312
           path: reports/oel2c-ci/
+          retention-days: 30
+
+  esst1a-native-feedback:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PGE_OPENMODELICA_ROOT: /tmp/pge-esst1a-reference
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y build-essential liblapack-dev libexpat1-dev libcurl4t64 zip unzip
+      - run: python -m pip install -e '.[dev]'
+      - name: Prepare pinned OpenIPSL and FMI runtime
+        run: python -m benchmarks.esst1a_reference_setup --root "$PGE_OPENMODELICA_ROOT" --fetch
+      - name: Test typed ports, raw lag resets and independent network feedback
+        run: python -m pytest tests/test_esst1a.py tests/test_esst1a_joint.py tests/test_esst1a_joint_recheck.py tests/test_esst1a_refinement.py tests/test_esst1a_two_active_stress.py tests/test_esst1a_causal.py tests/test_mnlex2_guard_audit.py tests/test_esst1a_causal_recheck.py tests/test_native_uel_roots.py tests/test_native_uel_weak_invariance.py --junitxml=reports/esst1a-ci/tests.xml
+      - name: Compare all component states and algebraic selectors
+        run: python -u -m benchmarks.esst1a_component --root "$PGE_OPENMODELICA_ROOT" --out reports/esst1a-ci/component
+      - name: Compare closed network, faults and protection at two tolerances
+        run: python -u -m benchmarks.generator_esst1a_validation --root "$PGE_OPENMODELICA_ROOT" --out reports/esst1a-ci/network
+      - name: Joint native AVR and UEL with explicit negative timing witness
+        run: python -u -m benchmarks.generator_esst1a_joint_validation --root "$PGE_OPENMODELICA_ROOT" --out reports/esst1a-ci/joint
+      - name: Require strict causal agreement for all registered native cases
+        run: |
+          python - <<'PYTHON'
+          import os
+          from pathlib import Path
+          from benchmarks.generator_esst1a_causal_validation import qualify, NAMES
+          r = qualify(Path('reports/esst1a-ci/causal'), Path(os.environ['PGE_OPENMODELICA_ROOT']))
+          assert r['status'] == 'complete' and len(r['runs']) == 26
+          assert r['passed'] and r['all_registered_trajectories_agree']
+          assert r['native_UEL_root_policy'] == 'continuous_atoms'
+          assert not r['expected_rejections_accepted'] and not r['industrial_profile_qualified']
+          assert {row['case'] for row in r['runs']} == set(NAMES)
+          assert all(row['passed'] for row in r['runs'])
+          assert all(row['native_guard_audit']['passed'] and not row['native_guard_audit']['event_times_certified_by_this_audit'] for row in r['runs'])
+          for path in Path('reports/esst1a-ci/causal').glob('*/*/reference.json'):
+              import json
+              reference = json.loads(path.read_text())
+              assert reference['native_UEL_event_policy'] == 'causal'
+              assert reference['native_UEL_root_policy'] == 'continuous_atoms'
+              for event in reference['event_log']:
+                  if event['kind'] != 'native_mnlex2_lag_reset':
+                      continue
+                  assert event['event_iteration_reasons'] and 'legacy_broadcast' not in event['event_iteration_reasons']
+                  guard = event['guard_before_update']
+                  assert guard['strict_' + event['bound'] + '_condition']
+                  assert guard['raw_state_pu'] == event['raw_state_before_pu']
+          PYTHON
+      - name: Diagnose event-clock refinement independently in both solvers
+        run: python -u -m benchmarks.generator_esst1a_refinement --root "$PGE_OPENMODELICA_ROOT" --out reports/esst1a-ci/refinement --require-agreement
+      - name: Require complete agreement across numerical refinement
+        run: |
+          python - <<'PYTHON'
+          import json
+          r = json.load(open('reports/esst1a-ci/refinement/summary.json'))
+          positive = {'activation_recovery', 'saturation_recovery', 'fast_feedback', 'fault_clear', 'two_active_limiters_stress', 'two_limiters_sensitive'}
+          assert r['diagnostic_completed'] and r['passed'] and r['all_cross_solver_comparisons_agree'] and not r['industrial_profile_qualified']
+          assert {row['case'] for row in r['runs']} == positive
+          assert all(row['all_cross_solver_comparisons_agree'] and row['primary_reset_clocks_self_converged'] and row['native_reset_clocks_self_converged'] for row in r['runs'])
+          PYTHON
+      - name: Require complete component and network evidence
+        run: python -c "import json; assert all(json.load(open('reports/esst1a-ci/'+name+'/summary.json'))['passed'] for name in ['component','network','joint'])"
+      - name: Retain reference licenses, lock and connection contract
+        if: always()
+        run: |
+          mkdir -p reports/esst1a-ci/reference-sources
+          cp requirements/esst1a-reference.json requirements/mnlex2-reference.json requirements/modelica-reference.json docs/ESST1A_VALIDATION_RU.md docs/ESST1A_MNLEX2_JOINT_VALIDATION_RU.md reports/esst1a-ci/reference-sources/
+          cp power_grid_env/assets/licenses/OpenIPSL-LICENSE.txt reports/esst1a-ci/reference-sources/
+          if [ -f "$PGE_OPENMODELICA_ROOT/libraries/ModelicaStandardLibrary-4.0.0/LICENSE" ]; then
+            cp "$PGE_OPENMODELICA_ROOT/libraries/ModelicaStandardLibrary-4.0.0/LICENSE" reports/esst1a-ci/reference-sources/MSL-LICENSE.txt
+          fi
+          if [ -f "$PGE_OPENMODELICA_ROOT/fmpy/fmpy-0.3.27.dist-info/licenses/LICENSE.txt" ]; then
+            cp "$PGE_OPENMODELICA_ROOT/fmpy/fmpy-0.3.27.dist-info/licenses/LICENSE.txt" reports/esst1a-ci/reference-sources/FMPy-LICENSE.txt
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: esst1a-native-feedback-linux-py312
+          path: reports/esst1a-ci/
+          retention-days: 30
+
+  ex02-takeover-pss-modal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PGE_OPENMODELICA_ROOT: /tmp/pge-ex02-reference
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y build-essential liblapack-dev libexpat1-dev libcurl4t64 zip unzip
+      - run: python -m pip install -e '.[dev]'
+      - run: python -m benchmarks.esst1a_reference_setup --root "$PGE_OPENMODELICA_ROOT" --fetch
+      - run: python -m pytest tests/test_ex02.py --junitxml=reports/ex02-ci/tests.xml
+      - name: Require every registered joint and modal comparison
+        run: python -u -m benchmarks.ex02_validation --root "$PGE_OPENMODELICA_ROOT" --out reports/ex02-ci/matrix
+      - name: Qualify conditioned clocks and preserve the frozen rejection
+        run: python -u -m benchmarks.ex02_conditioning --root "$PGE_OPENMODELICA_ROOT" --out reports/ex02-ci/conditioning
+      - name: Retain contracts and licenses
+        if: always()
+        run: |
+          mkdir -p reports/ex02-ci/contracts
+          cp requirements/esst1a-reference.json requirements/mnlex2-reference.json requirements/modelica-reference.json requirements/ex02-*.lock requirements/ex02-conditioning-witness.json docs/ESST1A_VALIDATION_RU.md reports/ex02-ci/contracts/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ex02-takeover-pss-modal-linux-py312
+          path: reports/ex02-ci/
+          retention-days: 30
+
+  ex03-long-run-and-sparse-scale:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PGE_OPENMODELICA_ROOT: /tmp/pge-ex03-reference
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y build-essential liblapack-dev libexpat1-dev libcurl4t64 zip unzip
+      - run: python -m pip install --require-hashes -r requirements/pilot-linux-py312.lock
+      - run: python -m pip install -e '.[dev]' 'pytest==8.3.5'
+      - run: python -m benchmarks.esst1a_reference_setup --root "$PGE_OPENMODELICA_ROOT" --fetch
+      - name: Verify independent sparse equations, budgets and scope gates
+        run: python -m pytest tests/test_ex03.py --junitxml=reports/ex03-ci/tests.xml
+      - name: Qualify full horizons and all declared scale points
+        run: python -u -m benchmarks.ex03_validation --root "$PGE_OPENMODELICA_ROOT" --out reports/ex03-ci/qualification
+      - name: Retain contracts and native license notices
+        if: always()
+        run: |
+          mkdir -p reports/ex03-ci/contracts
+          cp requirements/modelica-reference.json requirements/esst1a-reference.json docs/EX03_LONG_RUN_AND_SCALE_RU.md power_grid_env/assets/licenses/OpenIPSL-LICENSE.txt reports/ex03-ci/contracts/
+          cp "$PGE_OPENMODELICA_ROOT/libraries/ModelicaStandardLibrary-4.0.0/LICENSE" reports/ex03-ci/contracts/MSL-LICENSE.txt
+          cp "$PGE_OPENMODELICA_ROOT/fmpy/fmpy-0.3.27.dist-info/licenses/LICENSE.txt" reports/ex03-ci/contracts/FMPy-LICENSE.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ex03-long-run-and-sparse-scale-linux-py312
+          path: reports/ex03-ci/
           retention-days: 30

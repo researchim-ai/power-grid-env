@@ -1,0 +1,17 @@
+{
+  "schema": "power-grid-env.conditioning-witness/v1",
+  "reference": "Synthetic authored network; OpenIPSL 3.1.0 ESST1A/MNLEX2, MSL 4.0.0; not field measurements",
+  "recorded_code_sha256": "cc8389339b493ee65a295458ced2193637253b5ae16ddd9951fb3bd0db8a145c",
+  "artifacts": {
+    "protocol": "cases/reference/ex02-conditioning/protocol.json.gz",
+    "primary": "cases/reference/ex02-conditioning/primary.json.gz",
+    "1e-11": "cases/reference/ex02-conditioning/1e-11.json.gz",
+    "1e-12": "cases/reference/ex02-conditioning/1e-12.json.gz"
+  },
+  "files": {
+    "cases/reference/ex02-conditioning/protocol.json.gz": "6d78777e294df7d58734ee6af5c25df99c8ae5e57a6985a4105e7c6ec1e4131b",
+    "cases/reference/ex02-conditioning/primary.json.gz": "6f4912295047a8b037bf77bfaab13598c6e27d88a1a551878c1703598c3c696d",
+    "cases/reference/ex02-conditioning/1e-11.json.gz": "709c3ffbf399bd9d9a4ac58daa54e180b0578d76ad972320974629eeac4b37ad",
+    "cases/reference/ex02-conditioning/1e-12.json.gz": "db9d9c47fb3022e9089329db745e602599f4856c0a6ef25853f619b229b0fa98"
+  }
+}

@@ -19,6 +19,7 @@ def needed(spec):
 
 def project_motor_case(spec):
     if spec.study!='coupled_rms' or spec.coupled is None:raise ValueError('coupled RMS required')
+    if spec.coupled.esst1a_exciters:raise ValueError('old SI projection cannot silently remove an ESST1A exciter')
     n,s=spec.network,spec.coupled
     if not 1<=len(n.generators)<=4 or len(s.machines)!=len(n.generators) or s.faults:raise ValueError('one to four GENROU generators without faults required')
     passports={p.generator_id:p for p in s.machines};gens={g.id:g for g in n.generators}
@@ -36,15 +37,15 @@ def project_motor_case(spec):
         if e.kind in CONTROL_EVENTS and (e.equipment_id not in gens or not math.isfinite(e.value)):raise ValueError('unknown/nonfinite generator control target')
     data=spec.model_dump(mode='json');data.update(study='motor_start',coupled=None)
     data['network']['generators']=[];data['network']['terminals']=[t for t in data['network']['terminals'] if t['equipment_id'] not in gens]
-    data['induction']=s.model_dump(mode='json',exclude={'machines','faults','generator_thermal','overexcitation_limiters','generator_field_thermal','underexcitation_limiters','oel2c_limiters'})
+    data['induction']=s.model_dump(mode='json',exclude={'machines','faults','generator_thermal','overexcitation_limiters','generator_field_thermal','underexcitation_limiters','oel2c_limiters','esst1a_exciters','takeover_oels'})
     data['induction']['events']=[e for e in data['induction']['events'] if e['kind'] not in CONTROL_EVENTS|{'generator_open'}]
     return StudySpec.model_validate(data)
 
 
 class MultiCircuit(Circuit):
-    def __init__(self,spec):
-        self.ports=[]
-        super().__init__(project_motor_case(spec),initialize=False)
+    def __init__(self,spec,*,maximum_duration_s=3.,current_constraints=None,maximum_nodes=64,sparse_network=False):
+        self.ports=[];self.current_constraints=current_constraints or {}
+        super().__init__(project_motor_case(spec),initialize=False,maximum_duration_s=maximum_duration_s,maximum_nodes=maximum_nodes,sparse_network=sparse_network)
         self.spec=spec;self.n=spec.network;self.s=spec.coupled
         self.term={t.id:t.connectivity_node_id for t in self.n.terminals}
         self.initialize_joint()
@@ -63,7 +64,7 @@ class MultiCircuit(Circuit):
         for p,y in zip(self.p,admittances):Y[p['bus'],p['bus']]+=y
         pv=self.pv_nodes;other=np.array([i for i in range(self.N) if i not in pv],dtype=int)
         voltage=np.empty(self.N,complex);voltage[pv]=pv_voltage
-        if len(other):voltage[other]=np.linalg.solve(Y[np.ix_(other,other)],drive[other]-Y[np.ix_(other,pv)]@pv_voltage)
+        if len(other):voltage[other]=self.network_solve(Y[np.ix_(other,other)],drive[other]-Y[np.ix_(other,pv)]@pv_voltage)
         ig=Y[pv]@voltage-drive[pv]
         currents=np.array([voltage[p['bus']]*y for p,y in zip(self.p,admittances)])
         rotor=[r*i for r,i in zip(responses,currents)];flux=[p['lm']*i+p['L']@r for p,i,r in zip(self.p,currents,rotor)]
@@ -76,17 +77,35 @@ class MultiCircuit(Circuit):
         magnitude=np.array([g.v_set_pu*self.base[node] for g,node in zip(gens,self.pv_nodes)])
         speed0=np.full(self.M,.99) if warm else np.zeros(self.M)
         passive=self.steady_response(speed0,cold=not warm)[0]
-        def response(values):return self.steady_multi(values[:self.M] if warm else np.zeros(self.M),magnitude*np.exp(1j*values[-ng:]),not warm)
+        selected=[i for i,g in enumerate(gens) if g.id in self.current_constraints];off=self.M if warm else 0
+        def response(values):
+            mag=magnitude.copy()
+            for j,i in enumerate(selected):mag[i]=values[off+ng+j]*self.base[self.pv_nodes[i]]
+            return self.steady_multi(values[:self.M] if warm else np.zeros(self.M),mag*np.exp(1j*values[off:off+ng]),not warm)
+        def field_constraints(point):
+            v,_,_,_,ig=point;out=[]
+            for i in selected:
+                g=gens[i];p=self.current_constraints[g.id]
+                network=self.n.model_copy(update={'generators':[g]});settings=self.s.model_copy(update={'machines':[passports[g.id]]})
+                from benchmarks.oel2c_current_network import stationary_field
+                field=stationary_field(network,settings,v[self.pv_nodes[i]],ig[i])
+                out.append(p.KAct*p.KScale*abs(field)/p.rated_field_reaction_pu-p.ILimPu)
+            return out
         def residual(values):
             v,_,_,torque,ig=response(values)
             mechanical=torque-np.array([m.fan_torque_pu*w*abs(w) for m,w in zip(self.s.motors,values[:self.M])]) if warm else []
             power=(3*v[self.pv_nodes]*np.conj(ig)).real
-            return np.r_[mechanical,[(value-g.p_w)/passports[g.id].rated_va for value,g in zip(power,gens)]]
+            return np.r_[mechanical,[(value-g.p_w)/passports[g.id].rated_va for value,g in zip(power,gens)],field_constraints(response(values))]
         guess=np.r_[speed0,np.angle(passive[self.pv_nodes])] if warm else np.angle(passive[self.pv_nodes])
+        if selected:guess=np.r_[guess,[gens[i].v_set_pu for i in selected]]
         solved=root(residual,guess,tol=1e-11);error=float(np.max(abs(residual(solved.x))))
         speeds=solved.x[:self.M] if warm else np.zeros(self.M)
         if not np.isfinite(solved.x).all() or error>1e-9 or (warm and (np.any(speeds<self.s.operating_point.minimum_speed_pu) or np.any(speeds>1))):raise ValueError('independent multi-PV/motor equilibrium failed')
-        point=response(solved.x);self.install_motor_point(speeds,point,cold=not warm)
+        point=response(solved.x)
+        for i in selected:
+            p=self.current_constraints[gens[i].id];voltage_pu=abs(point[0][self.pv_nodes[i]])/self.base[self.pv_nodes[i]]
+            if not p.regulating_voltage_bounds_pu[0]<voltage_pu<p.regulating_voltage_bounds_pu[1]:raise ValueError('independent regulating voltage outside declared bounds')
+        self.install_motor_point(speeds,point,cold=not warm)
         voltage,_,_,_,ig=point
         for g,node,current in zip(gens,self.pv_nodes,ig):
             network=self.n.model_copy(update={'generators':[g]});settings=self.s.model_copy(update={'machines':[passports[g.id]]})
@@ -98,7 +117,7 @@ class MultiCircuit(Circuit):
         motor_error=float(np.max(abs(derivative[:self.p[-1]['speed']+1])))
         thermal_error=max((abs(derivative[a]) for a in self.thermal.values()),default=0.)
         if gen_error>1e-8 or (warm and motor_error>1e-8) or (warm and self.s.operating_point.thermal_state=='equilibrium' and thermal_error>1e-8):raise ValueError('independent multi-generator initial RHS not zero')
-        self.initialization=dict(method='independent_SI_joint_multi_PV_motor_root',maximum_static_residual=error,maximum_generator_initial_rhs=gen_error,maximum_motor_initial_rhs=motor_error,generator_initial_q_var={g.g.id:g.initial_q_var for _,g,_ in self.ports},speeds_pu=speeds.tolist())
+        self.initialization=dict(method='independent_SI_joint_field_current_PV_motor_root' if selected else 'independent_SI_joint_multi_PV_motor_root',maximum_static_residual=error,maximum_generator_initial_rhs=gen_error,maximum_motor_initial_rhs=motor_error,generator_initial_q_var={g.g.id:g.initial_q_var for _,g,_ in self.ports},speeds_pu=speeds.tolist())
 
     def set_context(self,cfg):
         super().set_context(cfg)

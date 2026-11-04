@@ -34,6 +34,10 @@ Requirements: [specification](AGENT_IMPLEMENTATION_SPEC_RU.md) and [architecture
 pip install -e ".[dev]"
 ```
 
+For the ANDES backend and full regression suite, use
+`pip install -e ".[dev,rms]"`. The qualified ANDES reference has a separate
+EX-02 lock file; `dev` alone does not install external simulators.
+
 Python 3.11+ and the `dss-python` / `opendssdirect.py` wheels are required.
 
 ## Commands
@@ -151,3 +155,72 @@ SI generator/motor network. The explicitly named `Dynawo cap-guard-v1`
 variant adds an upper-cap recognition band; raw-source diagnostics are
 retained separately. The adapted source file is MPL-2.0, with its license
 included in the wheel. [Equations, initialization and reproduction](docs/OEL2C_VALIDATION_RU.md) (Russian).
+
+OEL2C now supports explicit `inactive_equilibrium` initialization with loaded
+machines and motors, including all eight states, anti-windup and initial timer
+memory. Active and boundary initial points are rejected explicitly.
+[Native validation and equilibrium scope](docs/OEL2C_EQUILIBRIUM_RU.md) (Russian).
+
+OEL2C `active_limited_equilibrium` initializes a loaded operating point with
+exhausted PID authority, an explicit AVR reference policy and separate thermal
+reference excess diagnostics. Native checks cover limiter release and field
+protection. [Equations, reference audit and scope](docs/OEL2C_ACTIVE_EQUILIBRIUM_RU.md) (Russian).
+
+OEL2C now supports joint field-current-constrained network equilibrium with a specified AVR input and interior PID authority. Initial terminal voltage is solved explicitly. Independent SI/native-FMU checks include the full conditional regulating spectrum. [Inputs, examples and validation scope](docs/OEL2C_CURRENT_REGULATION_RU.md) (Russian).
+
+OEL2C `selected_equilibrium` adds explicit stationary active-set selection, neutral reference/PID memory and zero-rate timer contacts. Ambiguous inputs are rejected; stationarity is reported separately from full OEL stability. [Inputs and independent validation](docs/OEL2C_SELECTED_EQUILIBRIUM_RU.md) (Russian).
+
+OEL2C now offers finite coincident-guard checks: benign equivalent modes are accepted, sensitive starts are rejected with explicit witnesses. Physical input and thresholds remain unchanged. The Python thermal guard preserves the original Modelica operation order at rounding-sensitive release points. Independent SI/FMU checks include native component derivatives at neighboring points. [Policy, limits and commands](docs/OEL2C_BOUNDARY_POLICY_RU.md) (Russian).
+
+A five-state ESST1A profile adds explicit absolute OEL takeover, UEL and
+supplementary input ports. The unmodified OpenIPSL FMU is compared in feedback
+with an independent SI network, including fault clearing and field thermal trips.
+[Connections, reproduction and EX-02 limitations](docs/ESST1A_VALIDATION_RU.md).
+
+[Joint native ESST1A/MNLEX2 validation](docs/ESST1A_MNLEX2_JOINT_VALIDATION_RU.md)
+puts both original OpenIPSL models in closed network feedback. Raw states and
+reset event sides are checked; a timing-sensitive two-UEL case is explicitly
+retained as a negative witness rather than qualified.
+
+The audit checks every reset and all physical channels even for an expected
+negative witness. Sealed evidence can be rechecked using a pinned SHA-256
+without rebuilding FMUs; the qualification event limit remains 1 microsecond.
+
+Independent step and tolerance refinement now checks both solvers. Causal FMU event
+routing also validates the two-active-UEL stress case, eliminating the former
+0.173 s discrepancy in the reference adapter. Continuous atomic roots also resolve the nearly
+stationary case: all 13 registered scenarios agree at two accuracies within
+the unchanged 1 microsecond limit. Self-convergence does not establish
+cross-solver agreement.
+
+The causal validator now requires an audit of source conditions and both sides
+of each native reset. Sealed trajectories can be rechecked using pinned SHA-256
+without executing FMUs; local roundoff sensitivity remains diagnostic.
+
+EX-02 adds the explicitly named dynamic absolute OEL
+`FieldCurrentPI_AbsoluteTakeover_v1`, an explicit IEEEST connection to ESST1A,
+and local ESST1A/PSS/OEL modal analysis. Independent references use an SI
+network and pinned OpenIPSL/MSL FMUs; `benchmarks.ex02_cases` registers the
+joint disturbance and modal corpus. Qualification is limited to the declared
+engineering profiles; OEM controllers, arbitrary hybrid modes and EMT remain
+outside this scope.
+
+Examples: `power-grid run-study cases/studies/ex02_overload_recovery.json
+--out reports/ex02-example` and `power-grid run-study
+cases/studies/ex02_modal_avr_pss_oel.json --out reports/ex02-modal`.
+[Connection contract, reproduction and isolated dependencies (Russian)](docs/ESST1A_VALIDATION_RU.md).
+
+EX-03 adds 45-second runup, coast, restart and cooling cases, a 30-second
+ESST1A cross-check, and five measured dynamic configurations up to
+`(2000 nodes, 8 motors, 4 generators)`. An independent sparse SI/MNA model
+checks internal states and every node's complex voltage.
+[Cases, exact scale limits and reproduction (Russian)](docs/EX03_LONG_RUN_AND_SCALE_RU.md).
+
+EX-04 introduces a [reproducible release candidate](docs/EX04_REPRODUCIBLE_RELEASE_RU.md):
+frozen source, a hash-locked offline wheelhouse, retained dependency notices,
+a complete collected-test inventory, and an explicit Linux x86_64 / Python 3.12
+profile. Required tests must pass setup, call and teardown without skip/xfail;
+tests outside the profile are listed separately and never counted as passed.
+Source, wheel and test inventory identities are bound in an execution receipt.
+Independent release qualification remains pending an actual remote CI run and
+verification of artifact provenance. Local installations do not establish it.

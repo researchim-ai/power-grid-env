@@ -29,10 +29,12 @@ class ClassicalMachine(BaseModel):
     governor: TGOV1Passport | None = None
     exciter: SEXSPassport | None = None
     stabilizer: IEEESTPassport | None = None
+    stabilizer_connection: Literal['SEXS','external_ESST1A'] = 'SEXS'
 
     @model_validator(mode='after')
     def dependencies(self):
-        if self.stabilizer is not None and self.exciter is None:
+        if self.stabilizer is not None and self.stabilizer_connection=='external_ESST1A' and self.exciter is not None:raise ValueError('external ESST1A stabilizer cannot also bind SEXS')
+        if self.stabilizer is not None and self.exciter is None and not (self.model=='GENROU' and self.stabilizer_connection=='external_ESST1A'):
             raise ValueError('stabilizer requires an exciter')
         return self
 

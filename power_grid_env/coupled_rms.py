@@ -11,7 +11,7 @@ from power_grid_env.coupled_lines import CoupledLines,LINE_EVENTS,validate_line_
 import numpy as np
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import splu
-from pydantic import Field, model_validator
+from pydantic import BaseModel,ConfigDict,Field,model_validator
 from power_grid_env.induction import InductionEvent, InductionSettings
 from power_grid_env.induction_network import InductionNetwork,validate_induction,integrate_induction_model
 from power_grid_env.rms_study import ClassicalMachine, RoundRotorMachine, RMSFault
@@ -21,6 +21,8 @@ from power_grid_env.controller_boundaries import ControllerBoundaries
 from power_grid_env.generator_field_thermal import GeneratorFieldThermalProtection,FieldThermalBank
 from power_grid_env.generator_excitation import OverexcitationLimiter,ExcitationLimiterBank
 from power_grid_env.generator_underexcitation import UnderexcitationLimiter,MinimumExcitationBank
+from power_grid_env.excitation_takeover import TakeoverOELPassport,TakeoverOELBank
+from power_grid_env.exciter_esst1a import ESST1APassport,ESST1ABank,PORTS as ESST_PORTS
 from power_grid_env.generator_oel2c import OEL2CPassport,OEL2CBank,CHANNELS as OEL2C_CHANNELS
 from power_grid_env.generator_thermal import GeneratorThermalProtection,GeneratorThermalBank
 from power_grid_env.model import validate_network_rules
@@ -50,7 +52,23 @@ class FaultTransition:
     equipment_id: str
 
 
+class ESST1APortEvent(BaseModel):
+    model_config=ConfigDict(extra='forbid',allow_inf_nan=False)
+    time_s: float=Field(gt=0)
+    kind: Literal['esst1a_port_set']='esst1a_port_set'
+    equipment_id: str=Field(min_length=1)
+    port: Literal['oel_ceiling_pu','uel_error_floor_pu','uel_field_floor_pu','uel_sum_pu','supplementary_voltage_pu','supplementary_field_pu']
+    value: float
+
+    @model_validator(mode='after')
+    def absolute_field_inputs(self):
+        if self.port in ('oel_ceiling_pu','uel_field_floor_pu') and self.value<0:raise ValueError('absolute takeover field limits must be nonnegative')
+        return self
+
+
 class CoupledSettings(InductionSettings):
+    takeover_oels: list[TakeoverOELPassport] = Field(default_factory=list,max_length=8)
+    esst1a_exciters: list[ESST1APassport] = Field(default_factory=list,max_length=8)
     generator_field_thermal: list[GeneratorFieldThermalProtection] = Field(default_factory=list,max_length=8)
     oel2c_limiters: list[OEL2CPassport] = Field(default_factory=list,max_length=8)
     underexcitation_limiters: list[UnderexcitationLimiter] = Field(default_factory=list,max_length=8)
@@ -58,11 +76,11 @@ class CoupledSettings(InductionSettings):
     generator_thermal: list[GeneratorThermalProtection] = Field(default_factory=list,max_length=8)
     faults: list[CoupledFault] = Field(default_factory=list,max_length=100)
     machines: list[ClassicalMachine | RoundRotorMachine] = Field(min_length=1,max_length=8)
-    events: list[CoupledEvent] = Field(default_factory=list,max_length=100)
+    events: list[CoupledEvent | ESST1APortEvent] = Field(default_factory=list,max_length=100)
 
     @model_validator(mode='after')
     def supported_machines(self):
-        if any(m.model not in {'GENCLS','GENROU'} or (m.stabilizer is not None and (m.exciter is None or m.stabilizer.MODE!=1)) or (m.exciter is not None and m.exciter.EMIN<0) for m in self.machines):
+        if any(m.model not in {'GENCLS','GENROU'} or (m.stabilizer is not None and ((m.exciter is None and m.stabilizer_connection!='external_ESST1A') or m.stabilizer.MODE!=1)) or (m.exciter is not None and m.exciter.EMIN<0) for m in self.machines):
             raise ValueError('coupled profile accepts GENCLS/GENROU with optional TGOV1/SEXS/IEEEST MODE=1 and nonnegative field limit')
         if len({f.id for f in self.faults})!=len(self.faults):
             raise ValueError('duplicate coupled fault ID')
@@ -81,11 +99,11 @@ def validate_coupled(network,settings):
     projection=network.model_copy(deep=True)
     removed={g.terminal_id for g in projection.generators}
     projection.generators=[];projection.terminals=[t for t in projection.terminals if t.id not in removed]
-    motor_settings=InductionSettings.model_validate({k:v for k,v in settings.model_dump(mode='json').items() if k not in {'machines','faults','generator_thermal','overexcitation_limiters','generator_field_thermal','underexcitation_limiters','oel2c_limiters'}} | {
-        'events':[e.model_dump(mode='json') for e in settings.events if e.kind not in {'generator_mechanical_step','governor_step','voltage_reference_step','generator_open',*LINE_EVENTS}]})
+    motor_settings=InductionSettings.model_validate({k:v for k,v in settings.model_dump(mode='json').items() if k not in {'machines','faults','generator_thermal','overexcitation_limiters','generator_field_thermal','underexcitation_limiters','oel2c_limiters','esst1a_exciters','takeover_oels'}} | {
+        'events':[e.model_dump(mode='json') for e in settings.events if e.kind not in {'generator_mechanical_step','governor_step','voltage_reference_step','generator_open','esst1a_port_set',*LINE_EVENTS}]})
     scope=validate_induction(projection,motor_settings,validate_rules=False)
     errors.extend(scope['errors'])
-    if any(m.model not in {'GENCLS','GENROU'} or (m.stabilizer is not None and (m.exciter is None or m.stabilizer.MODE!=1)) or (m.exciter is not None and m.exciter.EMIN<0) for m in settings.machines):
+    if any(m.model not in {'GENCLS','GENROU'} or (m.stabilizer is not None and ((m.exciter is None and m.stabilizer_connection!='external_ESST1A') or m.stabilizer.MODE!=1)) or (m.exciter is not None and m.exciter.EMIN<0) for m in settings.machines):
         errors.append('only GENCLS/GENROU with optional TGOV1/SEXS/IEEEST MODE=1 and nonnegative field limit')
     for machine in settings.machines:
         passport=RoundRotorMachine if machine.model=='GENROU' else ClassicalMachine
@@ -102,6 +120,19 @@ def validate_coupled(network,settings):
         errors.append('one synchronous-machine passport per canonical generator required')
     if any(m.id in generators for m in settings.motors):
         errors.append('motor ID collides with canonical generator')
+    esst_ids={p.generator_id for p in settings.esst1a_exciters}
+    if len(esst_ids)!=len(settings.esst1a_exciters):errors.append('unique ESST1A targets required')
+    for p in settings.esst1a_exciters:
+        machine=passports.get(p.generator_id)
+        if machine is None or machine.model!='GENROU' or machine.exciter is not None:errors.append('ESST1A requires GENROU without simultaneous SEXS')
+        if p.generator_id in {x.generator_id for x in settings.oel2c_limiters+settings.overexcitation_limiters}:errors.append('summation OEL passports cannot bind to the absolute ESST1A takeover port')
+    for m in settings.machines:
+        if m.stabilizer is not None and m.stabilizer_connection=='external_ESST1A' and (m.generator_id not in esst_ids or m.exciter is not None):errors.append('external ESST1A stabilizer requires an exclusive ESST1A target')
+        if m.stabilizer is not None and m.generator_id in esst_ids and m.stabilizer_connection!='external_ESST1A':errors.append('ESST1A stabilizer connection must be explicit')
+    takeover_ids=[p.generator_id for p in settings.takeover_oels]
+    if len(set(takeover_ids))!=len(takeover_ids) or not set(takeover_ids)<=esst_ids:errors.append('unique takeover OEL targets must have ESST1A')
+    for e in settings.events:
+        if e.kind=='esst1a_port_set' and e.equipment_id not in esst_ids:errors.append('ESST1A port event requires an ESST1A target')
     field_ids=[]
     oel_by_id={p.generator_id:p for p in settings.overexcitation_limiters}
     for p in settings.generator_field_thermal:
@@ -126,7 +157,7 @@ def validate_coupled(network,settings):
         try:UnderexcitationLimiter.model_validate(p.model_dump())
         except ValueError as exc:errors.append('invalid UEL passport: '+str(exc))
         uel_ids.append(p.generator_id);m=passports.get(p.generator_id)
-        if m is None or m.model!='GENROU' or m.exciter is None:errors.append('UEL requires an existing GENROU with SEXS')
+        if m is None or m.model!='GENROU' or (m.exciter is None and p.generator_id not in esst_ids):errors.append('UEL requires an existing GENROU with SEXS')
     if len(set(uel_ids))!=len(uel_ids) or len(uel_ids)>8:errors.append('unique UEL passports required')
     if settings.operating_point and any(p.initialization!='inactive_equilibrium' for p in settings.underexcitation_limiters):errors.append('UEL loaded operating point requires inactive_equilibrium initialization')
     oel2c_ids=[]
@@ -139,7 +170,8 @@ def validate_coupled(network,settings):
         field=next((q for q in settings.generator_field_thermal if q.generator_id==p.generator_id),None)
         if field and not math.isclose(p.rated_field_reaction_pu,field.rated_field_reaction_pu,rel_tol=1e-12):errors.append('OEL2C and field thermal rated field bases must agree')
     if len(set(oel2c_ids))!=len(oel2c_ids) or len(oel2c_ids)>8:errors.append('unique OEL2C passports required')
-    if settings.oel2c_limiters and settings.operating_point:errors.append('OEL2C dynawo_startup is not a full loaded equilibrium profile')
+    if settings.operating_point and any(p.initialization=='dynawo_startup' for p in settings.oel2c_limiters):errors.append('OEL2C dynawo_startup is not a full loaded equilibrium profile')
+    if not settings.operating_point and any(p.initialization in ('active_limited_equilibrium','current_regulating_equilibrium','selected_equilibrium') for p in settings.oel2c_limiters):errors.append('active OEL2C equilibrium requires an explicit loaded operating point')
     thermal_ids=[]
     for p in settings.generator_thermal:
         try:GeneratorThermalProtection.model_validate(p.model_dump())
@@ -177,7 +209,7 @@ def validate_coupled(network,settings):
                 errors.append('governed generator requires governor_step instead of mechanical bypass')
             elif event.kind=='governor_step' and machine.governor is None:
                 errors.append('governor_step requires TGOV1')
-            elif event.kind=='voltage_reference_step' and machine.exciter is None:
+            elif event.kind=='voltage_reference_step' and machine.exciter is None and event.equipment_id not in esst_ids:
                 errors.append('voltage_reference_step requires SEXS')
     opened=set()
     for event in sorted(settings.events,key=lambda e:e.time_s):
@@ -205,10 +237,10 @@ def validate_coupled(network,settings):
     errors.extend(validate_line_events(network,topology,settings.events))
     samples=(2*settings.maximum_contactor_transitions if any(m.contactor for m in settings.motors) else 0)+math.ceil(settings.duration_s/settings.step_s)+2*(len(settings.events)+2*len(settings.faults)+len(settings.motors))+2
     motor_channels=sum(16+8*(m.model=='double_cage')+2*bool(m.thermal)+6*bool(m.contactor) for m in settings.motors)
-    if samples*(2*len(topology.buses)+motor_channels+42*len(settings.machines)+2*len(settings.generator_thermal)+(len(OEL2C_CHANNELS)+2)*len(settings.oel2c_limiters)+8*len(settings.underexcitation_limiters)+6*len(settings.overexcitation_limiters)+4*len(settings.generator_field_thermal)+4*len(settings.faults)+9*len(network.lines)+6)>2_000_000:
+    if samples*(2*len(topology.buses)+motor_channels+42*len(settings.machines)+2*len(settings.generator_thermal)+(len(OEL2C_CHANNELS)+2)*len(settings.oel2c_limiters)+40*len(settings.esst1a_exciters)+8*len(settings.underexcitation_limiters)+6*len(settings.overexcitation_limiters)+4*len(settings.generator_field_thermal)+4*len(settings.faults)+9*len(network.lines)+6)>2_000_000:
         errors.append('coupled trace exceeds two-million-scalar budget')
     return {'ok':not errors,'errors':errors,'model':'coupled_synchronous_generators_single_or_double_cage_motors',
-            'limitations':['positive sequence and algebraic stators','GENCLS/GENROU with fixed field or SEXS and optional IEEEST MODE=1',
+            'limitations':['positive sequence and algebraic stators','GENCLS/GENROU with fixed field, SEXS, or declared five-state ESST1A; IEEEST MODE=1 with SEXS or explicitly connected ESST1A',
                            'constant-Z background only','external slack required; electrical generator opening only, no reclose or islanding',
                            'declared motor mechanical/thermal subset','no field qualification']}
 
@@ -237,6 +269,8 @@ class CoupledNetwork(InductionNetwork):
         self.field_thermal=FieldThermalBank(self,self.excitation_limiters.end)
         self.underexcitation_limiters=MinimumExcitationBank(self,self.field_thermal.end)
         self.oel2c=OEL2CBank(self,self.underexcitation_limiters.end)
+        self.esst1a=ESST1ABank(self,self.oel2c.end)
+        self.takeover_oel=TakeoverOELBank(self,self.esst1a.end)
         self.controller_boundaries=ControllerBoundaries(self)
         self.fault_passports={f.id:f for f in settings.faults}
         self.fault_buses={f.id:lookup[self.topology.node_to_bus[f.node_id]] for f in settings.faults}
@@ -259,12 +293,15 @@ class CoupledNetwork(InductionNetwork):
     def excitation_bias(self,state):
         return self.excitation_limiters.bias(state)-self.underexcitation_limiters.output(state)-self.oel2c.output(state)
 
-    def field_voltage(self,state):
-        return self.controllers.field(state,self.gen_voltage)*self.field_thermal.field_enabled
+    def field_voltage(self,state,voltage=None,current=None):
+        field=self.controllers.field(state,self.gen_voltage)
+        if self.esst1a.entries:
+            for i,value in self.esst1a.output(state,voltage,current).items():field[i]=value
+        return field*self.field_thermal.field_enabled
 
     def generator_internal(self,state):
         rotor=state[self.gen_offset:self.rotor_end].reshape(-1,2)
-        return self.round_rotors.internal(state,rotor,self.field_voltage(state))
+        return self.round_rotors.internal(state,rotor,self.controllers.field(state,self.gen_voltage))
 
     def generator_currents(self,state,voltage):
         internal=self.generator_internal(state)
@@ -297,11 +334,11 @@ class CoupledNetwork(InductionNetwork):
             (mechanical[i]-electrical[i]-m.damping_pu*(rotor[i,1]-1))/(2*m.inertia_s)]
             for i,m in enumerate(self.gen_passports)])
         return self.controller_boundaries.derivative(np.r_[motor,derivative.ravel(),
-            self.round_rotors.derivatives(state,rotor,generator_current,self.field_voltage(state)),
+            self.round_rotors.derivatives(state,rotor,generator_current,self.field_voltage(state,voltage,generator_current)),
             self.controllers.derivatives(state,rotor[:,1],self.generator_terminal_voltage(state,voltage),self.excitation_bias(state)),
             self.generator_thermal.derivatives(state,generator_current),
             self.excitation_limiters.derivatives(state,generator_current),
-            self.field_thermal.derivatives(state,generator_current),self.underexcitation_limiters.derivatives(state),self.oel2c.derivatives(state,generator_current)])
+            self.field_thermal.derivatives(state,generator_current),self.underexcitation_limiters.derivatives(state),self.oel2c.derivatives(state,generator_current),self.esst1a.derivatives(state,voltage,generator_current),self.takeover_oel.derivatives(state,generator_current)])
 
     def static_electrical(self,speed,generator_internal,*,steady):
         response=self.cages.response(self.constants,speed) if steady else np.zeros(len(speed),dtype=complex)
@@ -319,7 +356,7 @@ class CoupledNetwork(InductionNetwork):
 
     def initial_state(self):
         return np.r_[np.zeros(self.electrical_size),[m.thermal.initial_level for m in self.settings.motors if m.thermal],np.zeros(self.motor_state_end-self.electrical_size-len(self.thermal_indices)),
-                     np.tile([0.,1.],len(self.generators)),np.zeros(self.oel2c.end-self.rotor_end)]
+                     np.tile([0.,1.],len(self.generators)),np.zeros(self.takeover_oel.end-self.rotor_end)]
 
     def scheduled_events(self):
         transitions=[FaultTransition(t,kind,f.id) for f in self.settings.faults
@@ -333,7 +370,7 @@ class CoupledNetwork(InductionNetwork):
     def additional_channels(self):
         channels = {g.id+'.'+key:[] for g in self.generators for key in ('delta','omega','rotor_frequency_hz','p_w','q_var','current_pu',
             'bus_voltage_pu','electrical_power_pu','mechanical_power_pu','connected','terminal_voltage_pu','terminal_angle_rad')}
-        channels.update({key:[] for key in self.controllers.channel_names()+self.round_rotors.channel_names()+self.generator_thermal.channel_names()+self.excitation_limiters.channel_names()+self.field_thermal.channel_names()+self.underexcitation_limiters.channel_names()+self.oel2c.channel_names()})
+        channels.update({key:[] for key in self.controllers.channel_names()+self.round_rotors.channel_names()+self.generator_thermal.channel_names()+self.excitation_limiters.channel_names()+self.field_thermal.channel_names()+self.underexcitation_limiters.channel_names()+self.oel2c.channel_names()+self.esst1a.channel_names()+self.takeover_oel.channel_names()})
         channels.update({key:[] for key in self.lines.channels()})
         channels.update({f.id+'.'+key:[] for f in self.settings.faults for key in ['active','current_a','p_w','q_var']})
         return channels
@@ -346,7 +383,9 @@ class CoupledNetwork(InductionNetwork):
         mechanical=self.controllers.mechanical(state,rotor[:,1],self.gen_mechanical)
         terminal=self.generator_terminal_voltage(state,voltage)
         signals=self.controllers.signals(state,rotor[:,1],terminal,self.gen_mechanical,self.excitation_bias(state))
-        signals.update(self.round_rotors.signals(state,self.field_voltage(state)))
+        signals.update(self.round_rotors.signals(state,self.field_voltage(state,voltage,current)))
+        signals.update(self.esst1a.signals(state,voltage,current))
+        signals.update(self.takeover_oel.signals(state,current))
         signals.update(self.lines.signals(voltage))
         signals.update(self.generator_thermal.signals(state))
         signals.update(self.excitation_limiters.signals(state,current))
@@ -370,6 +409,7 @@ class CoupledNetwork(InductionNetwork):
         return signals,complex(sum(power))
 
     def after_discrete_commands(self,time,state,event_log):
+        self.esst1a.refresh(time,state,event_log)
         self.oel2c.apply(set(),time,state,event_log)
         self.underexcitation_limiters.refresh(time,state,event_log)
         self.controller_boundaries.refresh(time,state,event_log)
@@ -380,7 +420,8 @@ class CoupledNetwork(InductionNetwork):
         more,extra=self.controller_boundaries.guards(state)
         uel_ids,uel_guards=self.underexcitation_limiters.guards(state)
         oel_ids,oel_guards=self.oel2c.guards(state)
-        return [('thermal',i) for i in ids]+field_ids+more+uel_ids+oel_ids,guards+field_guards+extra+uel_guards+oel_guards
+        esst_ids,esst_guards=self.esst1a.guards(state)
+        return [('thermal',i) for i in ids]+field_ids+more+uel_ids+oel_ids+esst_ids,guards+field_guards+extra+uel_guards+oel_guards+esst_guards
 
     def apply_guard_events(self,ids,time,state,event_log):
         reaction=None
@@ -389,11 +430,16 @@ class CoupledNetwork(InductionNetwork):
             reaction=self.field_thermal.reaction(state,current)
         self.generator_thermal.apply({key[1] for key in ids if key[0]=='thermal'},time,state,event_log)
         if reaction is not None:self.field_thermal.apply(ids,time,state,event_log,reaction)
+        self.esst1a.apply({key for key in ids if key[0]=='esst1a'},time,state,event_log)
         self.oel2c.apply({key for key in ids if key[0]=='oel2c'},time,state,event_log)
         self.underexcitation_limiters.apply({key for key in ids if key[0]=='uel'},time,state,event_log)
         self.controller_boundaries.apply({key for key in ids if key[0]=='controller'},time,state,event_log)
 
     def apply_additional_event(self,event):
+        if event.kind=='esst1a_port_set':
+            i=next(i for i,g in enumerate(self.generators) if g.id==event.equipment_id)
+            self.esst1a.ports[i][event.port]=event.value
+            return dict(outcome='applied',port=event.port,value=event.value,units='pu field voltage' if event.port in ('oel_ceiling_pu','uel_field_floor_pu','supplementary_field_pu') else 'pu voltage error')
         if event.kind=='generator_open':
             i=next(i for i,g in enumerate(self.generators) if g.id==event.equipment_id)
             was_closed=bool(self.gen_connected[i]);self.gen_connected[i]=False
@@ -415,7 +461,9 @@ class CoupledNetwork(InductionNetwork):
         if event.kind not in {'generator_mechanical_step','governor_step','voltage_reference_step'}:return None
         i=next(i for i,g in enumerate(self.generators) if g.id==event.equipment_id)
         if event.kind=='governor_step':self.controllers.pref[i]+=event.value
-        elif event.kind=='voltage_reference_step':self.controllers.vref[i]+=event.value
+        elif event.kind=='voltage_reference_step':
+            if i in self.esst1a.entries:self.esst1a.reference_step(i,event.value)
+            else:self.controllers.vref[i]+=event.value
         else:self.gen_mechanical[i]+=event.value
         return {'outcome':'applied','value':event.value,'units':'additive pu voltage' if event.kind=='voltage_reference_step' else 'additive pu on generator VA base'}
 
@@ -437,10 +485,18 @@ class CoupledNetwork(InductionNetwork):
         result['underexcitation_limits']=uel['limits'];result['ok']=result['ok'] and uel['ok']
         oel2c=self.oel2c.validate(channels,self.settings.rtol,self.settings.atol)
         result['oel2c_limits']=oel2c['limits'];result['ok']=result['ok'] and oel2c['ok']
+        esst=self.esst1a.validate(channels,self.settings.rtol,self.settings.atol)
+        result['esst1a_limits']=esst['limits'];result['ok']=result['ok'] and esst['ok']
+        takeover=self.takeover_oel.validate(channels)
+        result['takeover_oel_limits']=takeover['limits'];result['ok']=result['ok'] and takeover['ok']
         return result
 
     def additional_metadata(self):
-        return {'oel2c_model':'pinned Dynawo OEL2C with declared upper-cap numerical guard v1 / MSL 3.2.3 eight-state component; nonpositive SEXS input summation; explicit internal startup, not full equilibrium',
+        return {'takeover_OEL_model':'declared absolute field-current PI with sensor lag and back-calculation; not an IEEE OEL model',
+                'takeover_OEL_passports':[p.model_dump(mode='json') for p in self.settings.takeover_oels],
+                'ESST1A_model':'OpenIPSL 3.1.0 five-state VOS1/UEL1 with explicit absolute takeover inputs' if self.esst1a.entries else None,
+                'ESST1A_passports':[p.model_dump(mode='json') for p in self.settings.esst1a_exciters],
+                'oel2c_model':'pinned Dynawo OEL2C with declared upper-cap numerical guard v1 / MSL 3.2.3 eight-state component; nonpositive SEXS input summation; explicit startup, strict inactive or active authority-limited equilibrium initialization',
                 'oel2c_passports':[p.model_dump(mode='json') for p in self.settings.oel2c_limiters],
                 'underexcitation_model':'MNLEX2 circle on own machine VA base; positive AVR summation; OpenIPSL 3.1.0 raw lag and reversal reset semantics',
                 'underexcitation_initialization':'explicit inactive raw-lag equilibrium or zero-output raw-lag startup; active/boundary initial circle rejected',

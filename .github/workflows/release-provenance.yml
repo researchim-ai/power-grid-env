@@ -1,0 +1,67 @@
+name: EX-04 independent provenance verification
+on:
+  workflow_run:
+    workflows: ['EX-04 frozen release candidate']
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: 'Full source commit SHA (40 lowercase hexadecimal characters)'
+        required: true
+      run_id:
+        description: 'Completed release candidate run ID'
+        required: true
+      attempt:
+        description: 'Exact run attempt'
+        required: true
+permissions:
+  contents: read
+  actions: read
+  attestations: read
+jobs:
+  verify:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'workflow_dispatch' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TARGET_REPO: ${{ github.repository }}
+      TARGET_SHA: ${{ inputs.commit || github.event.workflow_run.head_sha }}
+      TARGET_RUN: ${{ inputs.run_id || github.event.workflow_run.id }}
+      TARGET_ATTEMPT: ${{ inputs.attempt || github.event.workflow_run.run_attempt }}
+    steps:
+      # Trusted verifier from the branch chosen for this verifier workflow.
+      # The target source is checked out separately and is never executed.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: verifier
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.commit || github.event.workflow_run.head_sha }}
+          path: target-source
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Verify API bindings, signed hosted-runner identity and frozen content
+        working-directory: verifier
+        run: >-
+          python -m benchmarks.release_remote
+          --repo "$TARGET_REPO" --commit "$TARGET_SHA"
+          --run-id "$TARGET_RUN" --attempt "$TARGET_ATTEMPT"
+          --source "$GITHUB_WORKSPACE/target-source"
+          --out /tmp/pge-remote-proof
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: ex04-provenance-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/pge-remote-proof/
+          include-hidden-files: true
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 30

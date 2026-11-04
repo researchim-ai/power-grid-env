@@ -21,7 +21,7 @@ def motor_case(spec):
     if any(e.kind not in ('source_voltage','motor_open','motor_close') for e in s.events):raise ValueError('multibus coupled source/motor events only')
     data=spec.model_dump(mode='json');data.update(study='motor_start',coupled=None)
     data['network']['generators']=[];data['network']['terminals']=[t for t in data['network']['terminals'] if t['equipment_id']!=g.id]
-    data['induction']=s.model_dump(mode='json',exclude={'machines','faults','generator_thermal','overexcitation_limiters','generator_field_thermal','underexcitation_limiters','oel2c_limiters'})
+    data['induction']=s.model_dump(mode='json',exclude={'machines','faults','generator_thermal','overexcitation_limiters','generator_field_thermal','underexcitation_limiters','oel2c_limiters','esst1a_exciters','takeover_oels'})
     return StudySpec.model_validate(data)
 
 

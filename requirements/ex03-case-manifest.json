@@ -1,0 +1,75 @@
+{
+  "schema": "power-grid-env.ex03-corpus/v1",
+  "cases": {
+    "grid_long_start": {
+      "sha256": "0896ff8e932a7c00991d5750edee5d3723e4ed0942df3dd899bd674ceb8aa480",
+      "nodes": 6,
+      "motors": 3,
+      "generators": 0,
+      "duration_s": 45.0
+    },
+    "gen_long_restart": {
+      "sha256": "43c6d55a4953de89f831e516a200b7a5d1d530ba4c139fffb818e5ad9fb78a25",
+      "nodes": 6,
+      "motors": 3,
+      "generators": 1,
+      "duration_s": 45.0
+    },
+    "gen_staggered_restart": {
+      "sha256": "90f16c9add05fe7b74d06aa67f2300e31f6720b7efe6f74372e3f86698dbaa76",
+      "nodes": 6,
+      "motors": 3,
+      "generators": 1,
+      "duration_s": 45.0
+    },
+    "gen_thermal_cooling": {
+      "sha256": "1314306fc570fdb13278169fccfd823cecd610e07c894856498043238f65c578",
+      "nodes": 6,
+      "motors": 3,
+      "generators": 1,
+      "duration_s": 45.0
+    },
+    "scale_64_4_1": {
+      "sha256": "9e98fc7962722a784f43df5cabe29a07f5b065a637aa6efe48cf5f6ff3e91d80",
+      "nodes": 64,
+      "motors": 4,
+      "generators": 1,
+      "duration_s": 6.0
+    },
+    "scale_256_8_2": {
+      "sha256": "55aa8e470c83fbbf60d838ebadae4c7b98692c1e6df5592ca67fd482959dbe3d",
+      "nodes": 256,
+      "motors": 8,
+      "generators": 2,
+      "duration_s": 6.0
+    },
+    "scale_512_32_4": {
+      "sha256": "168d199b69723b756fc2b895154bc8aa8440f029a6bc25c5d54e4c87a7b2b710",
+      "nodes": 512,
+      "motors": 32,
+      "generators": 4,
+      "duration_s": 6.0
+    },
+    "scale_1024_16_4": {
+      "sha256": "355fe8912fe71c4867ba67732beb1b963dfbde98bc0e8446cce8ecfd3b1a52cb",
+      "nodes": 1024,
+      "motors": 16,
+      "generators": 4,
+      "duration_s": 6.0
+    },
+    "scale_2000_8_4": {
+      "sha256": "8fa854c73d87407259c9408ce6636dea61f060d0cfcde8b5afc2439fc2f1891e",
+      "nodes": 2000,
+      "motors": 8,
+      "generators": 4,
+      "duration_s": 6.0
+    },
+    "native_avr": {
+      "sha256": "ccccecf1d090a33a8c66f1614fd741abd2ce582f36ca93e394d443f290315d73",
+      "nodes": 6,
+      "motors": 3,
+      "generators": 1,
+      "duration_s": 30.0
+    }
+  }
+}

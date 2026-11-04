@@ -15,6 +15,7 @@ class UnderexcitationLimiter(BaseModel):
     generator_id: str=Field(min_length=1)
     model: Literal['MNLEX2_OpenIPSL_3_1_0']='MNLEX2_OpenIPSL_3_1_0'
     initialization: Literal['inactive_equilibrium','zero_output_startup']='inactive_equilibrium'
+    event_detection: Literal['machine_epsilon','conditioned_1e-8']='machine_epsilon'
     K_F2: float=Field(default=.1,gt=0)
     T_F2: float=Field(default=1.,gt=0)
     K_M: float=Field(default=.3,gt=0)
@@ -22,6 +23,11 @@ class UnderexcitationLimiter(BaseModel):
     MEL_MAX: float=Field(default=.1,gt=0)
     Q_0: float=2.5
     Radius: float=Field(default=3.,gt=0)
+
+
+def reset_rate_floor(p):
+    """Explicit event localization policy; continuous MNLEX2 ODE is unchanged."""
+    return 1e-8 if p.event_detection=='conditioned_1e-8' else 64*np.finfo(float).eps
 
 
 def circle_error(p,active,reactive,voltage):
@@ -80,7 +86,7 @@ class MinimumExcitationBank:
         for i,(a,p) in self.entries.items():
             region=self.regions[i]
             if region:
-                eps=64*np.finfo(float).eps;rate=self.free_rate(state,i)
+                eps=reset_rate_floor(p);rate=self.free_rate(state,i)
                 instant=rate>eps if region<0 else rate < -eps
                 def reversal(t,x,i=i,region=region,instant=instant,eps=eps):
                     if instant:return 0.
@@ -99,17 +105,16 @@ class MinimumExcitationBank:
             a,p=self.entries[i];before=float(state[a]);region=self.regions[i]
             if side=='reset':
                 state[a]=0. if region<0 else p.MEL_MAX
-                rate=self.free_rate(state,i);eps=64*np.finfo(float).eps
+                rate=self.free_rate(state,i)
                 self.regions[i]=(-1 if rate<=0. else 0) if region<0 else (1 if rate>=0. else 0)
             else:self.regions[i]=-1 if side=='lower' else 1
             event_log.append(dict(time_s=float(time),kind='uel_lag_reset' if side=='reset' else 'uel_lag_region_enter',
                 equipment_id=p.generator_id,bound=('lower' if region<0 else 'upper') if side=='reset' else side,
-                raw_state_before_pu=before,raw_state_after_pu=float(state[a])))
+                raw_state_before_pu=before,raw_state_after_pu=float(state[a]),event_detection=p.event_detection,event_rate_floor_per_s=float(reset_rate_floor(p))))
 
     def refresh(self,time,state,event_log):
-        eps=64*np.finfo(float).eps
-        roots={('uel',i,'reset') for i in self.entries if self.regions[i] and
-               (self.free_rate(state,i)>eps if self.regions[i]<0 else self.free_rate(state,i)<-eps)}
+        roots={('uel',i,'reset') for i,(a,p) in self.entries.items() if self.regions[i] and
+               (self.free_rate(state,i)>reset_rate_floor(p) if self.regions[i]<0 else self.free_rate(state,i)<-reset_rate_floor(p))}
         self.apply(roots,time,state,event_log)
 
     def channel_names(self):

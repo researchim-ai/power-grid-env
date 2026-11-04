@@ -63,21 +63,45 @@ jobs:
                   ['-m', 'power_grid_env.stator_transient', str(repo / 'cases/components/induction_full_stator_dol.json'), '--out', str(target / 'stator.json')],
                   ['-m', 'power_grid_env.cli', 'run-study', str(repo / 'cases/studies/generator_underexcitation_recovery.json'), '--out', str(target / 'uel.json')],
                   ['-m', 'power_grid_env.cli', 'run-study', str(repo / 'cases/studies/generator_oel2c_UEL_coordination.json'), '--out', str(target / 'oel2c.json')],
+                  ['-m', 'power_grid_env.cli', 'run-study', str(repo / 'cases/studies/generator_oel2c_loaded_voltage_step.json'), '--out', str(target / 'oel2c-loaded.json')],
+                  ['-m', 'power_grid_env.cli', 'run-study', str(repo / 'cases/studies/generator_oel2c_active_voltage_down.json'), '--out', str(target / 'oel2c-active.json')],
+                  ['-m', 'power_grid_env.cli', 'run-study', str(repo / 'cases/studies/generator_oel2c_regulating_voltage_up.json'), '--out', str(target / 'oel2c-regulating.json')],
+                  ['-m', 'power_grid_env.cli', 'run-study', str(repo / 'cases/studies/generator_oel2c_selected_deadband_memory.json'), '--out', str(target / 'oel2c-selected.json')],
+                  ['-m', 'power_grid_env.cli', 'run-study', str(repo / 'cases/studies/generator_oel2c_boundary_scaled_and_release.json'), '--out', str(target / 'oel2c-boundary.json')],
+                  ['-m', 'power_grid_env.cli', 'run-study', str(repo / 'cases/studies/generator_esst1a_gate_priority.json'), '--out', str(target / 'esst1a.json')],
+                  ['-m', 'power_grid_env.cli', 'run-study', str(repo / 'cases/studies/generator_esst1a_joint_activation_recovery.json'), '--out', str(target / 'esst1a-joint.json')],
+                  ['-m', 'power_grid_env.cli', 'run-study', str(repo / 'cases/studies/ex02_overload_recovery.json'), '--out', str(target / 'ex02-takeover.json')],
+                  ['-m', 'power_grid_env.cli', 'run-study', str(repo / 'cases/studies/ex02_modal_avr_pss_oel.json'), '--out', str(target / 'ex02-modal.json')],
                   ['-m', 'power_grid_env.motor_assessment', str(repo / 'cases/studies/multibus_motor_runup3s.json'), '--criteria', str(repo / 'cases/criteria/motor_start_acceptance.json'), '--out', str(target / 'motor')],
               ]
               for index, args in enumerate(commands):
                   with (target / f'{index}.log').open('w') as log:
                       subprocess.run([str(python), *args], cwd='/tmp', env={k: v for k, v in os.environ.items() if k != 'PYTHONPATH'}, check=True, stdout=log, stderr=subprocess.STDOUT)
-          for name in ['field.json', 'stator.json', 'uel.json', 'oel2c.json', 'motor/trace.json']:
+          for name in ['field.json', 'stator.json', 'uel.json', 'oel2c.json', 'oel2c-loaded.json', 'oel2c-active.json', 'oel2c-regulating.json', 'oel2c-selected.json', 'oel2c-boundary.json', 'esst1a.json', 'esst1a-joint.json', 'ex02-takeover.json', 'ex02-modal.json', 'motor/trace.json']:
               left, right = [json.loads((out / label / name).read_text()) for label in ['a', 'b']]
               assert left['completed'] and right['completed']
-              for key in ['code_sha256', 'time_s', 'channels', 'event_log']:
+              for key in ['code_sha256', 'time_s', 'channels', 'event_log', 'state_matrix_per_s']:
                   if key in left:
                       assert left[key] == right[key], (name, key)
           for label in ['a', 'b']:
               assert json.loads((out / label / 'motor/assessment.json').read_text())['passed']
               assert max(json.loads((out / label / 'uel.json').read_text())['channels']['g2.UEL.output_pu']) > .001
               assert min(json.loads((out / label / 'oel2c.json').read_text())['channels']['g2.OEL2C.output_pu']) < -.001
+              active = json.loads((out / label / 'oel2c-active.json').read_text())
+              assert active['operating_point']['oel2c_AVR_reference_initialization']['g2']['PID_authority_exhausted']
+              assert abs(active['channels']['g2.OEL2C.output_pu'][-1]) < 1e-8
+              regulating = json.loads((out / label / 'oel2c-regulating.json').read_text())
+              assert regulating['operating_point']['mode'] == 'coupled_loaded_current_regulating_equilibrium'
+              assert regulating['channels']['g2.SEXS.reference_pu'][0] == 1.10
+              assert abs(regulating['channels']['g2.OEL2C.actual_current_pu'][0] - 1.3) < 1e-9
+              assert not regulating['operating_point']['oel2c_AVR_reference_initialization']['g2']['PID_authority_exhausted']
+              selected = json.loads((out / label / 'oel2c-selected.json').read_text())
+              assert selected['operating_point']['full_OEL_stability_qualified'] is False
+              assert selected['channels']['g2.OEL2C.reference_current_pu'][0] == 1.4
+              boundary = json.loads((out / label / 'oel2c-boundary.json').read_text())
+              audit = boundary['operating_point']['oel2c_selected_equilibrium']['g2']['boundary_neighborhood']
+              assert audit['passed'] and audit['distinct_effective_modes'] == 1
+              assert not audit['interval_certified'] and not audit['physical_input_or_threshold_changed']
           (out / 'summary.json').write_text(json.dumps({'passed': True, 'clean_venvs': 2, 'exact_component_replay': True}) + '\n')
           PYCODE
       - uses: actions/upload-artifact@v4
@@ -87,3 +111,32 @@ jobs:
           path: |
             /tmp/pge-ci-pilot-report/
             /tmp/pge-ci-component-report/
+
+  ex02-isolated-references:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Locked ANDES environment without dependency overlays
+        run: |
+          python -m venv /tmp/ex02-andes
+          /tmp/ex02-andes/bin/python -m pip install --require-hashes -r requirements/pilot-linux-py312.lock -r requirements/ex02-andes-linux-py312.lock
+          /tmp/ex02-andes/bin/python -m pip check
+          PYTHONPATH=. /tmp/ex02-andes/bin/python -m pytest tests/test_andes_interface.py tests/test_canonical_rms.py tests/test_multibus_loaded.py
+      - name: Locked Pandapower environment with compatible pandas
+        run: |
+          python -m venv /tmp/ex02-pandapower
+          /tmp/ex02-pandapower/bin/python -m pip install --require-hashes -r requirements/ex02-pandapower-linux-py312.lock
+          /tmp/ex02-pandapower/bin/python -m pip check
+          /tmp/ex02-pandapower/bin/python - <<'PYTHON'
+          import importlib.util
+          import pandas, pandapower as pp
+          import pandapower.networks as pn
+          assert pandas.__version__ == '2.3.3' and pp.__version__ == '3.5.6'
+          assert importlib.util.find_spec('andes') is None
+          n = pn.case9()
+          pp.runpp(n, numba=False)
+          assert n.converged and len(n.res_bus) == 9
+          PYTHON

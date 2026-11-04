@@ -133,7 +133,7 @@ class InductionSettings(BaseModel):
             raise ValueError('duplicate motor ID')
         if any(e.time_s >= self.duration_s for e in self.events):
             raise ValueError('events must precede horizon')
-        keys = [(e.time_s, 'source' if e.kind == 'source_voltage' else 'load' if e.kind == 'load_torque_scale' else 'motor' if e.kind in {'motor_open','motor_close'} else e.kind, e.equipment_id) for e in self.events]
+        keys = [(e.time_s, 'source' if e.kind == 'source_voltage' else 'load' if e.kind == 'load_torque_scale' else 'motor' if e.kind in {'motor_open','motor_close'} else e.kind, e.equipment_id,getattr(e,'port',None)) for e in self.events]
         if len(set(keys)) != len(keys):
             raise ValueError('simultaneous commands to the same device are ambiguous')
         return self

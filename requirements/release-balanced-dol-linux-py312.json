@@ -1,0 +1,58 @@
+{
+  "schema": "pge-release-profile-v1",
+  "profile_id": "balanced-dol-linux-x86_64-cpython312-candidate-v1",
+  "platform": {
+    "system": "Linux",
+    "machine": "x86_64",
+    "python": "3.12"
+  },
+  "runtime_lock": "requirements/pilot-linux-py312.lock",
+  "required_test_files": [
+    "tests/test_release_candidate.py",
+    "tests/test_runtime_integrity.py",
+    "tests/test_motor_bundle.py",
+    "tests/test_coupled_rms.py",
+    "tests/test_ex03.py",
+    "tests/test_release_remote.py"
+  ],
+  "collection_contract": "Collect all tests; every node outside the required files is explicitly outside_profile, never passed. Required setup, call and teardown must pass without skips or xfail.",
+  "scope": [
+    "Balanced positive-sequence motor direct-on-line starting and restart",
+    "EX-03 exact case hashes and five discrete scale tuples in requirements/ex03-case-manifest.json",
+    "Two clean offline wheel installations, OpenDSS smoke and synthetic SI motor trace replay",
+    "Public reference models and parameter sets; own laboratory equipment is not required"
+  ],
+  "numerical_evidence": [
+    "docs/EX03_LONG_RUN_AND_SCALE_RU.md",
+    "docs/ESST1A_VALIDATION_RU.md"
+  ],
+  "known_failures_and_exclusions": [
+    {
+      "id": "mixed-cold-native-budget",
+      "status": "unqualified",
+      "reason": "Full mixed OEL/UEL/PSS cold 30-second native design exhausted its 120-second budget; ESST1A-only native long case is a separate qualified scope."
+    },
+    {
+      "id": "legacy-uel-clock",
+      "status": "preserved_negative",
+      "reason": "Machine-epsilon UEL clock policy can exceed the one-microsecond reset-clock criterion; conditioned_1e-8 is an explicitly different numerical policy."
+    },
+    {
+      "id": "arbitrary-topology-scale",
+      "status": "not_qualified",
+      "reason": "Five measured scale tuples do not establish arbitrary equipment combinations or unlimited scale."
+    },
+    {
+      "id": "emt-unbalanced-oem",
+      "status": "outside_profile",
+      "reason": "No universal EMT, unbalanced-network, OEM controller or site qualification claim."
+    },
+    {
+      "id": "independent-release-host",
+      "status": "pending",
+      "reason": "Requires a published exact commit, successful workflow_dispatch, live GitHub API bindings and fresh signed GitHub-hosted-runner attestation verification."
+    }
+  ],
+  "independent_host_verified": false,
+  "industrial_release_qualified": false
+}

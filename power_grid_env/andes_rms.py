@@ -28,14 +28,9 @@ _FREQUENCY_HZ = 50.0
 
 
 def ensure_andes_importable() -> bool:
-    """Подключает уже скачанную библиотеку, если она лежит рядом с проектом."""
-    if importlib.util.find_spec("andes") is not None:
-        return True
-    bundled = Path(__file__).resolve().parents[1] / ".andes-deps"
-    if not bundled.is_dir():
-        return False
-    sys.path.append(str(bundled))
+    """Detect ANDES in this environment; never inject a dependency overlay."""
     return importlib.util.find_spec("andes") is not None
+
 
 
 def qualify_swing_mode() -> dict[str, Any]:

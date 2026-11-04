@@ -9,20 +9,24 @@ import math
 import numpy as np
 from scipy.linalg import lu_factor,lu_solve
 from scipy.optimize import root
+from scipy.sparse import lil_matrix,diags,issparse,block_diag,csc_matrix
+from scipy.sparse.linalg import splu
 from benchmarks.independent_group_contactor import run as hybrid
 
 CLOCKS={'YNyn0':0,'Dyn11':11,'YNd1':1,'Dyn5':5,'YNd5':5}
 
 
 class Circuit:
-    def __init__(self,spec,*,initialize=True):
+    def __init__(self,spec,*,initialize=True,maximum_duration_s=3.,maximum_nodes=64,sparse_network=False):
         n=spec.network;s=spec.induction
         if spec.study!='motor_start' or spec.backend!='scipy' or s is None or spec.coupled:raise ValueError('independent multibus motor_start/scipy required')
-        if len(n.sources)!=1 or not 1<=len(s.motors)<=32 or not 2<=len(n.connectivity_nodes)<=64:raise ValueError('bounded multibus circuit required')
+        if type(maximum_nodes) is not int or not 2<=maximum_nodes<=2048 or (maximum_nodes>64 and not sparse_network):raise ValueError('bounded sparse reference node profile required')
+        self.sparse_network=bool(sparse_network)
+        if len(n.sources)!=1 or not 1<=len(s.motors)<=32 or not 2<=len(n.connectivity_nodes)<=maximum_nodes:raise ValueError('bounded multibus circuit required')
         if any([n.switches,n.generators,n.inverters,n.storages,n.shunts,n.neutral_grounds,n.study_faults,n.harmonics,n.omissions]):raise ValueError('unsupported independent multibus equipment')
         if any(m.mechanical_load for m in s.motors):raise ValueError('fan motors required')
         if s.operating_point and any(not m.connected for m in s.motors):raise ValueError('loaded disconnected motor equilibrium outside independent multibus scope')
-        if not 0<s.duration_s<=3 or not math.isfinite(s.step_s) or s.step_s<=0:raise ValueError('bounded multibus horizon/output required')
+        if not math.isfinite(maximum_duration_s) or not 0<maximum_duration_s<=60 or not 0<s.duration_s<=maximum_duration_s or not math.isfinite(s.step_s) or s.step_s<=0:raise ValueError('bounded multibus horizon/output required')
         self.spec=spec;self.n=n;self.s=s;self.wb=2*math.pi*n.frequency_hz
         if not math.isfinite(self.wb) or self.wb<=0 or not math.isfinite(n.s_base_va) or n.s_base_va<=0:raise ValueError('positive frequency and system base required')
         self.nodes={node.id:i for i,node in enumerate(n.connectivity_nodes)};self.N=len(self.nodes)
@@ -31,7 +35,7 @@ class Circuit:
         if not np.isfinite(self.base).all() or np.any(self.base<=0):raise ValueError('positive finite node voltage bases required')
         self.term={t.id:t.connectivity_node_id for t in n.terminals}
         if any(sorted(t.phases)!=list('ABC') for t in [*n.connectivity_nodes,*n.terminals]):raise ValueError('balanced ABC nodes and ports required')
-        self.Y=np.zeros((self.N,self.N),complex);self.branches=[]
+        self.Y=lil_matrix((self.N,self.N),dtype=complex) if self.sparse_network else np.zeros((self.N,self.N),complex);self.branches=[]
         for line in n.lines:
             if list(line.phases)!=list('ABC'):raise ValueError('ABC line required')
             r,x=np.array(line.r_ohm),np.array(line.x_ohm)
@@ -102,7 +106,13 @@ class Circuit:
     def generator_closed(self,j):return True
 
     def rebuild(self):
-        A=np.zeros((self.N+self.M+self.K+len(self.generator_ports()),)*2,complex);A[:self.N,:self.N]=self.Y
+        shape=(self.N+self.M+self.K+len(self.generator_ports()),)*2
+        if self.sparse_network:
+            # LIL slice assignment of a sparse NxN block calls toarray().
+            # Assemble the passive and winding blocks without that hidden N^2 copy.
+            A=block_diag((self.Y.tocsc(),csc_matrix((shape[0]-self.N,shape[1]-self.N),dtype=complex)),format='lil')
+        else:
+            A=np.zeros(shape,complex);A[:self.N,:self.N]=self.Y
         for i,p in enumerate(self.p):
             row=self.N+i;rr=slice(self.N+self.M+p['rotor'].start,self.N+self.M+p['rotor'].stop)
             if self.cfg['connected'][i]:
@@ -115,8 +125,11 @@ class Circuit:
             if self.generator_closed(j):A[row,node]=1.;A[row,row]=g.z
             else:A[row,row]=1.
         # Diagonal scaling retains SI equations while conditioning MV/LV MNA.
-        self.row_scale=np.max(abs(A),axis=1)
-        self.lu=lu_factor(A/self.row_scale[:,None]);self.cache_x=None
+        self.row_scale=abs(A).tocsr().max(axis=1).toarray().ravel() if self.sparse_network else np.max(abs(A),axis=1)
+        if not np.isfinite(self.row_scale).all() or np.any(self.row_scale<=0):raise ValueError('singular independent MNA row')
+        self.lu=splu((diags(1/self.row_scale)@A).tocsc()) if self.sparse_network else lu_factor(A/self.row_scale[:,None]);self.cache_x=None
+        self.factorizations=getattr(self,'factorizations',0)+1
+        self.matrix_nnz=int(A.nnz if self.sparse_network else np.count_nonzero(A))
 
     def electrical(self,x):
         if self.cache_x is not None and np.array_equal(x,self.cache_x):return self.cache
@@ -124,7 +137,8 @@ class Circuit:
         for p in self.p:
             f=x[p['state']].reshape(-1,2);rhs[self.N+self.M+p['rotor'].start:self.N+self.M+p['rotor'].stop]=self.wb*(f[:,0]+1j*f[:,1])
         for j,(_,g,at) in enumerate(self.generator_ports()):rhs[self.N+self.M+self.K+j]=g.emf(x[at]) if self.generator_closed(j) else 0j
-        solved=lu_solve(self.lu,rhs/self.row_scale);v=solved[:self.N];st=solved[self.N:self.N+self.M];rot=solved[self.N+self.M:self.N+self.M+self.K]
+        self.linear_solves=getattr(self,'linear_solves',0)+1
+        solved=self.lu.solve(rhs/self.row_scale) if self.sparse_network else lu_solve(self.lu,rhs/self.row_scale);v=solved[:self.N];st=solved[self.N:self.N+self.M];rot=solved[self.N+self.M:self.N+self.M+self.K]
         self.generator_currents=solved[self.N+self.M+self.K:]
         if self.generator:self.generator_current=self.generator_currents[0]
         torque=np.array([-3*self.wb*p['lm']*(sum(rot[p['rotor']])*np.conj(st[i])).imag/m.rated_va for i,(m,p) in enumerate(zip(self.s.motors,self.p))])
@@ -149,16 +163,31 @@ class Circuit:
             admittances.append(1/(p['rs']+1j*self.wb*p['lss']+1j*self.wb*p['lm']*sum(response)) if self.cfg['connected'][i] else 0j);responses.append(response)
         Y=self.Y.copy();drive=np.zeros(self.N,complex);drive[self.source]=self.es/self.zs
         for p,admittance in zip(self.p,admittances):Y[p['bus'],p['bus']]+=admittance
-        if pv_node is None:voltage=np.linalg.solve(Y,drive);ig=0j
+        if pv_node is None:voltage=self.network_solve(Y,drive);ig=0j
         else:
             other=np.array([i for i in range(self.N) if i!=pv_node]);voltage=np.empty(self.N,complex);voltage[pv_node]=pv_voltage
-            voltage[other]=np.linalg.solve(Y[np.ix_(other,other)],drive[other]-Y[other,pv_node]*pv_voltage)
-            ig=Y[pv_node]@voltage-drive[pv_node]
+            voltage[other]=self.network_solve(Y[np.ix_(other,other)],drive[other]-np.asarray(Y[other,pv_node].toarray() if issparse(Y) else Y[other,pv_node]).ravel()*pv_voltage)
+            ig=complex(np.asarray(Y[pv_node]@voltage).item()-drive[pv_node])
         currents=np.array([voltage[p['bus']]*admittance for p,admittance in zip(self.p,admittances)])
         rotor=[response*current for response,current in zip(responses,currents)]
         flux=[p['lm']*current+p['L']@ir for p,current,ir in zip(self.p,currents,rotor)]
         torque=np.array([-3*self.wb*p['lm']*(sum(ir)*np.conj(current)).imag/m.rated_va for m,p,ir,current in zip(self.s.motors,self.p,rotor,currents)])
         return voltage,currents,flux,torque,ig
+
+    def physical_balance(self,v,current):
+        residual=np.asarray(self.Y@v).ravel();residual[self.source]-=self.es*self.cfg['scale']/self.zs
+        for p,i in zip(self.p,current):residual[p['bus']]+=i
+        generated=0j
+        for j,(node,g,at) in enumerate(self.generator_ports()):
+            residual[node]-=self.generator_currents[j];generated+=3*v[node]*np.conj(self.generator_currents[j])
+        source=3*v[self.source]*np.conj((self.es*self.cfg['scale']-v[self.source])/self.zs)
+        passive=np.asarray(self.Y@v).ravel();passive[self.source]-=v[self.source]/self.zs
+        demand=sum(3*v[p['bus']]*np.conj(i) for p,i in zip(self.p,current))
+        balance=(source+generated-demand-np.sum(3*v*np.conj(passive)))/self.n.s_base_va
+        return dict(kcl_pu=float(max(abs(residual)*3*self.base/self.n.s_base_va)),power_balance_pu=float(abs(balance)))
+
+    def network_solve(self,matrix,rhs):
+        return splu(matrix.tocsc()).solve(np.asarray(rhs).ravel()) if issparse(matrix) else np.linalg.solve(matrix,rhs)
 
     def install_motor_point(self,speeds,response,cold=False):
         voltage,currents,flux,_,_=response
@@ -194,10 +223,10 @@ class Circuit:
     def run(self,report):
         segments,changes,trips,controls=hybrid(settings=self.s,state=self.state.copy(),rhs=self.rhs,voltage=self.sensed,
             heating=lambda x:np.array([(abs(i)/p['ibase'])**2 for i,p in zip(self.electrical(x)[1],self.p)]),
-            thermal_indices=self.thermal,get_context=lambda:self.cfg,set_context=self.set_context,event_handler=getattr(self,'handle_event',None),extra_guards=getattr(self,'extra_guards',None),extra_apply=getattr(self,'extra_apply',None),after_commands=getattr(self,'after_commands',None))
+            thermal_indices=self.thermal,get_context=lambda:self.cfg,set_context=self.set_context,event_handler=getattr(self,'handle_event',None),extra_guards=getattr(self,'extra_guards',None),extra_apply=getattr(self,'extra_apply',None),after_commands=getattr(self,'after_commands',None),**getattr(self,'hybrid_options',{}))
         sides=report['sample_side'];times=report['time_s'];groups=[t for t,side in zip(times,sides) if side=='pre_event']
         if len(groups)!=len(changes) or any(abs(a-b)>1e-6 for a,b in zip(groups,changes)):raise ValueError('independent multibus event groups mismatch')
-        alignment=dict(zip(groups,changes));channels={};node_voltage={node:[] for node in self.nodes}
+        alignment=dict(zip(groups,changes));channels={};node_voltage={node:[] for node in self.nodes};balance_audit=[]
         for time,side in zip(times,sides):
             at=alignment.get(time,time) if side in ('pre_event','post_event') else time
             choices=[seg for seg in segments if seg[0]<=at<=seg[1]]
@@ -205,6 +234,7 @@ class Circuit:
             left,right,dense,connected,scale,load_scale,snapshot=choices[0] if side=='pre_event' else choices[-1]
             self.set_context(dict(connected=connected,latched=snapshot['latched'],scale=scale,load_scale=load_scale,**snapshot.get('extra_context',{})))
             x=dense(at);v,st,rot,torque=self.electrical(x)
+            if hasattr(self,'sample_audit'):balance_audit.append(self.sample_audit(v,st))
             for node,i in self.nodes.items():node_voltage[node].append(complex(v[i]))
             for i,(m,p) in enumerate(zip(self.s.motors,self.p)):
                 flux=x[p['state']].reshape(-1,2);flux=flux[:,0]+1j*flux[:,1]
@@ -212,6 +242,7 @@ class Circuit:
                 power=3*v[p['bus']]*np.conj(st[i])
                 row=dict(speed_pu=x[p['speed']],e_real_pu=emf.real,e_imag_pu=emf.imag,current_pu=abs(st[i])/p['ibase'],bus_voltage_pu=abs(v[p['bus']])/p['vbase'],p_w=power.real,q_var=power.imag,te_pu=torque[i])
                 if m.thermal:row['thermal_level']=x[self.thermal[i]]
+                if hasattr(self,'complete_motor_signals'):row.update(self.complete_motor_signals(i,flux,rot))
                 for key,value in row.items():channels.setdefault(m.id+'.'+key,[]).append(float(value))
             sensed={i:self.sensed(x,i) for i,m in enumerate(self.s.motors) if m.contactor}
             for key,value in controls['signals'](snapshot,at,connected,sensed).items():channels.setdefault(key,[]).append(value)
@@ -219,10 +250,11 @@ class Circuit:
                 terminal=v[node] if self.generator_closed(j) else g.emf(x[at])
                 values=g.signals(x[at],self.generator_currents[j],terminal)
                 suffixes=('delta','omega','e1q','e1d','e2d','e2q','p_w','q_var','TGOV1.valve_pu','SEXS.field_pu')
-                for suffix in suffixes:
-                    key=g.g.id+'.'+suffix;channels.setdefault(key,[]).append(values[key])
+                for key in (values if getattr(self,'complete_state_channels',False) else [g.g.id+'.'+k for k in suffixes]):channels.setdefault(key,[]).append(values[key])
+                if getattr(self,'complete_state_channels',False):
+                    for suffix,value in [('TGOV1.valve_state_pu',x[at][2]),('SEXS.field_state_pu',x[at][5])]:channels.setdefault(g.g.id+'.'+suffix,[]).append(float(value))
             if hasattr(self,'extra_signals'):
                 for key,value in self.extra_signals(x).items():channels.setdefault(key,[]).append(float(value))
         return dict(time_s=list(times),sample_side=list(sides),channels=channels,event_log=controls['event_log'],
                     node_voltage={k:{'real_v':[z.real for z in values],'imag_v':[z.imag for z in values]} for k,values in node_voltage.items()},
-                    independent_SI_network=True,production_stamps_used=False,initialization=self.initialization,field_validated=False)
+                    independent_SI_network=True,production_stamps_used=False,initialization=self.initialization,balance_audit=balance_audit,integration=controls.get('integration'),sparse_MNA=self.sparse_network,network_work=dict(factorizations=self.factorizations,linear_solves=getattr(self,'linear_solves',0),matrix_nnz=self.matrix_nnz),field_validated=False)

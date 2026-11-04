@@ -18,6 +18,7 @@ from benchmarks.andes_motor_terminal import initial_motor,equations
 
 
 def scope(spec):
+    if spec.coupled and spec.coupled.esst1a_exciters:raise ValueError('ESST1A is outside the stock ANDES adapter')
     if spec.coupled and spec.coupled.oel2c_limiters:raise ValueError('OEL2C feedback requires independent validation; stock ANDES OEL2C is outside this adapter')
     if spec.coupled and spec.coupled.underexcitation_limiters:raise ValueError('MNLEX2 feedback requires independent SI; stock native closed-loop UEL is not qualified')
     if spec.coupled and spec.coupled.generator_field_thermal:raise ValueError('field thermal trip and zero field voltage require the independent SI reference')
@@ -53,7 +54,7 @@ def scope(spec):
 def coordinates(spec):
     settings=spec.coupled if spec.coupled else spec.induction
     d=spec.model_dump(mode='json');d['study']='motor_start';d['coupled']=None
-    d['induction']=settings.model_dump(mode='json',exclude={'machines','faults','events','generator_thermal','overexcitation_limiters','generator_field_thermal','underexcitation_limiters','oel2c_limiters'});d['induction']['events']=[]
+    d['induction']=settings.model_dump(mode='json',exclude={'machines','faults','events','generator_thermal','overexcitation_limiters','generator_field_thermal','underexcitation_limiters','oel2c_limiters','esst1a_exciters','takeover_oels'});d['induction']['events']=[]
     rows=[]
     for m in settings.motors:
         one=dict(d);one['induction']=dict(d['induction'],motors=[m.model_dump(mode='json')]);single=StudySpec.model_validate(one)

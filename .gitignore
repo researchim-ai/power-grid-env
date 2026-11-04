@@ -253,3 +253,7 @@ data/external/processed/
 .DS_Store
 Thumbs.db
 /.idea/
+
+# Local JUnit output; model XML elsewhere remains visible.
+/main-tests.xml
+/junit*.xml

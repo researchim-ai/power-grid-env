@@ -22,9 +22,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "andes>=2.0,<3"]
+dev = ["pytest>=8"]
 rms = ["andes>=2.0,<3"]
-benchmark = ["pandapower>=3.5"]
+benchmark = ["pandapower>=3.5,<3.6", "pandas>=2.3,<3"]
 
 [project.scripts]
 power-grid = "power_grid_env.cli:main"

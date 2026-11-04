@@ -1,0 +1,26 @@
+{
+  "schema": "pge-license-supplements-v1",
+  "files": [
+    {
+      "name": "cloudpickle",
+      "version": "3.1.1",
+      "path": "docs/third-party-licenses/cloudpickle-3.1.1-LICENSE",
+      "url": "https://raw.githubusercontent.com/cloudpipe/cloudpickle/v3.1.1/LICENSE",
+      "sha256": "3029ea34173e9fdc233ad315dc6b100bd1ea71f529b1c1af97664a272fdc55f5"
+    },
+    {
+      "name": "pyarrow",
+      "version": "23.0.0",
+      "path": "docs/third-party-licenses/pyarrow-23.0.0-LICENSE.txt",
+      "url": "https://raw.githubusercontent.com/apache/arrow/apache-arrow-23.0.0/LICENSE.txt",
+      "sha256": "23fc45dce1769d9ddf4aac4d6cdaf3f7f0d14fcc4d930dd0d4afbefa2ea3322a"
+    },
+    {
+      "name": "pyarrow",
+      "version": "23.0.0",
+      "path": "docs/third-party-licenses/pyarrow-23.0.0-NOTICE.txt",
+      "url": "https://raw.githubusercontent.com/apache/arrow/apache-arrow-23.0.0/NOTICE.txt",
+      "sha256": "c946470d6b024c77feebdfb686bf92a828402c0ffc27c769bca7d8bef08e1db7"
+    }
+  ]
+}

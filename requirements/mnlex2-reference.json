@@ -1,0 +1,12 @@
+{
+  "schema": "power-grid-env.mnlex2-reference/v1",
+  "model": "OpenIPSL.Electrical.Controls.PSSE.UEL.MNLEX2",
+  "openipsl_commit": "0ee96c3bcf71330916fbaba60a82eeaac5e1ffb5",
+  "modelica_version": "4.0.0",
+  "AVR_lock_sha256": "1d92772c496d0367a6c04bb131e0c564d5653f4eabca6b44596b94f2f6685aa4",
+  "files": {
+    "OpenIPSL/Electrical/Controls/PSSE/UEL/MNLEX2.mo": "76ef77539f37a2cbcac2ca5ede8946f514bd58604988a124afbe4dd7b202ce6f",
+    "OpenIPSL/NonElectrical/Continuous/SimpleLagLim.mo": "e9ab69d314dfd7f9da864502443e29485a21e6f9c09b8e9d2e91131db1c0a634",
+    "OpenIPSL/NonElectrical/Continuous/DerivativeLag.mo": "c5937a2c6bf3fa50b17216d6a1da15621d5538312d56833d1f3c055fdddb3f43"
+  }
+}

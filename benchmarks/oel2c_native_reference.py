@@ -39,18 +39,31 @@ def validate(case):
     return p,rows
 
 
-def initialization_modifiers():
-    return ','.join(['firstOrder(initType=Modelica.Blocks.Types.Init.InitialOutput)','firstOrder1(initType=Modelica.Blocks.Types.Init.InitialOutput)',
+def initialization_modifiers(states=None):
+    cap='' if states is None else ',y_start='+format(states['limiter.oelReferenceCurrent.limIntegrator1.y'],'.17g')
+    timer='' if states is None else ',y_start='+format(states['limiter.oelReferenceCurrent.limIntegrator.y'],'.17g')
+    return ','.join(['firstOrder(initType=Modelica.Blocks.Types.Init.InitialOutput)','firstOrder1(initType=Modelica.Blocks.Types.Init.InitialOutput'+cap+')',
         'limitedLeadLag(firstOrder(initType=Modelica.Blocks.Types.Init.InitialOutput))','limitedLeadLag1(firstOrder(initType=Modelica.Blocks.Types.Init.InitialOutput))',
-        'oelReferenceCurrent(limIntegrator(initType=Modelica.Blocks.Types.Init.InitialOutput),limIntegrator1(initType=Modelica.Blocks.Types.Init.InitialOutput))',
+        'oelReferenceCurrent(limIntegrator(initType=Modelica.Blocks.Types.Init.InitialOutput'+timer+'),limIntegrator1(initType=Modelica.Blocks.Types.Init.InitialOutput'+cap+'))',
         'pid(initType=Modelica.Blocks.Types.InitPID.InitialState)'])
 
 
-def build_model(p,input0,out,root,*,case=None,tolerance=1e-10,mode='dassl',variant='guarded'):
-    if variant not in ('guarded','original'):raise ValueError('registered native source variant required')
+def build_model(p,input0,out,root,*,case=None,tolerance=1e-10,mode='dassl',variant='guarded',regulating_output_pu=None):
+    if variant not in ('guarded','original','equilibrium'):raise ValueError('registered native source variant required')
+    if p.model=='OEL2C_Dynawo_equilibrium_guard_v2_SEXS_summation':
+        if variant not in ('guarded','equilibrium'):raise ValueError('v2 passport requires v2 reference equations')
+        from benchmarks.dynawo_reference_setup import verify_equilibrium_copy
+        verify_equilibrium_copy(root);variant='equilibrium'
+    elif variant=='equilibrium':raise ValueError('v2 reference equations require a v2 passport')
     out=Path(out).resolve();out.mkdir(parents=True,exist_ok=False);paths=library_paths(root,variant);name='Reference'
     params=','.join(k+'='+('true' if v else 'false') if isinstance(v,bool) else k+'='+format(v,'.17g') for k,v in p.native_parameters().items())
-    params+=',Input0Pu='+format(input0,'.17g')+(','+'oelActivation(ICapTolPu='+format(p.cap_tolerance_pu,'.17g')+')' if variant=='guarded' else '')+','+initialization_modifiers()
+    states=None
+    if p.initialization!='dynawo_startup':
+        if mode!='me':raise ValueError('stationary equilibrium uses the explicit Model Exchange initial-condition protocol')
+        from benchmarks.oel2c_equilibrium_reference import initial_conditions
+        states,_=initial_conditions(p,input0,regulating_output_pu=regulating_output_pu)
+    params+=',Input0Pu='+format(input0,'.17g')+(','+'oelActivation(ICapTolPu='+format(p.cap_tolerance_pu,'.17g')+')' if variant in ('guarded','equilibrium') else '')+','+initialization_modifiers(states)
+    if variant=='equilibrium':params=params.replace('oelActivation(ICapTolPu=', 'oelActivation(ICmpTolPu='+format(p.current_comparison_tolerance_pu,'.17g')+',ICapTolPu=')
     if mode=='me':declaration=f'input Real fieldCurrent(start={input0:.17g});';drive='fieldCurrent';observer='';duration=10.;step=.002
     else:
         _,rows=validate(case);duration=case['duration_s'];step=case['step_s'];declaration='Integer query(start=0,fixed=true);';drive=format(rows[-1,1],'.17g')
@@ -61,7 +74,8 @@ def build_model(p,input0,out,root,*,case=None,tolerance=1e-10,mode='dassl',varia
         observer=f'when sample(0,{step:.17g}) then query=pre(query)+1; end when;'
     observables='\n'.join('  output Real out_'+key+' = limiter.'+var+';' for key,var in REAL_VARIABLES.items())
     observables+='\n'+'\n'.join('  output '+kind+' out_'+label+'_timer_'+suffix+' = limiter.oelActivation.'+source+'.'+native+';' for label,source in [('enable','timer'),('reset','timer1')] for kind,suffix,native in [('Real','age','y'),('Boolean','active','u')])
-    model=f'model {name}\n  {declaration}\n{observables}\n  Dynawo.Electrical.Controls.Machines.OverExcitationLimiters.Standard.Oel2c limiter({params});\nequation\n  limiter.inputPu={drive};\n  {observer}\n  annotation(experiment(StartTime=0,StopTime={duration:.17g},Tolerance={tolerance:.17g},Interval={step:.17g}));\nend {name};\n'
+    initial_time=0.
+    model=f'model {name}\n  {declaration}\n{observables}\n  Dynawo.Electrical.Controls.Machines.OverExcitationLimiters.Standard.Oel2c limiter({params});\nequation\n  limiter.inputPu={drive};\n  {observer}\n  annotation(experiment(StartTime={initial_time:.17g},StopTime={duration:.17g},Tolerance={tolerance:.17g},Interval={step:.17g}));\nend {name};\n'
     (out/'Reference.mo').write_text(model)
     modelica_path=str(paths[0].parent)+':'+str(paths[-1].parent.parent)
     script='setCompiler("gcc");\nsetCXXCompiler("g++");\nsetModelicaPath('+json.dumps(modelica_path)+');\n'

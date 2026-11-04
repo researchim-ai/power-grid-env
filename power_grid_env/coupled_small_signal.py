@@ -14,6 +14,7 @@ def run_coupled_small_signal(network,settings):
     scope=validate_coupled(network,settings)
     def failure(reason,status='rejected',**extra):return dict(solved=False,completed=False,status=status,reason=reason,**extra)
     if not scope['ok']:return failure('coupled_scope',scope=scope)
+    if settings.esst1a_exciters and any(not m.connected or m.thermal or m.contactor for m in settings.motors):return failure('esst1a_modal_requires_connected_nonhybrid_motors')
     if settings.oel2c_limiters:return failure('oel2c_modal_analysis_unsupported')
     if settings.generator_field_thermal:return failure('generator_field_thermal_modal_analysis_unsupported')
     if settings.underexcitation_limiters:return failure('underexcitation_limiter_modal_analysis_unsupported')
@@ -21,7 +22,7 @@ def run_coupled_small_signal(network,settings):
     if settings.generator_thermal:return failure('generator_thermal_hybrid_modal_analysis_unsupported')
     if any(m.contactor for m in settings.motors):return failure('hybrid_contactor_modal_analysis_unsupported')
     if settings.events or settings.faults or settings.operating_point is None:return failure('coupled_small_signal_equilibrium_only')
-    count=sum((5 if m.model=='double_cage' else 3) for m in settings.motors if m.connected)+sum((6 if m.model=='GENROU' else 2)+2*bool(m.governor)+2*bool(m.exciter)+7*bool(m.stabilizer) for m in settings.machines)
+    count=sum((5 if m.model=='double_cage' else 3) for m in settings.motors if m.connected)+sum((6 if m.model=='GENROU' else 2)+2*bool(m.governor)+2*bool(m.exciter)+7*bool(m.stabilizer) for m in settings.machines)+5*len(settings.esst1a_exciters)+2*len(settings.takeover_oels)
     if count>MAX_STATES:return failure('coupled_small_signal_state_budget',maximum_states=MAX_STATES)
     try:
         model=CoupledNetwork(network,settings);state,initial=initialize_coupled(model,require_stable=False)

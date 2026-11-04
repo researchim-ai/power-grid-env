@@ -9,10 +9,10 @@ from benchmarks.genrou_reference import saturation_curve
 
 
 class ExcitationCircuit(ProtectedCircuit):
-    def __init__(self,spec):
+    def __init__(self,spec,*,maximum_duration_s=3.,current_constraints=None):
         if spec.coupled.oel2c_limiters:raise ValueError('OEL2C requires the native Model Exchange feedback reference')
         self.limiters={};self.field_relays={};self.uels={}
-        super().__init__(spec)
+        super().__init__(spec,maximum_duration_s=maximum_duration_s,current_constraints=current_constraints)
         ids={g.g.id:i for i,(_,g,_) in enumerate(self.ports)}
         passports=spec.coupled.overexcitation_limiters
         if len({p.generator_id for p in passports})!=len(passports):raise ValueError('duplicate independent OEL target')
@@ -135,7 +135,7 @@ class ExcitationCircuit(ProtectedCircuit):
         for i,(a,p) in self.uels.items():
             region=self.cfg['uel_regions'][i]
             if region:
-                eps=32*np.finfo(float).eps;initial=self.uel_rate(state,i)
+                eps=1e-8 if p.event_detection=='conditioned_1e-8' else 32*np.finfo(float).eps;initial=self.uel_rate(state,i)
                 instant=initial>eps if region<0 else initial < -eps
                 def reversal(t,x,i=i,region=region,instant=instant,eps=eps):
                     if instant:return 0.
@@ -189,9 +189,9 @@ class ExcitationCircuit(ProtectedCircuit):
 
     def after_commands(self,t,x,cfg):
         roots=set();eps=32*np.finfo(float).eps
-        for i in self.uels:
-            region=cfg['uel_regions'][i]
-            if region and (self.uel_rate(x,i)>eps if region<0 else self.uel_rate(x,i)<-eps):roots.add(('uel',i,'reset'))
+        for i,(a,p) in self.uels.items():
+            region=cfg['uel_regions'][i];floor=1e-8 if p.event_detection=='conditioned_1e-8' else 32*np.finfo(float).eps
+            if region and (self.uel_rate(x,i)>floor if region<0 else self.uel_rate(x,i)<-floor):roots.add(('uel',i,'reset'))
         for j,(_,g,at) in enumerate(self.ports):
             for slot in (0,1):
                 mode=cfg['controller_bounds'][2*j+slot]

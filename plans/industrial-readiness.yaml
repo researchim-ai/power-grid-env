@@ -1,6 +1,6 @@
 schema: power-grid-env.readiness/v1
-date: '2026-11-02'
-document: docs/OEL2C_VALIDATION_RU.md
+date: '2026-11-04'
+document: docs/OEL2C_BOUNDARY_POLICY_RU.md
 status: in_progress
 released: false
 competitive_superiority_proven: false
@@ -1355,10 +1355,22 @@ oel2c_delivery:
 
 oel2c_followup_execution:
   order_is_sequential: true
+  next_block: EX-04
   blocks:
   - id: EX-01
     title: Полная стационарная инициализация возбуждения
-    status: planned
+    status: done
+    completion_scope: declared_GENROU_TGOV1_SEXS_stationary_profiles_with_explicit_memory_and_finite_guard_policy
+    completion_report: reports/oel2c-boundary-final-v2-2026-11-03/delivery.json
+    implemented_subset: strict_inactive_OEL2C_equilibrium_with_loaded_GENROU_SEXS_and_motors
+    implemented_active_subset: active_PID_authority_limited_equilibrium_with_explicit_AVR_reference_policy
+    implemented_regulating_subset: specified_AVR_current_constrained_network_and_conditional_native_spectrum
+    implemented_selected_subset: explicit_neutral_memory_and_stationary_active_set_selection
+    implemented_boundary_subset: finite_guard_witnesses_with_native_derivatives_and_sensitive_start_rejection
+    out_of_scope:
+    - exhaustive_continuous_interval_certification
+    - general_hybrid_stability_and_arbitrary_AVR_models
+    document: docs/OEL2C_EQUILIBRIUM_RU.md
     deliver:
     - explicit_loaded_initialization_variant_distinct_from_dynawo_startup
     - jointly_solved_network_rotor_AVR_limiter_and_clock_modes
@@ -1370,7 +1382,44 @@ oel2c_followup_execution:
     - negative_inputs_fail_without_partial_success_trace
   - id: EX-02
     title: Точка подключения AVR и гибридные воздействия
-    status: planned
+    status: done
+    completion_scope: declared_ESST1A_MNLEX2_IEEEST_absolute_PI_OEL_profiles_with_explicit_event_detection_and_numerical_precision
+    completion_report: reports/ex02-qualified-final-2026-11-04/delivery.json
+    qualified_matrix: reports/ex02-qualified-matrix-2026-11-04/summary.json
+    conditioned_event_validation: reports/ex02-conditioning-qualified-2026-11-04/summary.json
+    qualified_comparisons: 106
+    legacy_weak_clock_witness: requirements/ex02-conditioning-witness.json
+    legacy_weak_clock_qualified: false
+    cancellation_scope: simultaneous_OEL_ceiling_cancels_UEL_floor_command_by_declared_selector_priority
+    implemented_subset: five_state_ESST1A_live_MNLEX2_external_IEEEST_and_two_state_absolute_PI_takeover_OEL
+    document: docs/ESST1A_VALIDATION_RU.md
+    joint_native_document: docs/ESST1A_MNLEX2_JOINT_VALIDATION_RU.md
+    joint_native_report: reports/esst1a-joint-final-v2-2026-11-03/delivery.json
+    joint_native_scope: legacy_broadcast_eleven_positive_cases_plus_one_rejected_timing_witness
+    joint_reset_audit: complete_inventory_all_reset_failures_and_negative_witness_physics
+    joint_reset_audit_report: reports/esst1a-reset-audit-final-2026-11-03/delivery.json
+    joint_historical_recheck: benchmarks.generator_esst1a_joint_recheck
+    joint_refinement_protocol: benchmarks.generator_esst1a_refinement
+    joint_refinement_report: reports/esst1a-refinement-final-2026-11-03/delivery.json
+    joint_causal_report: reports/esst1a-causal-final-2026-11-03/delivery.json
+    native_UEL_guard_contract: mandatory_original_operands_reset_sides_and_event_causes_audit
+    native_UEL_guard_contract_report: reports/esst1a-guard-contract-final-2026-11-03/delivery.json
+    native_UEL_pinned_recheck: benchmarks.generator_esst1a_causal_recheck
+    native_UEL_event_policy: per_FMU_roots_requests_or_actual_input_discontinuity
+    native_UEL_root_policy: continuous_atoms
+    continuous_root_validation_report: reports/esst1a-continuous-roots-final-2026-11-03/delivery.json
+    continuous_root_validated_scope: thirteen_registered_cases_two_native_tolerances_and_six_case_refinement
+    two_active_UEL_status: causal_native_agreement_at_two_tolerances_broadcast_counterexample_retained
+    two_active_UEL_stress: cases/studies/generator_esst1a_two_active_limiters_stress.json
+    report: reports/esst1a-final-v2-2026-11-03/delivery.json
+    remaining: []
+    scope_exclusions:
+    - IEEE_or_manufacturer_OEL_equivalence_for_the_authored_absolute_PI_profile
+    - universal_event_clock_accuracy_for_legacy_machine_epsilon_UEL_policy
+    - stock_Modelica_master_event_chronology_for_conditioned_event_policy
+    - smooth_modal_analysis_across_UEL_resets_and_protection_events
+    - arbitrary_manufacturer_AVR_variants_and_pending_OEM_protection_timers
+    - general_network_EMT_and_independent_host_release
     depends_on: EX-01
     deliver:
     - separately_named_summation_and_takeover_connection_profiles
@@ -1383,7 +1432,35 @@ oel2c_followup_execution:
     - explicit_out_of_scope_for_unimplemented_AVR_or_manufacturer_variants
   - id: EX-03
     title: Длительный пуск и масштабирование динамической сети
-    status: planned
+    status: done
+    completion_scope: declared_balanced_DOL_profiles_four_45s_cases_five_sparse_scale_points_and_one_native_30s_ESST1A_case
+    document: docs/EX03_LONG_RUN_AND_SCALE_RU.md
+    completion_report: reports/ex03-final-2026-11-04/delivery.json
+    qualification_report: reports/ex03-qualified-v2-2026-11-04/summary.json
+    measurement_schema: power-grid-env.ex03-resource/v2
+    memory_measurement: current_executable_Linux_VmHWM_not_inherited_pre_exec_ru_maxrss
+    fresh_worker_runs: 42
+    independent_trace_comparisons: 22
+    scale_matrix_nodes_motors_generators:
+    - [64, 4, 1]
+    - [256, 8, 2]
+    - [512, 32, 4]
+    - [1024, 16, 4]
+    - [2000, 8, 4]
+    qualified_long_horizons_s: [45, 30]
+    negative_resource_checks: [rhs_evaluations, retained_scalars, network_buses]
+    arbitrary_scale_qualified: false
+    industrial_profile_qualified: false
+    remote_CI_executed: false
+    own_hardware_required: false
+    remaining: []
+    scope_exclusions:
+    - arbitrary_combinations_of_maximum_node_motor_and_generator_counts
+    - field_or_manufacturer_temperature_validation_and_EMT_inrush
+    - full_combined_OEL_UEL_PSS_heavy_cold_start_exceeding_the_120s_compute_budget
+    followups:
+    - investigate_full_limiter_PSS_cold_start_solver_work_without_raising_acceptance_limits
+    - full_coupled_analytic_Jacobian_and_streamed_large_network_outputs
     depends_on: EX-02
     deliver:
     - meshed_motor_runup_restart_and_excitation_recovery_corpus
@@ -1396,7 +1473,17 @@ oel2c_followup_execution:
     - no_competitive_superiority_claim_without_matched_public_comparison
   - id: EX-04
     title: Независимая воспроизводимая поставка
-    status: planned
+    status: in_progress
+    implementation_document: docs/EX04_REPRODUCIBLE_RELEASE_RU.md
+    candidate_profile: requirements/release-balanced-dol-linux-py312.json
+    remote_workflow: .github/workflows/release-candidate.yml
+    independent_host_verified: false
+    remaining:
+    - published_source_commit_and_executed_remote_CI
+    - executed_signed_remote_proof_on_published_exact_commit
+    provenance_verifier: benchmarks/release_remote.py
+    provenance_workflow: .github/workflows/release-provenance.yml
+    signed_hosted_runner_policy: implemented_not_yet_executed_on_project
     depends_on: EX-03
     deliver:
     - executed_remote_CI_on_supported_platform_matrix
@@ -1407,3 +1494,201 @@ oel2c_followup_execution:
     - complete_collected_test_inventory_without_silent_skips
     - source_variant_and_dependency_licenses_retained_with_native_artifacts
     - public_reference_data_sufficient_own_lab_hardware_not_required
+
+
+oel2c_loaded_equilibrium:
+  date: '2026-11-03'
+  initialization: inactive_equilibrium
+  document: docs/OEL2C_EQUILIBRIUM_RU.md
+  report: reports/oel2c-equilibrium-v2-2026-11-03/delivery.json
+  inactive_upper_reference_branch: implemented
+  initial_continuous_states: 8
+  reset_clock_history: explicit_negative_entry_epoch_tOff_plus_one_second
+  native_clock_initialization: individual_positive_time_origin_shift
+  native_held_integrator_branch: one_outward_ULP_without_changing_limits
+  native_initial_derivatives_checked: true
+  current_base_or_AVR_reference_retuned: false
+  active_or_boundary_equilibria_qualified: false
+  whole_stock_Dynawo_network_qualified: false
+  industrial_profile_qualified: false
+  competitive_superiority_proven: false
+  own_hardware_required: false
+  status: independently_validated_for_strict_inactive_subset
+  full_collection_tests_verified: 1446
+  full_collection_test_files: 104
+  new_tests_since_cold_OEL2C: 71
+  full_collection_skips: 0
+  full_collection_unresolved_failures: 0
+  loaded_network_cases: 12
+  native_loaded_feedback_runs: 36
+  rejected_inputs: 9
+  native_component_regression_runs: 27
+  clean_same_host_venvs: 2
+  exact_installed_CLI_replay: true
+  exact_frozen_primary_and_native_replay: true
+  remote_CI_execution_verified: false
+  code_sha256: 66858cc77f01110d898eca9a35f5f2dc93c737994941082ad2664ebc8a7ddc16
+  wheel_sha256: 54a378631c0ae95dd439a0ac157f9e3d037978fba940979331241a99e640e3ba
+
+
+oel2c_active_limited_equilibrium:
+  date: '2026-11-03'
+  initialization: active_limited_equilibrium
+  document: docs/OEL2C_ACTIVE_EQUILIBRIUM_RU.md
+  report: reports/oel2c-active-final-2026-11-03/delivery.json
+  AVR_reference_policy: explicit_derive_from_operating_point_with_OEL
+  initial_reference_audit: baseline_limiter_output_derived_reference_and_control_current_excess
+  current_acceptance_evaluated: false
+  unsaturated_current_regulating_equilibrium_qualified: false
+  general_boundary_equilibria_qualified: false
+  AVR_takeover_qualified: false
+  whole_stock_Dynawo_network_qualified: false
+  industrial_profile_qualified: false
+  competitive_superiority_proven: false
+  own_hardware_required: false
+  status: independently_validated_for_active_PID_authority_limited_subset
+  full_collection_tests_verified: 1536
+  full_collection_test_files: 105
+  new_tests_since_inactive_equilibrium: 90
+  full_collection_skips: 0
+  full_collection_unresolved_failures: 0
+  active_network_cases: 12
+  native_active_feedback_runs: 36
+  rejected_active_inputs: 12
+  inactive_network_regression_cases: 12
+  native_inactive_regression_runs: 36
+  native_component_regression_runs: 27
+  clean_same_host_venvs: 2
+  exact_installed_CLI_and_reference_audit_replay: true
+  exact_frozen_primary_and_native_replay: true
+  remote_CI_execution_verified: false
+  code_sha256: 0238d0fd6fa61fc84e5b0450bcba11c33ea9755737ed022c709c231ca1f3a443
+  wheel_sha256: 7c3e3e17f9c8dc3898078a853d7ede80e888a9422a40452254b7f2bc65ee9a61
+
+
+oel2c_current_regulating_equilibrium:
+  date: '2026-11-03'
+  initialization: current_regulating_equilibrium
+  document: docs/OEL2C_CURRENT_REGULATION_RU.md
+  report: reports/oel2c-regulating-final-2026-11-03/delivery.json
+  model: OEL2C_Dynawo_equilibrium_guard_v2_SEXS_summation
+  specified_AVR_reference_changed: false
+  current_normalization_retuned: false
+  initial_PV_constraint_replaced_by_field_current_target: true
+  explicit_voltage_bounds_required: true
+  PID_authority_exhausted: false
+  conditional_stability_includes_regulating_OEL: true
+  independent_SI_and_native_FMU_spectrum: true
+  full_transient_current_acceptance_qualified: false
+  general_boundary_equilibria_qualified: false
+  AVR_takeover_qualified: false
+  whole_stock_Dynawo_network_qualified: false
+  industrial_profile_qualified: false
+  competitive_superiority_proven: false
+  remote_CI_execution_verified: false
+  own_hardware_required: false
+  status: independently_validated_for_current_regulating_hot_subset
+  full_collection_tests_verified: 1602
+  full_collection_test_files: 106
+  new_tests_since_active_limited_equilibrium: 66
+  full_collection_skips: 0
+  full_collection_unresolved_failures: 0
+  regulating_network_cases: 12
+  native_regulating_feedback_runs: 36
+  rejected_regulating_inputs: 12
+  native_active_regression_runs: 36
+  native_inactive_regression_runs: 36
+  native_component_regression_runs: 27
+  native_original_source_diagnostics: 3
+  conditional_spectral_cases: 12
+  conditional_spectral_normalized_error_limit: 0.0001
+  maximum_conditional_spectral_normalized_error: 6.736483703070011e-08
+  clean_same_host_venvs: 2
+  exact_installed_CLI_and_reference_audit_replay: true
+  exact_frozen_primary_native_and_spectral_replay: true
+  code_sha256: 5ca6c8c944d53721d84267501ad973f4ce95769445dd401f1a0a92a009646bcd
+  wheel_sha256: 516639a8236ac2e702fa2fdcacd4ee4140cbf3e259f8645f7b6fce7e1a4dc9e4
+
+
+oel2c_selected_equilibrium:
+  date: '2026-11-03'
+  document: docs/OEL2C_SELECTED_EQUILIBRIUM_RU.md
+  report: reports/oel2c-selected-final-2026-11-03/delivery.json
+  initialization: selected_equilibrium
+  explicit_stationarity_only_policy_required: true
+  neutral_reference_and_PID_memory_required: true
+  loaded_PV_constraints_preserved: true
+  AVR_policy: explicit_derive_from_operating_point_with_OEL
+  full_OEL_stability_qualified: false
+  general_boundary_equilibria_qualified: false
+  industrial_profile_qualified: false
+  competitive_superiority_proven: false
+  own_hardware_required: false
+  remote_CI_execution_verified: false
+  status: independently_validated_selected_stationary_subset
+  full_collection_tests_verified: 1669
+  full_collection_test_files: 107
+  new_tests_since_current_regulating_equilibrium: 67
+  full_collection_skips: 0
+  full_collection_unresolved_failures: 0
+  selected_network_cases: 16
+  native_selected_feedback_runs: 48
+  rejected_selected_inputs: 10
+  native_regulating_regression_runs: 36
+  native_active_regression_runs: 36
+  native_inactive_regression_runs: 36
+  native_component_regression_runs: 27
+  native_original_source_diagnostics: 3
+  exact_previous_primary_and_native_physical_trajectories: 36
+  clean_same_host_venvs: 2
+  exact_installed_CLI_memory_and_AVR_audit_replay: true
+  exact_frozen_primary_and_native_replay: true
+  code_sha256: 18de9fad7ab31b02de3f0d3b6b8a1b63d3d1fa428089732c12f71b51c39fb3ea
+  wheel_sha256: 56738c5d58a16f3e9c1e42e46464fd68c19b6add205b0b0a2f112086da85b1e0
+
+
+oel2c_boundary_policy:
+  date: '2026-11-03'
+  document: docs/OEL2C_BOUNDARY_POLICY_RU.md
+  report: reports/oel2c-boundary-final-v2-2026-11-03/delivery.json
+  policy: reject_sensitive_neighborhood
+  explicit_measured_current_probe_radius_required: true
+  physical_input_or_threshold_changed: false
+  independent_guard_roots: bracketed_on_native_path_analytic_on_primary
+  native_witness_derivatives_and_all_channels: true
+  interval_certified: false
+  hybrid_stability_qualified: false
+  industrial_profile_qualified: false
+  competitive_superiority_proven: false
+  own_hardware_required: false
+  remote_CI_execution_verified: false
+  status: independently_validated_finite_boundary_policy
+  EX01_completed_for_declared_profiles: true
+  full_collection_tests_verified: 1733
+  full_collection_test_files: 108
+  new_tests_since_selected_equilibrium: 64
+  full_collection_skips: 0
+  full_collection_unresolved_failures: 0
+  boundary_network_cases: 9
+  native_boundary_feedback_runs: 27
+  rejected_boundary_inputs: 11
+  independently_rejected_native_preflights: 7
+  source_operation_order_restored: true
+  canonical_source_FMU_proof: true
+  rejected_counterfactual_reference_drift_pu_s: 0.3
+  native_boundary_FMUs: 9
+  native_boundary_witness_states: 63
+  native_selected_regression_runs: 48
+  native_regulating_regression_runs: 36
+  native_active_regression_runs: 36
+  native_inactive_regression_runs: 36
+  native_component_regression_runs: 27
+  native_original_source_diagnostics: 3
+  exact_previous_primary_and_native_physical_trajectories: 52
+  network_KCL_and_power_balance_cases: 61
+  network_balance_limit_pu: 1e-8
+  clean_same_host_venvs: 2
+  exact_installed_CLI_and_boundary_audit_replay: true
+  exact_frozen_primary_and_native_replay: true
+  code_sha256: 21c03c5945ba7fe59f940c459906f2d79552aa18296f9aab485596f8eb5270dd
+  wheel_sha256: 9b67c94fa730dab8d2fedc4b24334a5f7b082e6d3517b48b8b5d19e226e06249

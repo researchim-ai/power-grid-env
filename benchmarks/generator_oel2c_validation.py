@@ -59,7 +59,7 @@ def compare(spec,primary,native):
         limit=0. if discrete else 100. if key.endswith(('.p_w','.q_var')) else 1e-6 if key.endswith(('_start_s','.field_thermal_level','.stator_thermal_level')) else 1e-5
         errors[key]=float(max(abs(reference-measured)));limits[key]=limit
     required={p.generator_id+'.OEL2C.'+k for p in spec.coupled.oel2c_limiters for k in (*CHANNELS,'field_reaction_pu','field_current_input_pu')}
-    required.update(g.id+'.'+k for g in spec.network.generators for k in ('delta','omega','p_w','q_var','current_pu','e1q','e1d','e2d','e2q','psi2d','psi2q','Se','field_pu','TGOV1.valve_pu','TGOV1.turbine_state_pu','TGOV1.output_pu','SEXS.field_pu','SEXS.filter_pu','connected','terminal_voltage_pu'))
+    required.update(g.id+'.'+k for g in spec.network.generators for k in ('delta','omega','p_w','q_var','current_pu','e1q','e1d','e2d','e2q','psi2d','psi2q','Se','field_pu','TGOV1.valve_pu','TGOV1.turbine_state_pu','TGOV1.output_pu','SEXS.field_pu','SEXS.filter_pu','SEXS.reference_pu','SEXS.error_pu','connected','terminal_voltage_pu'))
     if not required<=errors.keys():raise ValueError('missing native OEL2C channels')
     nodes={n.id for n in spec.network.connectivity_nodes}
     if set(native['node_voltage'])!=nodes:raise ValueError('native node inventory mismatch')

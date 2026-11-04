@@ -9,7 +9,15 @@ import numpy as np
 from scipy.integrate import solve_ivp
 
 
-def run(*,settings,state,rhs,voltage,heating,thermal_indices,get_context,set_context,event_handler=None,extra_guards=None,extra_apply=None,after_commands=None):
+def run(*,settings,state,rhs,voltage,heating,thermal_indices,get_context,set_context,event_handler=None,extra_guards=None,extra_apply=None,after_commands=None,maximum_step_s=.0005,wall_budget_s=120.,maximum_rhs=2_000_000):
+    if not math.isfinite(maximum_step_s) or not 0<maximum_step_s<=.05 or not math.isfinite(wall_budget_s) or not 0<wall_budget_s<=600 or type(maximum_rhs) is not int or not 1<=maximum_rhs<=20_000_000:raise ValueError('bounded independent integration policy required')
+    evaluations=0;clock_start=monotonic();original_rhs=rhs
+    def counted_rhs(t,x):
+        nonlocal evaluations
+        evaluations+=1
+        if evaluations>maximum_rhs or monotonic()-clock_start>wall_budget_s:raise ValueError('independent physical work budget exceeded')
+        return original_rhs(t,x)
+    rhs=counted_rhs
     motors=settings.motors;cfg=get_context();controls={};time=0.;log=[];segments=[];changes=[];trips={};transitions=0
     for i,m in enumerate(motors):
         if m.contactor:
@@ -42,7 +50,7 @@ def run(*,settings,state,rhs,voltage,heating,thermal_indices,get_context,set_con
     attempts=0;started=monotonic()
     while time<settings.duration_s:
         attempts+=1
-        if attempts>20000 or monotonic()-started>120.:raise ValueError('independent hybrid work budget exceeded')
+        if attempts>20000 or monotonic()-started>wall_budget_s:raise ValueError('independent hybrid work budget exceeded')
         right=min([t for t in timeline if t>time]+[settings.duration_s])
         target=min([right,*[deadline(i) for i in controls]])
         if target<=time:raise ValueError('independent group deadline did not advance')
@@ -58,7 +66,7 @@ def run(*,settings,state,rhs,voltage,heating,thermal_indices,get_context,set_con
         if extra_guards:
             for key,guard in extra_guards(state):guards.append(guard);names.append(('extra',key))
         snapshot=dict(extra_context={k:(v.copy() if hasattr(v,'copy') else v) for k,v in cfg.items() if k not in {'connected','latched','scale','load_scale'}},latched=cfg['latched'].copy(),controls={i:c.copy() for i,c in controls.items()})
-        sol=solve_ivp(rhs,(time,target),state.copy(),method='DOP853',rtol=2e-11,atol=1e-12,max_step=min(.0005,settings.step_s/2),dense_output=True,events=guards or None)
+        sol=solve_ivp(rhs,(time,target),state.copy(),method='DOP853',rtol=2e-11,atol=1e-12,max_step=min(maximum_step_s,settings.step_s/2),dense_output=True,events=guards or None)
         if not sol.success:raise ValueError('independent group physical integration failed')
         end=float(sol.t[-1]);state=sol.y[:,-1].copy()
         segments.append((time,end,sol.sol,cfg['connected'].copy(),cfg['scale'],cfg['load_scale'].copy(),snapshot))
@@ -130,4 +138,4 @@ def run(*,settings,state,rhs,voltage,heating,thermal_indices,get_context,set_con
             row=dict(contactor_sensed_voltage_pu=sensed[i],contactor_voltage_available=c['available'],contactor_pending_restart=c['pending'],contactor_restart_count=c['restarts'],contactor_timer_active=active,contactor_timer_remaining_s=max(0.,due-t) if active else 0.)
             values.update({m.id+'.'+k:float(v) for k,v in row.items()})
         return values
-    return segments,changes,trips,dict(event_log=log,signals=signals)
+    return segments,changes,trips,dict(event_log=log,signals=signals,integration=dict(method='DOP853',rhs_evaluations=evaluations,maximum_step_s=maximum_step_s,wall_budget_s=wall_budget_s))

@@ -1,0 +1,25 @@
+{
+  "schema": "pge-release-ci-actions-v1",
+  "actions": {
+    "actions/checkout": {
+      "commit": "11d5960a326750d5838078e36cf38b85af677262",
+      "tag_observed": "v4",
+      "source": "https://api.github.com/repos/actions/checkout/git/ref/tags/v4"
+    },
+    "actions/setup-python": {
+      "commit": "a26af69be951a213d495a4c3e4e4022e16d87065",
+      "tag_observed": "v5",
+      "source": "https://api.github.com/repos/actions/setup-python/git/ref/tags/v5"
+    },
+    "actions/upload-artifact": {
+      "commit": "ea165f8d65b6e75b540449e92b4886f43607fa02",
+      "tag_observed": "v4",
+      "source": "https://api.github.com/repos/actions/upload-artifact/git/ref/tags/v4"
+    },
+    "actions/attest": {
+      "commit": "1e69f48acb82d1966a394da916b4c1698aa569d6",
+      "tag_observed": "v4",
+      "source": "https://api.github.com/repos/actions/attest/git/ref/tags/v4"
+    }
+  }
+}

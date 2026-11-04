@@ -1,0 +1,36 @@
+{
+  "schema": "power-grid-env.esst1a-reference/v1",
+  "model": "OpenIPSL.Electrical.Controls.PSSE.ES.ESST1A",
+  "openipsl_commit": "0ee96c3bcf71330916fbaba60a82eeaac5e1ffb5",
+  "modelica_version": "4.0.0",
+  "base_lock_sha256": "26d928137e0448b4e8cc8d9e3041ab151c68fe38970c9aeb0e591d6e15736a98",
+  "fmpy": {
+    "version": "0.3.27",
+    "filename": "fmpy-0.3.27-py3-none-any.whl",
+    "url": "https://files.pythonhosted.org/packages/3f/f6/524fab535e287fc4d39736602cb69b4d9622a795d6c5da397f8039ed4c38/fmpy-0.3.27-py3-none-any.whl",
+    "sha256": "0c2c270dd39e4303e7200dd62626f4d80e76cda4a2ca3a8e542bd4f70522eddf"
+  },
+  "files": {
+    "OpenIPSL/package.mo": "dd4608eb9b0fc63bf9945c1525625793b83427d2adae572acf7870b56a674cc5",
+    "OpenIPSL/Types.mo": "3a83b64096d4d3621543171bab5216eea7c76d0d1e37595552d3fe727588fcaf",
+    "OpenIPSL/Icons/package.mo": "42c0997c4932f93ab4157d84dd7105d63bac1eeaa4189fe60fb367dc8821c858",
+    "OpenIPSL/Icons/VerifiedModel.mo": "db1c9491f7892cf2a958c6523e2f5112b0c57802914a67808eb7b33de948494d",
+    "OpenIPSL/Electrical/package.mo": "4af101a0b0da3299c3182bc266a3a0cfcb432e6a1f9817dd54b9760549d532e8",
+    "OpenIPSL/Electrical/Controls/package.mo": "3406e65bc9c5ffd66afdec1aa4b6e5f19f18cb2f9f3e0d1461716ecf7ad0e68e",
+    "OpenIPSL/Electrical/Controls/PSSE/package.mo": "c508eb25f3763633337ac14c011e8fc3d4cfcd70ec197ebd62f2fb6666fe5aa4",
+    "OpenIPSL/Electrical/Controls/PSSE/ES/package.mo": "a40b41e4175bc0441e792cadd61c9f473458f464f6554831ae8037dce5355313",
+    "OpenIPSL/Electrical/Controls/PSSE/ES/BaseClasses/package.mo": "b20b3464e6ce05f7354b6aa03f32c4ea6e1cfa1fb159cd1c5ff155fb6f2d78a1",
+    "OpenIPSL/Electrical/Controls/PSSE/ES/BaseClasses/BaseExciter.mo": "ae5f14b86a1e34dc44679d91d9b969c26d7bdce81eed4baaad91f960363f3369",
+    "OpenIPSL/Electrical/Controls/PSSE/ES/ESST1A.mo": "d97175ab6a1df0bc57c8e0f0147b2482798f582faf24a9e9a9b8c5171dfffaad",
+    "OpenIPSL/NonElectrical/package.mo": "bf8f62ccf3db52284a73c9c45e291da3c36bb661bcf99a2716b1670748a7161a",
+    "OpenIPSL/NonElectrical/Continuous/package.mo": "93e5eb004fb6d54b75894176cd21f41df79791748dfacfc8a14cc0131335c2e5",
+    "OpenIPSL/NonElectrical/Continuous/LeadLag.mo": "dfd566f14621fad5746cc2be74283033515ef8b3d5232d0be2b24eeffc8b4f9f",
+    "OpenIPSL/NonElectrical/Continuous/SimpleLag.mo": "7033967b059c58e1c68aebd0ac88904b7abb8b686a34f2498f2327ffb11cb846",
+    "OpenIPSL/NonElectrical/Continuous/SimpleLagLim.mo": "e9ab69d314dfd7f9da864502443e29485a21e6f9c09b8e9d2e91131db1c0a634",
+    "OpenIPSL/NonElectrical/Logical/package.mo": "83ed0a884a547378fa680e45fa2d19455f25469e522c3422d6aabd855b5c9cb8",
+    "OpenIPSL/NonElectrical/Logical/HV_GATE.mo": "c523899aa2750cd62368064bbfebe4c84323ac7c3a9731b3130b03e6555907e5",
+    "OpenIPSL/NonElectrical/Logical/LV_GATE.mo": "63df4391058040b2b4241ba41d356f2d04bb9d6bf24578c262a8fcfbc4eb4181",
+    "LICENSE": "1e406172c855f2a340d97ef4cac69f9d4758a86321e22f7ce295313df0fcab74"
+  },
+  "equations_modified": false
+}
