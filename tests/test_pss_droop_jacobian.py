@@ -75,10 +75,10 @@ def test_callback_does_not_call_RHS_or_change_state(monkeypatch):
 
 
 @pytest.mark.parametrize('name',['generator_oel2c_hold','generator_oel2c_loaded_hold'])
-def test_unimplemented_excitation_models_do_not_get_an_analytic_claim(name):
+def test_OEL2C_delegates_from_PSS_droop_profile(name):
     path=Path('cases/studies')/(name+'.json')
     s=StudySpec.model_validate_json(path.read_text());m=CoupledNetwork(s.network,s.coupled)
-    assert callback(m) is None and m.integration_jacobian() is None
+    assert callback(m) is None and m.integration_jacobian().jacobian_kind=='piecewise_analytic_OEL2C_network_reduction'
 
 
 @pytest.mark.parametrize('name',['joint_hold','joint_fault','joint_saturated_fault','joint_gate'])

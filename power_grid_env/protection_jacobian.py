@@ -7,9 +7,9 @@ import numpy as np
 KIND='piecewise_analytic_MNLEX2_field_I2_network_reduction'
 
 
-def supported(model):
-    if not (model.field_thermal.entries or model.underexcitation_limiters.entries):return False
-    if model.settings.oel2c_limiters:return False
+def supported(model,*,allow_oel=False):
+    if not (model.field_thermal.entries or model.underexcitation_limiters.entries or (allow_oel and model.oel2c.entries)):return False
+    if model.settings.oel2c_limiters and not allow_oel:return False
     targets=set(model.esst1a.entries)
     if any(model.gen_passports[i].model!='GENROU' or i in model.controllers.avr for i in targets):return False
     if any(i not in targets for i in model.takeover_oel.entries):return False
@@ -24,7 +24,14 @@ def callback(model):
         from power_grid_env.genrou_jacobian import jacobian
         return jacobian(model,state,protections=True)
     evaluate.jacobian_kind=KIND
-    return evaluate
+    from power_grid_env.jacobian_columns import attach
+    def evaluate_columns(time,state,cols,ctx):
+        from power_grid_env.genrou_jacobian import jacobian
+        return jacobian(model,state,protections=True,columns=cols,electrical=ctx)
+    def actions(time,state,u,ctx,voltage_directions=None):
+        from power_grid_env.genrou_jacobian import jacobian
+        return jacobian(model,state,protections=True,directions=u,electrical=ctx,voltage_directions=voltage_directions)
+    return attach(evaluate,model,evaluate_columns,actions)
 
 
 def mnlex2_rows(p,unit,a,state,power,dpower,voltage,dvoltage):

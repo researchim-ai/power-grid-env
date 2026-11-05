@@ -30,6 +30,9 @@ def state_coordinates(model):
     from power_grid_env.excitation_takeover import STATES as TAKEOVER_STATES
     for a,p in model.takeover_oel.entries.values():
         names.update({a+j:p.generator_id+'.TakeoverOEL.'+label for j,label in enumerate(TAKEOVER_STATES)})
+    if getattr(model.settings,'network_automation',None) is not None:
+        disconnected=tuple(g.id+'.' for i,g in enumerate(model.generators) if not model.gen_connected[i])
+        names={index:name for index,name in names.items() if not name.startswith(disconnected)}
     indices=np.array(sorted(names),dtype=int)
     return indices,[names[int(i)] for i in indices]
 

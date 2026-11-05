@@ -49,14 +49,14 @@ class MinimumExcitationBank:
             i=indices[p.generator_id];self.entries[i]=(offset,p);self.regions[i]=-1;offset+=2
         self.end=offset
 
-    def measurements(self,state):
+    def measurements(self,state,voltage=None,current=None):
         if not self.entries:return {}
-        m=self.model;v=m.electrical(state)[0];current=m.generator_currents(state,v)
+        m=self.model;v=m.electrical(state)[0] if voltage is None else voltage;current=m.generator_currents(state,v) if current is None else current
         terminal=m.generator_terminal_voltage(state,v);power=terminal*np.conj(current)
         return {i:(float(power[i].real),float(power[i].imag),float(abs(terminal[i]))) for i in self.entries}
 
-    def errors(self,state):
-        return {i:circle_error(p,*values) for i,values in self.measurements(state).items() for _,p in [self.entries[i]]}
+    def errors(self,state,voltage=None,current=None):
+        return {i:circle_error(p,*values) for i,values in self.measurements(state,voltage,current).items() for _,p in [self.entries[i]]}
 
     def initialize(self,state):
         errors=self.errors(state)
@@ -72,9 +72,9 @@ class MinimumExcitationBank:
         for i,(a,p) in self.entries.items():values[i]=np.clip(state[a],0.,p.MEL_MAX)
         return values
 
-    def derivatives(self,state):
+    def derivatives(self,state,voltage=None,current=None):
         out=np.zeros(self.end-self.offset)
-        for i,error in self.errors(state).items():
+        for i,error in self.errors(state,voltage,current).items():
             a,p=self.entries[i];out[a-self.offset:a-self.offset+2]=mnlex2_rates(p,state[a:a+2],error)
         return out
 
@@ -121,9 +121,9 @@ class MinimumExcitationBank:
         return [p.generator_id+'.UEL.'+k for _,p in self.entries.values() for k in
                 ('p_pu','q_pu','voltage_pu','circle_error_pu2','output_pu','raw_lag_state_pu','feedback_pu','feedback_memory_pu')]
 
-    def signals(self,state):
+    def signals(self,state,voltage=None,current=None):
         out={}
-        for i,values in self.measurements(state).items():
+        for i,values in self.measurements(state,voltage,current).items():
             a,p=self.entries[i];output=np.clip(state[a],0.,p.MEL_MAX)
             signals=dict(p_pu=values[0],q_pu=values[1],voltage_pu=values[2],circle_error_pu2=circle_error(p,*values),
                          output_pu=output,raw_lag_state_pu=state[a],feedback_pu=p.K_F2/p.T_F2*(output-state[a+1]),feedback_memory_pu=state[a+1])

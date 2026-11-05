@@ -17,12 +17,13 @@ CLOCKS={'YNyn0':0,'Dyn11':11,'YNd1':1,'Dyn5':5,'YNd5':5}
 
 
 class Circuit:
-    def __init__(self,spec,*,initialize=True,maximum_duration_s=3.,maximum_nodes=64,sparse_network=False):
+    def __init__(self,spec,*,initialize=True,maximum_duration_s=3.,maximum_nodes=64,sparse_network=False,maximum_motors=32):
         n=spec.network;s=spec.induction
         if spec.study!='motor_start' or spec.backend!='scipy' or s is None or spec.coupled:raise ValueError('independent multibus motor_start/scipy required')
         if type(maximum_nodes) is not int or not 2<=maximum_nodes<=2048 or (maximum_nodes>64 and not sparse_network):raise ValueError('bounded sparse reference node profile required')
         self.sparse_network=bool(sparse_network)
-        if len(n.sources)!=1 or not 1<=len(s.motors)<=32 or not 2<=len(n.connectivity_nodes)<=maximum_nodes:raise ValueError('bounded multibus circuit required')
+        if type(maximum_motors) is not int or not 1<=maximum_motors<=128:raise ValueError('bounded independent motor inventory required')
+        if len(n.sources)!=1 or not 1<=len(s.motors)<=maximum_motors or not 2<=len(n.connectivity_nodes)<=maximum_nodes:raise ValueError('bounded multibus circuit required')
         if any([n.switches,n.generators,n.inverters,n.storages,n.shunts,n.neutral_grounds,n.study_faults,n.harmonics,n.omissions]):raise ValueError('unsupported independent multibus equipment')
         if any(m.mechanical_load for m in s.motors):raise ValueError('fan motors required')
         if s.operating_point and any(not m.connected for m in s.motors):raise ValueError('loaded disconnected motor equilibrium outside independent multibus scope')

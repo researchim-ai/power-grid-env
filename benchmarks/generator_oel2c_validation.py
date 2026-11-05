@@ -34,14 +34,15 @@ def negative(name):
     return d
 
 
-def physical_events(report):return [e for e in report['event_log'] if e['kind'] in PHYSICAL]
+def physical_events(report,extended=False):return [e for e in report['event_log'] if e['kind'] in PHYSICAL|({'thermal_trip'} if extended else set())]
 
 
-def compare(spec,primary,native):
+def compare(spec,primary,native,*,extended=False):
     if not primary.get('completed') or not native.get('completed'):raise ValueError('complete feedback traces required')
-    left,right=physical_events(primary),physical_events(native)
+    left,right=physical_events(primary,extended),physical_events(native,extended)
     signature=lambda e:(e['kind'],e['equipment_id'])
     if [signature(e) for e in left]!=[signature(e) for e in right]:raise ValueError('independent physical event sequence differs')
+    if extended and any(a.get('outcome')!=b.get('outcome') for a,b in zip(left,right) if a['kind'] in ('motor_open','motor_close')):raise ValueError('motor command outcome differs')
     error=max((abs(a['time_s']-b['time_s']) for a,b in zip(left,right)),default=0.)
     mapping={a['time_s']:b['time_s'] for a,b in zip(left,right)};physical=set(mapping);step=spec.coupled.step_s;selected=[];times=[];sides=[]
     for i,(at,side) in enumerate(zip(primary['time_s'],primary['sample_side'])):
@@ -55,11 +56,14 @@ def compare(spec,primary,native):
         if key not in primary['channels']:continue
         reference=np.asarray(primary['channels'][key])[selected];measured=sample_native(native,times,sides,key)
         if not np.isfinite(reference).all():raise ValueError('nonfinite primary reference')
-        discrete=key.endswith(('.connected','.enable_timer_active','.enable_timer_expired','.reset_timer_active','.reset_timer_expired','.field_thermal_latched','.field_voltage_enabled','.stator_thermal_latched'))
-        limit=0. if discrete else 100. if key.endswith(('.p_w','.q_var')) else 1e-6 if key.endswith(('_start_s','.field_thermal_level','.stator_thermal_level')) else 1e-5
+        discrete=(extended and key.endswith(('.thermal_latched','.voltage_gate'))) or key.endswith(('.connected','.enable_timer_active','.enable_timer_expired','.reset_timer_active','.reset_timer_expired','.field_thermal_latched','.field_voltage_enabled','.stator_thermal_latched'))
+        limit=0. if discrete else 100. if key.endswith(('.p_w','.q_var')) or (extended and key.endswith(('_w','_var'))) else 1e-6 if key.endswith(('_start_s','.field_thermal_level','.stator_thermal_level')) or (extended and key.endswith('.thermal_level')) else 1e-5
         errors[key]=float(max(abs(reference-measured)));limits[key]=limit
     required={p.generator_id+'.OEL2C.'+k for p in spec.coupled.oel2c_limiters for k in (*CHANNELS,'field_reaction_pu','field_current_input_pu')}
     required.update(g.id+'.'+k for g in spec.network.generators for k in ('delta','omega','p_w','q_var','current_pu','e1q','e1d','e2d','e2q','psi2d','psi2q','Se','field_pu','TGOV1.valve_pu','TGOV1.turbine_state_pu','TGOV1.output_pu','SEXS.field_pu','SEXS.filter_pu','SEXS.reference_pu','SEXS.error_pu','connected','terminal_voltage_pu'))
+    if extended:
+        from benchmarks.eight_machine_circuit import extra_required
+        required.update(extra_required(spec))
     if not required<=errors.keys():raise ValueError('missing native OEL2C channels')
     nodes={n.id for n in spec.network.connectivity_nodes}
     if set(native['node_voltage'])!=nodes:raise ValueError('native node inventory mismatch')

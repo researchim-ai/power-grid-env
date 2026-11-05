@@ -21,6 +21,8 @@ env:
   OPENBLAS_NUM_THREADS: '1'
   OMP_NUM_THREADS: '1'
   MKL_NUM_THREADS: '1'
+  PGE_MOTULATOR_WHEEL: /tmp/pge-independent-wheels/motulator-0.19.0-py3-none-any.whl
+  MPLCONFIGDIR: /tmp/pge-matplotlib
 jobs:
   candidate:
     # One declared platform; this is not a cross-platform qualification claim.
@@ -41,6 +43,8 @@ jobs:
           python -m pip install setuptools==79.0.1 wheel==0.45.1
           python -m pip install --require-hashes -r requirements/pilot-linux-py312.lock
           python -m pip install --require-hashes -r requirements/ex02-andes-linux-py312.lock
+          python -m pip download --no-deps --only-binary=:all: --require-hashes -r requirements/motulator-reference.lock --dest /tmp/pge-independent-wheels
+          python -m pip install --no-deps --require-hashes -r requirements/motulator-reference.lock
           python -m pip download --only-binary=:all: --require-hashes -r requirements/pilot-linux-py312.lock --dest /tmp/pge-release-wheels
       - name: Build twice and replay in two source-independent offline installations
         run: python -m benchmarks.pilot_installation --work /tmp/pge-release-work --out /tmp/pge-release-installation --wheelhouse /tmp/pge-release-wheels

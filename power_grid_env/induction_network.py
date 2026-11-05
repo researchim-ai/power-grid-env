@@ -33,7 +33,7 @@ def validate_induction(network, settings, *, validate_rules=True):
     if len(topology.buses) > settings.runtime_limits.maximum_network_buses:
         errors.append(f'motor network exceeds {settings.runtime_limits.maximum_network_buses}-bus implementation budget')
     control_samples = 2*settings.maximum_contactor_transitions if any(m.contactor for m in settings.motors) else 0
-    samples = control_samples + math.ceil(settings.duration_s / settings.step_s) + 2 * (len(settings.events) + sum(m.thermal is not None for m in settings.motors)) + 2
+    samples = control_samples + math.ceil(settings.duration_s / settings.step_s) + 2 * (len({e.time_s for e in settings.events}) + sum(m.thermal is not None for m in settings.motors)) + 2
     motor_channels=sum(16+8*(m.model=='double_cage')+2*bool(m.thermal)+6*bool(m.contactor) for m in settings.motors)
     if samples * (2 * len(topology.buses) + motor_channels + 6) > 2_000_000:
         errors.append('motor trace exceeds two-million-scalar budget')
@@ -96,7 +96,10 @@ def validate_induction(network, settings, *, validate_rules=True):
     for motor in settings.motors:
         if motor.contactor and motor.contactor.sense_node_id not in topology.node_to_bus:
             errors.append(f'{motor.id}: unknown contactor sensing node')
-    controlled = {m.id for m in settings.motors if m.contactor}
+    # Protection can open the motor between scheduled commands. Its state
+    # cannot be inferred from the command list; the event handler reports
+    # a blocked latch or an already-satisfied command at execution time.
+    controlled = {m.id for m in settings.motors if m.contactor or m.thermal}
     states = {m.id: m.connected for m in settings.motors}
     for event in sorted(settings.events, key=lambda e: e.time_s):
         if event.kind == 'source_voltage':
@@ -180,14 +183,28 @@ class InductionNetwork:
     def electrical(self, state):
         values = np.asarray(state)[:self.electrical_size].reshape(-1, 3)
         e = values[:, 0]+1j*values[:, 1]
-        rhs = np.zeros(len(self.bus_names), dtype=complex)
-        rhs[self.source_bus] = self.source_y*self.source_e*self.source_scale
-        np.add.at(rhs, self.motor_buses, self.motor_y*e)
+        rhs = self.network_injection(state)
         voltage = self.lu.solve(rhs)
-        current = np.where(self.connected, (voltage[self.motor_buses]-e)/self.zmotor, 0j)
-        torque = (e*np.conj(current)).real
-        mismatch = float(np.max(abs(self.matrix@voltage-rhs)))
-        return voltage, current, torque, mismatch
+        return self.electrical_at_voltage(state,voltage,injection=rhs)
+
+    def network_injection(self,state):
+        values=np.asarray(state)[:self.electrical_size].reshape(-1,3)
+        e=values[:,0]+1j*values[:,1]
+        rhs=np.zeros(len(self.bus_names),dtype=complex)
+        rhs[self.source_bus]=self.source_y*self.source_e*self.source_scale
+        np.add.at(rhs,self.motor_buses,self.motor_y*e)
+        return rhs
+
+    def electrical_at_voltage(self,state,voltage,*,injection=None):
+        values=np.asarray(state)[:self.electrical_size].reshape(-1,3)
+        e=values[:,0]+1j*values[:,1]
+        current=np.where(self.connected,(voltage[self.motor_buses]-e)/self.zmotor,0j)
+        torque=(e*np.conj(current)).real
+        return voltage,current,torque,float(np.max(abs(self.matrix@voltage-(self.network_injection(state) if injection is None else injection))))
+
+    def differential_at_voltage(self,time,state,voltage):
+        _,current,torque,_=self.electrical_at_voltage(state,voltage)
+        return self.motor_derivatives(state,current,torque)
 
     def rhs(self, time, state):
         _, current, torque, _ = self.electrical(state)
@@ -232,7 +249,15 @@ class InductionNetwork:
         return np.zeros(len(self.bus_names),dtype=complex)
 
     def integration_jacobian(self):
-        return self.jacobian
+        from power_grid_env.jacobian_columns import attach
+        def evaluate(time,state):return self.jacobian(time,state)
+        def evaluate_columns(time,state,cols,ctx):
+            from power_grid_env.motor_jacobian import columns
+            return columns(self,state,cols,ctx)
+        def actions(time,state,u,ctx,voltage_directions=None):
+            from power_grid_env.motor_jacobian import columns
+            return columns(self,state,None,ctx,directions=u,voltage_directions=voltage_directions)
+        return attach(evaluate,self,evaluate_columns,actions)
 
     def jacobian(self,time,state):
         from power_grid_env.motor_jacobian import jacobian
@@ -250,7 +275,11 @@ class InductionNetwork:
 
     def apply_guard_events(self,ids,time,state,event_log):pass
 
-    def apply_additional_event(self, event):
+    def next_deadline(self,limit):return limit
+
+    def events_due(self,time):return False
+
+    def apply_additional_event(self, event, **context):
         return None
 
     def additional_metadata(self):
@@ -317,6 +346,7 @@ def integrate_induction_model(model, scope, state, operating_point, *, study='mo
         result=dict(solved=True,completed=False,status='runtime_limit_exceeded',reason=exc.resource,
                     resource_limit=dict(resource=exc.resource,limit=exc.limit,attempted=exc.attempted),scope=scope)
     result['runtime_budget']=budget.report()
+    if hasattr(model,'_dae_statistics'):result['dae_diagnostics']=dict(model._dae_statistics)
     return result
 
 
@@ -382,8 +412,20 @@ def _integrate_induction_model(model, scope, state, operating_point, *, study, b
         power_balance.append(float(abs(injected+additional_injection-passive_power-motor_power)/network.s_base_va))
     record(0., state, 'initial')
     nfev = njev = nlu = 0
-    jacobian_callback = model.integration_jacobian()
+    cohort_audits=[]
+    from power_grid_env.jacobian_storage import configure,direct_supported
+    analytic_callback=model.integration_jacobian()
+    if settings.jacobian_network=='direct_solve' and not direct_supported(analytic_callback):
+        return {'solved': False,'completed': False,'status': 'rejected','reason': 'direct_network_tangent_requires_analytic_profile','scope': scope}
+    jacobian_callback = configure(analytic_callback,settings.jacobian_format)
     counted_rhs=budget.rhs(model.rhs)
+    dae_stats=None;solver_method='Radau';solver_options={}
+    if settings.integration_method=='network_dae':
+        if not callable(getattr(analytic_callback,'jacobian_actions',None)) or not callable(getattr(analytic_callback,'dae_actions',None)):
+            return {'solved':False,'completed':False,'status':'rejected','reason':'network_DAE_requires_analytic_actions','scope':scope}
+        from power_grid_env.dae_solver import NetworkRadau,statistics
+        solver_method=NetworkRadau;dae_stats=statistics();model._dae_statistics=dae_stats
+        solver_options=dict(model=model,callback=analytic_callback,options=settings.dae_options,stats=dae_stats,check_time=budget.check_time)
     for left, right in zip(boundaries, boundaries[1:]):
         cursor = left
         while cursor < right:
@@ -392,11 +434,27 @@ def _integrate_induction_model(model, scope, state, operating_point, *, study, b
             control_ids, control_guards = contactors.guards()
             guards.extend(control_guards)
             extra_ids,extra_guards=model.additional_guards(state);guards.extend(extra_guards)
-            target = contactors.next_deadline(right)
+            target = model.next_deadline(contactors.next_deadline(right))
+            computational_target=None
+            segment_width=settings.dae_options.segment_duration_s*min(1.,256/max(1,len(state)))
+            boundary=cursor+segment_width
+            boundary_epsilon=64*np.finfo(float).eps*max(1.,abs(boundary),abs(target))
+            if dae_stats is not None and target-boundary>boundary_epsilon:
+                near_grid=regular[abs(regular-boundary)<=boundary_epsilon]
+                computational_target=float(near_grid[0]) if len(near_grid) else boundary
+                target=computational_target
+            solver_guards=guards
+            if dae_stats is not None:
+                solver_guards=[]
+                for guard in guards:
+                    def mapped_guard(time,values,guard=guard):return guard(time,model._dae_coordinates.decode(time,values))
+                    mapped_guard.terminal=getattr(guard,'terminal',False);mapped_guard.direction=getattr(guard,'direction',0)
+                    solver_guards.append(mapped_guard)
             try:
-                solution = solve_ivp(counted_rhs, (cursor, target), state, method='Radau',
+                solution = solve_ivp(counted_rhs, (cursor, target), state, method=solver_method,
                                      rtol=settings.rtol, atol=settings.atol, max_step=settings.step_s,
-                                     dense_output=True, events=guards or None, jac=jacobian_callback)
+                                     dense_output=True, events=solver_guards or None, jac=jacobian_callback,**solver_options)
+                if dae_stats is not None:model._dae_coordinates.physical_solution(solution)
             except (ValueError, RuntimeError, ArithmeticError) as exc:
                 return {'solved': True, 'completed': False, 'status': 'numerically_not_converged',
                         'solver_message': str(exc), 'scope': scope}
@@ -410,11 +468,20 @@ def _integrate_induction_model(model, scope, state, operating_point, *, study, b
             state = solution.y[:, -1]
             endpoint_epsilon=64*np.finfo(float).eps*max(1.,abs(stop),abs(target))
             if abs(stop-target)<=endpoint_epsilon:stop=float(target)
+            cohort_indices=None
+            if settings.event_policy=='coincident_roots_v1':
+                from power_grid_env.hybrid_events import coincident_roots
+                cohort_indices,audit=coincident_roots(solution,guards,check_time=budget.check_time)
+                if cohort_indices:cohort_audits.append(audit)
             triggered = {i for i, roots in zip(guard_indices, (solution.t_events or [])[:thermal_guard_count]) if len(roots)}
             control_roots = {i for i,roots in zip(control_ids,(solution.t_events or [])[thermal_guard_count:thermal_guard_count+len(control_ids)]) if len(roots)}
             extra_roots={i for i,roots in zip(extra_ids,(solution.t_events or [])[thermal_guard_count+len(control_ids):]) if len(roots)}
-            control_boundary = bool(extra_roots) or bool(control_roots) or contactors.due(stop)
-            if triggered:
+            if cohort_indices is not None:
+                triggered={guard_indices[j] for j in cohort_indices if j<thermal_guard_count}
+                control_roots={control_ids[j-thermal_guard_count] for j in cohort_indices if thermal_guard_count<=j<thermal_guard_count+len(control_ids)}
+                extra_roots={extra_ids[j-thermal_guard_count-len(control_ids)] for j in cohort_indices if j>=thermal_guard_count+len(control_ids)}
+            control_boundary = bool(extra_roots) or bool(control_roots) or contactors.due(stop) or model.events_due(stop)
+            if triggered and settings.event_policy=='legacy':
                 # Identical relays can reach the same threshold in one root.
                 # Apply exact numerical ties atomically; do not trip merely
                 # nearby relays within the much wider ODE tolerance.
@@ -427,16 +494,19 @@ def _integrate_induction_model(model, scope, state, operating_point, *, study, b
                         triggered.add(i)
             scheduled = events.get(right, []) if stop == right else []
             axis_epsilon = 64*np.finfo(float).eps*max(1.,abs(cursor),abs(stop))
-            sample_times = [*regular[(regular > cursor+axis_epsilon) & (regular < stop-axis_epsilon)], stop]
-            sampled = solution.sol(sample_times)
-            sampled[:, -1] = state
+            sample_times=list(regular[(regular > cursor+axis_epsilon) & (regular < stop-axis_epsilon)])
+            computational_only=computational_target is not None and abs(stop-computational_target)<=axis_epsilon and not (triggered or scheduled or control_boundary)
+            near=regular[abs(regular-stop)<=axis_epsilon]
+            if not computational_only or len(near):sample_times.append(float(near[0]) if computational_only and len(near) else stop)
+            sampled=solution.sol(sample_times) if sample_times else np.empty((len(state),0))
+            if sample_times and abs(sample_times[-1]-stop)<=axis_epsilon:sampled[:,-1]=state
             for time, values in zip(sample_times, sampled.T):
                 record(time, values, 'pre_event' if time == stop and (triggered or scheduled or control_boundary) else 'regular')
             try:
                 if control_roots:contactors.observe(stop,state,event_log,control_roots)
             except ValueError as exc:
                 return {'solved':True,'completed':False,'status':'contactor_control_failed','solver_message':str(exc),'event_log':event_log,'scope':scope}
-            for i in sorted(triggered):
+            for i in sorted(triggered,key=(lambda i:settings.motors[i].id) if settings.event_policy=='coincident_roots_v1' else None):
                 motor = settings.motors[i]
                 model.thermal_latched[i] = True
                 model.connected[i] = False
@@ -447,7 +517,8 @@ def _integrate_induction_model(model, scope, state, operating_point, *, study, b
             model.apply_guard_events(extra_roots,stop,state,event_log)
             batch_log_start = len(event_log)
             manual_interlocks_refreshed = False
-            if contactors.states:scheduled = sorted(scheduled,key=lambda e:e.kind in {'motor_open','motor_close'})
+            if settings.event_policy=='coincident_roots_v1':scheduled=sorted(scheduled,key=lambda e:(e.kind in {'motor_open','motor_close'},e.equipment_id,e.kind))
+            elif contactors.states:scheduled = sorted(scheduled,key=lambda e:e.kind in {'motor_open','motor_close'})
             for event in scheduled:
                 if contactors.states and event.kind in {'motor_open','motor_close'} and not manual_interlocks_refreshed:
                     try:
@@ -456,7 +527,7 @@ def _integrate_induction_model(model, scope, state, operating_point, *, study, b
                         return {'solved':True,'completed':False,'status':'contactor_control_failed','solver_message':str(exc),'event_log':event_log,'scope':scope}
                     manual_interlocks_refreshed = True
                 reclose = reclose_diagnostic(model,channels,event.equipment_id) if event.kind=='motor_close' else None
-                additional = model.apply_additional_event(event)
+                additional = (model.apply_additional_event(event,time=stop,state=state,event_log=event_log) if getattr(model,'automation',None) is not None else model.apply_additional_event(event))
                 if additional is not None:
                     event_log.append({'time_s':stop,'kind':event.kind,'equipment_id':event.equipment_id,**additional})
                     continue
@@ -507,6 +578,7 @@ def _integrate_induction_model(model, scope, state, operating_point, *, study, b
             if stop < cursor or (stop == cursor and not (triggered or control_boundary)):
                 return {'solved': True, 'completed': False, 'status': 'integration_no_progress', 'scope': scope}
             cursor = stop
+            del solution,sampled
     channels[network.sources[0].id+'.p_w'] = [float(s.real) for s in source_power]
     channels[network.sources[0].id+'.q_var'] = [float(s.imag) for s in source_power]
     max_kcl = max(kcl)
@@ -538,7 +610,7 @@ def _integrate_induction_model(model, scope, state, operating_point, *, study, b
             'sample_side': sides, 'channels': channels, 'motor_summary': summary, 'event_log': event_log,
             'contactor_control': {'model':'hysteretic_voltage_contactor', 'transition_count':contactors.transitions, 'transition_budget':settings.maximum_contactor_transitions, 'initial_open_auto_start':False, 'manual_close_voltage_check':'after_nonmotor_scheduled_commands_before_manual_switches', 'automatic_action_voltage_check':'after_scheduled_commands', 'electromagnetic_coil_model':False},
             'mapping': {'motor_buses': {m.id: model.bus_names[int(bus)] for m, bus in zip(settings.motors, model.motor_buses)}},
-            'maximum_kcl_residual_pu': max_kcl, 'maximum_power_balance_residual_pu': max(power_balance), 'integration': {'method': 'Radau', 'nfev': nfev, 'njev': njev, 'nlu': nlu, 'jacobian': getattr(jacobian_callback,'jacobian_kind','analytic_motor_network_reduction') if jacobian_callback is not None else 'scipy_finite_difference'},
+            'maximum_kcl_residual_pu': max_kcl, 'maximum_power_balance_residual_pu': max(power_balance), 'integration': {'method': 'Radau', 'jacobian_network_response': getattr(jacobian_callback,'jacobian_network_response','cached_ports') if jacobian_callback is not None else 'finite_difference', 'jacobian_format': getattr(jacobian_callback,'jacobian_storage','dense') if jacobian_callback is not None else 'finite_difference', 'jacobian_assembly': getattr(jacobian_callback,'jacobian_assembly','dense') if jacobian_callback is not None else 'finite_difference', 'jacobian_linear_solver': 'SuperLU' if getattr(jacobian_callback,'jacobian_storage',None)=='csc' else 'dense_LU' if jacobian_callback is not None else 'scipy_default', 'nfev': nfev, 'njev': njev, 'nlu': nlu, 'jacobian': getattr(jacobian_callback,'jacobian_kind','analytic_motor_network_reduction') if jacobian_callback is not None else 'scipy_finite_difference'},
             'motor_models': {m.id:m.model for m in settings.motors},
             'initialization': 'loaded high-speed equilibrium' if settings.operating_point else 'zero rotor flux and zero speed; explicit initial contactor states',
             'operating_point': operating_point, 'additional_validation': additional_validation,
@@ -563,5 +635,8 @@ def _integrate_induction_model(model, scope, state, operating_point, *, study, b
                       'contactor_timer_remaining_s': 's to automatic deadline; zero when timer inactive',
                       'thermal_latched': '1 = latched trip; 0 = not tripped', 'v': 'pu bus voltage', 'a': 'rad', 'p_w': 'W', 'q_var': 'var'},
             'industrial_profile_qualified': False, 'field_validated': False}
+    if settings.event_policy=='coincident_roots_v1':result['hybrid_event_audit']=dict(policy=settings.event_policy,cohorts=cohort_audits,maximum_snap_s=max([0.,*[a['maximum_snap_s'] for a in cohort_audits]]))
+    if dae_stats is not None:
+        result['integration'].update(method='RadauIIA_index1_network_DAE',jacobian_format='linear_operator',jacobian_assembly='analytic_Schur_products',jacobian_linear_solver='GMRES_block_Jacobi',dae=dae_stats,dae_options=settings.dae_options.model_dump(mode='json'),algebraic_network_solver='SuperLU',scipy_implementation='1.15.2',dae_scope='fixed-topology nonsingular linear algebraic network, reinitialized after events')
     result.update(model.additional_metadata())
     return result

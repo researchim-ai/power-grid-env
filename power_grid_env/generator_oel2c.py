@@ -20,6 +20,7 @@ class OEL2CPassport(BaseModel):
     model_config=ConfigDict(extra='forbid',allow_inf_nan=False)
     generator_id: str=Field(min_length=1)
     model: Literal['OEL2C_Dynawo_cap_guard_v1_SEXS_summation','OEL2C_Dynawo_equilibrium_guard_v2_SEXS_summation']='OEL2C_Dynawo_cap_guard_v1_SEXS_summation'
+    coincidence_policy: Literal['legacy','independent_below_clock_batch_v1']='legacy'
     initialization: Literal['dynawo_startup','inactive_equilibrium','active_limited_equilibrium','current_regulating_equilibrium','selected_equilibrium']='dynawo_startup'
     avr_reference_initialization: Literal['unmodified','derive_from_operating_point_with_OEL','specified_for_current_regulation']='unmodified'
     equilibrium_boundary_policy: Literal['native_relations','reject_sensitive_neighborhood']='native_relations'
@@ -101,7 +102,7 @@ class OEL2CPassport(BaseModel):
         return self
 
     def native_parameters(self):
-        return self.model_dump(exclude={'generator_id','model','rated_field_reaction_pu','initialization','cap_tolerance_pu','avr_reference_initialization','specified_avr_reference_pu','regulating_voltage_bounds_pu','current_comparison_tolerance_pu','equilibrium_reference_current_pu','equilibrium_pid_output_pu','equilibrium_stability_policy','equilibrium_boundary_policy','equilibrium_probe_radius_pu'})
+        return self.model_dump(exclude={'coincidence_policy','generator_id','model','rated_field_reaction_pu','initialization','cap_tolerance_pu','avr_reference_initialization','specified_avr_reference_pu','regulating_voltage_bounds_pu','current_comparison_tolerance_pu','equilibrium_reference_current_pu','equilibrium_pid_output_pu','equilibrium_stability_policy','equilibrium_boundary_policy','equilibrium_probe_radius_pu'})
 
 
 class OEL2CDynamics:
@@ -363,7 +364,12 @@ class OEL2CBank:
         return ids,guards
 
     def apply(self,roots,time,state,event_log):
-        for i,(a,p,k) in self.entries.items():
+        from power_grid_env.oel2c_events import coalesce_below_clocks
+        if self.model.settings.event_policy=='legacy':roots=coalesce_below_clocks(self,roots,state,time)
+        entries=self.entries.items()
+        if self.entries and all(p.coincidence_policy=='independent_below_clock_batch_v1' for _,p,_ in self.entries.values()):
+            entries=sorted(entries,key=lambda entry:entry[1][1].generator_id)
+        for i,(a,p,k) in entries:
             logs=[];k.apply({r[2] for r in roots if r[0]=='oel2c' and r[1]==i},time,state[a:a+8],logs)
             event_log.extend(dict(e,equipment_id=p.generator_id) for e in logs)
 

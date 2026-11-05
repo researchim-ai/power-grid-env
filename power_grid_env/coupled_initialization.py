@@ -39,7 +39,14 @@ def initialize_coupled(model,*,require_stable=True):
             else:
                 reaction=model.round_rotors.field_reaction(probe,rot,ig)
                 for i,p in regulating.items():constraints[i]=p.KAct*p.KScale*abs(reaction[i])/p.rated_field_reaction_pu-p.ILimPu
-        error=np.r_[motor,power.real-ptarget,constraints]
+        active_error=power.real-ptarget
+        if np.any(~model.gen_connected):
+            for i in np.flatnonzero(~model.gen_connected):
+                direction=voltage[model.gen_buses[i]]
+                if abs(direction)<1e-12:direction=model.source_e
+                mismatch=internal[i]-vtarget[i]*direction/abs(direction)
+                active_error[i]=mismatch.real;constraints[i]=mismatch.imag
+        error=np.r_[motor,active_error,constraints]
         best=min(best,float(max(abs(error))))
         return error
     rhs=np.zeros(len(model.bus_names),dtype=complex);rhs[model.source_bus]=model.source_y*model.source_e
@@ -81,7 +88,8 @@ def initialize_coupled(model,*,require_stable=True):
             if generator_error:return None,generator_error
             if steady and requested.thermal_state=='equilibrium':
                 for i,address in model.thermal_indices.items():state[address]=abs(current[i])**2
-            controller_error=model.controllers.initialize(state,voltage[model.gen_buses],model.gen_voltage,model.gen_mechanical,tolerance)
+            terminal_voltage=voltage[model.gen_buses] if np.all(model.gen_connected) else np.where(model.gen_connected,voltage[model.gen_buses],internal)
+            controller_error=model.controllers.initialize(state,terminal_voltage,model.gen_voltage,model.gen_mechanical,tolerance)
             if controller_error:return None,controller_error
             takeover_error=model.takeover_oel.initialize(state,ig,model.gen_voltage)
             if takeover_error:return None,takeover_error

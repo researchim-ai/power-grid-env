@@ -56,7 +56,7 @@ def compare(a,b):
         x=np.asarray(a['channels'][k]);y=np.asarray(b['channels'][k])
         if x.shape!=ta.shape or y.shape!=tb.shape or not np.isfinite(x).all() or not np.isfinite(y).all():raise ValueError('invalid channel: '+k)
         errors[k]=float(max(abs(x-y)))
-    events=lambda r:[tuple(x.get(k) for k in ('kind','equipment_id','outcome','controller','bound','port','gate','active')) for x in r['event_log']]
+    events=lambda r:[tuple(x.get(k) for k in ('kind','equipment_id','outcome','controller','bound','port','gate','active','transition'))+(x.get('value') if type(x.get('value')) is bool else None,) for x in r['event_log']]
     if events(a)!=events(b):raise ValueError('discrete event sequence differs')
     clocks=max([0.,*[abs(x['time_s']-y['time_s']) for x,y in zip(a['event_log'],b['event_log'])]])
     axis=float(max(abs(ta-tb)))

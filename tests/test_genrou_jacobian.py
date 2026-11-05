@@ -106,9 +106,9 @@ def test_analytic_callback_never_calls_RHS_or_mutates_state(monkeypatch):
 
 
 @pytest.mark.parametrize('name',['generator_oel2c_hold','generator_oel2c_loaded_hold'])
-def test_unsupported_excitation_limiters_keep_existing_FD_path(name):
+def test_OEL2C_delegates_to_extended_profile(name):
     s=StudySpec.model_validate_json(Path('cases/studies/'+name+'.json').read_text());m=CoupledNetwork(s.network,s.coupled)
-    assert m.integration_jacobian() is None
+    assert m.integration_jacobian().jacobian_kind=='piecewise_analytic_OEL2C_network_reduction'
     with pytest.raises(ValueError,match='excludes'):jacobian(m,m.initial_state())
 
 

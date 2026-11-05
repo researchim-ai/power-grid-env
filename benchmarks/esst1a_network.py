@@ -15,16 +15,21 @@ from power_grid_env.study_spec import StudySpec
 from power_grid_env.model import canonical_hash
 
 
-def scope(spec,maximum_duration_s=5.,allow_cold_prestart=False):
+def scope(spec,maximum_duration_s=5.,allow_cold_prestart=False,*,profile='legacy'):
+    if profile not in ('legacy','eight_machine_v1'):raise ValueError('unknown native reference profile')
+    extended=profile=='eight_machine_v1'
     if not math.isfinite(maximum_duration_s) or not 0<maximum_duration_s<=60:raise ValueError('bounded native ESST1A horizon required')
     if spec.study!='coupled_rms' or not spec.coupled or not spec.coupled.esst1a_exciters:raise ValueError('coupled ESST1A profile required')
     s=spec.coupled;targets={p.generator_id for p in s.esst1a_exciters}
     if len(targets)!=len(s.esst1a_exciters) or not targets<={g.id for g in spec.network.generators}:raise ValueError('unique known ESST1A targets required')
-    if s.oel2c_limiters or s.overexcitation_limiters or (s.operating_point is None and (not allow_cold_prestart or any(m.connected for m in s.motors))) or s.duration_s>maximum_duration_s:raise ValueError('loaded ESST1A reference subset required; OEL adapters not qualified')
-    if any(m.contactor or m.thermal for m in s.motors):raise ValueError('motor automatic controls outside native ESST1A scope')
+    if s.oel2c_limiters or s.overexcitation_limiters or (s.operating_point is None and (not (allow_cold_prestart or extended) or any(m.connected for m in s.motors))) or s.duration_s>maximum_duration_s:raise ValueError('loaded ESST1A reference subset required; OEL adapters not qualified')
+    if any(m.contactor or (m.thermal and not extended) for m in s.motors):raise ValueError('motor automatic controls outside native ESST1A scope')
     if any(e.kind not in ('source_voltage','motor_open','motor_close','generator_open','governor_step','voltage_reference_step','esst1a_port_set') for e in s.events):raise ValueError('unsupported ESST1A network event')
     if any(e.kind=='esst1a_port_set' and e.equipment_id not in targets for e in s.events):raise ValueError('unknown ESST1A port target')
     if any(m.model!='GENROU' or m.governor is None or (m.stabilizer is not None and (m.generator_id not in targets or m.stabilizer_connection!='external_ESST1A')) or (m.exciter is not None if m.generator_id in targets else m.exciter is None) for m in s.machines):raise ValueError('GENROU/TGOV1 and exclusive ESST1A or SEXS required')
+    if extended and any(m.stabilizer and m.stabilizer.MODE!=1 for m in s.machines):raise ValueError('eight-machine native PSS requires MODE1')
+    if extended and s.operating_point is not None:raise ValueError('eight-machine profile requires cold motor prestart')
+    if extended and (len(spec.network.generators)>8 or len(spec.network.connectivity_nodes)>512):raise ValueError('eight-machine reference budget exceeded')
     data=spec.model_dump(mode='json');data['coupled']['esst1a_exciters']=[];data['coupled']['takeover_oels']=[];data['coupled']['faults']=[]
     data['coupled']['events']=[e for e in data['coupled']['events'] if e['kind']!='esst1a_port_set']
     for m in data['coupled']['machines']:
@@ -46,12 +51,12 @@ def uel_event_reasons(policy,before,after,own_root=False,own_time=False,step_req
     return reasons
 
 
-def run(spec,out,root,tolerance=1e-10,*,native_uels=False,uel_event_policy='causal',uel_root_policy='continuous_atoms',linearize=False,maximum_duration_s=5.,audit_network=False,allow_cold_prestart=False):
+def run(spec,out,root,tolerance=1e-10,*,native_uels=False,uel_event_policy='causal',uel_root_policy='continuous_atoms',linearize=False,maximum_duration_s=5.,audit_network=False,allow_cold_prestart=False,profile='legacy'):
     from benchmarks.native_uel_roots import POLICIES
     if uel_root_policy not in POLICIES:raise ValueError('unknown native UEL root policy')
     if uel_event_policy not in ('broadcast','causal'):raise ValueError('unknown native UEL event policy')
     if not math.isfinite(tolerance) or not 0<tolerance<=1e-6:raise ValueError('native tolerance required')
-    baseline=scope(spec,maximum_duration_s,allow_cold_prestart)
+    baseline=scope(spec,maximum_duration_s,allow_cold_prestart,profile=profile);extended=profile=='eight_machine_v1'
     if linearize and (spec.coupled.events or spec.coupled.faults or spec.coupled.underexcitation_limiters or spec.coupled.generator_thermal or spec.coupled.generator_field_thermal or any(not m.connected for m in spec.coupled.motors)):raise ValueError('strict connected nonhybrid equilibrium required for native modal reference')
     if native_uels:
         if not spec.coupled.underexcitation_limiters:raise ValueError('native UEL feedback requires an explicit UEL passport')
@@ -64,7 +69,8 @@ def run(spec,out,root,tolerance=1e-10,*,native_uels=False,uel_event_policy='caus
     from fmpy.sundials.libraries import sundials_cvode
     import fmpy
     if fmpy.__version__!=identity['fmpy_version'] or not Path(fmpy.__file__).resolve().is_relative_to(Path(fmpy_path)):raise ValueError('wrong FMI master package')
-    plant=ExcitationCircuit(baseline,maximum_duration_s=maximum_duration_s);state=plant.state.copy();nplant=len(state);blocks=[];time_s=0.;output_times=[];sides=[];channels={};node_voltage={};event_log=[]
+    from benchmarks.eight_machine_circuit import EightMachineCircuit
+    plant=(EightMachineCircuit(baseline,maximum_duration_s=maximum_duration_s) if extended else ExcitationCircuit(baseline,maximum_duration_s=maximum_duration_s));state=plant.state.copy();nplant=len(state);blocks=[];time_s=0.;output_times=[];sides=[];channels={};node_voltage={};event_log=[]
     base_admittance=plant.Y.copy();active_faults=set();faults={f.id:f for f in spec.coupled.faults}
     uel_iterations=dict(updated=0,skipped_unaffected=0)
     network_balance=[];calls=0;events_count=0;started=time.monotonic();callback_error=[]
@@ -131,7 +137,7 @@ def run(spec,out,root,tolerance=1e-10,*,native_uels=False,uel_event_policy='caus
         def get_dx(ptr,n):
             nonlocal calls
             calls+=1
-            if calls>2_000_000 or time.monotonic()-started>180:raise ValueError('native coupled work budget')
+            if calls>2_000_000 or time.monotonic()-started>(480 if extended else 180):raise ValueError('native coupled work budget')
             sync();arr=np.ctypeslib.as_array(ptr,(n,));arr[:nplant]=plant.rhs(time_s,state)
             for gid in exciter_ids:
                 at=ports[gid][3];arr[at.start+4:at.start+6]=0.
@@ -176,6 +182,7 @@ def run(spec,out,root,tolerance=1e-10,*,native_uels=False,uel_event_policy='caus
                 flux=state[p['state']].reshape(-1,2);flux=flux[:,0]+1j*flux[:,1]
                 emf=1j*plant.wb*(p['lm']*np.linalg.solve(p['L'],np.ones(len(p['rr']))))@flux/p['vbase'];power=3*v[p['bus']]*np.conj(st[i])
                 row=dict(speed_pu=state[p['speed']],e_real_pu=emf.real,e_imag_pu=emf.imag,current_pu=abs(st[i])/p['ibase'],bus_voltage_pu=abs(v[p['bus']])/p['vbase'],p_w=power.real,q_var=power.imag,te_pu=torque[i],connected=float(plant.cfg['connected'][i]))
+                if extended:row.update(plant.complete_motor_signals(i,flux,rot))
                 values.update({m.id+'.'+k:float(x) for k,x in row.items()})
             for i,(node,g,at) in enumerate(plant.ports):
                 terminal=v[node] if plant.generator_closed(i) else g.emf(state[at]);row=g.signals(state[at],plant.generator_currents[i],terminal)
@@ -205,6 +212,7 @@ def run(spec,out,root,tolerance=1e-10,*,native_uels=False,uel_event_policy='caus
                 power=3*fault_voltage*np.conj(current)
                 values.update({fault.id+'.'+key:float(value) for key,value in dict(active=fault.id in active_faults,current_a=abs(current),p_w=power.real,q_var=power.imag).items()})
             if not all(math.isfinite(x) for x in values.values()):raise ValueError('nonfinite native output')
+            if extended and (len(output_times)+1)*(len(values)+2*len(plant.nodes)+2)>2_000_000:raise ValueError('extended native retained-output budget exceeded')
             if channels and set(values)!=set(channels):raise ValueError('native channel inventory drift')
             output_times.append(float(t));sides.append(side)
             for k,value in values.items():channels.setdefault(k,[]).append(float(value))
@@ -253,6 +261,8 @@ def run(spec,out,root,tolerance=1e-10,*,native_uels=False,uel_event_policy='caus
         for fault in faults.values():
             for at,kind in [(fault.apply_s,'fault_apply'),(fault.clear_s,'fault_clear')]:
                 scheduled.setdefault(at,[]).append(SimpleNamespace(kind=kind,equipment_id=fault.id))
+        if spec.coupled.event_policy=='coincident_roots_v1':
+            for at,commands in scheduled.items():scheduled[at]=sorted(commands,key=lambda e:(e.kind in {'motor_open','motor_close'},e.equipment_id,e.kind))
         grid=np.r_[np.arange(math.ceil(spec.coupled.duration_s/spec.coupled.step_s))*spec.coupled.step_s,spec.coupled.duration_s]
         targets=sorted(set([float(t) for t in grid if t>0]+list(scheduled)));cursor=0.;record(0.,'initial');solver=solver_at(0.)
         for target in targets:
@@ -282,6 +292,7 @@ def run(spec,out,root,tolerance=1e-10,*,native_uels=False,uel_event_policy='caus
                     if root_keys:event_log.extend(plant.extra_apply(root_keys,at,state,cfg));plant.set_context(cfg)
                     if timed:
                         for e in scheduled[target]:
+                            outcome=None
                             if e.kind in ('fault_apply','fault_clear'):
                                 if e.kind=='fault_apply':active_faults.add(e.equipment_id)
                                 else:active_faults.remove(e.equipment_id)
@@ -290,12 +301,14 @@ def run(spec,out,root,tolerance=1e-10,*,native_uels=False,uel_event_policy='caus
                                     fault=faults[fid];node=plant.nodes[fault.node_id];plant.Y[node,node]+=1/complex(fault.r_ohm,fault.x_ohm)
                                 plant.rebuild()
                             elif e.kind=='source_voltage':cfg['scale']=e.value
-                            elif e.kind in ('motor_open','motor_close'):cfg['connected'][next(i for i,m in enumerate(plant.s.motors) if m.id==e.equipment_id)]=e.kind=='motor_close'
+                            elif e.kind in ('motor_open','motor_close'):
+                                if extended:outcome=plant.motor_command(e,cfg)
+                                else:cfg['connected'][next(i for i,m in enumerate(plant.s.motors) if m.id==e.equipment_id)]=e.kind=='motor_close'
                             elif e.equipment_id in exciter_ids and e.kind in ('esst1a_port_set','voltage_reference_step'):
                                 if e.kind=='esst1a_port_set':controls[e.equipment_id]['ports'][e.port]=e.value
                                 else:controls[e.equipment_id]['reference_increment']+=e.value
                             else:plant.handle_event(e,cfg)
-                            event_log.append(dict(time_s=float(at),kind=e.kind,equipment_id=e.equipment_id))
+                            event_log.append(dict(time_s=float(at),kind=e.kind,equipment_id=e.equipment_id,**({'outcome':outcome} if outcome is not None else {})))
                         plant.set_context(cfg)
                     sync();event_log.extend(plant.after_commands(at,state,cfg));plant.set_context(cfg);sync()
                     for b in all_blocks:
@@ -334,7 +347,7 @@ def run(spec,out,root,tolerance=1e-10,*,native_uels=False,uel_event_policy='caus
         if abs(cursor-spec.coupled.duration_s)>1e-10:raise ValueError('incomplete native time axis')
         return dict(completed=True,status='completed',time_s=output_times,sample_side=sides,channels=channels,network_balance=network_balance,
             node_voltage={k:dict(real_v=[z.real for z in v],imag_v=[z.imag for z in v]) for k,v in node_voltage.items()},event_log=event_log,
-            native_MNLEX2_in_feedback=bool(native_uel_blocks),native_UEL_event_policy=uel_event_policy,native_UEL_root_policy=uel_root_policy,native_UEL_event_iterations=uel_iterations,native_UEL_initialization={gid:dict(native_states=b.native_state_names,event_detection=b.p.event_detection,event_rate_floor_per_s=1e-8 if b.p.event_detection=='conditioned_1e-8' else 64*np.finfo(float).eps,root_policy=b.root_policy,root_indicator_names=b.root_indicator_names,native_FMI_compound_indicators=b.native_nz,initial_residual_per_s=b.initial_residual,native_algebraic_initial_raw_pu=b.initial_raw,independent_SI_inputs=b.initial_inputs,reference=b.identity) for gid,b in native_uel_blocks.items()},
+            native_profile=profile,auxiliary_reference_identities=dict(pss={gid:b.identity for gid,b in native_pss_blocks.items()},takeover_OEL={gid:b.identity for gid,b in native_oel_blocks.items()}),native_MNLEX2_in_feedback=bool(native_uel_blocks),native_UEL_event_policy=uel_event_policy,native_UEL_root_policy=uel_root_policy,native_UEL_event_iterations=uel_iterations,native_UEL_initialization={gid:dict(native_states=b.native_state_names,event_detection=b.p.event_detection,event_rate_floor_per_s=1e-8 if b.p.event_detection=='conditioned_1e-8' else 64*np.finfo(float).eps,root_policy=b.root_policy,root_indicator_names=b.root_indicator_names,native_FMI_compound_indicators=b.native_nz,initial_residual_per_s=b.initial_residual,native_algebraic_initial_raw_pu=b.initial_raw,independent_SI_inputs=b.initial_inputs,reference=b.identity) for gid,b in native_uel_blocks.items()},
             native_ESST1A_in_feedback=True,native_takeover_OEL_in_feedback=bool(native_oel_blocks),native_PSS_in_feedback=bool(native_pss_blocks),independent_SI_network=True,production_stamps_used=False,production_AVR_RHS_used=False,primary_event_clocks_used=False,
             tolerance=tolerance,reference=identity,study_sha256=canonical_hash(spec),rhs_evaluations=calls,hybrid_batches=events_count,elapsed_s=time.monotonic()-started,
             initialization=plant.initialization,exciter_initialization={b.p.generator_id:dict(native_states=b.native_state_names,initial_residual_per_s=b.initial_residual) for b in blocks},whole_stock_OpenIPSL_network_qualified=False)

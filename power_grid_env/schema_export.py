@@ -13,6 +13,12 @@ def export_schemas(directory: Path) -> None:
     from power_grid_env.study_spec import StudySpec
 
     directory.mkdir(parents=True, exist_ok=True)
+    from power_grid_env.flux_network import FluxNetworkSettings
+    (directory / 'flux-network.schema.json').write_text(json.dumps(FluxNetworkSettings.model_json_schema(),ensure_ascii=False,indent=2),encoding='utf-8')
+    from power_grid_env.network_automation import NetworkAutomation
+    (directory / 'network-automation.schema.json').write_text(json.dumps(NetworkAutomation.model_json_schema(),ensure_ascii=False,indent=2),encoding='utf-8')
+    from power_grid_env.industrial_dol import IndustrialDOLPack
+    (directory / 'industrial-dol.schema.json').write_text(json.dumps(IndustrialDOLPack.model_json_schema(),ensure_ascii=False,indent=2),encoding='utf-8')
     from power_grid_env.motor_bundle import MotorReplayCriteria
     (directory / "motor-replay.schema.json").write_text(
         json.dumps(MotorReplayCriteria.model_json_schema(), ensure_ascii=False, indent=2), encoding="utf-8")

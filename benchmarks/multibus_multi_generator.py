@@ -17,11 +17,12 @@ def needed(spec):
     return bool(spec.coupled and (len(spec.network.generators)!=1 or spec.coupled.generator_thermal or spec.coupled.generator_field_thermal or spec.coupled.overexcitation_limiters or any(e.kind in CONTROL_EVENTS for e in spec.coupled.events)))
 
 
-def project_motor_case(spec):
+def project_motor_case(spec,*,maximum_generators=4):
     if spec.study!='coupled_rms' or spec.coupled is None:raise ValueError('coupled RMS required')
     if spec.coupled.esst1a_exciters:raise ValueError('old SI projection cannot silently remove an ESST1A exciter')
     n,s=spec.network,spec.coupled
-    if not 1<=len(n.generators)<=4 or len(s.machines)!=len(n.generators) or s.faults:raise ValueError('one to four GENROU generators without faults required')
+    if type(maximum_generators) is not int or not 1<=maximum_generators<=32:raise ValueError('bounded generator reference profile required')
+    if not 1<=len(n.generators)<=maximum_generators or len(s.machines)!=len(n.generators) or s.faults:raise ValueError('one to four GENROU generators without faults required')
     passports={p.generator_id:p for p in s.machines};gens={g.id:g for g in n.generators}
     if len(passports)!=len(s.machines) or len(gens)!=len(n.generators) or passports.keys()!=gens.keys():raise ValueError('unique generator/passport identity bijection required')
     terminals={t.id:t.connectivity_node_id for t in n.terminals};levels={v.id:v.nominal_ll_v for v in n.voltage_levels};nodes={p.id:p for p in n.connectivity_nodes};seen=set()
@@ -37,15 +38,15 @@ def project_motor_case(spec):
         if e.kind in CONTROL_EVENTS and (e.equipment_id not in gens or not math.isfinite(e.value)):raise ValueError('unknown/nonfinite generator control target')
     data=spec.model_dump(mode='json');data.update(study='motor_start',coupled=None)
     data['network']['generators']=[];data['network']['terminals']=[t for t in data['network']['terminals'] if t['equipment_id'] not in gens]
-    data['induction']=s.model_dump(mode='json',exclude={'machines','faults','generator_thermal','overexcitation_limiters','generator_field_thermal','underexcitation_limiters','oel2c_limiters','esst1a_exciters','takeover_oels'})
+    data['induction']=s.model_dump(mode='json',exclude={'monitored_lines','machines','faults','generator_thermal','overexcitation_limiters','generator_field_thermal','underexcitation_limiters','oel2c_limiters','esst1a_exciters','takeover_oels'})
     data['induction']['events']=[e for e in data['induction']['events'] if e['kind'] not in CONTROL_EVENTS|{'generator_open'}]
     return StudySpec.model_validate(data)
 
 
 class MultiCircuit(Circuit):
-    def __init__(self,spec,*,maximum_duration_s=3.,current_constraints=None,maximum_nodes=64,sparse_network=False):
+    def __init__(self,spec,*,maximum_duration_s=3.,current_constraints=None,maximum_nodes=64,sparse_network=False,maximum_generators=4,maximum_motors=32):
         self.ports=[];self.current_constraints=current_constraints or {}
-        super().__init__(project_motor_case(spec),initialize=False,maximum_duration_s=maximum_duration_s,maximum_nodes=maximum_nodes,sparse_network=sparse_network)
+        super().__init__(project_motor_case(spec,maximum_generators=maximum_generators),initialize=False,maximum_duration_s=maximum_duration_s,maximum_nodes=maximum_nodes,sparse_network=sparse_network,maximum_motors=maximum_motors)
         self.spec=spec;self.n=spec.network;self.s=spec.coupled
         self.term={t.id:t.connectivity_node_id for t in self.n.terminals}
         self.initialize_joint()

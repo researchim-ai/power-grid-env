@@ -70,6 +70,12 @@ def main(argv: list[str] | None = None) -> int:
     plant = sub.add_parser("plant-study", help="замороженный набор режимов площадки")
     plant.add_argument("--out", required=True)
 
+    modes=sub.add_parser('critical-modes',help='bounded analytic Schur critical eigenmodes')
+    modes.add_argument('study');modes.add_argument('--out',required=True);modes.add_argument('--count',type=int,default=6);modes.add_argument('--indices')
+
+    dol=sub.add_parser('industrial-dol',help='bounded industrial DOL/restart study pack')
+    dol.add_argument('pack');dol.add_argument('--out',required=True);dol.add_argument('--cancel-file')
+
     run_spec = sub.add_parser("run-study", help="запуск сохранённого исследования")
     run_spec.add_argument("spec")
     run_spec.add_argument("--out", required=True)
@@ -310,6 +316,43 @@ def main(argv: list[str] | None = None) -> int:
         write_json(Path(args.out), comparison)
         print(json.dumps({"passed": comparison["passed"], "status": comparison["status"]}, ensure_ascii=False))
         return 0 if comparison["passed"] else 2
+
+    if args.command=='critical-modes':
+        from power_grid_env.study_spec import StudySpec
+        from power_grid_env.dae_spectrum import critical_modes
+        try:
+            path=Path(args.study)
+            if path.stat().st_size>32000000:raise ValueError('spectral study input byte budget')
+            spec=StudySpec.model_validate_json(path.read_text())
+            if spec.study=='coupled_rms':
+                from power_grid_env.coupled_rms import CoupledNetwork,validate_coupled
+                from power_grid_env.coupled_initialization import initialize_coupled
+                if not validate_coupled(spec.network,spec.coupled)['ok']:raise ValueError('unsupported spectral network scope')
+                model=CoupledNetwork(spec.network,spec.coupled);state,initial=initialize_coupled(model,require_stable=False)
+            elif spec.study=='motor_start':
+                from power_grid_env.induction_network import InductionNetwork,validate_induction
+                from power_grid_env.motor_operating_point import initialize_motor_state
+                if not validate_induction(spec.network,spec.induction)['ok']:raise ValueError('unsupported spectral network scope')
+                model=InductionNetwork(spec.network,spec.induction);state,initial=initialize_motor_state(model)
+            else:raise ValueError('critical-modes requires motor_start or coupled_rms')
+            if state is None:raise ValueError('spectral initialization failed: '+str(initial))
+            indices=None if args.indices is None else [int(x) for x in args.indices.split(',')]
+            result=critical_modes(model,state,indices=indices,count=args.count)
+        except (ValueError,OSError,RuntimeError) as exc:
+            result=dict(completed=False,status='failed',error=str(exc))
+        write_json(Path(args.out),result);print(json.dumps(dict(completed=result['completed'])));return 0 if result['completed'] else 2
+
+    if args.command=='industrial-dol':
+        from power_grid_env.industrial_dol import IndustrialDOLPack,run_pack
+        try:
+            path=Path(args.pack)
+            if path.stat().st_size>32000000:raise ValueError('industrial DOL input byte budget')
+            pack=IndustrialDOLPack.model_validate_json(path.read_text())
+            result=run_pack(pack,Path(args.out),cancelled=(lambda:Path(args.cancel_file).exists()) if args.cancel_file else None)
+        except (ValueError,OSError,RuntimeError) as exc:
+            print(json.dumps(dict(completed=False,status='rejected',error=str(exc)),ensure_ascii=False));return 2
+        print(json.dumps({k:result[k] for k in ['completed','purpose','validation_passed','engineering_acceptable']},ensure_ascii=False))
+        return 0 if result['validation_passed'] and (pack.purpose=='regression' or result['engineering_acceptable']) else 2
 
     if args.command == "run-study":
         from power_grid_env.study_spec import run_study_document

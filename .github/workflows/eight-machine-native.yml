@@ -1,0 +1,80 @@
+name: Eight-machine native reference qualification
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'power_grid_env/**'
+      - 'benchmarks/**'
+      - 'benchmarks/coupled_jacobian_validation.py'
+      - 'tests/test_eight_machine_reference.py'
+      - 'requirements/**'
+      - '.github/workflows/eight-machine-native.yml'
+permissions:
+  contents: read
+env:
+  OPENBLAS_NUM_THREADS: '1'
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+jobs:
+  algorithm:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --require-hashes -r requirements/pilot-linux-py312.lock -r requirements/solver-tests-linux-py312.lock
+      - run: python -m pytest tests/test_eight_machine_reference.py -q --junitxml=/tmp/pge-eight-machine-native-tests.xml
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: eight-machine-unit-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            /tmp/pge-eight-machine-native-tests.xml
+          if-no-files-found: error
+          retention-days: 30
+  native:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      PGE_OPENMODELICA_ROOT: /tmp/pge-eight-machine-native-native
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y build-essential liblapack-dev libexpat1-dev libcurl4t64 zip unzip
+      - run: python -m pip install --require-hashes -r requirements/pilot-linux-py312.lock -r requirements/fmi-subset-linux-py312.lock
+      - run: python -m benchmarks.modelica_reference_setup --root "$PGE_OPENMODELICA_ROOT" --fetch
+      - run: python -m benchmarks.dynawo_reference_setup --root "$PGE_OPENMODELICA_ROOT" --fetch
+      - run: python -m benchmarks.eight_machine_validation --root "$PGE_OPENMODELICA_ROOT" --out /tmp/pge-eight-machine-native-native-report
+      - name: Retain reference contracts and notices with generated native artifacts
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os, shutil
+          from pathlib import Path
+          root=Path(os.environ['PGE_OPENMODELICA_ROOT']); out=Path('/tmp/pge-eight-machine-native-native-report/contracts');out.mkdir(parents=True,exist_ok=True)
+          lock=json.loads(Path('requirements/esst1a-reference.json').read_text())
+          files=[(root/'libraries'/('OpenIPSL-'+lock['openipsl_commit'])/'LICENSE','OpenIPSL-LICENSE.txt'),('power_grid_env/assets/licenses/Dynawo-MPL-2.0.txt','Dynawo-MPL-2.0.txt'),
+                 (root/'libraries/ModelicaStandardLibrary-3.2.3/LICENSE','MSL-LICENSE.txt'),
+                 (root/'libraries/ModelicaStandardLibrary-4.0.0/LICENSE','MSL4-LICENSE.txt'),
+                 (root/'fmpy/fmpy-0.3.27.dist-info/licenses/LICENSE.txt','FMPy-LICENSE.txt'),
+                 (root/'runtime/usr/share/doc/omc/copyright','OpenModelica-copyright'),
+                 ('requirements/esst1a-reference.json','esst1a-reference.json'),
+                 ('requirements/modelica-reference.json','modelica-reference.json'),
+                 ('requirements/dynawo-oel2c-reference.json','dynawo-oel2c-reference.json'),
+                 ('requirements/fmi-subset-linux-py312.lock','fmi-subset-linux-py312.lock')]
+          for src,name in files:
+              if not Path(src).is_file():raise FileNotFoundError(src)
+              shutil.copyfile(src,out/name)
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: eight-machine-native-${{ github.sha }}-${{ github.run_attempt }}
+          path: /tmp/pge-eight-machine-native-native-report/
+          if-no-files-found: error
+          retention-days: 30

@@ -29,7 +29,7 @@ def disconnected_buses(network,topology,closed):
     return sorted(set(graph)-seen)
 
 
-def validate_line_events(network,topology,events):
+def validate_line_events(network,topology,events,*,allow_islands=False):
     errors=[];closed={line.id:True for line in network.lines};groups=defaultdict(list)
     for event in events:
         if event.kind in LINE_EVENTS:groups[event.time_s].append(event)
@@ -40,17 +40,18 @@ def validate_line_events(network,topology,events):
             if event.equipment_id in targets:errors.append('conflicting simultaneous line operations');continue
             targets.add(event.equipment_id)
             requested=event.kind=='line_close'
-            if closed[event.equipment_id]==requested:errors.append('redundant line operation')
+            if not allow_islands and closed[event.equipment_id]==requested:errors.append('redundant line operation')
             if event.value is not None:errors.append('line operation takes no value')
             closed[event.equipment_id]=requested
         try:
-            if disconnected_buses(network,topology,closed):errors.append(f'line switching at {time} would create an unsupported island')
+            if not allow_islands and disconnected_buses(network,topology,closed):errors.append(f'line switching at {time} would create an unsupported island')
         except (KeyError,IndexError,ValueError):errors.append('invalid line switching connectivity model')
     return errors
 
 
 class CoupledLines:
-    def __init__(self,network,topology,base_y,bus_names):
+    def __init__(self,network,topology,base_y,bus_names,*,allow_islands=False):
+        self.allow_islands=allow_islands
         self.network=network;self.topology=topology;self.original=base_y.copy();self.names=bus_names
         self.closed={line.id:True for line in network.lines};self.parameters={}
         lookup={bus:i for i,bus in enumerate(bus_names)}
@@ -62,7 +63,7 @@ class CoupledLines:
             self.parameters[line.id]=(a,b,1/z,shunt,ll)
 
     def passive_matrix(self):
-        if disconnected_buses(self.network,self.topology,self.closed):raise ValueError('runtime line switching would create an unsupported island')
+        if not self.allow_islands and disconnected_buses(self.network,self.topology,self.closed):raise ValueError('runtime line switching would create an unsupported island')
         matrix=self.original.tolil(copy=True)
         for id_,(a,b,y,shunt,_) in self.parameters.items():
             if not self.closed[id_]:
@@ -75,11 +76,12 @@ class CoupledLines:
         self.closed[event.equipment_id]=event.kind=='line_close'
         return dict(outcome='applied',closed=self.closed[event.equipment_id],switching='both line ends; series and charging removed/restored')
 
-    def channels(self):return [id_+'.'+key for id_ in self.parameters for key in CHANNELS]
+    def channels(self,monitored=None):return [id_+'.'+key for id_ in (self.parameters if monitored is None else monitored) for key in CHANNELS]
 
-    def signals(self,voltage):
+    def signals(self,voltage,monitored=None):
         result={}
-        for id_,(a,b,y,shunt,ll) in self.parameters.items():
+        for id_ in (self.parameters if monitored is None else monitored):
+            a,b,y,shunt,ll=self.parameters[id_]
             ia=((voltage[a]-voltage[b])*y+voltage[a]*shunt/2) if self.closed[id_] else 0j
             ib=((voltage[b]-voltage[a])*y+voltage[b]*shunt/2) if self.closed[id_] else 0j
             sa=voltage[a]*np.conj(ia)*self.network.s_base_va;sb=voltage[b]*np.conj(ib)*self.network.s_base_va

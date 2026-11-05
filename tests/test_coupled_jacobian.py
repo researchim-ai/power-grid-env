@@ -63,10 +63,10 @@ def test_analytic_path_agrees_with_independent_SI_reference(name):
 
 
 @pytest.mark.parametrize('name',['generator_oel2c_hold'])
-def test_complex_controller_profile_retains_finite_difference_fallback(name):
+def test_OEL2C_delegates_from_classical_profile(name):
     s=StudySpec.model_validate_json(Path('cases/studies/'+name+'.json').read_text())
     model=CoupledNetwork(s.network,s.coupled)
-    assert model.integration_jacobian() is None
+    assert model.integration_jacobian().jacobian_kind=='piecewise_analytic_OEL2C_network_reduction'
     with pytest.raises(ValueError,match='GENCLS'):jacobian(model,model.initial_state())
 
 

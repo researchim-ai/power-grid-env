@@ -75,3 +75,14 @@ def test_transformer_system_base_and_explicit_winding_losses():
     assert r['completed'] and other['completed']
     assert r['initial']['bus_voltage_pu']==pytest.approx(other['initial']['bus_voltage_pu'],abs=1e-7)
     assert r['channels']['g.delta']==pytest.approx(other['channels']['g.delta'],abs=1e-7)
+
+
+def test_off_nameplate_bus_bases_match_independent_opendss():
+    s=example(tap_hv=1.025,tap_lv=1.)
+    # Bus nominal labels remain 110/10 kV; physical nameplate ratio is 100/9 kV.
+    s.network.transformers[0].windings[0].nominal_ll_v=100000.
+    s.network.transformers[0].windings[1].nominal_ll_v=9000.
+    primary=run_study(s);assert primary['completed'],primary
+    phase=solve_network(s.network);assert phase.status=='converged',phase.diagnostics
+    for row in phase.voltages:
+        if row.phase=='A':assert primary['initial']['bus_voltage_pu'][row.bus_id]==pytest.approx(abs(row.complex)/row.v_base_ln_v,abs=1e-5)

@@ -9,10 +9,10 @@ from benchmarks.genrou_reference import saturation_curve
 
 
 class ExcitationCircuit(ProtectedCircuit):
-    def __init__(self,spec,*,maximum_duration_s=3.,current_constraints=None):
+    def __init__(self,spec,*,maximum_duration_s=3.,current_constraints=None,maximum_nodes=64,sparse_network=False,maximum_generators=4):
         if spec.coupled.oel2c_limiters:raise ValueError('OEL2C requires the native Model Exchange feedback reference')
         self.limiters={};self.field_relays={};self.uels={}
-        super().__init__(spec,maximum_duration_s=maximum_duration_s,current_constraints=current_constraints)
+        super().__init__(spec,maximum_duration_s=maximum_duration_s,current_constraints=current_constraints,maximum_nodes=maximum_nodes,sparse_network=sparse_network,maximum_generators=maximum_generators)
         ids={g.g.id:i for i,(_,g,_) in enumerate(self.ports)}
         passports=spec.coupled.overexcitation_limiters
         if len({p.generator_id for p in passports})!=len(passports):raise ValueError('duplicate independent OEL target')

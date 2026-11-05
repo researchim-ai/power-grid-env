@@ -25,7 +25,8 @@ def callback(model):
     def evaluate(time, state):
         return jacobian(model, state)
     evaluate.jacobian_kind = KIND
-    return evaluate
+    from power_grid_env.jacobian_columns import attach
+    return attach(evaluate,model,lambda time,state,cols,ctx:columns(model,state,cols,ctx),lambda time,state,u,ctx,voltage_directions=None:columns(model,state,None,ctx,directions=u,voltage_directions=voltage_directions))
 
 
 def jacobian(model, state):
@@ -47,14 +48,13 @@ def jacobian(model, state):
     model._motor_current_response = view._motor_current_response
     cached = getattr(model, '_classical_voltage_response', None)
     if cached is None or cached[0] is not model.lu:
-        rhs = np.zeros((len(model.bus_names), nm + ng), dtype=complex)
-        for j, (bus, y) in enumerate(zip(model.motor_buses, model.motor_y)): rhs[bus, j] = y
-        for j, (bus, y) in enumerate(zip(model.gen_buses, model.active_gen_y)): rhs[bus, nm+j] = y
-        cached = (model.lu, model.lu.solve(rhs)); model._classical_voltage_response = cached
+        from power_grid_env.network_sensitivity import port_response
+        response = port_response(model, np.r_[model.motor_buses, model.gen_buses], np.r_[model.motor_y, model.active_gen_y], np.r_[model.motor_buses, model.gen_buses])
+        cached = (model.lu, response); model._classical_voltage_response = cached
     response = cached[1]
     real = np.arange(nm)*3; imag = real+1; speed = real+2
     delta = model.gen_offset+np.arange(ng)*2; omega = delta+1
-    dvm_delta = response[model.motor_buses, nm:] * (1j*eg)[None, :]
+    dvm_delta = response[:nm, nm:] * (1j*eg)[None, :]
     dim_delta = np.where(model.connected[:, None], dvm_delta / model.zmotor[:, None], 0j)
     motor_emf = state[real]+1j*state[imag]
     for i, motor in enumerate(model.settings.motors):
@@ -69,9 +69,9 @@ def jacobian(model, state):
             address = model.cages.addresses[i]; coefficient = model.cages.coefficients[i][2][1]
             derivative = coefficient*dim_delta[i]
             result[address.start, delta] = derivative.real; result[address.start+1, delta] = derivative.imag
-    dig_em = np.where(model.gen_connected[:, None], -response[model.gen_buses, :nm]/model.gen_z[:, None], 0j)
+    dig_em = np.where(model.gen_connected[:, None], -response[nm:, :nm]/model.gen_z[:, None], 0j)
     dig_delta = np.where(model.gen_connected[:, None],
-                        ((np.eye(ng)-response[model.gen_buses, nm:])*(1j*eg)[None, :])/model.gen_z[:, None], 0j)
+                        ((np.eye(ng)-response[nm:, nm:])*(1j*eg)[None, :])/model.gen_z[:, None], 0j)
     for i, machine in enumerate(model.gen_passports):
         inertia = 2*machine.inertia_s
         power_em = eg[i]*np.conj(dig_em[i])
@@ -89,4 +89,42 @@ def jacobian(model, state):
         result[address, address] = -1/passport.time_constant_s
     if not np.isfinite(result).all():
         raise ValueError('nonfinite coupled Jacobian')
+    return result
+
+
+def columns(model,state,coordinates,electrical=None,*,directions=None,voltage_directions=None):
+    from power_grid_env.jacobian_columns import seeds
+    from power_grid_env.motor_jacobian import tangent_rows
+    from power_grid_env.network_sensitivity import port_response
+    state=np.asarray(state);dimension=model.generator_thermal.end
+    if not supported(model):raise ValueError('unsupported classical tangent profile')
+    if state.shape!=(dimension,) or not np.isrealobj(state) or not np.isfinite(state).all():raise ValueError('invalid classical tangent state')
+    if directions is None:_,unit=seeds(dimension,coordinates)
+    else:
+        from power_grid_env.jacobian_columns import tangent_seeds
+        unit=tangent_seeds(dimension,directions)
+    nm=len(model.settings.motors);ng=len(model.generators)
+    voltage,im,_,_=model.electrical(state) if electrical is None else electrical
+    eg=model.generator_internal(state);ig=model.generator_currents(state,voltage)
+    real=np.arange(nm)*3;delta=model.gen_offset+np.arange(ng)*2;omega=delta+1
+    dem=unit[real]+1j*unit[real+1];deg=1j*eg[:,None]*unit[delta]
+    if voltage_directions is not None:
+        dv=np.asarray(voltage_directions);dvm,dvg=dv[model.motor_buses],dv[model.gen_buses]
+    elif directions is not None or model.settings.jacobian_network=='direct_solve':
+        from power_grid_env.network_sensitivity import directional_response
+        dv=directional_response(model,np.r_[model.motor_buses,model.gen_buses],np.r_[model.motor_y,model.active_gen_y],np.r_[model.motor_buses,model.gen_buses],np.vstack([dem,deg]))
+        dvm,dvg=dv[:nm],dv[nm:]
+    else:
+        cached=getattr(model,'_classical_voltage_response',None)
+        if cached is None or cached[0] is not model.lu:
+            response=port_response(model,np.r_[model.motor_buses,model.gen_buses],np.r_[model.motor_y,model.active_gen_y],np.r_[model.motor_buses,model.gen_buses]);cached=(model.lu,response);model._classical_voltage_response=cached
+        response=cached[1]
+        dvm=response[:nm,:nm]@dem+response[:nm,nm:]@deg;dvg=response[nm:,:nm]@dem+response[nm:,nm:]@deg
+    dim=np.where(model.connected[:,None],(dvm-dem)/model.zmotor[:,None],0j);dig=np.where(model.gen_connected[:,None],(deg-dvg)/model.gen_z[:,None],0j)
+    result=np.zeros((dimension,unit.shape[1]));result[:model.motor_state_end]=tangent_rows(model,state,im,dim,unit)
+    for i,m in enumerate(model.gen_passports):
+        result[delta[i]]=2*math.pi*model.network.frequency_hz*unit[omega[i]]
+        result[omega[i]]=-((deg[i]*np.conj(ig[i])+eg[i]*np.conj(dig[i])).real+m.damping_pu*unit[omega[i]])/(2*m.inertia_s)
+    for i,(a,p) in model.generator_thermal.entries.items():result[a]=(2*(np.conj(ig[i])*dig[i]).real-unit[a])/p.time_constant_s
+    if not np.isfinite(result).all():raise ValueError('nonfinite classical tangent rows')
     return result

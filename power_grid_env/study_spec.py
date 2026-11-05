@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Callable
 import math
 
-from pydantic import BaseModel, ConfigDict, ValidationError, Field
+from pydantic import BaseModel, ConfigDict, ValidationError, Field, model_serializer
 
 from power_grid_env.scenarios import Scenario
 from power_grid_env.results import SolveOptions
@@ -13,11 +13,12 @@ from power_grid_env.rms_study import RMSSettings
 from power_grid_env.induction import InductionSettings
 from power_grid_env.coupled_rms import CoupledSettings
 
+from power_grid_env.flux_network import FluxNetworkSettings
 from power_grid_env.model import Network
 from power_grid_env.scope import compile_scope
 
 STUDY_SCHEMA = "power-grid-env.study/v1"
-_EXECUTABLE = {("power_flow", "opendss"), ("qsts", "opendss"), ("rms", "andes"), ("small_signal", "andes"), ("motor_start", "scipy"), ("coupled_rms", "scipy"), ("coupled_small_signal", "scipy")}
+_EXECUTABLE = {("flux_network", "scipy"), ("power_flow", "opendss"), ("qsts", "opendss"), ("rms", "andes"), ("small_signal", "andes"), ("motor_start", "scipy"), ("coupled_rms", "scipy"), ("coupled_small_signal", "scipy")}
 
 
 class StudySpec(BaseModel):
@@ -34,6 +35,13 @@ class StudySpec(BaseModel):
     induction: InductionSettings | None = None
     coupled: CoupledSettings | None = None
     options: SolveOptions = Field(default_factory=SolveOptions)
+    flux_network: FluxNetworkSettings | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_legacy_identity(self, handler):
+        data=handler(self)
+        if self.flux_network is None:data.pop("flux_network",None)
+        return data
 
 
 def migrate_study(payload: dict[str, Any]) -> dict[str, Any]:
@@ -59,6 +67,17 @@ def run_study_document(payload: dict[str, Any], solver: Callable[..., Any] | Non
 def run_study(spec: StudySpec, solver: Callable[..., Any] | None = None, *, out=None, resume=False, max_steps=None, checkpoint_every=96, cancelled=None, isolate=False, wall_timeout_s=None) -> dict[str, Any]:
     if spec.schema_version != STUDY_SCHEMA:
         return _rejected("schema")
+    if spec.flux_network is not None and spec.study!='flux_network':
+        return _rejected('flux_settings_only_for_flux_network')
+    if spec.study=='flux_network':
+        if spec.flux_network is None:return _rejected('flux_settings_required')
+        if spec.backend!='scipy' or any(v is not None for v in [spec.rms,spec.induction,spec.coupled,spec.scenario]) or spec.options!=SolveOptions() or spec.requested_motors or resume or max_steps is not None:
+            return _rejected('unsupported_flux_runtime_options')
+        if isolate or wall_timeout_s is not None or cancelled is not None:
+            from power_grid_env.rms_process import run_isolated_rms
+            return run_isolated_rms(spec,timeout_s=120. if wall_timeout_s is None else wall_timeout_s,cancelled=cancelled)
+        from power_grid_env.flux_network import run_flux_network
+        report=run_flux_network(spec.network,spec.flux_network);report['study_id']=spec.id;return report
     if spec.requested_motors:
         return _rejected("unsupported_motor")
     if (spec.study, spec.backend) not in _EXECUTABLE:
@@ -81,6 +100,7 @@ def run_study(spec: StudySpec, solver: Callable[..., Any] | None = None, *, out=
         if isolate:
             from power_grid_env.rms_process import run_isolated_rms
             return run_isolated_rms(spec,timeout_s=120. if wall_timeout_s is None else wall_timeout_s,cancelled=cancelled)
+        if spec.study=="coupled_small_signal" and spec.coupled.network_automation is not None:return _rejected("network_automation_small_signal_not_qualified")
         if spec.study=="coupled_small_signal":
             from power_grid_env.coupled_small_signal import run_coupled_small_signal
             report=run_coupled_small_signal(spec.network,spec.coupled)

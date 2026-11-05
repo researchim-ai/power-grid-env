@@ -29,7 +29,14 @@ def callback(model):
         from power_grid_env.genrou_jacobian import jacobian
         return jacobian(model,state,esst=True)
     evaluate.jacobian_kind=KIND
-    return evaluate
+    from power_grid_env.jacobian_columns import attach
+    def evaluate_columns(time,state,cols,ctx):
+        from power_grid_env.genrou_jacobian import jacobian
+        return jacobian(model,state,esst=True,columns=cols,electrical=ctx)
+    def actions(time,state,u,ctx,voltage_directions=None):
+        from power_grid_env.genrou_jacobian import jacobian
+        return jacobian(model,state,esst=True,directions=u,electrical=ctx,voltage_directions=voltage_directions)
+    return attach(evaluate,model,evaluate_columns,actions)
 
 
 def assemble(model,i,state,voltage,current,dvoltage,dcurrent,dpss,unit,q,duel=None):
@@ -38,15 +45,15 @@ def assemble(model,i,state,voltage,current,dvoltage,dcurrent,dpss,unit,q,duel=No
     a,p=model.esst1a.entries[i];ports=model.esst1a.ports[i]
     sensor,z1,z2,raw,zf=unit[a:a+5]
     regulator=clip_slope(state[a+3],p.V_AMIN,p.V_AMAX)*raw
-    current_limit=p.K_LR*dcurrent if p.K_LR*(current-p.I_LR)>0. else np.zeros(len(state))
+    current_limit=p.K_LR*dcurrent if p.K_LR*(current-p.I_LR)>0. else np.zeros(unit.shape[1])
     demand=regulator-current_limit
     feedback=p.K_F/p.T_F*(demand-zf)
     error=-feedback-sensor+dpss+(0. if duel is None else duel)
     clipped=clip_slope(q['error_pu'],p.V_IMIN,p.V_IMAX)*error
-    selected=clipped if q['error_limited_pu']>=ports['uel_error_floor_pu'] else np.zeros(len(state))
+    selected=clipped if q['error_limited_pu']>=ports['uel_error_floor_pu'] else np.zeros(unit.shape[1])
     lead1=p.T_C/p.T_B*selected+(1-p.T_C/p.T_B)*z1
     lead2=p.T_C1/p.T_B1*lead1+(1-p.T_C1/p.T_B1)*z2
-    cap=np.zeros(len(state));pi_rows=None
+    cap=np.zeros(unit.shape[1]);pi_rows=None
     if i in model.takeover_oel.entries:
         b,pi=model.takeover_oel.entries[i]
         free=state[b+1]+pi.proportional_gain*(pi.current_limit_pu-state[b])
@@ -56,7 +63,7 @@ def assemble(model,i,state,voltage,current,dvoltage,dcurrent,dpss,unit,q,duel=No
         if clipped_ceiling<ports['oel_ceiling_pu']:cap=dceiling
         pi_rows=np.array([(dcurrent-unit[b])/pi.sensor_time_s,
                          -pi.integral_gain*unit[b]+(dceiling-dfree)/pi.tracking_time_s])
-    high=demand if q['field_demand_pu']>=ports['uel_field_floor_pu'] else np.zeros(len(state))
+    high=demand if q['field_demand_pu']>=ports['uel_field_floor_pu'] else np.zeros(unit.shape[1])
     takeover=high if q['field_floor_selected_pu']<=q['effective_oel_ceiling_pu'] else cap
     lower=p.V_RMIN*dvoltage;upper=p.V_RMAX*dvoltage-p.K_C*dcurrent
     if q['rectifier_lower_pu']==q['rectifier_upper_pu'] or q['takeover_selected_pu']>=q['rectifier_upper_pu']:field=upper

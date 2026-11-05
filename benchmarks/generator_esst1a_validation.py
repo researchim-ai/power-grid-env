@@ -11,11 +11,12 @@ from power_grid_env.study_spec import run_study
 from power_grid_env.topology import compile_topology
 
 
-def compare(spec,primary,native):
+def compare(spec,primary,native,*,extended=False):
     if not primary.get('completed') or not native.get('completed'):raise ValueError('complete ESST1A traces required')
-    physical=PHYSICAL|{'esst1a_port_set','fault_apply','fault_clear'}
+    physical=PHYSICAL|{'esst1a_port_set','fault_apply','fault_clear'}|({'thermal_trip'} if extended else set())
     left=[e for e in primary['event_log'] if e['kind'] in physical];right=[e for e in native['event_log'] if e['kind'] in physical]
     if [(e['kind'],e['equipment_id']) for e in left]!=[(e['kind'],e['equipment_id']) for e in right]:raise ValueError('physical event inventory differs')
+    if extended and any(a.get('outcome')!=b.get('outcome') for a,b in zip(left,right) if a['kind'] in ('motor_open','motor_close')):raise ValueError('motor command outcome differs')
     mapping={a['time_s']:b['time_s'] for a,b in zip(left,right)}
     selected=[];times=[];sides=[]
     for i,(t,side) in enumerate(zip(primary['time_s'],primary['sample_side'])):
@@ -31,12 +32,15 @@ def compare(spec,primary,native):
     from power_grid_env.excitation_takeover import STATES as OS,VALUES as OV
     required.update(m.generator_id+'.IEEEST.'+k for m in spec.coupled.machines if m.stabilizer for k in [*STATE_NAMES,'sig','raw_pu','limited_pu','output_pu','voltage_gate'])
     required.update(p.generator_id+'.TakeoverOEL.'+k for p in spec.coupled.takeover_oels for k in (*OS,*OV))
+    if extended:
+        from benchmarks.eight_machine_circuit import extra_required
+        required.update(extra_required(spec))
     for key in native['channels'].keys()&primary['channels'].keys():
         reference=np.asarray(primary['channels'][key])[selected];measured=sample_native(native,times,sides,key)
         error=float(np.max(abs(reference-measured)))
         if not math.isfinite(error):raise ValueError('nonfinite ESST1A comparison')
-        discrete=key.endswith(('_active','.active','.connected','.field_thermal_latched','.field_voltage_enabled','.stator_thermal_latched'))
-        errors[key]=error;limits[key]=0. if discrete else 100. if key.endswith(('.p_w','.q_var')) else 2e-5
+        discrete=(extended and key.endswith(('.thermal_latched','.voltage_gate'))) or key.endswith(('_active','.active','.connected','.field_thermal_latched','.field_voltage_enabled','.stator_thermal_latched'))
+        errors[key]=error;limits[key]=0. if discrete else 100. if key.endswith(('.p_w','.q_var')) or (extended and key.endswith(('_w','_var'))) else 1e-6 if extended and key.endswith(('.thermal_level','.stator_thermal_level','.field_thermal_level')) else 2e-5
     if not required<=errors.keys():raise ValueError('missing ESST1A feedback channels: '+str(sorted(required-errors.keys())))
     if set(native['node_voltage'])!={n.id for n in spec.network.connectivity_nodes}:raise ValueError('native node inventory differs')
     buses=compile_topology(spec.network).node_to_bus;levels={v.id:v.nominal_ll_v/math.sqrt(3) for v in spec.network.voltage_levels}

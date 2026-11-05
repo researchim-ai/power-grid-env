@@ -51,9 +51,10 @@ class GeneratorThermalBank:
         selected=set(triggered)
         # Include only roundoff-level ties with a rising heat state; never
         # coalesce distinct relays using the much wider integration tolerance.
-        for i,(a,p) in self.entries.items():
-            eps=64*np.finfo(float).eps*max(abs(state[a]),p.trip_level,np.finfo(float).tiny)
-            if not self.latched[i] and self.model.gen_connected[i] and state[a]>=p.trip_level-eps and abs(current[i])**2>state[a]:selected.add(i)
+        if self.model.settings.event_policy=='legacy':
+            for i,(a,p) in self.entries.items():
+                eps=64*np.finfo(float).eps*max(abs(state[a]),p.trip_level,np.finfo(float).tiny)
+                if not self.latched[i] and self.model.gen_connected[i] and state[a]>=p.trip_level-eps and abs(current[i])**2>state[a]:selected.add(i)
         for i in sorted(selected):
             if self.latched[i] or not self.model.gen_connected[i]:continue
             a,p=self.entries[i];self.latched[i]=True;self.model.gen_connected[i]=False

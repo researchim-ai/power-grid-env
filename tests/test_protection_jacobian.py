@@ -37,11 +37,11 @@ def test_callback_has_no_hidden_RHS_and_does_not_mutate(monkeypatch):
     assert np.isfinite(callback(m)(0.,x)).all();assert np.array_equal(x,before)
 
 
-def test_OEL2C_remains_explicit_fallback():
+def test_OEL2C_delegates_from_protection_profile():
     from power_grid_env.coupled_rms import CoupledNetwork
     from power_grid_env.generator_oel2c import OEL2CPassport
     s=example('hold');s.coupled.oel2c_limiters=[OEL2CPassport(generator_id='g2',rated_field_reaction_pu=1.)]
-    m=CoupledNetwork(s.network,s.coupled);assert callback(m) is None;assert m.integration_jacobian() is None
+    m=CoupledNetwork(s.network,s.coupled);assert callback(m) is None;assert m.integration_jacobian().jacobian_kind=='piecewise_analytic_OEL2C_network_reduction'
 
 
 @pytest.mark.parametrize('name',['hold','overload_recovery','field_trip','generator_open','pss_limited','pss_voltage_gate'])

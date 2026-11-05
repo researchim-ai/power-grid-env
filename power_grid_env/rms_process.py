@@ -59,7 +59,7 @@ def run_isolated_rms(spec, *, timeout_s=120., cancelled=None, max_result_bytes=6
                 if report['completed'] and (report.get('code_sha256')!=code or package_fingerprint()!=code):
                     return _failure('stale_worker_code',elapsed)
                 if report['completed'] and (report.get('network_sha256')!=canonical_hash(spec.network)
-                        or report.get('settings')!=(spec.coupled if spec.study in {'coupled_rms','coupled_small_signal'} else spec.induction if spec.study=='motor_start' else spec.rms).model_dump(mode='json')):
+                        or report.get('settings')!=(spec.coupled if spec.study in {'coupled_rms','coupled_small_signal'} else spec.induction if spec.study=='motor_start' else spec.flux_network if spec.study=='flux_network' else spec.rms).model_dump(mode='json')):
                     return _failure('mismatched_worker_result',elapsed)
                 report['execution']={'mode':'isolated_process','elapsed_s':elapsed,'timeout_s':timeout_s,
                                      'max_result_bytes':max_result_bytes,'os_sandbox':False}

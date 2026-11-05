@@ -167,7 +167,7 @@ def transformer_parameters(transformer, topology, base_va):
         raise ValueError('autotransformer/series winding unsupported')
     hv=topology.buses[topology.terminal_bus[a.terminal_id]].nominal_ll_v
     lv=topology.buses[topology.terminal_bus[b.terminal_id]].nominal_ll_v
-    scale=base_va/a.rated_va*(a.nominal_ll_v/hv)**2*b.tap_pu**2/100
+    scale=base_va/a.rated_va*(b.nominal_ll_v/lv)**2*b.tap_pu**2/100
     phi=(parsed.clock_hours[1]*math.pi/6+math.pi)%(2*math.pi)-math.pi
     return {'r':resistance*scale,'x':transformer.x_hl_pct*scale,
             'tap':(a.nominal_ll_v/b.nominal_ll_v)/(hv/lv)*a.tap_pu/b.tap_pu,

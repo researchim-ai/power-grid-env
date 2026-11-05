@@ -5,11 +5,11 @@ from benchmarks.multibus_multi_generator import MultiCircuit
 
 
 class ProtectedCircuit(MultiCircuit):
-    def __init__(self,spec,*,maximum_duration_s=3.,current_constraints=None):
+    def __init__(self,spec,*,maximum_duration_s=3.,current_constraints=None,maximum_nodes=64,sparse_network=False,maximum_generators=4):
         ids=[p.generator_id for p in spec.coupled.generator_thermal]
         if len(set(ids))!=len(ids) or not set(ids)<={g.id for g in spec.network.generators}:raise ValueError('independent unique existing generator thermal targets required')
         self.relays={}
-        super().__init__(spec,maximum_duration_s=maximum_duration_s,current_constraints=current_constraints)
+        super().__init__(spec,maximum_duration_s=maximum_duration_s,current_constraints=current_constraints,maximum_nodes=maximum_nodes,sparse_network=sparse_network,maximum_generators=maximum_generators)
         ids={g.g.id:i for i,(_,g,_) in enumerate(self.ports)}
         self.cfg['generator_connected']=np.ones(len(self.ports),dtype=bool)
         self.cfg['generator_latched']=np.zeros(len(self.ports),dtype=bool)

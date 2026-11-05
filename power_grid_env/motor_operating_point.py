@@ -66,7 +66,18 @@ def initialize_motor_state(model):
                 rejected.append('dynamic_residual')
                 continue
             indices = np.array([*[3*i+j for i in active for j in range(3)],*[k for i,address in model.cages.addresses.items() if i in active for k in range(address.start,address.stop)]])
-            jacobian = model.jacobian(0.,state)[np.ix_(indices,indices)]
+            if settings.jacobian_network=='direct_solve':
+                from power_grid_env.jacobian_storage import direct_supported
+                from power_grid_env.sparse_jacobian import assemble
+                callback=model.integration_jacobian()
+                if not direct_supported(callback):
+                    return None, {'reason': 'direct_network_tangent_requires_analytic_profile'}
+                # Stability certification still needs a bounded dense active
+                # dynamic block, but must not construct the port-square cache.
+                matrix=assemble(callback,0.,state)
+                jacobian=matrix[indices,:][:,indices].toarray()
+            else:
+                jacobian = model.jacobian(0.,state)[np.ix_(indices,indices)]
             modes = np.linalg.eigvals(jacobian)
             abscissa = float(max(modes.real))
             if not np.isfinite(modes).all() or abscissa >= -1e-7:

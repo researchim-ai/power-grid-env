@@ -25,7 +25,14 @@ def callback(model):
         from power_grid_env.genrou_jacobian import jacobian
         return jacobian(model,state,excitation=True)
     evaluate.jacobian_kind=KIND
-    return evaluate
+    from power_grid_env.jacobian_columns import attach
+    def evaluate_columns(time,state,cols,ctx):
+        from power_grid_env.genrou_jacobian import jacobian
+        return jacobian(model,state,excitation=True,columns=cols,electrical=ctx)
+    def actions(time,state,u,ctx,voltage_directions=None):
+        from power_grid_env.genrou_jacobian import jacobian
+        return jacobian(model,state,excitation=True,directions=u,electrical=ctx,voltage_directions=voltage_directions)
+    return attach(evaluate,model,evaluate_columns,actions)
 
 
 def pss_rows(passport,unit,address,omega):

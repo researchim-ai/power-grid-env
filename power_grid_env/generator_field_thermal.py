@@ -58,7 +58,7 @@ class FieldThermalBank:
 
     def apply(self,roots,time,state,event_log,reaction):
         selected={key[1] for key in roots if key[0]=='field'}
-        if roots:
+        if roots and self.model.settings.event_policy=='legacy':
             for i,(a,p) in self.entries.items():
                 eps=64*np.finfo(float).eps*max(abs(state[a]),p.trip_level,np.finfo(float).tiny)
                 if not self.latched[i] and state[a]>=p.trip_level-eps and (abs(reaction[i])/p.rated_field_reaction_pu)**2>state[a]:selected.add(i)

@@ -66,7 +66,7 @@ class ControllerBoundaries:
 
     def apply(self,roots,time,state,event_log):
         selected=set(roots)
-        if roots:
+        if roots and self.model.settings.event_policy=='legacy':
             rates=self.rates(state)
             for a,(_,_,low,high) in self.entries.items():
                 if a in self.active:continue

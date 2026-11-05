@@ -86,31 +86,37 @@ class NativeBlock:
     def close(self):self.f.terminate();self.f.freeInstance()
 
 
-def scope(spec):
+def scope(spec,*,profile='legacy'):
+    if profile not in ('legacy','eight_machine_v1'):raise ValueError('unknown native reference profile')
+    extended=profile=='eight_machine_v1'
     if spec.study!='coupled_rms' or spec.backend!='scipy' or not spec.coupled or not spec.coupled.oel2c_limiters:raise ValueError('coupled OEL2C profile required')
     s=spec.coupled
     for p in s.oel2c_limiters:OEL2CPassport.model_validate(p.model_dump(mode='json'))
     if s.operating_point is not None and any(p.initialization=='dynawo_startup' for p in s.oel2c_limiters):raise ValueError('loaded native OEL2C requires explicit stationary initialization')
     if s.operating_point is None and any(p.initialization in ('active_limited_equilibrium','current_regulating_equilibrium','selected_equilibrium') for p in s.oel2c_limiters):raise ValueError('native active equilibrium requires a loaded operating point')
     if any(p.initialization!='current_regulating_equilibrium' and (p.initialization in ('active_limited_equilibrium','selected_equilibrium'))!=(p.avr_reference_initialization=='derive_from_operating_point_with_OEL') for p in s.oel2c_limiters):raise ValueError('native explicit AVR reference policy mismatch')
-    if not 1<=len(spec.network.generators)<=4 or s.faults or s.duration_s>5.:raise ValueError('one-to-four-machine OEL2C reference subset required')
-    if any(m.contactor or m.thermal for m in s.motors):raise ValueError('motor contactors/thermal controls outside current native OEL2C master scope')
+    if not 1<=len(spec.network.generators)<=(8 if extended else 4) or s.faults or s.duration_s>(6. if extended else 5.):raise ValueError('one-to-four-machine OEL2C reference subset required')
+    if any(m.contactor or (m.thermal and not extended) for m in s.motors):raise ValueError('motor contactors/thermal controls outside current native OEL2C master scope')
     if any(e.kind not in ('source_voltage','motor_open','motor_close','generator_open','governor_step','voltage_reference_step') for e in s.events):raise ValueError('unsupported native OEL2C plant event')
     if len({p.generator_id for p in s.oel2c_limiters})!=len(s.oel2c_limiters):raise ValueError('unique native OEL2C targets required')
     if not {p.generator_id for p in s.oel2c_limiters}<={g.id for g in spec.network.generators}:raise ValueError('unknown native OEL2C target')
     if {p.generator_id for p in s.oel2c_limiters}&{p.generator_id for p in s.overexcitation_limiters}:raise ValueError('ambiguous native OEL implementations')
-    if any(m.model!='GENROU' or m.exciter is None or m.governor is None or m.stabilizer is not None for m in s.machines):raise ValueError('native GENROU/TGOV1/SEXS subset required')
-    if any(p.initialization!=('inactive_equilibrium' if s.operating_point is not None else 'zero_output_startup') for p in s.underexcitation_limiters):raise ValueError('native joint UEL requires inactive_equilibrium for loaded / zero_output_startup for cold')
+    if any(m.model!='GENROU' or m.exciter is None or m.governor is None or (m.stabilizer is not None and (not extended or m.stabilizer.MODE!=1 or m.stabilizer_connection!='SEXS')) for m in s.machines):raise ValueError('native GENROU/TGOV1/SEXS subset required')
+    if any(p.initialization not in (('inactive_equilibrium',) if s.operating_point is not None else ('inactive_equilibrium','zero_output_startup') if extended else ('zero_output_startup',)) for p in s.underexcitation_limiters):raise ValueError('native joint UEL requires inactive_equilibrium for loaded / zero_output_startup for cold')
     bases={p.generator_id:p.rated_field_reaction_pu for p in s.generator_field_thermal}
     if any(p.generator_id in bases and not math.isclose(p.rated_field_reaction_pu,bases[p.generator_id],rel_tol=1e-12) for p in s.oel2c_limiters):raise ValueError('native field thermal and OEL2C current bases must agree')
-    if len(s.oel2c_limiters)>4:raise ValueError('native OEL2C block budget')
+    if len(s.oel2c_limiters)>(8 if extended else 4):raise ValueError('native OEL2C block budget')
+    if extended and (s.operating_point is not None or any(p.initialization!='inactive_equilibrium' for p in s.oel2c_limiters)):raise ValueError('eight-machine profile requires cold motors and inactive OEL equilibrium')
+    if extended and len(spec.network.connectivity_nodes)>512:raise ValueError('eight-machine node budget exceeded')
     data=spec.model_dump(mode='json');data['coupled']['oel2c_limiters']=[]
+    if extended:
+        for m in data['coupled']['machines']:m['stabilizer']=None
     return StudySpec.model_validate(data)
 
 
-def run(spec,out,root,tolerance=1e-10):
+def run(spec,out,root,tolerance=1e-10,*,profile='legacy'):
     if not math.isfinite(tolerance) or not 0<tolerance<=1e-6:raise ValueError('native tolerance required')
-    baseline=scope(spec);out=Path(out).resolve();out.mkdir(parents=True,exist_ok=False);identity=verify(root)
+    baseline=scope(spec,profile=profile);extended=profile=='eight_machine_v1';out=Path(out).resolve();out.mkdir(parents=True,exist_ok=False);identity=verify(root)
     if any(p.model=='OEL2C_Dynawo_equilibrium_guard_v2_SEXS_summation' for p in spec.coupled.oel2c_limiters):
         from benchmarks.dynawo_reference_setup import verify_equilibrium_copy,sha,PATCH_FILE
         verify_equilibrium_copy(root);identity['equilibrium_guard_v2_sha256']=sha(Path(root)/'dynawo-equilibrium-guard-v2'/PATCH_FILE)
@@ -122,8 +128,9 @@ def run(spec,out,root,tolerance=1e-10):
     import fmpy
     if fmpy.__version__!=identity['fmpy_version'] or not Path(fmpy.__file__).resolve().is_relative_to(Path(fmpy_path)):raise ValueError('wrong FMI master package')
     constraints={p.generator_id:p for p in spec.coupled.oel2c_limiters if p.initialization=='current_regulating_equilibrium'}
-    plant=ExcitationCircuit(baseline,maximum_duration_s=5.,current_constraints=constraints);state=plant.state.copy();nplant=len(state);blocks=[];time_s=0.;output_times=[];sides=[];channels={};node_voltage={};event_log=[]
-    calls=0;events_count=0;started=time.monotonic();callback_error=[]
+    from benchmarks.eight_machine_circuit import EightMachineCircuit
+    plant=(EightMachineCircuit(baseline,maximum_duration_s=6.,current_constraints=constraints) if extended else ExcitationCircuit(baseline,maximum_duration_s=5.,current_constraints=constraints));state=plant.state.copy();nplant=len(state);blocks=[];time_s=0.;output_times=[];sides=[];channels={};node_voltage={};event_log=[]
+    calls=0;events_count=0;started=time.monotonic();callback_error=[];network_balance=[]
     ports={g.g.id:(i,node,g,at) for i,(node,g,at) in enumerate(plant.ports)}
     def reaction(gid):
         i,node,g,at=ports[gid];plant.electrical(state)
@@ -134,6 +141,15 @@ def run(spec,out,root,tolerance=1e-10):
             initial=abs(reaction(p.generator_id))/p.rated_field_reaction_pu
             desired=plant.cfg['generator_vref'][ports[p.generator_id][0]]-p.specified_avr_reference_pu if p.initialization=='current_regulating_equilibrium' else None
             block=NativeBlock(p,initial,out/('block-'+str(len(blocks))),root,spec.coupled.duration_s,tolerance,FMU2Model,desired);block.a=slice(nx,nx+block.nx);block.z=slice(nz,nz+block.nz);nx+=block.nx;nz+=block.nz;blocks.append(block)
+        pss_blocks={}
+        if extended:
+            from benchmarks.ex02_native_blocks import NativeAux
+            for m in spec.coupled.machines:
+                if m.stabilizer is None:continue
+                i,node,g,at=ports[m.generator_id];voltage=plant.electrical(state)[0]
+                b=NativeAux(m.stabilizer,'pss',0.,abs(voltage[node])/g.vbase,out/('pss-'+str(len(pss_blocks))),root,spec.coupled.duration_s,tolerance,generator_id=m.generator_id)
+                b.a=slice(nx,nx+b.nx);b.z=slice(nz,nz+b.nz);nx+=b.nx;nz+=b.nz;pss_blocks[m.generator_id]=b
+        all_blocks=[*blocks,*pss_blocks.values()]
         native_nz=nz;reference_audit={}
         for b in blocks:
             if b.p.initialization not in ('active_limited_equilibrium','current_regulating_equilibrium','selected_equilibrium'):continue
@@ -142,35 +158,42 @@ def run(spec,out,root,tolerance=1e-10):
             plant.cfg['generator_vref'][i]=chosen
             reference_audit[b.p.generator_id]=dict(baseline_reference_pu=original,limiter_output_pu=bias,derived_reference_pu=chosen)
         def sync():
+            if pss_blocks:
+                voltage=plant.electrical(state)[0]
+                for gid,b in pss_blocks.items():
+                    i,node,g,at=ports[gid];terminal=voltage[node] if plant.generator_closed(i) else g.emf(state[at]);b.set_inputs([state[at.start+1]-1.,abs(terminal)/g.vbase])
+                for i,(_,g,_) in enumerate(plant.ports):g.vref=plant.cfg['generator_vref'][i]
             for b in blocks:
                 i,node,g,at=ports[b.p.generator_id]
                 b.f.setReal([b.real['fieldCurrent']],[abs(reaction(b.p.generator_id))/b.p.rated_field_reaction_pu])
                 g.vref=plant.cfg['generator_vref'][i]+b.output()
+            for gid,b in pss_blocks.items():ports[gid][2].vref+=b.output()
         def set_time(t):
             nonlocal time_s
             time_s=float(t)
-            for b in blocks:b.f.setTime(time_s+b.time_offset)
+            for b in all_blocks:b.f.setTime(time_s+getattr(b,'time_offset',0.))
         def get_x(ptr,n):
             arr=np.ctypeslib.as_array(ptr,(n,));arr[:nplant]=state
-            for b in blocks:b.f.getContinuousStates(np.ctypeslib.as_ctypes(arr[b.a]),b.nx)
+            for b in all_blocks:b.f.getContinuousStates(np.ctypeslib.as_ctypes(arr[b.a]),b.nx)
         def set_x(ptr,n):
             nonlocal state
             arr=np.ctypeslib.as_array(ptr,(n,));state=arr[:nplant].copy()
-            for b in blocks:b.f.setContinuousStates(np.ctypeslib.as_ctypes(arr[b.a]),b.nx)
+            for b in all_blocks:b.f.setContinuousStates(np.ctypeslib.as_ctypes(arr[b.a]),b.nx)
         def get_dx(ptr,n):
             nonlocal calls
             calls+=1
-            if calls>2_000_000 or time.monotonic()-started>180:raise ValueError('native coupled work budget')
+            if calls>2_000_000 or time.monotonic()-started>(480 if extended else 180):raise ValueError('native coupled work budget')
             sync();arr=np.ctypeslib.as_array(ptr,(n,));arr[:nplant]=plant.rhs(time_s,state)
-            for b in blocks:b.f.getDerivatives(np.ctypeslib.as_ctypes(arr[b.a]),b.nx)
+            for b in all_blocks:b.f.getDerivatives(np.ctypeslib.as_ctypes(arr[b.a]),b.nx)
             if not np.isfinite(arr).all():raise ValueError('nonfinite native coupled RHS')
         def nominals(ptr,n):
             arr=np.ctypeslib.as_array(ptr,(n,));arr[:nplant]=np.maximum(1.,abs(plant.state))
-            for b in blocks:b.f.getNominalsOfContinuousStates(np.ctypeslib.as_ctypes(arr[b.a]),b.nx)
+            for b in all_blocks:b.f.getNominalsOfContinuousStates(np.ctypeslib.as_ctypes(arr[b.a]),b.nx)
         guards=[]
         def get_z(ptr,n):
             sync();arr=np.ctypeslib.as_array(ptr,(n,))
             for b in blocks:b.f.getEventIndicators(np.ctypeslib.as_ctypes(arr[b.z]),b.nz)
+            for b in pss_blocks.values():b.event_indicators(arr[b.z])
             for j,(_,guard) in enumerate(guards):arr[native_nz+j]=guard(time_s,state)
             if not np.isfinite(arr).all():raise ValueError('nonfinite native coupled event indicator')
         class Input:
@@ -192,10 +215,12 @@ def run(spec,out,root,tolerance=1e-10):
             return solver
         def record(t,side):
             set_time(t);sync();v,st,rot,torque=plant.electrical(state);values={}
+            if extended:network_balance.append(plant.physical_balance(v,st))
             for i,(m,p) in enumerate(zip(plant.s.motors,plant.p)):
                 flux=state[p['state']].reshape(-1,2);flux=flux[:,0]+1j*flux[:,1]
                 emf=1j*plant.wb*(p['lm']*np.linalg.solve(p['L'],np.ones(len(p['rr']))))@flux/p['vbase'];power=3*v[p['bus']]*np.conj(st[i])
                 row=dict(speed_pu=state[p['speed']],e_real_pu=emf.real,e_imag_pu=emf.imag,current_pu=abs(st[i])/p['ibase'],bus_voltage_pu=abs(v[p['bus']])/p['vbase'],p_w=power.real,q_var=power.imag,te_pu=torque[i],connected=float(plant.cfg['connected'][i]))
+                if extended:row.update(plant.complete_motor_signals(i,flux,rot))
                 values.update({m.id+'.'+k:float(x) for k,x in row.items()})
             for i,(node,g,at) in enumerate(plant.ports):
                 terminal=v[node] if plant.generator_closed(i) else g.emf(state[at]);row=g.signals(state[at],plant.generator_currents[i],terminal)
@@ -210,7 +235,9 @@ def run(spec,out,root,tolerance=1e-10):
             for b in blocks:
                 prefix=b.p.generator_id+'.OEL2C.';values.update({prefix+k:float(x) for k,x in b.signals(t).items()})
                 values[prefix+'field_reaction_pu']=reaction(b.p.generator_id);values[prefix+'field_current_input_pu']=abs(values[prefix+'field_reaction_pu'])/b.p.rated_field_reaction_pu
+            for gid,b in pss_blocks.items():values.update({gid+'.IEEEST.'+k:float(v) for k,v in b.signals().items()})
             if not all(math.isfinite(x) for x in values.values()):raise ValueError('nonfinite native output')
+            if extended and (len(output_times)+1)*(len(values)+2*len(plant.nodes)+2)>2_000_000:raise ValueError('extended native retained-output budget exceeded')
             if channels and set(values)!=set(channels):raise ValueError('native channel inventory drift')
             output_times.append(float(t));sides.append(side)
             for k,value in values.items():channels.setdefault(k,[]).append(float(value))
@@ -257,13 +284,15 @@ def run(spec,out,root,tolerance=1e-10):
                 else:raise ValueError('native conditional difference crosses a clipping boundary')
                 matrix[:,j]=(fp-fm)/(2*step)
             set_x(np.ctypeslib.as_ctypes(initial),nx);sync()
-            for b in blocks:b.update()
+            for b in all_blocks:b.update()
             eigen=np.linalg.eigvals(matrix)
             if not np.isfinite(eigen).all():raise ValueError('nonfinite native conditional spectrum')
             conditional_spectrum=dict(eigenvalues_per_s=[[float(v.real),float(v.imag)] for v in eigen],states=len(selected),relative_difference_step=1e-7,
                 scope='hot branch, constrained reference and bound-held timer excluded; not full hybrid stability')
         scheduled={}
         for e in spec.coupled.events:scheduled.setdefault(e.time_s,[]).append(e)
+        if spec.coupled.event_policy=='coincident_roots_v1':
+            for at,commands in scheduled.items():scheduled[at]=sorted(commands,key=lambda e:(e.kind in {'motor_open','motor_close'},e.equipment_id,e.kind))
         grid=np.r_[np.arange(math.ceil(spec.coupled.duration_s/spec.coupled.step_s))*spec.coupled.step_s,spec.coupled.duration_s]
         targets=sorted(set([float(t) for t in grid if t>0]+list(scheduled)));cursor=0.;record(0.,'initial');solver=solver_at(0.)
         for target in targets:
@@ -272,7 +301,7 @@ def run(spec,out,root,tolerance=1e-10):
                 event,roots,at=solver.step(cursor,next_time)
                 if callback_error:raise ValueError('native callback: '+callback_error[0])
                 set_time(at);sync();step_event=False
-                for b in blocks:
+                for b in all_blocks:
                     signal,terminate=b.f.completedIntegratorStep()
                     if terminate:raise ValueError('native early termination')
                     step_event |= signal
@@ -287,13 +316,16 @@ def run(spec,out,root,tolerance=1e-10):
                     if root_keys:event_log.extend(plant.extra_apply(root_keys,at,state,cfg));plant.set_context(cfg)
                     if timed:
                         for e in scheduled[target]:
+                            outcome=None
                             if e.kind=='source_voltage':cfg['scale']=e.value
-                            elif e.kind in ('motor_open','motor_close'):cfg['connected'][next(i for i,m in enumerate(plant.s.motors) if m.id==e.equipment_id)]=e.kind=='motor_close'
+                            elif e.kind in ('motor_open','motor_close'):
+                                if extended:outcome=plant.motor_command(e,cfg)
+                                else:cfg['connected'][next(i for i,m in enumerate(plant.s.motors) if m.id==e.equipment_id)]=e.kind=='motor_close'
                             else:plant.handle_event(e,cfg)
-                            event_log.append(dict(time_s=float(at),kind=e.kind,equipment_id=e.equipment_id))
+                            event_log.append(dict(time_s=float(at),kind=e.kind,equipment_id=e.equipment_id,**({'outcome':outcome} if outcome is not None else {})))
                         plant.set_context(cfg)
                     sync();event_log.extend(plant.after_commands(at,state,cfg));plant.set_context(cfg);sync()
-                    for b in blocks:b.update()
+                    for b in all_blocks:b.update()
                     record(at,'post_event')
                     del solver;solver=solver_at(at)
                 elif at_target:record(at,'regular')
@@ -303,9 +335,9 @@ def run(spec,out,root,tolerance=1e-10):
         if abs(cursor-spec.coupled.duration_s)>1e-10:raise ValueError('incomplete native time axis')
         return dict(completed=True,status='completed',time_s=output_times,sample_side=sides,channels=channels,
             node_voltage={k:dict(real_v=[z.real for z in v],imag_v=[z.imag for z in v]) for k,v in node_voltage.items()},event_log=event_log,
-            native_OEL2C_in_feedback=True,native_reference_variant=('Dynawo equilibrium guard v2 / FMI2 Model Exchange / CVODE' if any(p.model=='OEL2C_Dynawo_equilibrium_guard_v2_SEXS_summation' for p in spec.coupled.oel2c_limiters) else 'Dynawo cap guard v1 / FMI2 Model Exchange / CVODE'),
+            native_PSS_in_feedback=bool(pss_blocks),native_PSS_initialization={gid:dict(reference=b.identity,native_states=b.native_state_names,initial_residual_per_s=b.initial_residual) for gid,b in pss_blocks.items()},native_profile=profile,network_balance=network_balance,native_OEL2C_in_feedback=True,native_reference_variant=('Dynawo equilibrium guard v2 / FMI2 Model Exchange / CVODE' if any(p.model=='OEL2C_Dynawo_equilibrium_guard_v2_SEXS_summation' for p in spec.coupled.oel2c_limiters) else 'Dynawo cap guard v1 / FMI2 Model Exchange / CVODE'),
             independent_SI_network=True,production_stamps_used=False,production_limiter_RHS_used=False,primary_event_clocks_used=False,
             tolerance=tolerance,reference=identity,study_sha256=canonical_hash(spec),rhs_evaluations=calls,hybrid_batches=events_count,elapsed_s=time.monotonic()-started,
             initialization=plant.initialization,conditional_regulating_spectrum=conditional_spectrum,AVR_reference_initialization=reference_audit,limiter_initialization={b.p.generator_id:dict(mode=b.p.initialization,model=b.p.model,boundary_neighborhood=b.boundary_audit,native_time_offset_s=b.time_offset,initial_continuous_residual_per_s=b.stationary_initial_residual,held_cap_rounding='one outward ULP on held native LimIntegrator states' if b.p.initialization!='dynawo_startup' else None) for b in blocks},whole_stock_Dynawo_network_qualified=False)
     finally:
-        for b in blocks:b.close()
+        for b in [*blocks,*locals().get('pss_blocks',{}).values()]:b.close()

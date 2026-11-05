@@ -1,0 +1,49 @@
+name: Full winding and network automation independent references
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'power_grid_env/**'
+      - 'benchmarks/**'
+      - 'tests/**'
+      - 'requirements/**'
+      - '.github/workflows/equipment-automation-reference.yml'
+permissions:
+  contents: read
+jobs:
+  independent-reference:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MPLCONFIGDIR: /tmp/pge-matplotlib
+      PGE_MOTULATOR_WHEEL: /tmp/pge-native-wheels/motulator-0.19.0-py3-none-any.whl
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install locked runtime and independent implementation
+        run: |
+          python -m pip install --require-hashes -r requirements/pilot-linux-py312.lock
+          python -m pip install --require-hashes -r requirements/ex02-andes-linux-py312.lock
+          python -m pip download --no-deps --only-binary=:all: --require-hashes -r requirements/motulator-reference.lock --dest /tmp/pge-native-wheels
+          python -m pip install --no-deps --require-hashes -r requirements/motulator-reference.lock
+      - name: Native flux-coordinate and exact linear machine references
+        run: python -m benchmarks.extended_equipment_validation --out /tmp/pge-equipment-reference --wheel "$PGE_MOTULATOR_WHEEL"
+      - name: Independent SI network, swing equations and protection timelines
+        run: python -m benchmarks.network_automation_reference --out /tmp/pge-automation-reference
+      - name: Physics, automation, fault paths and transformer base regressions
+        run: python -m pytest tests/test_flux_machine.py tests/test_flux_network.py tests/test_network_automation.py tests/test_extended_equipment_reference.py tests/test_network_automation_reference.py tests/test_ex04_preflight.py tests/test_multivoltage_rms.py --junitxml=/tmp/pge-equipment-tests.xml
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: equipment-automation-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            /tmp/pge-equipment-reference/
+            /tmp/pge-automation-reference/
+            /tmp/pge-equipment-tests.xml
+            /tmp/pge-native-wheels/
+          if-no-files-found: error
+          retention-days: 30

@@ -5,10 +5,11 @@ Motor torque and all electrical pu parameters use each motor's own MVA base.
 """
 from __future__ import annotations
 from power_grid_env.runtime_limits import RuntimeLimits
+from power_grid_env.dae_options import DAEOptions
 
 import math
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, model_serializer
 from power_grid_env.motor_thermal import MotorThermalProtection
 from power_grid_env.motor_contactor import MotorContactorControl
 
@@ -114,19 +115,45 @@ class InductionEvent(BaseModel):
 
 
 class InductionSettings(BaseModel):
+    capacity_profile: Literal['standard','extended_128x32']='standard'
+    event_policy: Literal['legacy','coincident_roots_v1']='legacy'
+    integration_method: Literal['radau','network_dae']='radau'
+    dae_options: DAEOptions=Field(default_factory=DAEOptions)
+    jacobian_format: Literal['dense','csc']='dense'
+    jacobian_network: Literal['cached_ports','direct_solve']='cached_ports'
     runtime_limits: RuntimeLimits = Field(default_factory=RuntimeLimits)
     model_config = ConfigDict(extra='forbid', allow_inf_nan=False)
     duration_s: float = Field(default=5., gt=0, le=60)
     step_s: float = Field(default=.005, gt=0)
     rtol: float = Field(default=1e-7, gt=0, le=1e-4)
     atol: float = Field(default=1e-9, gt=0, le=1e-6)
-    motors: list[InductionMotor] = Field(min_length=1, max_length=32)
+    motors: list[InductionMotor] = Field(min_length=1, max_length=128)
     operating_point: MotorOperatingPoint | None = None
     maximum_contactor_transitions: int = Field(default=64, ge=1, le=512)
-    events: list[InductionEvent] = Field(default_factory=list, max_length=100)
+    events: list[InductionEvent] = Field(default_factory=list, max_length=512)
+
+    @model_serializer(mode='wrap')
+    def canonical_solver_settings(self,handler):
+        data=handler(self)
+        # Preserve historical default-mode StudySpec hashes. Explicit CSC
+        # remains in serialized input and therefore in the case identity.
+        if self.jacobian_format=='dense':data.pop('jacobian_format',None)
+        if self.jacobian_network=='cached_ports':data.pop('jacobian_network',None)
+        if self.integration_method=='radau':data.pop('integration_method',None)
+        if self.event_policy=='legacy':data.pop('event_policy',None)
+        if self.capacity_profile=='standard':data.pop('capacity_profile',None)
+        if self.dae_options==DAEOptions():data.pop('dae_options',None)
+        return data
 
     @model_validator(mode='after')
     def budgets(self):
+        if self.capacity_profile=='standard' and len(self.motors)>32:raise ValueError('standard profile supports at most 32 motors')
+        if self.capacity_profile=='standard' and len(self.events)>100:raise ValueError('standard profile supports at most 100 events')
+        if self.capacity_profile=='extended_128x32' and (self.jacobian_network!='direct_solve' or self.event_policy!='coincident_roots_v1'):raise ValueError('extended capacity requires direct_solve and coincident_roots_v1')
+        if self.integration_method=='network_dae' and self.jacobian_network!='direct_solve':raise ValueError('network DAE requires explicit direct_solve tangents')
+        if self.integration_method=='radau' and self.dae_options!=DAEOptions():raise ValueError('DAE options require network_dae integration')
+        if self.jacobian_network=='direct_solve' and self.jacobian_format!='csc':
+            raise ValueError('direct network tangents require CSC analytic delivery')
         if self.step_s > self.duration_s or math.ceil(self.duration_s / self.step_s) > 200000:
             raise ValueError('invalid motor integration sampling budget')
         if len({m.id for m in self.motors}) != len(self.motors):

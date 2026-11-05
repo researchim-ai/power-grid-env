@@ -1797,3 +1797,170 @@ protection_jacobian_followup:
   OEL2C_analytic: pending_separate_clock_and_active_set_derivation
   saltation_matrices: not_implemented
   remote_release_gate: EX-04_still_requires_actual_signed_run
+
+oel2c_jacobian_followup:
+  id: NA-06
+  status: implemented_for_declared_single_OEL_continuous_subset
+  qualification_status: read_bound_report_for_exact_producer
+  document: docs/OEL2C_JACOBIAN_RU.md
+  algorithm_report: reports/na06-qualified-v3-2026-11-05/summary.json
+  native_report: reports/na06-native-v2-2026-11-05/summary.json
+  registered_positive_cases: 57
+  repeats: 2
+  native_cases: 10
+  native_tolerances: [1.0e-12, 1.0e-13]
+  explicit_multi_OEL_exclusions: 8
+  negative_witness: reports/na06-qualified-2026-11-05/cold__two_limiters
+  multi_OEL_routing: finite_difference_until_coincident_event_contract_qualified
+  primary_equations_changed: false
+  saltation_matrices: not_implemented
+  next: coincident_event_batching_then_sparse_network_Jacobians
+  remote_release_gate: EX-04_still_requires_actual_signed_run
+
+oel2c_below_clock_batch_followup:
+  id: NA-07
+  status: implemented_explicit_optin_subset
+  qualification_status: read_bound_report_for_exact_producer
+  document: docs/OEL2C_EVENT_BATCH_RU.md
+  algorithm_report: reports/na07-qualified-v2-2026-11-05/summary.json
+  native_report: reports/na07-native-v2-2026-11-05/summary.json
+  policy: independent_below_clock_batch_v1
+  default_policy: legacy_unchanged_with_multi_OEL_FD
+  algorithm_cases: 8
+  native_cases: 6
+  continuous_equations_changed: false
+  hybrid_policy_changed: explicit_optin_only
+  general_coincident_guard_batching: not_implemented
+  saltation_matrices: not_implemented
+  next: sparse_Jacobian_scaling_and_broader_hybrid_contract
+  remote_release_gate: EX-04_requires_actual_signed_run
+
+jacobian_scaling_followup:
+  id: NA-08
+  status: implemented_exact_blocked_ports_and_optin_CSC
+  qualification_status: read_bound_report_for_exact_producer
+  document: docs/JACOBIAN_SCALING_RU.md
+  algorithm_report: reports/na08-qualified-v2-2026-11-05/summary.json
+  native_report: reports/na08-native-v2-2026-11-05/summary.json
+  trajectory_cases: 9
+  repeats: 2
+  temporary_RHS_maximum_columns: 8
+  memory_probe_sizes: [2000, 20000]
+  memory_probe_ports: 40
+  memory_probe_is_full_trajectory: false
+  CSC_default: false
+  dense_Jacobian_assembly_retained: true
+  nonzero_thresholding: false
+  physical_equations_changed: false
+  next: sparse_assembly_or_DAE_for_large_dynamic_state_counts
+  remote_release_gate: EX-04_requires_actual_signed_run
+
+streamed_CSC_assembly_followup:
+  id: NA-09
+  status: implemented_for_supported_motor_and_coupled_analytic_profiles
+  qualification_status: read_bound_report_for_exact_producer
+  document: docs/STREAMED_JACOBIAN_RU.md
+  algorithm_report: reports/na09-qualified-v2-2026-11-05/summary.json
+  native_report: reports/na09-native-v2-2026-11-05/summary.json
+  trajectory_cases: 12
+  trajectory_comparisons: 24
+  block_columns: 32
+  authored_high_state_counts: [400, 424]
+  authored_high_machine_counts: {generators: 8, motors: 32}
+  authored_high_state_duration_s: [0.8, 6.0]
+  memory_snapshots: 3
+  repeats: 2
+  native_cases: 3
+  eight_machine_native_qualified: false
+  physical_RHS_changed: false
+  nonzero_thresholding: false
+  dense_final_CSC_possible: true
+  dense_fallback_for_external_callbacks_without_column_protocol: explicit_metadata
+  general_DAE_or_matrix_free_solver: not_implemented
+  next: larger_port_DAE_formulation_and_external_multi_machine_scale_corpus
+  remote_release_gate: EX-04_requires_actual_signed_run
+
+independent_eight_machine_followup:
+  id: NA-10
+  status: implemented_explicit_eight_machine_reference_profile
+  qualification_status: read_bound_report_for_exact_producer
+  document: docs/EIGHT_MACHINE_NATIVE_RU.md
+  native_report: reports/na10-qualified-v2-2026-11-05/summary.json
+  original_NA09_cases_unchanged: 3
+  thermal_trip_latch_case: 1
+  native_tolerances: [1.0e-12, 1.0e-13]
+  generators: 8
+  motors: 32
+  nodes: 512
+  native_PSS_preserved: true
+  UEL: independent_SI_circle_lag_not_native_MNLEX2
+  whole_stock_grid_solver: false
+  physical_RHS_changed: false
+  arbitrary_scale_qualified: false
+  next: larger_port_DAE_and_disturbance_rich_external_corpus
+  remote_release_gate: EX-04_requires_actual_signed_run
+  thermal_reclose_scope: accounts_for_autonomous_trip_without_resetting_latch
+
+direct_network_tangent_followup:
+  id: NA-11
+  status: implemented_explicit_direct_network_and_analytic_products
+  qualification_status: read_bound_report_for_exact_producer
+  document: docs/NETWORK_TANGENTS_RU.md
+  algorithm_report: reports/na11-qualified-v2-2026-11-05/summary.json
+  native_report: reports/na11-native-v2-2026-11-05/summary.json
+  default_network_response: cached_ports
+  optin_network_response: direct_solve
+  maximum_temporary_network_RHS_columns: 8
+  analytic_profiles: [motor, GENCLS, GENROU, PSS, ESST1A, UEL, thermal, OEL2C]
+  trajectory_cases: 15
+  trajectory_repeats: 2
+  native_eight_machine_cases: 4
+  algebraic_memory_tuples: [[2000, 400], [20000, 2000]]
+  algebraic_probes_are_dynamic_qualification: false
+  physical_RHS_changed: false
+  matrix_free_integrator: not_implemented
+  general_DAE_solver: not_implemented
+  next: NA-12_index1_DAE_residual_consistent_initialization_block_Newton_preconditioning
+  remote_release_gate: EX-04_requires_actual_signed_run
+  loaded_motor_initialization: direct_CSC_with_dense_active_stability_block
+
+network_dae_and_industrial_dol_followup:
+  id: NA-12
+  status: implemented_five_scoped_blocks
+  qualification_status: read_bound_reports_for_exact_producer_and_completion
+  document: docs/DAE_AND_DOL_BLOCKS_RU.md
+  algorithm_report: reports/blocks1-5-qualified-v6-2026-11-05/summary.json
+  native_report: reports/blocks1-5-native-rechecked-v6-2026-11-05/summary.json
+  engineering_pack: reports/blocks1-5-industrial-dol-v6-2026-11-05/summary.json
+  blocks: [index1_residual, Radau_Schur_GMRES, coincident_roots_and_local_saltation, extended_scale_and_critical_modes, bounded_DOL_pack]
+  extended_limits: {motors: 128, generators: 32}
+  dynamic_scale_tuples: [[512, 64, 16], [2000, 128, 32]]
+  arbitrary_scale_qualified: false
+  universal_DAE_solver: false
+  global_hybrid_gradient: false
+  own_lab_required: false
+  remote_release_gate: EX-04_requires_actual_signed_run
+
+extended_equipment_and_network_automation:
+  roadmap_blocks: [6, 7, 8]
+  status: implemented_bounded_profiles_remote_gate_pending
+  document: docs/EQUIPMENT_AUTOMATION_VALIDATION_RU.md
+  full_winding_network:
+    physics: [saturation, discrete_rotor_cages, copper_loss, temperature_resistance, two_node_heat_balance]
+    native_reference: motulator_0.19.0_single_bus_single_cage
+    exact_reference: matrix_exponential_locked_linear_RL_feeder_one_two_four_cages
+    nonlinear_meshed_external_reference: pending
+    core_loss: not_implemented_in_this_profile
+    universal_EMT: false
+    maximum_API_limits_are_not_scale_qualification: true
+  network_automation:
+    physics: [continuous_relays, actual_breaker_delays, breaker_failure_backup, limited_reclose, break_before_make_ATS, synchronism, runtime_islands]
+    independent_reference: two_bus_SI_GENCLS_and_prescribed_protection_timelines
+    numerical_profile: Radau_cached_ports_coincident_roots_v1_finite_difference
+    analytic_DAE_automation_qualification: pending
+    OEM_relay_certification: false
+  external_delivery:
+    workflow: .github/workflows/equipment-automation-reference.yml
+    preflight: benchmarks.ex04_preflight
+    actual_hosted_signed_execution: pending
+    EX04_complete: false

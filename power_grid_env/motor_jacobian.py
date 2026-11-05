@@ -21,9 +21,8 @@ def jacobian(model,state):
     count=len(model.settings.motors);dimension=model.motor_state_end
     if len(state)!=dimension:raise ValueError('motor-only Jacobian cannot include synchronous-machine states')
     if model._motor_current_response is None:
-        rhs=np.zeros((len(model.bus_names),count),dtype=complex)
-        for j,(bus,y) in enumerate(zip(model.motor_buses,model.motor_y)):rhs[bus,j]=y
-        response=model.lu.solve(rhs)[model.motor_buses,:]
+        from power_grid_env.network_sensitivity import port_response
+        response=port_response(model,model.motor_buses,model.motor_y,model.motor_buses)
         model._motor_current_response=np.where(model.connected[:,None],(response-np.eye(count))/model.zmotor[:,None],0j)
     di=model._motor_current_response
     _,current,_,_=model.electrical(state)
@@ -58,3 +57,54 @@ def jacobian(model,state):
         result[address.start,omega[i]]=-wb*u1.imag;result[address.start+1,omega[i]]=wb*u1.real
     if not np.isfinite(result).all():raise ValueError('nonfinite motor Jacobian')
     return result
+
+
+def tangent_rows(model,state,current,dcurrent,unit):
+    """Motor/cage/heat rows for arbitrary global tangent columns."""
+    count=len(model.settings.motors);width=unit.shape[1]
+    result=np.zeros((model.motor_state_end,width));wb=2*math.pi*model.network.frequency_hz
+    for i,m in enumerate(model.settings.motors):
+        real=3*i;imag=real+1;omega=real+2;e=complex(state[real],state[imag]);speed=state[omega]
+        dem=unit[real]+1j*unit[imag];di=dcurrent[i]
+        tau=model.constants[i][2];difference=model.constants[i][1]
+        de=-(1/tau+1j*wb*(1-speed))*dem+1j*difference/tau*di+1j*wb*e*unit[omega]
+        result[real]=de.real;result[imag]=de.imag
+        result[omega]=((dem*np.conj(current[i])+e*np.conj(di)).real-load_slope(m,speed)*model.load_scale[i]*unit[omega])/(2*m.inertia_s)
+        if i in model.thermal_indices:
+            a=model.thermal_indices[i];result[a]=(2*(np.conj(current[i])*di).real-unit[a])/m.thermal.time_constant_s
+        if i in model.cages.addresses:
+            address=model.cages.addresses[i];_,a,b,_=model.cages.coefficients[i]
+            u1=complex(*state[address]);du1=unit[address.start]+1j*unit[address.start+1];slip=wb*(1-speed)
+            for output,row in [(0,real),(1,address.start)]:
+                d=(a[output,0]-(1j*slip if output==0 else 0.))*dem+(a[output,1]-(1j*slip if output==1 else 0.))*du1+b[output]*di
+                d+=1j*wb*(e if output==0 else u1)*unit[omega]
+                result[row]=d.real;result[row+1]=d.imag
+    if not np.isfinite(result).all():raise ValueError('nonfinite motor tangent rows')
+    return result
+
+
+def columns(model,state,coordinates,electrical=None,*,directions=None,voltage_directions=None):
+    from power_grid_env.jacobian_columns import seeds
+    state=np.asarray(state);dimension=model.motor_state_end
+    if state.shape!=(dimension,) or not np.isrealobj(state) or not np.isfinite(state).all():raise ValueError('invalid motor tangent state')
+    if directions is None:_,unit=seeds(dimension,coordinates)
+    else:
+        from power_grid_env.jacobian_columns import tangent_seeds
+        unit=tangent_seeds(dimension,directions)
+    direct=directions is not None or model.settings.jacobian_network=='direct_solve'
+    if not direct and model._motor_current_response is None:
+        from power_grid_env.network_sensitivity import port_response
+        response=port_response(model,model.motor_buses,model.motor_y,model.motor_buses)
+        model._motor_current_response=np.where(model.connected[:,None],(response-np.eye(len(model.settings.motors)))/model.zmotor[:,None],0j)
+    real=np.arange(len(model.settings.motors))*3
+    dem=unit[real]+1j*unit[real+1]
+    if voltage_directions is not None:
+        dv=np.asarray(voltage_directions)[model.motor_buses]
+        dcurrent=np.where(model.connected[:,None],(dv-dem)/model.zmotor[:,None],0j)
+    elif direct:
+        from power_grid_env.network_sensitivity import directional_response
+        dv=directional_response(model,model.motor_buses,model.motor_y,model.motor_buses,dem)
+        dcurrent=np.where(model.connected[:,None],(dv-dem)/model.zmotor[:,None],0j)
+    else:dcurrent=model._motor_current_response@dem
+    _,current,_,_=model.electrical(state) if electrical is None else electrical
+    return tangent_rows(model,state,current,dcurrent,unit)
