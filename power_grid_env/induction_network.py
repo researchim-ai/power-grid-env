@@ -101,7 +101,7 @@ def validate_induction(network, settings, *, validate_rules=True):
     # a blocked latch or an already-satisfied command at execution time.
     controlled = {m.id for m in settings.motors if m.contactor or m.thermal}
     states = {m.id: m.connected for m in settings.motors}
-    for event in sorted(settings.events, key=lambda e: e.time_s):
+    for event in sorted(settings.events, key=(lambda e:(e.time_s,e.kind in {'motor_open','motor_close'},e.equipment_id,e.kind)) if settings.event_policy=='coincident_roots_v1' else (lambda e:e.time_s)):
         if event.kind == 'source_voltage':
             if event.equipment_id not in {s.id for s in network.sources}:
                 errors.append('unknown source voltage target')
@@ -111,7 +111,7 @@ def validate_induction(network, settings, *, validate_rules=True):
             pass
         else:
             closed = event.kind == 'motor_close'
-            if event.equipment_id not in controlled and states[event.equipment_id] == closed:
+            if settings.event_policy=='legacy' and event.equipment_id not in controlled and states[event.equipment_id] == closed:
                 errors.append('redundant contactor operation')
             states[event.equipment_id] = closed
     return {'ok': not errors, 'errors': errors, 'model': 'single_or_double_cage_algebraic_stator_balanced',
@@ -336,21 +336,22 @@ def reclose_diagnostic(model, channels, motor_id):
                'phase_defined_above_voltage_pu':1e-12, 'scope':'diagnostic only; no synchronism permissive or instantaneous EMT current claim'}
 
 
-def integrate_induction_model(model, scope, state, operating_point, *, study='motor_start'):
+def integrate_induction_model(model, scope, state, operating_point, *, study='motor_start', observer=None):
     from power_grid_env.runtime_limits import IntegrationBudget,RuntimeLimitExceeded
     budget=IntegrationBudget(model.settings.runtime_limits)
     try:
-        result=_integrate_induction_model(model,scope,state,operating_point,study=study,budget=budget)
+        result=_integrate_induction_model(model,scope,state,operating_point,study=study,budget=budget,observer=observer)
         budget.check_time()
     except RuntimeLimitExceeded as exc:
         result=dict(solved=True,completed=False,status='runtime_limit_exceeded',reason=exc.resource,
                     resource_limit=dict(resource=exc.resource,limit=exc.limit,attempted=exc.attempted),scope=scope)
+    if observer is not None:result['sensitivity']=observer.report(result.get('completed',False))
     result['runtime_budget']=budget.report()
     if hasattr(model,'_dae_statistics'):result['dae_diagnostics']=dict(model._dae_statistics)
     return result
 
 
-def _integrate_induction_model(model, scope, state, operating_point, *, study, budget):
+def _integrate_induction_model(model, scope, state, operating_point, *, study, budget, observer=None):
     """Shared event/thermal integrator; extra machines use the same nodal solve."""
     network, settings = model.network, model.settings
     from power_grid_env.motor_contactor import MotorContactorBank,ContactorControlError
@@ -410,6 +411,9 @@ def _integrate_induction_model(model, scope, state, operating_point, *, study, b
         passive_power = np.sum(voltage*np.conj(passive_i))*network.s_base_va
         motor_power = np.sum(voltage[model.motor_buses]*np.conj(current)*model.factors)*network.s_base_va
         power_balance.append(float(abs(injected+additional_injection-passive_power-motor_power)/network.s_base_va))
+    if observer is not None:
+        model._sensitivity_budget=budget
+        observer.start(model,state)
     record(0., state, 'initial')
     nfev = njev = nlu = 0
     cohort_audits=[]
@@ -463,6 +467,7 @@ def _integrate_induction_model(model, scope, state, operating_point, *, study, b
             if not solution.success or not np.isfinite(solution.y).all():
                 return {'solved': True, 'completed': False, 'status': 'numerically_not_converged',
                         'solver_message': solution.message, 'scope': scope}
+            if observer is not None:observer.segment(model,solution)
             model.observe_accepted_states(solution.y)
             stop = float(solution.t[-1])
             state = solution.y[:, -1]
@@ -493,15 +498,18 @@ def _integrate_induction_model(model, scope, state, operating_point, *, study, b
                             and abs(pre_current[i])**2 > state[model.thermal_indices[i]]):
                         triggered.add(i)
             scheduled = events.get(right, []) if stop == right else []
+            internal_only=(settings.event_trace=='sampled_controls' and bool(extra_roots) and not (triggered or scheduled or control_roots or contactors.due(stop) or model.events_due(stop)) and all(key[0] in {'controller','oel2c','uel','esst1a'} for key in extra_roots))
             axis_epsilon = 64*np.finfo(float).eps*max(1.,abs(cursor),abs(stop))
             sample_times=list(regular[(regular > cursor+axis_epsilon) & (regular < stop-axis_epsilon)])
             computational_only=computational_target is not None and abs(stop-computational_target)<=axis_epsilon and not (triggered or scheduled or control_boundary)
             near=regular[abs(regular-stop)<=axis_epsilon]
-            if not computational_only or len(near):sample_times.append(float(near[0]) if computational_only and len(near) else stop)
+            if (not computational_only and not internal_only) or len(near):sample_times.append(float(near[0]) if computational_only and len(near) else stop)
             sampled=solution.sol(sample_times) if sample_times else np.empty((len(state),0))
             if sample_times and abs(sample_times[-1]-stop)<=axis_epsilon:sampled[:,-1]=state
             for time, values in zip(sample_times, sampled.T):
                 record(time, values, 'pre_event' if time == stop and (triggered or scheduled or control_boundary) else 'regular')
+            if observer is not None:
+                observer.before_events(model,stop,state,triggered,scheduled,control_boundary)
             try:
                 if control_roots:contactors.observe(stop,state,event_log,control_roots)
             except ValueError as exc:
@@ -566,7 +574,8 @@ def _integrate_induction_model(model, scope, state, operating_point, *, study, b
                         model.factorize()
                         model.after_discrete_commands(stop,state,event_log)
                         contactors.observe(stop,state,event_log)
-                    record(stop, state, 'post_event')
+                    if observer is not None:observer.after_events(model,stop,state,event_log)
+                    if not internal_only or len(near):record(stop, state, 'post_event')
                     for entry in event_log[batch_log_start:]:
                         if 'reclose_diagnostic' in entry:
                             motor_id = entry['equipment_id']
@@ -638,5 +647,7 @@ def _integrate_induction_model(model, scope, state, operating_point, *, study, b
     if settings.event_policy=='coincident_roots_v1':result['hybrid_event_audit']=dict(policy=settings.event_policy,cohorts=cohort_audits,maximum_snap_s=max([0.,*[a['maximum_snap_s'] for a in cohort_audits]]))
     if dae_stats is not None:
         result['integration'].update(method='RadauIIA_index1_network_DAE',jacobian_format='linear_operator',jacobian_assembly='analytic_Schur_products',jacobian_linear_solver='GMRES_block_Jacobi',dae=dae_stats,dae_options=settings.dae_options.model_dump(mode='json'),algebraic_network_solver='SuperLU',scipy_implementation='1.15.2',dae_scope='fixed-topology nonsingular linear algebraic network, reinitialized after events')
+        if getattr(model,'automation',None) is not None:
+            result['integration']['dae_scope']='piecewise linear algebraic RMS network; unexcited passive components restricted to zero voltage; reinitialized after topology/relay events'
     result.update(model.additional_metadata())
     return result

@@ -117,6 +117,7 @@ class InductionEvent(BaseModel):
 class InductionSettings(BaseModel):
     capacity_profile: Literal['standard','extended_128x32']='standard'
     event_policy: Literal['legacy','coincident_roots_v1']='legacy'
+    event_trace: Literal['all','sampled_controls']='all'
     integration_method: Literal['radau','network_dae']='radau'
     dae_options: DAEOptions=Field(default_factory=DAEOptions)
     jacobian_format: Literal['dense','csc']='dense'
@@ -140,6 +141,7 @@ class InductionSettings(BaseModel):
         if self.jacobian_format=='dense':data.pop('jacobian_format',None)
         if self.jacobian_network=='cached_ports':data.pop('jacobian_network',None)
         if self.integration_method=='radau':data.pop('integration_method',None)
+        if self.event_trace=='all':data.pop('event_trace',None)
         if self.event_policy=='legacy':data.pop('event_policy',None)
         if self.capacity_profile=='standard':data.pop('capacity_profile',None)
         if self.dae_options==DAEOptions():data.pop('dae_options',None)
@@ -160,7 +162,7 @@ class InductionSettings(BaseModel):
             raise ValueError('duplicate motor ID')
         if any(e.time_s >= self.duration_s for e in self.events):
             raise ValueError('events must precede horizon')
-        keys = [(e.time_s, 'source' if e.kind == 'source_voltage' else 'load' if e.kind == 'load_torque_scale' else 'motor' if e.kind in {'motor_open','motor_close'} else e.kind, e.equipment_id,getattr(e,'port',None)) for e in self.events]
+        keys = [(e.time_s, 'source' if e.kind == 'source_voltage' else 'load' if e.kind == 'load_torque_scale' else ('motor' if self.event_policy=='legacy' else e.kind) if e.kind in {'motor_open','motor_close'} else e.kind, e.equipment_id,getattr(e,'port',None)) for e in self.events]
         if len(set(keys)) != len(keys):
             raise ValueError('simultaneous commands to the same device are ambiguous')
         return self

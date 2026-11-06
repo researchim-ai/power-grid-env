@@ -2,6 +2,10 @@
 
 [Русский](README.md)
 
+[Current status, remaining blocks and work queue (Russian)](plans/CURRENT_STATUS.md)
+
+Validation and delivery run locally. CI is disabled; the agent does not interact with GitHub.
+
 ![Industrial substation and plant with a neural-network graph over the equipment](docs/assets/power-grid-env-banner.jpg)
 
 An engineering testbed for distribution-grid control algorithms. The first release is a quasi-static unbalanced feeder: import, preflight, an external controller, a restoration suite, comparison with a baseline, a report, and replay.
@@ -10,7 +14,11 @@ The simulator runs locally. A cluster, Kubernetes, and control of a real network
 
 A simulation run is not permission to operate a real network, a real-time guarantee, or a full EMT study.
 
-Full-winding saturated/electrothermal motors, RMS protection/transfer/islanding and independent references: [blocks 6–8 and exact scope (Russian)](docs/EQUIPMENT_AUTOMATION_VALIDATION_RU.md). Native motulator 0.19.0 and exact matrix-exponential references are provided; thermal stress constants are authored, and actual hosted signed EX-04 execution remains required.
+Additional profiles cover analytic automation with DAE, independent multi-cage network references, eddy-current losses, parameter identification and common-ground phase faults.
+
+Independent network checks now cover meshed saturated-motor circuits, transformers and multiple sources; standby transfer has a separate SI reference.
+
+Full-winding saturated/electrothermal motors, RMS protection/transfer/islanding and independent references: [blocks 6–8 and exact scope (Russian)](docs/EQUIPMENT_AUTOMATION_VALIDATION_RU.md). Native motulator 0.19.0 and exact matrix-exponential references are provided; thermal stress constants are authored, and external EX-04 has been cancelled by the user; local reproducibility is the delivery gate.
 
 Index-1 network DAE, extended dynamic cases and DOL/restart study packs: [implementation, evidence and scope (Russian)](docs/DAE_AND_DOL_BLOCKS_RU.md).
 
@@ -133,7 +141,7 @@ Project validation does not require our own hardware: it relies on analytic refe
 
 Added reproducible DOL → voltage dip → coast → restart cases, including manual inhibition, restart limits and thermal latching. Checks use an independent SI model, ANDES and analytic coast laws. [Cases and criteria (Russian)](docs/MULTIBUS_DOL_RESTART_VALIDATION_RU.md).
 
-Extended independent generator/motor network checks to 2–4 GENROU/TGOV1/SEXS machines: individual control targets, joint initialization, passport permutations and base changes. Added verified benchmark resumption and a dedicated CI job. [Eight cases, criteria and results (Russian)](docs/MULTI_GENERATOR_VALIDATION_RU.md).
+Extended independent generator/motor network checks to 2–4 GENROU/TGOV1/SEXS machines: individual control targets, joint initialization, passport permutations and base changes. Added locally verified benchmark resumption. [Eight cases, criteria and results (Russian)](docs/MULTI_GENERATOR_VALIDATION_RU.md).
 
 Generator stator thermal memory and latched electrical trips are available; rotor dynamics and cooling continue after opening. Six protected cases match an independent SI model. Eighteen unprotected ANDES baseline runs validate only the interval before opening; post-trip validation uses the SI model and analytic checks. See the [model and validation scope](docs/GENERATOR_STATOR_THERMAL_RU.md) (Russian).
 
@@ -220,14 +228,14 @@ ESST1A cross-check, and five measured dynamic configurations up to
 checks internal states and every node's complex voltage.
 [Cases, exact scale limits and reproduction (Russian)](docs/EX03_LONG_RUN_AND_SCALE_RU.md).
 
-EX-04 introduces a [reproducible release candidate](docs/EX04_REPRODUCIBLE_RELEASE_RU.md):
+Local delivery uses a [reproducible release candidate](docs/EX04_REPRODUCIBLE_RELEASE_RU.md):
 frozen source, a hash-locked offline wheelhouse, retained dependency notices,
 a complete collected-test inventory, and an explicit Linux x86_64 / Python 3.12
 profile. Required tests must pass setup, call and teardown without skip/xfail;
 tests outside the profile are listed separately and never counted as passed.
 Source, wheel and test inventory identities are bound in an execution receipt.
-Independent release qualification remains pending an actual remote CI run and
-verification of artifact provenance. Local installations do not establish it.
+The former external EX-04 requirement has been cancelled by the user. CI,
+publication and external signatures are not delivery gates; local installations establish local reproducibility.
 
 Fixed-field GENCLS networks now use an [analytic coupled Jacobian](docs/COUPLED_JACOBIAN_RU.md)
 with single/double-cage motors and thermal replicas. It includes mutual machine
@@ -262,6 +270,72 @@ MNLEX2 and rotor I² protection now have analytic derivatives coupled to AVR/PSS
 
 [NA-09: streamed CSC assembly](docs/STREAMED_JACOBIAN_RU.md) builds supported analytic Jacobians in blocks of up to 32 columns without full dense state-square identity/result buffers for larger systems. New checks cover 400/424 states with 8 generators, 32 double-cage motors and controllers. Final CSC and port responses may still be dense.
 
-[NA-10: independent eight-machine reference](docs/EIGHT_MACHINE_NATIVE_RU.md) checks the unchanged NA-09 scenarios (8 generators, 32 motors, PSS and excitation limiters), both rotor cages, and thermal trip/reclose interlocking. Qualification depends on the bound report; industrial qualification and independent release-host EX-04 remain separate requirements.
+[NA-10: independent eight-machine reference](docs/EIGHT_MACHINE_NATIVE_RU.md) checks the unchanged NA-09 scenarios (8 generators, 32 motors, PSS and excitation limiters), both rotor cages, and thermal trip/reclose interlocking. Qualification depends on the bound report; general industrial qualification remains separate; the external EX-04 requirement has been cancelled by the user.
 
 [NA-11: direct network tangents and J·v](docs/NETWORK_TANGENTS_RU.md) adds explicit `jacobian_network: direct_solve` for CSC and analytic Jacobian-vector products without a full matrix or dense port response. Radau still uses CSC/SuperLU. See the document for qualification scope and limits.
+
+### Local engineering workbench
+
+`python -m power_grid_env.cli workbench` provides versioned StudySpec projects,
+isolated local runs, immutable checkpoint attempts, numerical comparison and
+offline HTML/CSV/SVG reports. Export a verified data-only ZIP, restore it in a new
+project and replay without editing internal Python modules. See the
+[workflow and commands](docs/ENGINEERING_WORKBENCH_RU.md). No hosted services or CI are required.
+
+[B10.2: shared balanced AC studies](docs/BALANCED_AC_WORKFLOWS_RU.md): PF, local OPF, analytical AC WLS and branch N−1 use the same bus IDs, equipment limits and units. Includes audited dispatch transfer and immutable checkpoint attempts.
+
+[Phase networks and research B11/B12](docs/PHASE_NETWORK_AND_RESEARCH_RU.md): explicit phase/neutral RLC networks, saturation, averaged GFL/GFM, DC-link V/f drives, unbalanced Gamma machines, harmonics and physics-verified empirical surrogates.
+
+Full-trajectory derivatives of initial physical RMS states are available through
+`power_grid_env.hybrid_sensitivity.run_initial_sensitivity`;
+`audit_initial_sensitivity` checks complete physical runs at three difference
+steps. The current profile covers induction networks, scheduled switching and
+thermal trips. Ambiguous independent simultaneous guards are rejected.
+Controller and automatic-contactor reset derivatives remain unsupported.
+
+Public reference parameters with explicitly authored mechanisms are available
+through `power_grid_env.motor_catalog.catalog_entry` and `catalog_study`.
+Repeated acceptance: `python -m benchmarks.motor_catalog_acceptance --out <fresh-directory> --wheel <motulator-0.19.0.whl>`.
+Long meshed matrix: `python -m benchmarks.extended_duration_matrix --out <fresh-directory>`.
+See the [current status](plans/CURRENT_STATUS.md) for remaining qualifications.
+
+With `coincident_roots_v1`, TGOV1/SEXS keep their free derivative until the located
+boundary event, then enter the held mode; analytic derivatives follow the same
+mode. This removes artificial delays between nearly simultaneous limit entries.
+Current stage checks: `reports/remaining-blocks-final-2026-11-06/stage.json`.
+
+### Protected full-winding starts and complete-study sensitivities
+
+Run `python -m power_grid_env.cli protected-motor --catalog aalto-saturated-fan --mode restart --out /tmp/protected-start`
+for a sealed JSON and offline HTML engineering report. Use `--require-acceptable`
+when an engineering rejection must produce a nonzero exit status.
+`cases/protected/restart.json` is an editable input example.
+
+Run `python -m power_grid_env.cli sensitivity-study --study cases/sensitivity/ats-study.json --protocol cases/sensitivity/ats-request.json --out /tmp/ats-sensitivity`
+for audited numerical parameter derivatives through initialization and events.
+Nonsmooth or sequence-changing directions are reported as unavailable.
+The [acceptance guide](docs/REMAINING_BLOCKS_ACCEPTANCE_RU.md) documents exact
+physics, independent references, offline replay, and validated size/time profiles.
+
+### Engineering campaigns
+
+`python -m power_grid_env.cli campaign run --plan cases/campaign/industrial-21.json --out /tmp/campaign`
+runs 21 scenarios in separate bounded processes with explicit acceptance rules
+and an offline HTML/CSV comparison. Deterministic parameter grids, cancellation,
+recovery from sealed attempts, continuation into a new directory, and portable
+ZIP archives are supported. Numerical completion and engineering acceptance are
+reported separately. [Workflow and limits](docs/ENGINEERING_CAMPAIGNS_RU.md).
+
+For bounded local parallel execution, run `python -m power_grid_env.cli campaign run --plan cases/campaign/industrial-21-parallel.json --out /tmp/parallel-study`.
+`maximum_workers` and `memory_budget_mb` bound concurrent processes and their
+address-space reservations. The admission log is verified with the result;
+physical results are checked separately from timing and resource metadata.
+
+### Dynamic motor identification
+
+`python -m power_grid_env.cli identify-dynamic-motor --input cases/dynamic-identification/saturated.json --out /tmp/identified-motor`
+fits electrical parameters, inertia and a fan or viscous load from SI U/I/speed
+traces. Approval requires free electromechanical replay of separate held-out
+traces, identifiability and declared resolution checks. The output includes
+an approved passport only on success, offline plots, JSON and data provenance.
+[Method, units and limitations](docs/DYNAMIC_MOTOR_IDENTIFICATION_RU.md).

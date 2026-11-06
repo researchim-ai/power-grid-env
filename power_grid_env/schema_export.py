@@ -10,10 +10,23 @@ from power_grid_env.scenarios import Scenario
 
 
 def export_schemas(directory: Path) -> None:
+    from power_grid_env.dynamic_motor_identification import DynamicMotorIdentification
+    directory.mkdir(parents=True,exist_ok=True)
+    (directory/'dynamic-motor-identification.schema.json').write_text(json.dumps(DynamicMotorIdentification.model_json_schema(),ensure_ascii=False,indent=2),encoding='utf-8')
+    from power_grid_env.campaign import CampaignPlan,CampaignGrid
+    for name,model in [('campaign',CampaignPlan),('campaign-grid',CampaignGrid)]:
+        directory.mkdir(parents=True,exist_ok=True)
+        (directory/(name+'.schema.json')).write_text(json.dumps(model.model_json_schema(),ensure_ascii=False,indent=2),encoding='utf-8')
     from power_grid_env.study_spec import StudySpec
 
     directory.mkdir(parents=True, exist_ok=True)
+    from power_grid_env.protected_motor import ProtectedMotorStudy
+    from power_grid_env.study_sensitivity import SensitivityRequest
+    for name,model in [('protected-motor',ProtectedMotorStudy),('study-sensitivity',SensitivityRequest)]:
+        (directory/(name+'.schema.json')).write_text(json.dumps(model.model_json_schema(),ensure_ascii=False,indent=2),encoding='utf-8')
     from power_grid_env.flux_network import FluxNetworkSettings
+    from power_grid_env.motor_identification import MotorIdentification
+    (directory / 'motor-identification.schema.json').write_text(json.dumps(MotorIdentification.model_json_schema(),ensure_ascii=False,indent=2),encoding='utf-8')
     (directory / 'flux-network.schema.json').write_text(json.dumps(FluxNetworkSettings.model_json_schema(),ensure_ascii=False,indent=2),encoding='utf-8')
     from power_grid_env.network_automation import NetworkAutomation
     (directory / 'network-automation.schema.json').write_text(json.dumps(NetworkAutomation.model_json_schema(),ensure_ascii=False,indent=2),encoding='utf-8')

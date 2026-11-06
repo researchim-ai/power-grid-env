@@ -61,7 +61,7 @@ class CoupledControllerBank:
             values[i]=p.T2/p.T3*bounded+(1-p.T2/p.T3)*state[lag]-p.Dt*(speed[i]-1)
         return values
 
-    def derivatives(self,state,speed,voltage,voltage_bias=None):
+    def derivatives(self,state,speed,voltage,voltage_bias=None,*,continuous_guards=False):
         result=np.zeros(self.end-self.offset)
         pss_derivatives,pss_output,_=self.pss.evaluate(state,speed,voltage)
         for i,address in self.pss_addresses.items():
@@ -71,7 +71,7 @@ class CoupledControllerBank:
             bounded=np.clip(state[valve],p.VMIN,p.VMAX)
             demand=self.pref[i]-(speed[i]-1)/p.R
             rate=(demand-state[valve])/p.T1
-            result[valve-self.offset]=limited_rate(state[valve],rate,p.VMIN,p.VMAX)
+            result[valve-self.offset]=rate if continuous_guards else limited_rate(state[valve],rate,p.VMIN,p.VMAX)
             result[lag-self.offset]=(bounded-state[lag])/p.T3
         for i,(filter_state,field) in self.avr.items():
             p=self.passports[i].exciter
@@ -79,7 +79,7 @@ class CoupledControllerBank:
             bounded=np.clip(state[field],p.EMIN,p.EMAX)
             rate=(p.K*(p.TATB*error+(1-p.TATB)*state[filter_state])-state[field])/p.TE
             result[filter_state-self.offset]=(error-state[filter_state])/p.TB
-            result[field-self.offset]=limited_rate(state[field],rate,p.EMIN,p.EMAX)
+            result[field-self.offset]=rate if continuous_guards else limited_rate(state[field],rate,p.EMIN,p.EMAX)
         return result
 
     def channel_names(self):

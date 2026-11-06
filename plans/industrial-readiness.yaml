@@ -1,4 +1,6 @@
 schema: power-grid-env.readiness/v1
+current_status_document: plans/CURRENT_STATUS.md
+current_work_item: B08.4
 date: '2026-11-04'
 document: docs/OEL2C_BOUNDARY_POLICY_RU.md
 status: in_progress
@@ -1949,18 +1951,49 @@ extended_equipment_and_network_automation:
     physics: [saturation, discrete_rotor_cages, copper_loss, temperature_resistance, two_node_heat_balance]
     native_reference: motulator_0.19.0_single_bus_single_cage
     exact_reference: matrix_exponential_locked_linear_RL_feeder_one_two_four_cages
-    nonlinear_meshed_external_reference: pending
-    core_loss: not_implemented_in_this_profile
+    nonlinear_meshed_external_reference: original_motulator_flux_states_and_independent_dense_SI_network
+    core_loss: constant_eddy_conductance_with_native_RHS_reference
     universal_EMT: false
     maximum_API_limits_are_not_scale_qualification: true
   network_automation:
     physics: [continuous_relays, actual_breaker_delays, breaker_failure_backup, limited_reclose, break_before_make_ATS, synchronism, runtime_islands]
-    independent_reference: two_bus_SI_GENCLS_and_prescribed_protection_timelines
+    independent_reference: two_bus_SI_GENCLS_protection_timelines_and_standby_ATS
     numerical_profile: Radau_cached_ports_coincident_roots_v1_finite_difference
-    analytic_DAE_automation_qualification: pending
+    analytic_DAE_automation_qualification: implemented_scoped_continuous_modes_see_expanded_report
     OEM_relay_certification: false
   external_delivery:
     workflow: .github/workflows/equipment-automation-reference.yml
     preflight: benchmarks.ex04_preflight
     actual_hosted_signed_execution: pending
     EX04_complete: false
+
+nonlinear_flux_network_followup:
+  status: implemented_bounded_native_reference
+  native_solver: benchmarks.flux_network_native
+  cases: [radial_pair, meshed_pair, meshed_thermal_sag, meshed_recovery, inductive_source, transformer_tap, transformer_mismatch, transformer_clock1, two_sources]
+  native_original_equations: motulator_0.19.0_Gamma_AC_port_and_flux_RHS
+  network_equations: independently_authored_dense_SI
+  primary_coordinates: winding_currents
+  reference_coordinates: winding_fluxes
+  maximum_native_KCL_relative: 1.0e-6
+  structural_quadrature_feedback: exactly_zero
+  native_nonlinear_multi_cage: independently_authored_flux_reference_not_motulator
+  DAE_automation_qualification: implemented_scoped_continuous_modes_see_expanded_report
+  remote_EX04: still_requires_actual_signed_hosted_execution
+
+blocks678_expanded_followup:
+  document: plans/CURRENT_STATUS.md
+  implementation: [analytic_automation_DAE, nonlocal_relay_voltage_rows, passive_island_restriction, multi_cage_flux_reference, core_eddy_loss, steady_parameter_identification, transformer_excitation, resistive_load, common_point_LLG]
+  numerical_acceptance_report: reports/blocks678-expanded-final-2026-11-06/delivery.json
+  qualification_requires_matching_source: true
+  field_validation_claimed: false
+  dynamic_negative_sequence: block_B11_not_implemented_here
+  remote_EX04: pending_actual_signed_hosted_execution
+
+user_delivery_override_2026_11_06:
+  instruction: no_GitHub_actions_by_agent_no_CI_required
+  external_EX04: cancelled_by_user_not_passed
+  mandatory_delivery: B08.4_local_reproducible_package
+  publication_by_agent: prohibited
+  active_CI_workflows: none_archived_locally
+  supersedes_historical_remote_release_gates: true

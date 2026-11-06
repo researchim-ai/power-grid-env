@@ -1,0 +1,19 @@
+{
+  "schema_version": "power-grid-env.sensitivity-request/v1",
+  "parameters": [
+    {
+      "path": "/coupled/network_automation/breakers/2/closing_delay_s",
+      "step": 0.001,
+      "unit": "s"
+    }
+  ],
+  "outputs": [
+    "/event_times/6",
+    "/final/g.delta"
+  ],
+  "derivative_rtol": 0.005,
+  "derivative_atol": 2e-6,
+  "maximum_wall_s": 600.0,
+  "worker_wall_s": 120.0,
+  "isolate": false
+}

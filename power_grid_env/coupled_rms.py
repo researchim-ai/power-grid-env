@@ -1,7 +1,8 @@
 """One algebraic network for classical generators and induction motor dynamics.
 
 GENCLS and six-state GENROU share a nominal-speed algebraic stator/network.
-Optional TGOV1/SEXS/IEEEST MODE=1 are supported; islanding is outside this profile.
+Optional TGOV1/SEXS/IEEEST MODE=1 are supported. Controlled islands and
+reconnection require the explicit network-automation profile.
 """
 from __future__ import annotations
 import math
@@ -262,7 +263,7 @@ def validate_coupled(network,settings):
         errors.append('coupled trace exceeds two-million-scalar budget')
     return {'ok':not errors,'errors':errors,'model':'coupled_synchronous_generators_single_or_double_cage_motors',
             'limitations':['positive sequence and algebraic stators','GENCLS/GENROU with fixed field, SEXS, or declared five-state ESST1A; IEEEST MODE=1 with SEXS or explicitly connected ESST1A',
-                           'constant-Z background only','external slack required; electrical generator opening only, no reclose or islanding' if settings.network_automation is None else 'grid-connected initialization; dynamic balanced islands, residual-flux coast and synchrochecked reconnection; no line or breaker EMT',
+                           'constant-Z background only',('initial external slack; controlled islands/reconnection require explicit automation' if settings.network_automation is not None else 'external slack required; electrical generator opening only, no reclose or islanding') if settings.network_automation is None else 'grid-connected initialization; dynamic balanced islands, residual-flux coast and synchrochecked reconnection; no line or breaker EMT',
                            'declared motor mechanical/thermal subset','no field qualification']}
 
 
@@ -397,7 +398,7 @@ class CoupledNetwork(InductionNetwork):
             for i,m in enumerate(self.gen_passports)])
         result=self.controller_boundaries.derivative(np.r_[motor,derivative.ravel(),
             self.round_rotors.derivatives(state,rotor,generator_current,self.field_voltage(state,voltage,generator_current)),
-            self.controllers.derivatives(state,rotor[:,1],self.generator_terminal_voltage(state,voltage),self.excitation_bias(state)),
+            self.controllers.derivatives(state,rotor[:,1],self.generator_terminal_voltage(state,voltage),self.excitation_bias(state),continuous_guards=self.settings.event_policy=='coincident_roots_v1'),
             self.generator_thermal.derivatives(state,generator_current),
             self.excitation_limiters.derivatives(state,generator_current),
             self.field_thermal.derivatives(state,generator_current),self.underexcitation_limiters.derivatives(state,voltage,generator_current),self.oel2c.derivatives(state,generator_current),self.esst1a.derivatives(state,voltage,generator_current),self.takeover_oel.derivatives(state,generator_current)])
@@ -546,7 +547,13 @@ class CoupledNetwork(InductionNetwork):
         return {'outcome':'applied','value':event.value,'units':'additive pu voltage' if event.kind=='voltage_reference_step' else 'additive pu on generator VA base'}
 
     def integration_jacobian(self):
-        if self.automation is not None:return None
+        if self.automation is not None:
+            if self.settings.jacobian_network!='direct_solve':return None
+            from power_grid_env.automation_jacobian import callback
+            return callback(self,self.physical_integration_jacobian())
+        return self.physical_integration_jacobian()
+
+    def physical_integration_jacobian(self):
         from power_grid_env.coupled_jacobian import callback
         classical = callback(self)
         if classical is not None:return classical
@@ -615,7 +622,7 @@ class CoupledNetwork(InductionNetwork):
 
         if self.automation is not None:
             metadata['network_automation']={'model':'continuous measured RMS relay progress, explicit actuator delays/failures and break-before-make transfer',
-                'passports':self.settings.network_automation.model_dump(mode='json'),'jacobian':'explicit finite differences; no analytic DAE relay derivatives claimed',
+                'passports':self.settings.network_automation.model_dump(mode='json'),'jacobian':'piecewise analytic continuous clock/physical actions; hybrid guards and reset maps are separate' if self.settings.jacobian_network=='direct_solve' else 'explicit finite differences',
                 'pending_actions':[dict(time_s=t,kind=kind,breaker_or_transfer=id_,cause=cause) for t,_,kind,id_,cause in sorted(self.automation.queue)],
                 'source_port_voltage':'upstream Thevenin EMF; use a node port for local bus PT voltage','whole_EMT_or_OEM_qualified':False}
             metadata['generator_breaker_semantics']='electrical opening/reclosing with continuously retained rotor/field states, local phasor/frequency synchronism check and thermal latch interlock'

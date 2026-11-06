@@ -15,11 +15,16 @@ from power_grid_env.model import canonical_hash
 
 
 class NativeBlock:
-    def __init__(self,p,input0,out,root,stop,tolerance,FMU2Model,regulating_output_pu=None):
+    def __init__(self,p,input0,out,root,stop,tolerance,FMU2Model,regulating_output_pu=None,*,prepared_archive=None):
         measured=p.KScale*input0;reference=p.KAct*measured
         timer=(p.K2*((measured/p.ITfPu)**p.C2-1)+(p.FixedRu if measured<=p.ITfPu else p.FixedRd))/p.KFb
         if p.initialization=='dynawo_startup' and (not p.ILimPu<=reference<=p.IInstPu or not p.tMin<=timer<=p.tMax):raise ValueError('native OEL2C initial conditions outside profile')
-        self.p=p;out=Path(out).resolve();archive=build_model(p,input0,out,root,mode='me',tolerance=tolerance,regulating_output_pu=regulating_output_pu);folder=out/'unpacked';folder.mkdir()
+        self.p=p;out=Path(out).resolve()
+        if prepared_archive is None:archive=build_model(p,input0,out,root,mode='me',tolerance=tolerance,regulating_output_pu=regulating_output_pu)
+        else:
+            import shutil
+            out.mkdir(parents=True,exist_ok=False);archive=out/'Reference.fmu';shutil.copyfile(prepared_archive,archive);shutil.copyfile(Path(prepared_archive).with_suffix('.mo'),out/'Reference.mo')
+        folder=out/'unpacked';folder.mkdir()
         with zipfile.ZipFile(archive) as z:
             if any(Path(n).is_absolute() or '..' in Path(n).parts for n in z.namelist()):raise ValueError('unsafe generated FMU')
             z.extractall(folder)
@@ -87,15 +92,16 @@ class NativeBlock:
 
 
 def scope(spec,*,profile='legacy'):
-    if profile not in ('legacy','eight_machine_v1'):raise ValueError('unknown native reference profile')
-    extended=profile=='eight_machine_v1'
+    if profile not in ('legacy','eight_machine_v1','long_eight_machine_v1'):raise ValueError('unknown native reference profile')
+    extended=profile!='legacy'
+    long_profile=profile=='long_eight_machine_v1'
     if spec.study!='coupled_rms' or spec.backend!='scipy' or not spec.coupled or not spec.coupled.oel2c_limiters:raise ValueError('coupled OEL2C profile required')
     s=spec.coupled
     for p in s.oel2c_limiters:OEL2CPassport.model_validate(p.model_dump(mode='json'))
     if s.operating_point is not None and any(p.initialization=='dynawo_startup' for p in s.oel2c_limiters):raise ValueError('loaded native OEL2C requires explicit stationary initialization')
     if s.operating_point is None and any(p.initialization in ('active_limited_equilibrium','current_regulating_equilibrium','selected_equilibrium') for p in s.oel2c_limiters):raise ValueError('native active equilibrium requires a loaded operating point')
     if any(p.initialization!='current_regulating_equilibrium' and (p.initialization in ('active_limited_equilibrium','selected_equilibrium'))!=(p.avr_reference_initialization=='derive_from_operating_point_with_OEL') for p in s.oel2c_limiters):raise ValueError('native explicit AVR reference policy mismatch')
-    if not 1<=len(spec.network.generators)<=(8 if extended else 4) or s.faults or s.duration_s>(6. if extended else 5.):raise ValueError('one-to-four-machine OEL2C reference subset required')
+    if not 1<=len(spec.network.generators)<=(8 if extended else 4) or s.faults or s.duration_s>(60. if long_profile else 6. if extended else 5.):raise ValueError('one-to-four-machine OEL2C reference subset required')
     if any(m.contactor or (m.thermal and not extended) for m in s.motors):raise ValueError('motor contactors/thermal controls outside current native OEL2C master scope')
     if any(e.kind not in ('source_voltage','motor_open','motor_close','generator_open','governor_step','voltage_reference_step') for e in s.events):raise ValueError('unsupported native OEL2C plant event')
     if len({p.generator_id for p in s.oel2c_limiters})!=len(s.oel2c_limiters):raise ValueError('unique native OEL2C targets required')
@@ -114,10 +120,10 @@ def scope(spec,*,profile='legacy'):
     return StudySpec.model_validate(data)
 
 
-def run(spec,out,root,tolerance=1e-10,*,profile='legacy'):
+def run(spec,out,root,tolerance=1e-10,*,profile='legacy',precompiled=None):
     if not math.isfinite(tolerance) or not 0<tolerance<=1e-6:raise ValueError('native tolerance required')
-    baseline=scope(spec,profile=profile);extended=profile=='eight_machine_v1';out=Path(out).resolve();out.mkdir(parents=True,exist_ok=False);identity=verify(root)
-    if any(p.model=='OEL2C_Dynawo_equilibrium_guard_v2_SEXS_summation' for p in spec.coupled.oel2c_limiters):
+    baseline=scope(spec,profile=profile);extended=profile!='legacy';long_profile=profile=='long_eight_machine_v1';out=Path(out).resolve();out.mkdir(parents=True,exist_ok=False);identity=verify(root) if precompiled is None else precompiled.verify()
+    if precompiled is None and any(p.model=='OEL2C_Dynawo_equilibrium_guard_v2_SEXS_summation' for p in spec.coupled.oel2c_limiters):
         from benchmarks.dynawo_reference_setup import verify_equilibrium_copy,sha,PATCH_FILE
         verify_equilibrium_copy(root);identity['equilibrium_guard_v2_sha256']=sha(Path(root)/'dynawo-equilibrium-guard-v2'/PATCH_FILE)
     fmpy_path=str(Path(root).resolve()/'fmpy')
@@ -129,7 +135,7 @@ def run(spec,out,root,tolerance=1e-10,*,profile='legacy'):
     if fmpy.__version__!=identity['fmpy_version'] or not Path(fmpy.__file__).resolve().is_relative_to(Path(fmpy_path)):raise ValueError('wrong FMI master package')
     constraints={p.generator_id:p for p in spec.coupled.oel2c_limiters if p.initialization=='current_regulating_equilibrium'}
     from benchmarks.eight_machine_circuit import EightMachineCircuit
-    plant=(EightMachineCircuit(baseline,maximum_duration_s=6.,current_constraints=constraints) if extended else ExcitationCircuit(baseline,maximum_duration_s=5.,current_constraints=constraints));state=plant.state.copy();nplant=len(state);blocks=[];time_s=0.;output_times=[];sides=[];channels={};node_voltage={};event_log=[]
+    plant=(EightMachineCircuit(baseline,maximum_duration_s=60. if long_profile else 6.,current_constraints=constraints) if extended else ExcitationCircuit(baseline,maximum_duration_s=5.,current_constraints=constraints));state=plant.state.copy();nplant=len(state);blocks=[];time_s=0.;output_times=[];sides=[];channels={};node_voltage={};event_log=[]
     calls=0;events_count=0;started=time.monotonic();callback_error=[];network_balance=[]
     ports={g.g.id:(i,node,g,at) for i,(node,g,at) in enumerate(plant.ports)}
     def reaction(gid):
@@ -140,14 +146,14 @@ def run(spec,out,root,tolerance=1e-10,*,profile='legacy'):
         for p in spec.coupled.oel2c_limiters:
             initial=abs(reaction(p.generator_id))/p.rated_field_reaction_pu
             desired=plant.cfg['generator_vref'][ports[p.generator_id][0]]-p.specified_avr_reference_pu if p.initialization=='current_regulating_equilibrium' else None
-            block=NativeBlock(p,initial,out/('block-'+str(len(blocks))),root,spec.coupled.duration_s,tolerance,FMU2Model,desired);block.a=slice(nx,nx+block.nx);block.z=slice(nz,nz+block.nz);nx+=block.nx;nz+=block.nz;blocks.append(block)
+            block=NativeBlock(p,initial,out/('block-'+str(len(blocks))),root,spec.coupled.duration_s,tolerance,FMU2Model,desired,prepared_archive=None if precompiled is None else precompiled.oel(p,initial));block.a=slice(nx,nx+block.nx);block.z=slice(nz,nz+block.nz);nx+=block.nx;nz+=block.nz;blocks.append(block)
         pss_blocks={}
         if extended:
             from benchmarks.ex02_native_blocks import NativeAux
             for m in spec.coupled.machines:
                 if m.stabilizer is None:continue
                 i,node,g,at=ports[m.generator_id];voltage=plant.electrical(state)[0]
-                b=NativeAux(m.stabilizer,'pss',0.,abs(voltage[node])/g.vbase,out/('pss-'+str(len(pss_blocks))),root,spec.coupled.duration_s,tolerance,generator_id=m.generator_id)
+                b=NativeAux(m.stabilizer,'pss',0.,abs(voltage[node])/g.vbase,out/('pss-'+str(len(pss_blocks))),root,spec.coupled.duration_s,tolerance,generator_id=m.generator_id,prepared_archive=None if precompiled is None else precompiled.pss(m.generator_id,m.stabilizer,abs(voltage[node])/g.vbase),prepared_identity=None if precompiled is None else identity)
                 b.a=slice(nx,nx+b.nx);b.z=slice(nz,nz+b.nz);nx+=b.nx;nz+=b.nz;pss_blocks[m.generator_id]=b
         all_blocks=[*blocks,*pss_blocks.values()]
         native_nz=nz;reference_audit={}
@@ -182,7 +188,7 @@ def run(spec,out,root,tolerance=1e-10,*,profile='legacy'):
         def get_dx(ptr,n):
             nonlocal calls
             calls+=1
-            if calls>2_000_000 or time.monotonic()-started>(480 if extended else 180):raise ValueError('native coupled work budget')
+            if calls>2_000_000 or time.monotonic()-started>(900 if long_profile else 480 if extended else 180):raise ValueError('native coupled work budget')
             sync();arr=np.ctypeslib.as_array(ptr,(n,));arr[:nplant]=plant.rhs(time_s,state)
             for b in all_blocks:b.f.getDerivatives(np.ctypeslib.as_ctypes(arr[b.a]),b.nx)
             if not np.isfinite(arr).all():raise ValueError('nonfinite native coupled RHS')
@@ -311,7 +317,8 @@ def run(spec,out,root,tolerance=1e-10,*,profile='legacy'):
                 if hybrid:
                     events_count+=1
                     if events_count>5000:raise ValueError('native hybrid event budget')
-                    record(at,'pre_event')
+                    retain=(not long_profile or timed or bool(root_keys) or at_target)
+                    if retain:record(at,'pre_event')
                     cfg=copy.deepcopy(plant.cfg)
                     if root_keys:event_log.extend(plant.extra_apply(root_keys,at,state,cfg));plant.set_context(cfg)
                     if timed:
@@ -326,7 +333,7 @@ def run(spec,out,root,tolerance=1e-10,*,profile='legacy'):
                         plant.set_context(cfg)
                     sync();event_log.extend(plant.after_commands(at,state,cfg));plant.set_context(cfg);sync()
                     for b in all_blocks:b.update()
-                    record(at,'post_event')
+                    if retain:record(at,'post_event')
                     del solver;solver=solver_at(at)
                 elif at_target:record(at,'regular')
                 if at<=cursor and not hybrid:raise ValueError('native coupled time did not advance')

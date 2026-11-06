@@ -1,0 +1,155 @@
+{
+  "schema_version": "power-grid-env.phase-study/v1",
+  "id": "authored-phase-drive",
+  "case": {
+    "schema_version": "power-grid-env.phase-network/v1",
+    "id": "authored-gfl",
+    "nodes": [
+      "a",
+      "b",
+      "c"
+    ],
+    "frequency_hz": 50.0,
+    "sources": [
+      {
+        "id": "sa",
+        "node": "a",
+        "tones": [
+          {
+            "order": 1,
+            "rms": 230.0,
+            "phase_rad": 0.0
+          }
+        ],
+        "envelope": [
+          [
+            0.0,
+            1.0
+          ]
+        ]
+      },
+      {
+        "id": "sb",
+        "node": "b",
+        "tones": [
+          {
+            "order": 1,
+            "rms": 230.0,
+            "phase_rad": -2.0943951023931953
+          }
+        ],
+        "envelope": [
+          [
+            0.0,
+            1.0
+          ]
+        ]
+      },
+      {
+        "id": "sc",
+        "node": "c",
+        "tones": [
+          {
+            "order": 1,
+            "rms": 230.0,
+            "phase_rad": 2.0943951023931953
+          }
+        ],
+        "envelope": [
+          [
+            0.0,
+            1.0
+          ]
+        ]
+      }
+    ],
+    "resistors": [],
+    "capacitors": [],
+    "inductors": [],
+    "inductance_h": [],
+    "injections": [],
+    "converters": [],
+    "drives": [
+      {
+        "id": "vfd",
+        "nodes": [
+          "a",
+          "b",
+          "c"
+        ],
+        "motor": {
+          "id": "m",
+          "node_id": "grid",
+          "stator_r_ohm": 3.7,
+          "unsaturated_h": 0.34,
+          "saturation_beta_per_vs": 0.0,
+          "saturation_exponent": 7,
+          "cages": [
+            {
+              "resistance_ohm": 2.5,
+              "leakage_h": 0.023
+            }
+          ],
+          "pole_pairs": 2,
+          "inertia_kg_m2": 0.03,
+          "fan_nm_per_rad_s2": 0.0005917157124712526,
+          "viscous_nm_per_rad_s": 0.0,
+          "initial_speed_rad_s": 0.0,
+          "locked_rotor": false,
+          "thermal": null,
+          "provenance": {
+            "electrical": "https://aalto-electric-drives.github.io/motulator/drive_examples/current_vector/plot_2kw_im_sat_cvc.html",
+            "magnetics": "https://aalto-electric-drives.github.io/motulator/drive_examples/current_vector/plot_2kw_im_sat_cvc.html",
+            "mechanical": "J=0.03 kg m2; authored mechanical benchmark",
+            "extra_cages": "Authored passive RL branches, not measured skin-depth data"
+          }
+        },
+        "grid_ln_rms_v": 230.0,
+        "grid_frequency_hz": 50.0,
+        "grid_current_limit_rms_a": 30.0,
+        "rectifier_tau_s": 0.002,
+        "dc_capacitance_f": 0.02,
+        "dc_reference_v": 700.0,
+        "initial_dc_v": 700.0,
+        "dc_kp_per_s": 20.0,
+        "dc_ki_per_s2": 100.0,
+        "bleed_ohm": 1000000.0,
+        "rectifier_efficiency": 1.0,
+        "inverter_efficiency": 1.0,
+        "maximum_modulation": 1.0,
+        "motor_frequency_hz": 50.0,
+        "motor_ln_rms_v": 230.0,
+        "ramp_s": 0.05,
+        "phase_rad": 0.0,
+        "pll_kp_per_s": 50.0,
+        "pll_ki_per_s2": 500.0,
+        "connected": true
+      }
+    ],
+    "events": [],
+    "initial_voltage_v": {},
+    "sequence_monitors": {
+      "pcc": [
+        "a",
+        "b",
+        "c"
+      ]
+    },
+    "sequence_neutrals": {},
+    "provenance": {
+      "all": "authored averaged controls; not an OEM model"
+    }
+  },
+  "mode": "emt",
+  "orders": [
+    1
+  ],
+  "emt": {
+    "duration_s": 0.2,
+    "sample_s": 0.0005,
+    "max_step_s": 0.0005,
+    "rtol": 1e-8,
+    "atol": 1e-9,
+    "method": "Radau"
+  }
+}

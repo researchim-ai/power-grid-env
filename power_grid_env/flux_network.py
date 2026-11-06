@@ -56,6 +56,7 @@ def _balanced(matrix):
 class FluxNetwork:
     def __init__(self,network,settings):
         self.network=network;self.settings=settings;self.factorizations=0;errors=validate_network_rules(network)
+        if type(self) is FluxNetwork and any(p.core_loss_s for p in settings.motors):raise ValueError('positive core loss requires the flux-coordinate CoreFluxNetwork profile')
         if errors:raise ValueError('; '.join(errors))
         if any([network.switches,network.generators,network.inverters,network.storages,network.shunts,network.study_faults,network.harmonics,network.omissions]):
             raise ValueError('flux profile accepts fixed RL topology, voltage sources, RL loads, two-winding leakage transformers and Gamma motors')
@@ -80,19 +81,22 @@ class FluxNetwork:
             if line.temperature_c is not None:r*=1+line.resistance_alpha_per_c*(line.temperature_c-20.)
             branch(line.id,a,b,r,positive_sequence(line.x_ohm).real/wb)
         for tr in network.transformers:
-            p=transformer_parameters(tr,self.topology,network.s_base_va)
+            p=self.transformer_parameters(tr)
             a,b=[self.lookup[self.topology.terminal_bus[w.terminal_id]] for w in tr.windings]
             v1=self.topology.buses[self.names[a]].nominal_ll_v;v2=self.topology.buses[self.names[b]].nominal_ll_v
             first,second=tr.windings
             tap=first.nominal_ll_v/second.nominal_ll_v*first.tap_pu/second.tap_pu*np.exp(1j*p['phi'])
             zb=second.nominal_ll_v**2/first.rated_va*second.tap_pu**2/100
-            resistance=tr.load_loss_pct if first.r_pct is None else first.r_pct+second.r_pct
-            branch(tr.id,a,b,resistance*zb,tr.x_hl_pct*zb/wb,tap)
+            resistance_pct=tr.load_loss_pct if first.r_pct is None else first.r_pct+second.r_pct
+            branch(tr.id,a,b,resistance_pct*zb,tr.x_hl_pct*zb/wb,tap)
+            self.transformer_excitation(tr,a,branch)
         for load in network.loads:
             p=np.array([load.p_w.get(k,0.) for k in 'ABC']);q=np.array([load.q_var.get(k,0.) for k in 'ABC'])
-            if load.model!='constant_z' or not np.allclose(p,p[0]) or not np.allclose(q,q[0]) or p[0]<0 or q[0]<=0:
+            if load.model!='constant_z' or not np.allclose(p,p[0]) or not np.allclose(q,q[0]) or p[0]<0 or q[0]<0:
                 raise ValueError('background load must be balanced positive-inductance constant-Z RL')
             bus=self.lookup[self.topology.terminal_bus[load.terminal_id]];v=self.topology.buses[self.names[bus]].nominal_ll_v
+            if q[0]==0:
+                self.resistive_load(load,bus,sum(p)/v**2);continue
             z=v*v/complex(sum(p),-sum(q));branch(load.id,bus,None,z.real,z.imag/wb)
         self.sources=[];source_buses=set()
         if not network.sources or len(network.sources)>8:raise ValueError('one to eight voltage sources required')
@@ -109,6 +113,7 @@ class FluxNetwork:
             source_buses.add(boundary);self.sources.append((source,boundary,branch_index))
         if len(columns)>128:raise ValueError('flux branch limit 128')
         all_ids=[item.id for group in [network.sources,network.lines,network.loads,network.transformers] for item in group]
+        if any(id_.startswith('@') for id_ in all_ids+[p.id for p in settings.motors]):raise ValueError('flux equipment IDs reserve the @ prefix for virtual branches')
         if len(set(all_ids))!=len(all_ids) or len(set(branch_ids))!=len(branch_ids) or len(set(self.names))!=len(self.names):raise ValueError('unique network equipment and virtual branch identities required')
         self.R=np.asarray(resistance);self.L=np.asarray(inductance);self.branch_ids=branch_ids
         if not np.isfinite(1/self.L).all():raise ValueError('unrepresentable reciprocal branch inductance')
@@ -135,6 +140,10 @@ class FluxNetwork:
 
     @staticmethod
     def complex_values(values):return values[::2]+1j*values[1::2]
+
+    def transformer_parameters(self,tr):return transformer_parameters(tr,self.topology,self.network.s_base_va)
+    def transformer_excitation(self,tr,bus,branch):pass
+    def resistive_load(self,load,bus,conductance):raise ValueError('pure-resistance load requires a conductive flux-coordinate profile')
 
     def initial_state(self):
         x=np.zeros(self.dimension)
@@ -201,10 +210,31 @@ class FluxNetwork:
                 h=model.p.thermal;energy+=h.stator_capacity_j_per_k*(state[temp]-h.ambient_c)+h.rotor_capacity_j_per_k*(state[temp+1]-h.ambient_c)
         return float(energy)
 
+    def numerical_jacobian(self,time,state,rhs):
+        """Bounded central differences; energy quadratures have exact zero columns.
+
+        SciPy's adaptive numerical-Jacobian factors can grow without bound on
+        structurally zero accumulator columns during long coast/recovery runs.
+        This local approximation never adapts those factors or perturbs an
+        accumulator. Every physical RHS evaluation still passes the work budget.
+        """
+        matrix=np.zeros((self.dimension,self.dimension))
+        relative_step=np.cbrt(np.finfo(float).eps)
+        for column in range(self.dynamic_end):
+            step=relative_step*max(1.,abs(state[column]))
+            plus=state.copy();minus=state.copy();plus[column]+=step;minus[column]-=step
+            matrix[:,column]=(rhs(time,plus)-rhs(time,minus))/(plus[column]-minus[column])
+        if not np.isfinite(matrix).all():raise ValueError('nonfinite flux numerical Jacobian')
+        return csc_matrix(matrix)
+
 
 def run_flux_network(network,settings):
     budget=IntegrationBudget(settings.runtime_limits)
-    try:circuit=FluxNetwork(network,settings)
+    try:
+        if any(p.core_loss_s for p in settings.motors):
+            from power_grid_env.core_flux_network import CoreFluxNetwork
+            circuit=CoreFluxNetwork(network,settings)
+        else:circuit=FluxNetwork(network,settings)
     except (ValueError,ArithmeticError,RuntimeError) as exc:
         return dict(completed=False,solved=False,status='rejected',reason='flux_network_scope',detail=str(exc),code_sha256=package_fingerprint())
     state=circuit.initial_state();initial_energy=circuit.stored_energy(state);channels={};times=[];sides=[];max_kcl=0.;max_energy=0.;nfev=njev=nlu=0
@@ -215,10 +245,13 @@ def run_flux_network(network,settings):
         error=abs(residual)/max(1.,abs(entered),abs(energy),abs(initial_energy))
         result=dict(source_power_w=pin,stored_energy_j=energy,entered_energy_j=entered,external_resistance_energy_j=line_loss,mechanical_load_energy_j=mechanical,
                     ambient_heat_j=ambient,external_copper_energy_j=copper,energy_balance_j=residual,energy_relative_residual=error,kcl_relative_residual=kcl)
+        if any(p.core_loss_s for p in settings.motors):
+            result['external_winding_and_core_loss_energy_j']=result.pop('external_copper_energy_j')
         for i,name in enumerate(circuit.names[:circuit.node_count]):
             result[name+'.voltage_alpha_v']=voltage[i].real;result[name+'.voltage_beta_v']=voltage[i].imag
         for id_,current in zip(circuit.branch_ids,edge):result[id_+'.current_alpha_a']=current.real;result[id_+'.current_beta_a']=current.imag
         for id_,current in source_currents.items():result[id_+'.current_alpha_a']=current.real;result[id_+'.current_beta_a']=current.imag
+        if hasattr(circuit,'additional_flux_channels'):result.update(circuit.additional_flux_channels(voltage))
         for model,(_,speed,temp),(current,temperature,q) in zip(circuit.motors,circuit.addresses,rows):
             p=model.p;prefix=p.id+'.'
             row=dict(current_alpha_a=current[0].real,current_beta_a=current[0].imag,phase_a_a=current[0].real,
@@ -229,6 +262,7 @@ def run_flux_network(network,settings):
             for j,(ir,psi,rr) in enumerate(zip(current[1:],q['rotor_flux'],q['rr'])):
                 row.update({f'cage{j+1}_current_alpha_a':ir.real,f'cage{j+1}_current_beta_a':ir.imag,f'cage{j+1}_flux_alpha_vs':psi.real,f'cage{j+1}_flux_beta_vs':psi.imag,f'cage{j+1}_resistance_ohm':rr})
             if temp is not None:row.update(stator_temperature_c=temperature[0],rotor_temperature_c=temperature[1])
+            if p.core_loss_s:row['core_loss_w']=q['core_loss_w']
             for key,value in row.items():result[prefix+key]=value
         return result,kcl,float(error)
     def record(time,x,side):
@@ -250,7 +284,9 @@ def run_flux_network(network,settings):
         record(0.,state,'initial')
         for left,right in zip(boundaries,boundaries[1:]):
             grid=np.r_[regular[(regular>left+1e-13)&(regular<right-1e-13)],right]
-            sol=solve_ivp(budget.rhs(circuit.rhs),(left,right),state,method='Radau',rtol=settings.rtol,atol=settings.atol,
+            rhs=budget.rhs(circuit.rhs)
+            sol=solve_ivp(rhs,(left,right),state,method='Radau',rtol=settings.rtol,atol=settings.atol,
+                          jac=lambda time,x:circuit.numerical_jacobian(time,x,rhs),
                           max_step=min(settings.step_s,1/(64*network.frequency_hz)),t_eval=grid)
             nfev+=sol.nfev;njev+=sol.njev;nlu+=sol.nlu
             if not sol.success or not np.isfinite(sol.y).all():raise ValueError('flux network nonlinear integration failed')
@@ -267,9 +303,11 @@ def run_flux_network(network,settings):
         return dict(completed=False,solved=True,status='runtime_limit_exceeded',reason=exc.resource,runtime_budget=budget.report(),event_log=event_log,code_sha256=package_fingerprint())
     except (ValueError,ArithmeticError,RuntimeError) as exc:
         return dict(completed=False,solved=True,status='numerically_not_converged',detail=str(exc),runtime_budget=budget.report(),event_log=event_log,code_sha256=package_fingerprint())
+    core=any(p.core_loss_s for p in settings.motors)
     return dict(completed=True,solved=True,status='completed',model='balanced_RL_full_winding_Gamma_network',network_sha256=canonical_hash(network),code_sha256=package_fingerprint(),
                 settings=settings.model_dump(mode='json'),time_s=times,sample_side=sides,channels=channels,event_log=event_log,
                 maximum_kcl_relative_residual=max_kcl,maximum_energy_relative_residual=max_energy,runtime_budget=budget.report(),
-                integration=dict(method='Radau_full_winding_current_coordinates',nfev=nfev,njev=njev,nlu=nlu,states=circuit.dimension,network_sparse_factorizations=circuit.factorizations,original_KCL_preserved=True,artificial_grounding_or_capacitance=False),
-                scope=dict(balanced_alpha_beta_peak_SI=True,stator_dynamics_preserved=True,core_loss_model=False,continuous_skin_depth_model=False,breaker_transients=False,
+                integration=dict(method='Radau_full_winding_flux_coordinates_with_core_loss' if core else 'Radau_full_winding_current_coordinates',nfev=nfev,njev=njev,nlu=nlu,states=circuit.dimension,network_sparse_factorizations=circuit.factorizations,original_KCL_preserved=True,artificial_grounding_or_capacitance=False,
+                                 jacobian='bounded_central_difference_dynamic_columns_exact_zero_quadratures'),
+                scope=dict(balanced_alpha_beta_peak_SI=True,stator_dynamics_preserved=True,core_loss_model='constant_eddy_current_conductance' if core else False,continuous_skin_depth_model=False,breaker_transients=False,
                            universal_EMT=False,field_validated=False,industrial_release_qualified=False))

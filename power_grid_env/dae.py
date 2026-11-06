@@ -20,6 +20,7 @@ def mode_token(model):
     oel=tuple((i,tuple(sorted(k.context.items()))) for i,(_,_,k) in getattr(getattr(model,'oel2c',None),'entries',{}).items())
     automation=getattr(model,'automation',None)
     automation_mode=None if automation is None else (
+        bool(automation.initialized),bool(model.source_connected),tuple(sorted(model.lines.closed.items())),
         tuple(automation.active),tuple(automation.tripped),tuple(automation.ats_active),tuple(automation.ats_latched),
         tuple(sorted(automation.available.items())),tuple(sorted(automation.manual_inhibit)),tuple(sorted(automation.queue)))
     return model.lu,float(model.source_scale),arrays,control_arrays,boundary,field,uel,oel,automation_mode

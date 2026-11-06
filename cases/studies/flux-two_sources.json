@@ -1,0 +1,474 @@
+{
+  "schema_version": "power-grid-env.study/v1",
+  "id": "native-flux-two_sources",
+  "study": "flux_network",
+  "backend": "scipy",
+  "network": {
+    "schema_version": "power-grid-env.network/v1",
+    "id": "native-flux-two_sources",
+    "name": "Authored network; published saturated Gamma windings",
+    "s_base_va": 10000.0,
+    "frequency_hz": 50.0,
+    "voltage_levels": [
+      {
+        "id": "vl0",
+        "nominal_ll_v": 400.0,
+        "substation_id": null,
+        "s_base_va": null
+      }
+    ],
+    "connectivity_nodes": [
+      {
+        "id": "grid",
+        "voltage_level_id": "vl0",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "x": null,
+        "y": null
+      },
+      {
+        "id": "a",
+        "voltage_level_id": "vl0",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "x": null,
+        "y": null
+      },
+      {
+        "id": "b",
+        "voltage_level_id": "vl0",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "x": null,
+        "y": null
+      }
+    ],
+    "terminals": [
+      {
+        "id": "source:grid",
+        "equipment_id": "source",
+        "connectivity_node_id": "grid",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "l1:grid",
+        "equipment_id": "l1",
+        "connectivity_node_id": "grid",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "l1:a",
+        "equipment_id": "l1",
+        "connectivity_node_id": "a",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "l2:a",
+        "equipment_id": "l2",
+        "connectivity_node_id": "a",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "l2:b",
+        "equipment_id": "l2",
+        "connectivity_node_id": "b",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "reserve:b",
+        "equipment_id": "reserve",
+        "connectivity_node_id": "b",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "rl-load:b",
+        "equipment_id": "rl-load",
+        "connectivity_node_id": "b",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      }
+    ],
+    "lines": [
+      {
+        "id": "l1",
+        "terminal_from": "l1:grid",
+        "terminal_to": "l1:a",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "length_m": 1000.0,
+        "r_ohm": [
+          [
+            0.12,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.12,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.12
+          ]
+        ],
+        "x_ohm": [
+          [
+            0.2,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.2,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.2
+          ]
+        ],
+        "b_siemens": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "rating_a": 400.0,
+        "emergency_rating_a": null,
+        "emergency_duration_s": null,
+        "kron_reduction": "forbidden",
+        "temperature_c": null,
+        "resistance_alpha_per_c": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "Z1 и взаимное сопротивление заданы аналитически"
+        }
+      },
+      {
+        "id": "l2",
+        "terminal_from": "l2:a",
+        "terminal_to": "l2:b",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "length_m": 1000.0,
+        "r_ohm": [
+          [
+            0.09,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.09,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.09
+          ]
+        ],
+        "x_ohm": [
+          [
+            0.17,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.17,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.17
+          ]
+        ],
+        "b_siemens": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "rating_a": 400.0,
+        "emergency_rating_a": null,
+        "emergency_duration_s": null,
+        "kron_reduction": "forbidden",
+        "temperature_c": null,
+        "resistance_alpha_per_c": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "Z1 и взаимное сопротивление заданы аналитически"
+        }
+      }
+    ],
+    "switches": [],
+    "transformers": [],
+    "loads": [
+      {
+        "id": "rl-load",
+        "terminal_id": "rl-load:b",
+        "connection": "wye",
+        "grounding": {
+          "kind": "solid",
+          "r_ohm": null,
+          "x_ohm": null
+        },
+        "model": "constant_z",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "p_w": {
+          "A": 33.333333333333336,
+          "B": 33.333333333333336,
+          "C": 33.333333333333336
+        },
+        "q_var": {
+          "A": 26.666666666666668,
+          "B": 26.666666666666668,
+          "C": 26.666666666666668
+        },
+        "rated_kv": null,
+        "opendss_model": null,
+        "zip_z": null,
+        "zip_i": null,
+        "zip_p": null,
+        "zip_zq": null,
+        "zip_iq": null,
+        "zip_pq": null,
+        "vmin_pu": 0.0,
+        "vmax_pu": 1.5,
+        "critical": false,
+        "priority": 0,
+        "cold_load_multiplier": null,
+        "cold_load_tau_s": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": null
+        }
+      }
+    ],
+    "sources": [
+      {
+        "id": "source",
+        "terminal_id": "source:grid",
+        "ll_v": 400.0,
+        "angle_a_rad": 0.0,
+        "r_ohm": 0.05,
+        "x_ohm": 0.0,
+        "r0_ohm": null,
+        "x0_ohm": null,
+        "is_slack": true,
+        "participation": null,
+        "phase_pu": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "балансный источник прямой последовательности"
+        }
+      },
+      {
+        "id": "reserve",
+        "terminal_id": "reserve:b",
+        "ll_v": 400.0,
+        "angle_a_rad": 0.05,
+        "r_ohm": 0.07,
+        "x_ohm": 0.08,
+        "r0_ohm": null,
+        "x0_ohm": null,
+        "is_slack": true,
+        "participation": null,
+        "phase_pu": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "балансный источник прямой последовательности"
+        }
+      }
+    ],
+    "generators": [],
+    "inverters": [],
+    "storages": [],
+    "shunts": [],
+    "neutral_grounds": [],
+    "meters": [],
+    "study_faults": [],
+    "harmonics": [],
+    "assumptions": [],
+    "omissions": [],
+    "provenance": {
+      "source": "authored-analytical-case",
+      "quality": "nameplate",
+      "timestamp": null,
+      "uncertainty": null,
+      "note": null
+    }
+  },
+  "requested_motors": [],
+  "scenario": null,
+  "rms": null,
+  "induction": null,
+  "coupled": null,
+  "options": {
+    "tolerance": 1e-10,
+    "max_iterations": 80,
+    "max_outer": 20,
+    "max_pv_refinements": 4,
+    "apply_regulators": true,
+    "inverter_current_limit_model": false,
+    "approximate_phase_shift": false
+  },
+  "flux_network": {
+    "motors": [
+      {
+        "id": "m1",
+        "node_id": "a",
+        "stator_r_ohm": 3.7,
+        "unsaturated_h": 0.34,
+        "saturation_beta_per_vs": 0.84,
+        "saturation_exponent": 7,
+        "cages": [
+          {
+            "resistance_ohm": 2.5,
+            "leakage_h": 0.023
+          }
+        ],
+        "pole_pairs": 2,
+        "inertia_kg_m2": 0.03,
+        "fan_nm_per_rad_s2": 0.0005917157124712526,
+        "viscous_nm_per_rad_s": 0.0,
+        "initial_speed_rad_s": 0.0,
+        "locked_rotor": false,
+        "thermal": null,
+        "provenance": {
+          "electrical": "https://aalto-electric-drives.github.io/motulator/drive_examples/current_vector/plot_2kw_im_sat_cvc.html",
+          "magnetics": "https://aalto-electric-drives.github.io/motulator/drive_examples/current_vector/plot_2kw_im_sat_cvc.html",
+          "mechanical": "Authored J=0.03 kg m2 and fan-load stress"
+        }
+      },
+      {
+        "id": "m2",
+        "node_id": "b",
+        "stator_r_ohm": 3.7,
+        "unsaturated_h": 0.34,
+        "saturation_beta_per_vs": 0.65,
+        "saturation_exponent": 7,
+        "cages": [
+          {
+            "resistance_ohm": 2.5,
+            "leakage_h": 0.023
+          }
+        ],
+        "pole_pairs": 2,
+        "inertia_kg_m2": 0.03,
+        "fan_nm_per_rad_s2": 0.0005917157124712526,
+        "viscous_nm_per_rad_s": 0.0,
+        "initial_speed_rad_s": 0.0,
+        "locked_rotor": false,
+        "thermal": null,
+        "provenance": {
+          "electrical": "https://aalto-electric-drives.github.io/motulator/drive_examples/current_vector/plot_2kw_im_sat_cvc.html",
+          "magnetics": "Authored perturbation of published saturation coefficient",
+          "mechanical": "Authored J=0.03 kg m2 and fan-load stress"
+        }
+      }
+    ],
+    "duration_s": 0.06,
+    "step_s": 0.0005,
+    "rtol": 2e-9,
+    "atol": 2e-11,
+    "maximum_kcl_relative_residual": 1e-7,
+    "maximum_energy_relative_residual": 2e-6,
+    "events": [],
+    "runtime_limits": {
+      "maximum_network_buses": 2000,
+      "maximum_rhs_evaluations": 2000000,
+      "maximum_event_batches": 1024,
+      "maximum_retained_scalars": 2000000,
+      "maximum_integration_wall_s": 120.0
+    }
+  }
+}

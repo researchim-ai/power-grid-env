@@ -264,17 +264,18 @@ def test_subprocess_errors_and_output_budget_do_not_expose_credentials(tmp_path)
         _command(sys.executable, ['-c', 'import time;time.sleep(5)'], tmp_path/'timeout.txt', timeout=.05)
 
 
-def test_release_workflow_actions_are_pinned_and_verifier_is_read_only():
+def test_archived_release_workflow_actions_are_pinned_and_inactive():
     import yaml
     root=Path(__file__).resolve().parents[1]
+    assert not list((root/'.github/workflows').glob('*.yml')) and not list((root/'.github/workflows').glob('*.yaml'))
     pins=json.loads((root/'requirements/release-ci-actions.json').read_text())['actions']
     for filename in ['release-candidate.yml','release-provenance.yml']:
-        w=yaml.load((root/'.github/workflows'/filename).read_text(),Loader=yaml.BaseLoader)
+        w=yaml.load((root/'.github/archived-workflows'/filename).read_text(),Loader=yaml.BaseLoader)
         for job in w['jobs'].values():
             for step in job['steps']:
                 if 'uses' in step:
                     name,sha=step['uses'].split('@');assert pins[name]['commit']==sha
-    verifier=yaml.load((root/'.github/workflows/release-provenance.yml').read_text(),Loader=yaml.BaseLoader)
+    verifier=yaml.load((root/'.github/archived-workflows/release-provenance.yml').read_text(),Loader=yaml.BaseLoader)
     assert set(verifier['permissions'].values())=={'read'}
     assert 'permissions' not in verifier['jobs']['verify']
 

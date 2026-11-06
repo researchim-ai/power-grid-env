@@ -226,8 +226,17 @@ class Circuit:
             heating=lambda x:np.array([(abs(i)/p['ibase'])**2 for i,p in zip(self.electrical(x)[1],self.p)]),
             thermal_indices=self.thermal,get_context=lambda:self.cfg,set_context=self.set_context,event_handler=getattr(self,'handle_event',None),extra_guards=getattr(self,'extra_guards',None),extra_apply=getattr(self,'extra_apply',None),after_commands=getattr(self,'after_commands',None),**getattr(self,'hybrid_options',{}))
         sides=report['sample_side'];times=report['time_s'];groups=[t for t,side in zip(times,sides) if side=='pre_event']
-        if len(groups)!=len(changes) or any(abs(a-b)>1e-6 for a,b in zip(groups,changes)):raise ValueError('independent multibus event groups mismatch')
-        alignment=dict(zip(groups,changes));channels={};node_voltage={node:[] for node in self.nodes};balance_audit=[]
+        alignment_audit=None
+        if getattr(self,'allow_commuting_controller_alignment',False):
+            from benchmarks.controller_reference_bounds import align_commuting_groups
+            alignment,alignment_audit=align_commuting_groups(groups,changes,report['event_log'],controls['event_log'],[e.time_s for e in self.s.events])
+        else:
+            if len(groups)!=len(changes) or any(abs(a-b)>1e-6 for a,b in zip(groups,changes)):
+                error=ValueError('independent multibus event groups mismatch')
+                error.group_diagnostic=dict(primary_groups=groups,independent_groups=changes,independent_event_log=controls['event_log'])
+                raise error
+            alignment=dict(zip(groups,changes))
+        channels={};node_voltage={node:[] for node in self.nodes};balance_audit=[]
         for time,side in zip(times,sides):
             at=alignment.get(time,time) if side in ('pre_event','post_event') else time
             choices=[seg for seg in segments if seg[0]<=at<=seg[1]]
@@ -258,4 +267,4 @@ class Circuit:
                 for key,value in self.extra_signals(x).items():channels.setdefault(key,[]).append(float(value))
         return dict(time_s=list(times),sample_side=list(sides),channels=channels,event_log=controls['event_log'],
                     node_voltage={k:{'real_v':[z.real for z in values],'imag_v':[z.imag for z in values]} for k,values in node_voltage.items()},
-                    independent_SI_network=True,production_stamps_used=False,initialization=self.initialization,balance_audit=balance_audit,integration=controls.get('integration'),sparse_MNA=self.sparse_network,network_work=dict(factorizations=self.factorizations,linear_solves=getattr(self,'linear_solves',0),matrix_nnz=self.matrix_nnz),field_validated=False)
+                    independent_SI_network=True,production_stamps_used=False,initialization=self.initialization,controller_event_alignment=alignment_audit,balance_audit=balance_audit,integration=controls.get('integration'),sparse_MNA=self.sparse_network,network_work=dict(factorizations=self.factorizations,linear_solves=getattr(self,'linear_solves',0),matrix_nnz=self.matrix_nnz),field_validated=False)

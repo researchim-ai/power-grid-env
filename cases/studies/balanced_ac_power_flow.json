@@ -1,0 +1,105 @@
+{
+  "schema": "power-grid-env.steady-study/v1",
+  "id": "authored-balanced-power_flow",
+  "task": "power_flow",
+  "case": {
+    "schema": "power-grid-env.balanced-ac/v1",
+    "name": "balanced_ac_three_bus.m",
+    "base_mva": 100.0,
+    "buses": [
+      {
+        "id": 10,
+        "type_code": 3,
+        "pd": 0.0,
+        "qd": 0.0,
+        "gs": 0.0,
+        "bs": 0.0,
+        "vm": 1.04,
+        "va_deg": 0.0,
+        "vmin": 0.8,
+        "vmax": 1.2
+      },
+      {
+        "id": 20,
+        "type_code": 1,
+        "pd": -27.37914620892114,
+        "qd": 18.043187622562655,
+        "gs": 0.001,
+        "bs": 0.0,
+        "vm": 1.0,
+        "va_deg": 0.0,
+        "vmin": 0.8,
+        "vmax": 1.2
+      },
+      {
+        "id": 30,
+        "type_code": 1,
+        "pd": 98.584260545261,
+        "qd": 43.614504669477135,
+        "gs": 0.0,
+        "bs": 0.002,
+        "vm": 1.0,
+        "va_deg": 0.0,
+        "vmin": 0.8,
+        "vmax": 1.2
+      }
+    ],
+    "generators": [
+      {
+        "bus": 10,
+        "qmin": -1000.0,
+        "qmax": 1000.0,
+        "pmin": -1000.0,
+        "pmax": 1000.0,
+        "cost": [
+          1.0,
+          0.0
+        ],
+        "pg": 73.74626837210353,
+        "qg": 65.53536327774626
+      }
+    ],
+    "branches": [
+      {
+        "fbus": 10,
+        "tbus": 20,
+        "r": 0.02,
+        "x": 0.08,
+        "b": 0.02,
+        "rate_a": 1000.0,
+        "ratio": 1.02,
+        "angle_deg": 2.0,
+        "status": 1,
+        "angmin_deg": -90.0,
+        "angmax_deg": 90.0
+      },
+      {
+        "fbus": 20,
+        "tbus": 30,
+        "r": 0.04,
+        "x": 0.12,
+        "b": 0.01,
+        "rate_a": 1000.0,
+        "ratio": 0.0,
+        "angle_deg": 0.0,
+        "status": 1,
+        "angmin_deg": -90.0,
+        "angmax_deg": 90.0
+      },
+      {
+        "fbus": 10,
+        "tbus": 30,
+        "r": 0.03,
+        "x": 0.1,
+        "b": 0.01,
+        "rate_a": 1000.0,
+        "ratio": 0.0,
+        "angle_deg": 0.0,
+        "status": 1,
+        "angmin_deg": -90.0,
+        "angmax_deg": 90.0
+      }
+    ],
+    "published_cost": null
+  }
+}

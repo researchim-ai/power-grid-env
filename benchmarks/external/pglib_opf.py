@@ -16,67 +16,7 @@ CASES = (
 )
 
 
-def load_case(path: Path) -> OpfCase:
-    text = path.read_text(encoding="utf-8")
-    base = float(re.search(r"mpc\.baseMVA\s*=\s*([0-9.]+)", text).group(1))
-    published = re.search(r"opt objective value:\s*([0-9.]+)", text)
-    buses = [
-        Bus(
-            id=int(row[0]),
-            type_code=int(row[1]),
-            pd=row[2],
-            qd=row[3],
-            gs=row[4] / base,
-            bs=row[5] / base,
-            vm=row[7],
-            va_deg=row[8],
-            vmax=row[11],
-            vmin=row[12],
-        )
-        for row in _matrix(text, "bus")
-    ]
-    costs = _matrix(text, "gencost")
-    generators = []
-    for row, cost in zip(_matrix(text, "gen"), costs, strict=True):
-        if int(row[7]) != 1:
-            continue
-        count = int(cost[3])
-        generators.append(
-            GeneratorSpec(
-                bus=int(row[0]),
-                qmin=row[4],
-                qmax=row[3],
-                pmin=row[9],
-                pmax=row[8],
-                cost=tuple(cost[4 : 4 + count]),
-                pg=row[1],
-                qg=row[2],
-            )
-        )
-    branches = [
-        Branch(
-            fbus=int(row[0]),
-            tbus=int(row[1]),
-            r=row[2],
-            x=row[3],
-            b=row[4],
-            rate_a=row[5],
-            ratio=row[8],
-            angle_deg=row[9],
-            status=int(row[10]),
-            angmin_deg=row[11],
-            angmax_deg=row[12],
-        )
-        for row in _matrix(text, "branch")
-    ]
-    return OpfCase(
-        name=path.name,
-        base_mva=base,
-        buses=buses,
-        generators=generators,
-        branches=branches,
-        published_cost=None if published is None else float(published.group(1)),
-    )
+from power_grid_env.matpower_case import load_case
 
 
 def evaluate(path: Path) -> dict:
@@ -99,18 +39,6 @@ def evaluate(path: Path) -> dict:
         "flows_within_rating": bool(result["audit"]["flows_within_rating"]),
     }
 
-
-def _matrix(text: str, name: str) -> list[list[float]]:
-    match = re.search(rf"mpc\.{name}\s*=\s*\[(.*?)\];", text, flags=re.S)
-    if match is None:
-        raise ValueError(f"в кейсе нет mpc.{name}")
-    rows = []
-    for line in match.group(1).splitlines():
-        line = line.split("%")[0].strip().rstrip(";")
-        if not line:
-            continue
-        rows.append([float(item) for item in line.split()])
-    return rows
 
 
 def write_report(out: Path) -> dict:

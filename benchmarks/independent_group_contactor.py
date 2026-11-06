@@ -25,6 +25,8 @@ def run(*,settings,state,rhs,voltage,heating,thermal_indices,get_context,set_con
             controls[i]=dict(available=bool(v>p.dropout_voltage_pu if cfg['connected'][i] else v>=p.pickup_voltage_pu),changed=0.,pending=False,opened=0.,restarts=0)
     timeline={}
     for e in settings.events:timeline.setdefault(e.time_s,[]).append(e)
+    if settings.event_policy=='coincident_roots_v1':
+        for batch in timeline.values():batch.sort(key=lambda e:(e.kind in {'motor_open','motor_close'},e.equipment_id,e.kind))
     def emit(i,kind,time,**fields):
         nonlocal transitions
         if kind.startswith('contactor_') or fields.get('cause') in {'undervoltage_timer','automatic_restart'}:
@@ -71,13 +73,26 @@ def run(*,settings,state,rhs,voltage,heating,thermal_indices,get_context,set_con
         end=float(sol.t[-1]);state=sol.y[:,-1].copy()
         segments.append((time,end,sol.sol,cfg['connected'].copy(),cfg['scale'],cfg['load_scale'].copy(),snapshot))
         roots={name for name,values in zip(names,sol.t_events or []) if len(values)}
+        if settings.event_policy=='coincident_roots_v1' and roots:
+            from scipy.optimize import brentq
+            dense=sol.sol.interpolants[-1];a,b=dense.t_old,dense.t
+            tolerance=64*np.finfo(float).eps*max(1.,abs(end))
+            for name,guard in zip(names,guards):
+                if name in roots:continue
+                ga,gb=float(guard(a,dense(a))),float(guard(b,dense(b)))
+                if ga==gb==0:continue
+                direction=getattr(guard,'direction',0)
+                crosses=(ga<=0<=gb and direction>=0) or (ga>=0>=gb and direction<=0)
+                if crosses:
+                    at=brentq(lambda t:guard(t,dense(t)),a,b,xtol=4*np.finfo(float).eps,rtol=4*np.finfo(float).eps)
+                    if abs(at-end)<=tolerance:roots.add(name)
         eps=16*np.finfo(float).eps*max(1.,abs(end))
         scheduled=timeline.pop(right,[]) if abs(end-right)<=eps else []
         due=any(deadline(i)<=end+eps for i in controls)
         voltage_roots={i for kind,i in roots if kind=='voltage'}
         if voltage_roots:observe(end,voltage_roots)
         thermal_roots={i for kind,i in roots if kind=='thermal'}
-        if thermal_roots:
+        if thermal_roots and settings.event_policy!='coincident_roots_v1':
             watts=heating(state)
             for i,address in thermal_indices.items():
                 threshold=motors[i].thermal.trip_level;tol=64*np.finfo(float).eps*max(abs(state[address]),threshold,1e-300)

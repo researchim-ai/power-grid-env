@@ -181,7 +181,7 @@ def jacobian(model,state,*,excitation=False,esst=False,protections=False,oel=Fal
             demand=model.controllers.pref[i]-(state[omega[i]]-1)/p.R
             rate=(demand-state[valve])/p.T1
             blocked=(state[valve]>=p.VMAX and rate>0) or (state[valve]<=p.VMIN and rate<0)
-            if not blocked:result[valve]=(-unit[omega[i]]/p.R-unit[valve])/p.T1
+            if not blocked or model.settings.event_policy=='coincident_roots_v1':result[valve]=(-unit[omega[i]]/p.R-unit[valve])/p.T1
             result[lag]=(slope*unit[valve]-unit[lag])/p.T3
         power=(deg[i]*np.conj(ig[i])+eg[i]*np.conj(dig[i])).real
         if directions is not None:result[delta[i]]=2*math.pi*model.network.frequency_hz*unit[omega[i]]
@@ -236,7 +236,7 @@ def jacobian(model,state,*,excitation=False,esst=False,protections=False,oel=Fal
             result[f]=(derror-unit[f])/p.TB
             rate=(p.K*(p.TATB*error+(1-p.TATB)*state[f])-state[field])/p.TE
             blocked=(state[field]>=p.EMAX and rate>0) or (state[field]<=p.EMIN and rate<0)
-            if not blocked:result[field]=(p.K*(p.TATB*derror+(1-p.TATB)*unit[f])-unit[field])/p.TE
+            if not blocked or model.settings.event_policy=='coincident_roots_v1':result[field]=(p.K*(p.TATB*derror+(1-p.TATB)*unit[f])-unit[field])/p.TE
     for i,(a,p) in model.generator_thermal.entries.items():
         result[a]=2*(np.conj(ig[i])*dig[i]).real/p.time_constant_s-unit[a]/p.time_constant_s
     if protections:

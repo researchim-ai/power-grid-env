@@ -1,0 +1,399 @@
+{
+  "source": "official OEDI SMART-DS S3",
+  "selection": "preselected smallest cached second-leaf Master.dss, first excluded; own source loadshape references",
+  "bytes": 37537390,
+  "files": [
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/scenarios/base_timeseries/opendss/p1uhs0_1247/p1uhs0_1247--p1udt942/Master.dss",
+      "path": "smart-ds/v1.0/2018/SFO/P1U/opendss/p1uhs0_1247/p1uhs0_1247--p1udt942/Master.dss",
+      "bytes": 723,
+      "sha256": "de899a18cf18a074c8736df63dd0a89934cd7e87c619e458542767d7cb7880d0"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/scenarios/base_timeseries/opendss/p1uhs0_1247/p1uhs0_1247--p1udt942/LoadShapes.dss",
+      "path": "smart-ds/v1.0/2018/SFO/P1U/opendss/p1uhs0_1247/p1uhs0_1247--p1udt942/LoadShapes.dss",
+      "bytes": 4901,
+      "sha256": "bd459329780178dbc0261f148571843aa7036ba38205f04fbec7aa135d3f5168"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/scenarios/base_timeseries/opendss/p1uhs0_1247/p1uhs0_1247--p1udt942/Loads.dss",
+      "path": "smart-ds/v1.0/2018/SFO/P1U/opendss/p1uhs0_1247/p1uhs0_1247--p1udt942/Loads.dss",
+      "bytes": 8243,
+      "sha256": "62f43f181a8909b975b136b935d813ec838a1e14715fbdce899c1abf4399b004"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/scenarios/base_timeseries/opendss/p1uhs0_1247/p1uhs0_1247--p1udt942/Lines.dss",
+      "path": "smart-ds/v1.0/2018/SFO/P1U/opendss/p1uhs0_1247/p1uhs0_1247--p1udt942/Lines.dss",
+      "bytes": 10937,
+      "sha256": "f2799179770b10e308eb7d3c7e09fecf00c14fe57dcbc7c6e3c42409dba22153"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/scenarios/base_timeseries/opendss/p1uhs0_1247/p1uhs0_1247--p1udt942/LineCodes.dss",
+      "path": "smart-ds/v1.0/2018/SFO/P1U/opendss/p1uhs0_1247/p1uhs0_1247--p1udt942/LineCodes.dss",
+      "bytes": 3673,
+      "sha256": "6ed159162d806521cc8440874b7bd81999d0d19bbb808bc0f0f653136acd52c1"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/scenarios/base_timeseries/opendss/p1uhs0_1247/p1uhs0_1247--p1udt942/Transformers.dss",
+      "path": "smart-ds/v1.0/2018/SFO/P1U/opendss/p1uhs0_1247/p1uhs0_1247--p1udt942/Transformers.dss",
+      "bytes": 6765,
+      "sha256": "133b622fd127c1ca28bdf2f5d042e75f78b9746ca5cb26603b6a39b7be87a3c9"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/scenarios/base_timeseries/opendss/p1uhs0_1247/p1uhs0_1247--p1udt942/Buscoords.dss",
+      "path": "smart-ds/v1.0/2018/SFO/P1U/opendss/p1uhs0_1247/p1uhs0_1247--p1udt942/Buscoords.dss",
+      "bytes": 4128,
+      "sha256": "b417eac1fdf9b57dfb05e2004220d1e8154111336ecc2034f7f4fc7a960e35ed"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/scenarios/base_timeseries/opendss/p1uhs0_1247/p1uhs0_1247--p1udt942/SMART-DS_version.txt",
+      "path": "smart-ds/v1.0/2018/SFO/P1U/opendss/p1uhs0_1247/p1uhs0_1247--p1udt942/SMART-DS_version.txt",
+      "bytes": 4,
+      "sha256": "5717e7c840171019a4eeab5b79a7f894a4986eaff93d04ec5b12c9a189f594bf"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/scenarios/base_timeseries/opendss/p1uhs0_1247/p1uhs0_1247--p1udt942/Intermediates.txt",
+      "path": "smart-ds/v1.0/2018/SFO/P1U/opendss/p1uhs0_1247/p1uhs0_1247--p1udt942/Intermediates.txt",
+      "bytes": 11658,
+      "sha256": "29d05eb991b771bcbead5c90d115bb814350a99d5f59fac3e64100ea325ded93"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_16325_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_16325_pu.csv",
+      "bytes": 676114,
+      "sha256": "71711f9d820b7466a511c2e649a700cc09d6b459d9341216c79492af0179adfe"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_1644_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_1644_pu.csv",
+      "bytes": 677242,
+      "sha256": "e4a8b8da94f85dfed793fd0aed9620be5ee4c8bfd612a05b14512dd162863704"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_16521_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_16521_pu.csv",
+      "bytes": 664011,
+      "sha256": "8dda469c69c14aae08f4fbc3eb72708177dac642cb80145361b08077f7b0726b"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_16631_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_16631_pu.csv",
+      "bytes": 677379,
+      "sha256": "b97020b6867b1304d314bf28514addea3a2e85e982beab85b8e201e46fd75b00"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_1849_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_1849_pu.csv",
+      "bytes": 668866,
+      "sha256": "f534cfe06102b231243e7250bb07249f4f5b6f217ef5cc68115c68e32df2edf1"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_19494_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_19494_pu.csv",
+      "bytes": 665092,
+      "sha256": "5a909a846b6a99d481617e50660a7d242e493cfb9ee4f0719e7ccab46754202e"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_19648_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_19648_pu.csv",
+      "bytes": 675623,
+      "sha256": "658d181c1d43e401ca87cac411499b2734269a3d431d0a91e51af918b3b340af"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_22704_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_22704_pu.csv",
+      "bytes": 677722,
+      "sha256": "fccb1125e33090efccccadffe3824d6f0d87698d798694f1cf707c2b6ed55bc3"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_22718_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_22718_pu.csv",
+      "bytes": 660651,
+      "sha256": "160f30f58454e52460ebb35b08041337d38acab24775f0b33f859216470429d6"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_2820_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_2820_pu.csv",
+      "bytes": 635175,
+      "sha256": "aa120d5bdf8459150d5bde2e9fd4e9eefed962383c07089b5e22de6ff6eba3cf"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_28949_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_28949_pu.csv",
+      "bytes": 659695,
+      "sha256": "88eea692214c3aa659c37b3701e1cabd9b570a5a577048ce9a051356d7966826"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_32056_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_32056_pu.csv",
+      "bytes": 661673,
+      "sha256": "7e9888b224cc31426d6649d85ea41bd29882d22da820c632ce776d974d124356"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_32085_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_32085_pu.csv",
+      "bytes": 671397,
+      "sha256": "1796bd08600c7ae7d3a585c809a2a0b0f1914667ac3ce72627776a5b6a74b64b"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_32163_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_32163_pu.csv",
+      "bytes": 660269,
+      "sha256": "fbb1e02fd84ee6d582c3c7e85019e3042a761a2f4dd269be1eb6370572375a88"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_33205_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_33205_pu.csv",
+      "bytes": 669851,
+      "sha256": "b877e124b53b6f79b4a495fd002da214a1beffdcd99a6816b13475d9e74d7d57"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_33411_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_33411_pu.csv",
+      "bytes": 605094,
+      "sha256": "3e363c76954321287203c1cedf371d93cc66ca2dc321c0b68495dd9fb152282f"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_33605_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_33605_pu.csv",
+      "bytes": 677115,
+      "sha256": "a3415eec8ed1472c7fa61dd336ed3448648d69705f3d7361a0eb1971d66a09ac"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_33986_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_33986_pu.csv",
+      "bytes": 647077,
+      "sha256": "f6df9cc5b9868ce7d7a63bf14c4021ada85ad7396f6b34aeefacb1aa428ab146"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_41337_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_41337_pu.csv",
+      "bytes": 672955,
+      "sha256": "4885e2e8078bc4c0d1840e3e36a96bc63d435a247972108b65e5de6049bdf791"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kvar_41529_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kvar_41529_pu.csv",
+      "bytes": 663576,
+      "sha256": "13f76a0cfafbe2a904cbf4f24c95b2b76e476e2974e9349377e6bb9f1308dec4"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_16325_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_16325_pu.csv",
+      "bytes": 671420,
+      "sha256": "54dade2c0d6fc0dfe0bc21aa5e05278c6fc0959b66b53ce4f62a4d8b2f4fac3a"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_1644_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_1644_pu.csv",
+      "bytes": 664965,
+      "sha256": "9fb2a3b28dc9a2f473b0375fe1577345c2b19ffcebb23a5c2af17b040f5cbc67"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_16521_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_16521_pu.csv",
+      "bytes": 679391,
+      "sha256": "ffc3e3148ef33a7b049f61be70587f79c8cc8d932f37b82451da5642ed7539a6"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_16631_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_16631_pu.csv",
+      "bytes": 664767,
+      "sha256": "e48a71a4d377b778cea7d0e78c36d7cad517cd9cf9ca6ef79d18be286b26c195"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_1849_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_1849_pu.csv",
+      "bytes": 665064,
+      "sha256": "1576025a92bfa8b82f099c06932fbacd36fe89a8c8e52eb550da758ca6a524f0"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_19494_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_19494_pu.csv",
+      "bytes": 666892,
+      "sha256": "0abd6c05a8da16237819497ea11a6b8ee2b39977bdeefbef06697c947b72489c"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_19648_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_19648_pu.csv",
+      "bytes": 671375,
+      "sha256": "c599b97800e4f741786b1bcc6b1966c0b5bc4c6c89458318f1d2ad0c228570d2"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_22704_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_22704_pu.csv",
+      "bytes": 666787,
+      "sha256": "c6c8cfe733693e8a9c25a19d255d25b07817494da87b20b65db055d8fef89f0b"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_22718_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_22718_pu.csv",
+      "bytes": 677021,
+      "sha256": "ccc16da08770cf72243ad10b0c04596b31b26eab73cec67209821143fdc259a8"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_2820_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_2820_pu.csv",
+      "bytes": 665942,
+      "sha256": "56a70042465ef321de15562e7157ca3389e06af39ced3a6feb0127880acef2dd"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_28949_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_28949_pu.csv",
+      "bytes": 668666,
+      "sha256": "846eb9eb2d685e3e971acae4f0c02bd24e4877d474801955ba340d5befbcb5e1"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_32056_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_32056_pu.csv",
+      "bytes": 664033,
+      "sha256": "757aacbd8543fb1fe55992193a36b26eab415bd418e46322bda5b7f5d7abcf99"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_32085_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_32085_pu.csv",
+      "bytes": 669837,
+      "sha256": "0b5adf6c386faf8eef5bb0855f03068e25bb0e14fc061cf77ae9a037f9814455"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_32163_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_32163_pu.csv",
+      "bytes": 677024,
+      "sha256": "d637606ce60985e696aa7b6d894524f876e2ae96a547552fe1e202a9ff6fe23e"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_33205_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_33205_pu.csv",
+      "bytes": 665246,
+      "sha256": "9d253b9c8eaef6b7cdca08e4d0dc4158e417d10cd7f4d96477ac915c12f78112"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_33411_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_33411_pu.csv",
+      "bytes": 680390,
+      "sha256": "e1b9925148af9648e6ae4f6e393b3c8995212200382189ca04f11487c631679a"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_33605_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_33605_pu.csv",
+      "bytes": 663561,
+      "sha256": "94481231abe8918955ee9af090e4f4d78e8afcbeb2c128c675c18c0640f198c6"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_33986_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_33986_pu.csv",
+      "bytes": 671675,
+      "sha256": "8f07f25258e523a379db61e1d6c9cbce13a2fe0dacf5d70bb97e9a105ed8fd69"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_41337_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_41337_pu.csv",
+      "bytes": 666447,
+      "sha256": "9fb152afcdd470a7e6706d4bcf63055827253b396ad7182e673315781a4de288"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/com_kw_41529_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/com_kw_41529_pu.csv",
+      "bytes": 663666,
+      "sha256": "32a94aa1395abcf097924db7457dc2892a92e4b05b3b9f76c9fbf1e3b4d01653"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/res_kvar_1143_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/res_kvar_1143_pu.csv",
+      "bytes": 660029,
+      "sha256": "16f2b62774f00644d66a1203e002149b2fe264a984498dd674299af10daf39fe"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/res_kvar_13975_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/res_kvar_13975_pu.csv",
+      "bytes": 677438,
+      "sha256": "7f9322dc975452ad4097aef56a79d4a2a38659f9b8dd50451474dbade61208e8"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/res_kvar_14158_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/res_kvar_14158_pu.csv",
+      "bytes": 671013,
+      "sha256": "b42932239d32ae5512993cf3b191aed6056af5ca9c057fc6d97af2281a576029"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/res_kvar_14248_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/res_kvar_14248_pu.csv",
+      "bytes": 680481,
+      "sha256": "c6a7df4dc370c8145b52241ca0d27d05914062a6cd7e7023b3c559ffc6f09b48"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/res_kvar_1859_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/res_kvar_1859_pu.csv",
+      "bytes": 679351,
+      "sha256": "670fea950c4dd193a27db27af3db362d5567beec13933f9c8e1e756af1712825"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/res_kvar_223_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/res_kvar_223_pu.csv",
+      "bytes": 666105,
+      "sha256": "7ee7852dbbe2fd85b0365e9c86bca69a7371ad9e0d0bac39ca101807a9f0ce8c"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/res_kvar_3216_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/res_kvar_3216_pu.csv",
+      "bytes": 665476,
+      "sha256": "498e814dd4df005d6a7dbbd110e4b9da0f9ce7c19cc9ba439327c88290e0b8bc"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/res_kvar_5356_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/res_kvar_5356_pu.csv",
+      "bytes": 665551,
+      "sha256": "a62907f527838134360195431058e8774f200c1223d4db18f9263ca3c505d213"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/res_kw_1143_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/res_kw_1143_pu.csv",
+      "bytes": 673435,
+      "sha256": "945a80c70744ec538b12791baf7db6645dbee9cc9cc09bdf29e4fd92b0670a0c"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/res_kw_13975_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/res_kw_13975_pu.csv",
+      "bytes": 689097,
+      "sha256": "2b6321294bba81cd825ed71f581e6bcc4af4029a994f8c428ee5c68c81166242"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/res_kw_14158_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/res_kw_14158_pu.csv",
+      "bytes": 683972,
+      "sha256": "bf1da6e08179c8e0b56aebf5ee3d9b3d0df3ec1e4da801bd8848ba0a0c05ca2c"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/res_kw_14248_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/res_kw_14248_pu.csv",
+      "bytes": 689842,
+      "sha256": "78c313c7c15b9b034a540c3d78b7bf9ef66339c0881934ce53ea78bdd484a9d3"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/res_kw_1859_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/res_kw_1859_pu.csv",
+      "bytes": 688414,
+      "sha256": "e71cd9f10a6de9aea77b5d2c83f22fa9cb69b42713aeb35e3dab4864f05a81cd"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/res_kw_223_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/res_kw_223_pu.csv",
+      "bytes": 681008,
+      "sha256": "691e94c48c08598417d003ac9baa4cbdc646c894017c31de673af316d388c40c"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/res_kw_3216_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/res_kw_3216_pu.csv",
+      "bytes": 687079,
+      "sha256": "72b23698ce20dc1414d5765dac620fc7de07809e66628829af3588629e3d5d4e"
+    },
+    {
+      "url": "https://oedi-data-lake.s3.amazonaws.com/SMART-DS/v1.0/2018/SFO/P1U/profiles/res_kw_5356_pu.csv",
+      "path": "smart-ds/v1.0/2018/profiles/res_kw_5356_pu.csv",
+      "bytes": 677321,
+      "sha256": "fd051c1874bf8be2992fe3bd6c5e93d46d8e883fd8f323ff702d2e1c141e7b50"
+    }
+  ],
+  "profiles": 56,
+  "policy": "no_GitHub_no_CI"
+}

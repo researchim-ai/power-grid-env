@@ -1,0 +1,283 @@
+{
+  "id": "relay-grid",
+  "template": {
+    "id": "aalto-saturated-fan__locked",
+    "kind": "protected_motor",
+    "study": {
+      "schema_version": "power-grid-env.protected-motor-study/v1",
+      "case": {
+        "schema_version": "power-grid-env.phase-network/v1",
+        "id": "protected-aalto-saturated-fan__locked",
+        "nodes": [
+          "sa",
+          "sb",
+          "sc",
+          "fa",
+          "fb",
+          "fc",
+          "ma",
+          "mb",
+          "mc"
+        ],
+        "frequency_hz": 50.0,
+        "sources": [
+          {
+            "id": "source_a",
+            "node": "sa",
+            "tones": [
+              {
+                "order": 1,
+                "rms": 230.94010767585033,
+                "phase_rad": 0.0
+              }
+            ],
+            "envelope": [
+              [
+                0.0,
+                1.0
+              ]
+            ]
+          },
+          {
+            "id": "source_b",
+            "node": "sb",
+            "tones": [
+              {
+                "order": 1,
+                "rms": 230.94010767585033,
+                "phase_rad": -2.0943951023931953
+              }
+            ],
+            "envelope": [
+              [
+                0.0,
+                1.0
+              ]
+            ]
+          },
+          {
+            "id": "source_c",
+            "node": "sc",
+            "tones": [
+              {
+                "order": 1,
+                "rms": 230.94010767585033,
+                "phase_rad": 2.0943951023931953
+              }
+            ],
+            "envelope": [
+              [
+                0.0,
+                1.0
+              ]
+            ]
+          }
+        ],
+        "resistors": [
+          {
+            "id": "grid_a",
+            "frm": "sa",
+            "to": "fa",
+            "resistance_ohm": 0.17
+          },
+          {
+            "id": "contact_a",
+            "frm": "fa",
+            "to": "ma",
+            "resistance_ohm": 0.02
+          },
+          {
+            "id": "grid_b",
+            "frm": "sb",
+            "to": "fb",
+            "resistance_ohm": 0.17
+          },
+          {
+            "id": "contact_b",
+            "frm": "fb",
+            "to": "mb",
+            "resistance_ohm": 0.02
+          },
+          {
+            "id": "grid_c",
+            "frm": "sc",
+            "to": "fc",
+            "resistance_ohm": 0.17
+          },
+          {
+            "id": "contact_c",
+            "frm": "fc",
+            "to": "mc",
+            "resistance_ohm": 0.02
+          }
+        ],
+        "capacitors": [
+          {
+            "id": "snubber_a",
+            "frm": "fa",
+            "to": "ma",
+            "capacitance_f": 1e-06
+          },
+          {
+            "id": "snubber_b",
+            "frm": "fb",
+            "to": "mb",
+            "capacitance_f": 1e-06
+          },
+          {
+            "id": "snubber_c",
+            "frm": "fc",
+            "to": "mc",
+            "capacitance_f": 1e-06
+          }
+        ],
+        "inductors": [],
+        "inductance_h": [],
+        "injections": [],
+        "converters": [],
+        "drives": [],
+        "motors": [
+          {
+            "id": "motor",
+            "nodes": [
+              "ma",
+              "mb",
+              "mc"
+            ],
+            "passport": {
+              "id": "m",
+              "node_id": "motor",
+              "stator_r_ohm": 3.7,
+              "unsaturated_h": 0.34,
+              "saturation_beta_per_vs": 0.84,
+              "saturation_exponent": 7,
+              "cages": [
+                {
+                  "resistance_ohm": 2.5,
+                  "leakage_h": 0.023
+                }
+              ],
+              "pole_pairs": 2,
+              "inertia_kg_m2": 0.03,
+              "fan_nm_per_rad_s2": 0.0005917157124712526,
+              "viscous_nm_per_rad_s": 0.0,
+              "initial_speed_rad_s": 0.0,
+              "locked_rotor": true,
+              "thermal": null,
+              "provenance": {
+                "electrical": "https://aalto-electric-drives.github.io/motulator/drive_examples/current_vector/plot_2kw_im_sat_cvc.html",
+                "magnetics": "https://aalto-electric-drives.github.io/motulator/drive_examples/current_vector/plot_2kw_im_sat_cvc.html",
+                "mechanical": "Authored J=0.03 kg m2; fan torque=14.6 Nm at 1500 rpm"
+              }
+            }
+          }
+        ],
+        "events": [
+          {
+            "time_s": 0.51,
+            "kind": "resistance",
+            "equipment_id": "contact_a",
+            "value": 0.02
+          },
+          {
+            "time_s": 0.51,
+            "kind": "resistance",
+            "equipment_id": "contact_b",
+            "value": 0.02
+          },
+          {
+            "time_s": 0.51,
+            "kind": "resistance",
+            "equipment_id": "contact_c",
+            "value": 0.02
+          }
+        ],
+        "initial_voltage_v": {},
+        "sequence_monitors": {},
+        "sequence_neutrals": {},
+        "provenance": {
+          "electrical": "https://aalto-electric-drives.github.io/motulator/drive_examples/current_vector/plot_2kw_im_sat_cvc.html",
+          "magnetics": "https://aalto-electric-drives.github.io/motulator/drive_examples/current_vector/plot_2kw_im_sat_cvc.html",
+          "mechanical": "Authored J=0.03 kg m2; fan torque=14.6 Nm at 1500 rpm",
+          "breaker": "Authored finite contact + 1 uF snubber + passive 600 V/2 ohm clamp; not an OEM breaker",
+          "relay": "Authored accelerated I2t relay, not OEM settings"
+        }
+      },
+      "contact_ids": [
+        "contact_a",
+        "contact_b",
+        "contact_c"
+      ],
+      "relay": {
+        "id": "motor_relay",
+        "rated_current_rms_a": 5.0,
+        "time_constant_s": 1.0,
+        "trip_level": 5.0,
+        "reset_level": 1.0,
+        "initial_level": 0.0,
+        "opening_delay_s": 0.005,
+        "stator_trip_c": null,
+        "provenance": "Authored accelerated I2t relay, not OEM settings"
+      },
+      "off_resistance_ohm": 100000000.0,
+      "clamp_knee_v": 600.0,
+      "clamp_resistance_ohm": 2.0,
+      "reset_commands": [
+        {
+          "time_s": 0.5
+        }
+      ],
+      "duration_s": 0.6,
+      "sample_s": 0.001,
+      "max_step_s": 0.00025,
+      "rtol": 2e-08,
+      "atol": 2e-10,
+      "required_speed_pu": 0.95,
+      "maximum_runup_s": 0.5,
+      "supply_nodes": [
+        "sa",
+        "sb",
+        "sc"
+      ],
+      "supply_available_pu": 0.9,
+      "nominal_ln_rms_v": 230.94010767585033,
+      "minimum_closed_voltage_pu": 0.8,
+      "runtime_limits": {
+        "maximum_network_buses": 2000,
+        "maximum_rhs_evaluations": 2000000,
+        "maximum_event_batches": 1024,
+        "maximum_retained_scalars": 2000000,
+        "maximum_integration_wall_s": 120.0
+      }
+    },
+    "protocol": null,
+    "rules": [
+      {
+        "path": "/engineering/classification",
+        "operator": "eq",
+        "value": "protected_trip"
+      }
+    ],
+    "parameters": {},
+    "worker_wall_s": 180.0,
+    "memory_limit_mb": 4096
+  },
+  "axes": [
+    {
+      "path": "/relay/trip_level",
+      "values": [
+        3.0,
+        7.0
+      ],
+      "unit": "pu"
+    },
+    {
+      "path": "/relay/time_constant_s",
+      "values": [
+        0.5,
+        1.5
+      ],
+      "unit": "s"
+    }
+  ]
+}

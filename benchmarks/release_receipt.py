@@ -59,6 +59,10 @@ def create(candidate, test_inventory, source, out):
               'local_candidate_checks_passed': True, 'independent_host_verified': False,
               'industrial_release_qualified': False,
               'remote_gate': 'pending_authoritative_CI_run_and_artifact_binding'}
+    if profile.get('delivery_policy')=='local_only_no_GitHub_no_CI':
+        result['local_delivery_qualified']=True
+        result['remote_gate']='not_required_by_user_local_delivery_policy'
+        result['external_EX04']='cancelled_by_user_not_passed'
     out.parent.mkdir(parents=True, exist_ok=True); out.write_text(json.dumps(result, indent=2, allow_nan=False) + '\n')
     return result
 

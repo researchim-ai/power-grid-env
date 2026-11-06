@@ -154,8 +154,8 @@ def validate_automation(network,topology,settings):
     p=settings.network_automation
     if p is None:return ['network automation events require an explicit passport'] if any(e.kind in AUTOMATION_EVENTS for e in settings.events) else []
     errors=[]
-    if settings.integration_method!='radau' or settings.jacobian_network!='cached_ports' or settings.event_policy!='coincident_roots_v1':
-        errors.append('network automation v1 requires Radau, cached_ports and coincident_roots_v1; analytic DAE relay derivatives are not qualified')
+    if settings.event_policy!='coincident_roots_v1' or (settings.integration_method=='network_dae' and settings.jacobian_network!='direct_solve'):
+        errors.append('network automation requires coincident_roots_v1; network DAE requires direct_solve analytic actions')
     targets=dict(line={x.id for x in network.lines},generator={x.id for x in network.generators},source={x.id for x in network.sources},node=set(topology.node_to_bus))
     ids=set().union(*targets.values(),{x.id for x in settings.motors})
     for x in [*p.breakers,*p.relays,*p.transfers]:

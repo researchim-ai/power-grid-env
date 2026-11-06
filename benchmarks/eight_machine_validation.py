@@ -28,10 +28,10 @@ def case(name):
     return StudySpec.model_validate(s.model_dump(mode='json'))
 
 
-def compare(spec,primary,native):
+def compare(spec,primary,native,*,expected_profile=PROFILE):
     from benchmarks.generator_oel2c_validation import compare as oel_compare
     from benchmarks.generator_esst1a_validation import compare as esst_compare
-    if native.get('native_profile')!=PROFILE:raise ValueError('wrong native reference profile')
+    if native.get('native_profile')!=expected_profile:raise ValueError('wrong native reference profile')
     audit=native.get('network_balance')
     if not audit or len(audit)!=len(native['time_s']):raise ValueError('missing independent balance audit')
     if not all(np.isfinite([x['kcl_pu'],x['power_balance_pu']]).all() for x in audit):raise ValueError('nonfinite independent balance audit')

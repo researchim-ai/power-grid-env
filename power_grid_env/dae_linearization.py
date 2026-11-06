@@ -37,6 +37,8 @@ def device_groups(model,dimension):
 
 class DAEBlocks:
     def __init__(self,model,callback,time,state,maximum,check,tick):
+        automation_callback=callback if hasattr(callback,'automation_physical_callback') else None
+        if automation_callback is not None:callback=callback.automation_physical_callback
         self.n=len(state);self.mode=mode_token(model);self.lu=model.lu;self.maximum=maximum
         self.owners=np.empty(self.n,dtype=int);groups=device_groups(model,self.n);ctx=callback.jacobian_context(time,state)
         nodes=len(model.bus_names);ar=[];ac=[];av=[];cr=[];cc=[];cv=[]
@@ -55,10 +57,11 @@ class DAEBlocks:
         if self.B.shape!=(self.n,2) or not np.isfinite(self.B).all():raise ValueError('invalid local voltage differential block')
         buses=np.unique(self.owners);cached=getattr(model,'_dae_port_diagonal',None)
         if cached is None or cached[0] is not model.lu or not np.array_equal(cached[1],buses):
-            diagonal=np.empty(len(buses),complex)
+            diagonal=np.zeros(len(buses),complex);dead=set(getattr(model.lu,'dead',[]))
             for first in range(0,len(buses),8):
-                check();selected=buses[first:first+8];rhs=np.zeros((nodes,len(selected)),complex);rhs[selected,np.arange(len(selected))]=1.
-                diagonal[first:first+len(selected)]=self.lu.solve(rhs)[selected,np.arange(len(selected))]
+                check();positions=[j for j in range(first,min(len(buses),first+8)) if buses[j] not in dead]
+                selected=buses[positions];rhs=np.zeros((nodes,len(selected)),complex);rhs[selected,np.arange(len(selected))]=1.
+                if len(selected):diagonal[positions]=self.lu.solve(rhs)[selected,np.arange(len(selected))]
             cached=(model.lu,buses,diagonal);model._dae_port_diagonal=cached
         diag=dict(zip(cached[1],cached[2]));self.blocks=[]
         for indices,bus in groups:
@@ -68,12 +71,18 @@ class DAEBlocks:
                 local+=self.B[selected,0,None]*dv.real[None,:]+self.B[selected,1,None]*dv.imag[None,:]
                 self.blocks.append((selected,local))
         self.stored_local_scalar_slots=int(self.A.nnz+self.C.nnz*2+self.B.size+sum(b.size for _,b in self.blocks))
+        if automation_callback is not None:
+            from power_grid_env.automation_jacobian import extend_blocks
+            extend_blocks(self,model,automation_callback,time,state,check,tick)
 
     def action(self,vector):
         v=np.asarray(vector).reshape(self.n)
         if np.iscomplexobj(v):
-            voltage=self.lu.solve(self.C@np.column_stack([v.real,v.imag]))[self.owners]
+            all_voltage=self.lu.solve(self.C@np.column_stack([v.real,v.imag]));voltage=all_voltage[self.owners]
             network=self.B[:,0]*(voltage[:,0].real+1j*voltage[:,1].real)+self.B[:,1]*(voltage[:,0].imag+1j*voltage[:,1].imag)
+            if hasattr(self,'automation_voltage'):
+                network+=self.automation_voltage@np.r_[all_voltage[:,0].real+1j*all_voltage[:,1].real,all_voltage[:,0].imag+1j*all_voltage[:,1].imag]
         else:
-            voltage=self.lu.solve(self.C@v)[self.owners];network=self.B[:,0]*voltage.real+self.B[:,1]*voltage.imag
+            all_voltage=self.lu.solve(self.C@v);voltage=all_voltage[self.owners];network=self.B[:,0]*voltage.real+self.B[:,1]*voltage.imag
+            if hasattr(self,'automation_voltage'):network+=self.automation_voltage@np.r_[all_voltage.real,all_voltage.imag]
         return self.A@v+network

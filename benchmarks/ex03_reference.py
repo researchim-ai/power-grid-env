@@ -36,7 +36,9 @@ def reference(spec,*,maximum_step_s=.01):
         s=spec.coupled
         if any(e.kind=='generator_open' for e in s.events):raise ValueError('EX03 sparse oracle excludes generator opening')
         if s.esst1a_exciters or s.takeover_oels or s.underexcitation_limiters or s.generator_thermal or s.generator_field_thermal or s.overexcitation_limiters or s.oel2c_limiters:raise ValueError('EX03 sparse oracle requires declared GENROU/TGOV1/SEXS without limiter adapters')
-        c=attach(SparseCoupled(spec,maximum_duration_s=60.,maximum_nodes=2048,sparse_network=True))
+        extended=s.capacity_profile=='extended_128x32'
+        c=attach(SparseCoupled(spec,maximum_duration_s=60.,maximum_nodes=2048,sparse_network=True,maximum_generators=32 if extended else 4,maximum_motors=128 if extended else 32))
+        c.allow_commuting_controller_alignment=extended and not any(m.thermal or m.contactor for m in s.motors)
     else:c=SparseMotor(spec,maximum_duration_s=60.,maximum_nodes=2048,sparse_network=True)
     if spec.coupled:
         for _,g,_ in c.generator_ports():

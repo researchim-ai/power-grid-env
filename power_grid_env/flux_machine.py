@@ -7,7 +7,7 @@ rotor branches model a discrete cage spectrum, not an arbitrary skin-depth law.
 import math
 import numpy as np
 from scipy.optimize import brentq
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, model_serializer
 
 
 class CageWinding(BaseModel):
@@ -43,6 +43,7 @@ class FluxMachinePassport(BaseModel):
     unsaturated_h: float = Field(gt=0)
     saturation_beta_per_vs: float = Field(default=0., ge=0)
     saturation_exponent: int = Field(default=7, ge=1, le=20)
+    core_loss_s: float = Field(default=0., ge=0, le=1.)
     cages: list[CageWinding] = Field(min_length=1, max_length=4)
     pole_pairs: int = Field(ge=1, le=20)
     inertia_kg_m2: float = Field(gt=0)
@@ -53,9 +54,15 @@ class FluxMachinePassport(BaseModel):
     thermal: WindingThermal | None = None
     provenance: dict[str, str]
 
+    @model_serializer(mode='wrap')
+    def preserve_lossless_passport(self,handler):
+        result=handler(self)
+        if self.core_loss_s==0:result.pop('core_loss_s',None)
+        return result
+
     @model_validator(mode='after')
     def sourced(self):
-        required={'electrical','magnetics','mechanical'} | ({'thermal'} if self.thermal else set())
+        required={'electrical','magnetics','mechanical'} | ({'thermal'} if self.thermal else set()) | ({'core_loss'} if self.core_loss_s else set())
         if not required <= self.provenance.keys() or any(not str(v).strip() for v in self.provenance.values()):
             raise ValueError('electrical, magnetics, mechanical and enabled thermal parameter sources required')
         if self.locked_rotor and self.initial_speed_rad_s != 0:
@@ -90,6 +97,7 @@ class GammaWinding:
         return psi,rotor,reluctance,float(energy)
 
     def quantities(self,currents,speed,temperature):
+        if self.p.core_loss_s:raise ValueError('positive Gc requires flux-state network equations, not the lossless current-coordinate winding')
         p=self.p;psi,rotor,reluctance,energy=self.magnetic(currents)
         if p.thermal:
             multipliers=1+p.thermal.alpha_per_c*(np.asarray(temperature)-p.thermal.reference_c)

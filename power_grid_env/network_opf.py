@@ -170,6 +170,10 @@ class _Prepared:
 
 
 def _prepare(case: OpfCase) -> _Prepared:
+    from power_grid_env.balanced_ac import validate_case, components
+    validate_case(case)
+    if len(components(case)) != 1:
+        raise ValueError("OPF requires a connected single-reference case")
     ids = [bus.id for bus in case.buses]
     index = {bus_id: position for position, bus_id in enumerate(ids)}
     n_bus = len(ids)
@@ -211,7 +215,7 @@ def _prepare(case: OpfCase) -> _Prepared:
         value = 0.0 if gen.qg is None else gen.qg
         start[qg_at + offset] = min(gen.qmax, max(gen.qmin, value))
         bounds.append((gen.qmin, gen.qmax))
-    limited = [branch for branch in case.branches if branch.status == 1 and 0 < branch.rate_a < 1e5]
+    limited = [branch for branch in case.branches if branch.status == 1 and branch.rate_a > 0]
     angled = [branch for branch in case.branches if branch.status == 1]
     return _Prepared(
         case=case,
@@ -381,23 +385,37 @@ def audit_feasibility(
     tolerance: float = 1e-4,
 ) -> dict[str, Any]:
     """Независимая проверка: те же Ybus-формулы, без обращения к SLSQP."""
+    from power_grid_env.balanced_ac import validate_case
+    validate_case(case)
+    if not math.isfinite(tolerance) or tolerance <= 0:
+        raise ValueError('positive finite audit tolerance required')
+    arrays = [np.asarray(a, dtype=float) for a in (vm, theta, pg, qg)]
+    sizes = [len(case.buses), len(case.buses), len(case.generators), len(case.generators)]
+    if any(a.shape != (size,) or not np.all(np.isfinite(a)) for a, size in zip(arrays, sizes)):
+        return dict(max_mismatch_pu=None, flows_within_rating=False, angles_within_limit=False,
+                    voltages_within_limits=False, generators_within_limits=False,
+                    feasible=False, errors=['nonfinite or incorrectly shaped operating point'])
+    vm, theta, pg, qg = arrays
     index = {bus.id: position for position, bus in enumerate(case.buses)}
     ybus = _ybus(case, index)
     p_calc, q_calc = _injections(vm, theta, ybus)
+    if not np.all(np.isfinite(p_calc)) or not np.all(np.isfinite(q_calc)):
+        return dict(max_mismatch_pu=None, flows_within_rating=False, angles_within_limit=False,
+                    voltages_within_limits=False, generators_within_limits=False,
+                    feasible=False, errors=['nonfinite calculated network power'])
     worst = 0.0
+    voltage_ok = True
+    generator_ok = True
     for bus, spec in enumerate(case.buses):
         p_gen = sum(pg[k] for k, gen in enumerate(case.generators) if index[gen.bus] == bus)
         q_gen = sum(qg[k] for k, gen in enumerate(case.generators) if index[gen.bus] == bus)
         worst = max(worst, abs(p_calc[bus] - (p_gen - spec.pd) / case.base_mva))
         worst = max(worst, abs(q_calc[bus] - (q_gen - spec.qd) / case.base_mva))
-        if not spec.vmin - 1e-6 <= vm[bus] <= spec.vmax + 1e-6:
-            worst = max(worst, 1.0)
+        voltage_ok &= spec.vmin - 1e-6 <= vm[bus] <= spec.vmax + 1e-6
     for value, generator in zip(pg, case.generators, strict=True):
-        if value < generator.pmin - 1e-4 or value > generator.pmax + 1e-4:
-            worst = max(worst, 1.0)
+        generator_ok &= generator.pmin - 1e-4 <= value <= generator.pmax + 1e-4
     for value, generator in zip(qg, case.generators, strict=True):
-        if value < generator.qmin - 1e-3 or value > generator.qmax + 1e-3:
-            worst = max(worst, 1.0)
+        generator_ok &= generator.qmin - 1e-3 <= value <= generator.qmax + 1e-3
     flow_ok = True
     angle_ok = True
     for branch in case.branches:
@@ -406,16 +424,13 @@ def audit_feasibility(
         separation = math.degrees(theta[index[branch.fbus]] - theta[index[branch.tbus]])
         if separation < branch.angmin_deg - 1e-3 or separation > branch.angmax_deg + 1e-3:
             angle_ok = False
-        if branch.rate_a <= 0 or branch.rate_a >= 1e5:
-            continue
-        if any(flow > branch.rate_a + 1e-3 for flow in _branch_mva(vm, theta, branch, index, case.base_mva)):
+        ends = _branch_mva(vm, theta, branch, index, case.base_mva)
+        if not all(math.isfinite(v) for v in ends) or (branch.rate_a > 0 and any(flow > branch.rate_a + 1e-3 for flow in ends)):
             flow_ok = False
-    return {
-        "max_mismatch_pu": worst,
-        "flows_within_rating": flow_ok,
-        "angles_within_limit": angle_ok,
-        "feasible": worst <= tolerance and flow_ok and angle_ok,
-    }
+    return dict(max_mismatch_pu=float(worst), flows_within_rating=flow_ok,
+                angles_within_limit=angle_ok, voltages_within_limits=bool(voltage_ok),
+                generators_within_limits=bool(generator_ok),
+                feasible=bool(worst <= tolerance and flow_ok and angle_ok and voltage_ok and generator_ok), errors=[])
 
 
 def _ybus(case: OpfCase, index: dict[int, int]) -> np.ndarray:

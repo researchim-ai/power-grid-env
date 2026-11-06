@@ -1,0 +1,493 @@
+{
+  "schema_version": "power-grid-env.study/v1",
+  "id": "automation-standby_transfer",
+  "study": "coupled_rms",
+  "backend": "scipy",
+  "network": {
+    "schema_version": "power-grid-env.network/v1",
+    "id": "automation-standby_transfer",
+    "name": "Authored two-bus independent SI reference",
+    "s_base_va": 1000000.0,
+    "frequency_hz": 50.0,
+    "voltage_levels": [
+      {
+        "id": "vl0",
+        "nominal_ll_v": 10000.0,
+        "substation_id": null,
+        "s_base_va": null
+      }
+    ],
+    "connectivity_nodes": [
+      {
+        "id": "grid",
+        "voltage_level_id": "vl0",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "x": null,
+        "y": null
+      },
+      {
+        "id": "plant",
+        "voltage_level_id": "vl0",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "x": null,
+        "y": null
+      }
+    ],
+    "terminals": [
+      {
+        "id": "source:grid",
+        "equipment_id": "source",
+        "connectivity_node_id": "grid",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "feeder:grid",
+        "equipment_id": "feeder",
+        "connectivity_node_id": "grid",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "feeder:plant",
+        "equipment_id": "feeder",
+        "connectivity_node_id": "plant",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "load:plant",
+        "equipment_id": "load",
+        "connectivity_node_id": "plant",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      {
+        "id": "g:plant",
+        "equipment_id": "g",
+        "connectivity_node_id": "plant",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ]
+      }
+    ],
+    "lines": [
+      {
+        "id": "feeder",
+        "terminal_from": "feeder:grid",
+        "terminal_to": "feeder:plant",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "length_m": 1000.0,
+        "r_ohm": [
+          [
+            0.2,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.2,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.2
+          ]
+        ],
+        "x_ohm": [
+          [
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "b_siemens": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "rating_a": 400.0,
+        "emergency_rating_a": null,
+        "emergency_duration_s": null,
+        "kron_reduction": "forbidden",
+        "temperature_c": null,
+        "resistance_alpha_per_c": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "Z1 и взаимное сопротивление заданы аналитически"
+        }
+      }
+    ],
+    "switches": [],
+    "transformers": [],
+    "loads": [
+      {
+        "id": "load",
+        "terminal_id": "load:plant",
+        "connection": "wye",
+        "grounding": {
+          "kind": "solid",
+          "r_ohm": null,
+          "x_ohm": null
+        },
+        "model": "constant_z",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "p_w": {
+          "A": 100000.0,
+          "B": 100000.0,
+          "C": 100000.0
+        },
+        "q_var": {
+          "A": 33333.333333333336,
+          "B": 33333.333333333336,
+          "C": 33333.333333333336
+        },
+        "rated_kv": null,
+        "opendss_model": null,
+        "zip_z": null,
+        "zip_i": null,
+        "zip_p": null,
+        "zip_zq": null,
+        "zip_iq": null,
+        "zip_pq": null,
+        "vmin_pu": 0.0,
+        "vmax_pu": 1.5,
+        "critical": false,
+        "priority": 0,
+        "cold_load_multiplier": null,
+        "cold_load_tau_s": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": null
+        }
+      }
+    ],
+    "sources": [
+      {
+        "id": "source",
+        "terminal_id": "source:grid",
+        "ll_v": 10000.0,
+        "angle_a_rad": 0.0,
+        "r_ohm": 2.0,
+        "x_ohm": 8.0,
+        "r0_ohm": null,
+        "x0_ohm": null,
+        "is_slack": true,
+        "participation": null,
+        "phase_pu": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": "балансный источник прямой последовательности"
+        }
+      }
+    ],
+    "generators": [
+      {
+        "id": "g",
+        "terminal_id": "g:plant",
+        "phases": [
+          "A",
+          "B",
+          "C"
+        ],
+        "mode": "pv",
+        "p_w": 0.0,
+        "q_var": 0.0,
+        "v_set_pu": 1.0,
+        "v_min_pu": 0.9,
+        "v_max_pu": 1.1,
+        "q_min_var": -1000000.0,
+        "q_max_var": 1000000.0,
+        "participation": null,
+        "ll_v": 10000.0,
+        "inertia_s": null,
+        "x_d_pu": null,
+        "provenance": {
+          "source": "authored-analytical-case",
+          "quality": "nameplate",
+          "timestamp": null,
+          "uncertainty": null,
+          "note": null
+        }
+      }
+    ],
+    "inverters": [],
+    "storages": [],
+    "shunts": [],
+    "neutral_grounds": [],
+    "meters": [],
+    "study_faults": [],
+    "harmonics": [],
+    "assumptions": [],
+    "omissions": [],
+    "provenance": {
+      "source": "authored-analytical-case",
+      "quality": "nameplate",
+      "timestamp": null,
+      "uncertainty": null,
+      "note": null
+    }
+  },
+  "requested_motors": [],
+  "scenario": null,
+  "rms": null,
+  "induction": null,
+  "coupled": {
+    "event_policy": "coincident_roots_v1",
+    "runtime_limits": {
+      "maximum_network_buses": 2000,
+      "maximum_rhs_evaluations": 2000000,
+      "maximum_event_batches": 1024,
+      "maximum_retained_scalars": 2000000,
+      "maximum_integration_wall_s": 120.0
+    },
+    "duration_s": 0.6,
+    "step_s": 0.005,
+    "rtol": 1e-9,
+    "atol": 1e-11,
+    "motors": [
+      {
+        "id": "motor",
+        "model": "single_cage",
+        "rotor_mutual_x_pu": 0.0,
+        "rotor2_r_pu": null,
+        "rotor2_x_pu": null,
+        "node_id": "plant",
+        "rated_va": 100000.0,
+        "rated_ll_v": 10000.0,
+        "stator_r_pu": 0.02,
+        "stator_x_pu": 0.1,
+        "rotor_r_pu": 0.015,
+        "rotor_x_pu": 0.1,
+        "magnetizing_x_pu": 3.0,
+        "inertia_s": 0.5,
+        "fan_torque_pu": 0.6,
+        "mechanical_load": null,
+        "connected": false,
+        "thermal": null,
+        "contactor": null
+      }
+    ],
+    "operating_point": null,
+    "maximum_contactor_transitions": 64,
+    "events": [
+      {
+        "time_s": 0.1,
+        "kind": "source_voltage",
+        "equipment_id": "source",
+        "value": 0.0
+      },
+      {
+        "time_s": 0.4,
+        "kind": "source_voltage",
+        "equipment_id": "source",
+        "value": 1.0
+      },
+      {
+        "time_s": 0.5,
+        "kind": "source_close",
+        "equipment_id": "source",
+        "value": null
+      }
+    ],
+    "network_automation": {
+      "allow_islands": true,
+      "breakers": [
+        {
+          "id": "grid-cb",
+          "target_kind": "source",
+          "target_id": "source",
+          "opening_delay_s": 0.01,
+          "closing_delay_s": 0.0,
+          "minimum_open_s": 0.02,
+          "initial_open": false,
+          "fail_open": false,
+          "fail_close": false,
+          "breaker_failure_delay_s": 0.1,
+          "breaker_failure_current_a": 1.0,
+          "backup_breaker_ids": [],
+          "reclose_dead_s": 0.2,
+          "maximum_reclose_shots": 0,
+          "interlock_with": [],
+          "synchronism": {
+            "maximum_angle_rad": 0.17453292519943295,
+            "maximum_voltage_difference_pu": 0.1,
+            "maximum_frequency_difference_hz": 0.1,
+            "minimum_live_voltage_pu": 0.1,
+            "allow_dead_receiver": true,
+            "minimum_incoming_voltage_pu": 0.8,
+            "maximum_incoming_voltage_pu": 1.2,
+            "maximum_incoming_frequency_deviation_hz": 1.0
+          }
+        },
+        {
+          "id": "line-cb",
+          "target_kind": "line",
+          "target_id": "feeder",
+          "opening_delay_s": 0.01,
+          "closing_delay_s": 0.0,
+          "minimum_open_s": 0.02,
+          "initial_open": false,
+          "fail_open": false,
+          "fail_close": false,
+          "breaker_failure_delay_s": 0.1,
+          "breaker_failure_current_a": 1.0,
+          "backup_breaker_ids": [],
+          "reclose_dead_s": 0.2,
+          "maximum_reclose_shots": 0,
+          "interlock_with": [],
+          "synchronism": {
+            "maximum_angle_rad": 0.17453292519943295,
+            "maximum_voltage_difference_pu": 0.1,
+            "maximum_frequency_difference_hz": 0.1,
+            "minimum_live_voltage_pu": 0.1,
+            "allow_dead_receiver": true,
+            "minimum_incoming_voltage_pu": 0.8,
+            "maximum_incoming_voltage_pu": 1.2,
+            "maximum_incoming_frequency_deviation_hz": 1.0
+          }
+        },
+        {
+          "id": "reserve-cb",
+          "target_kind": "generator",
+          "target_id": "g",
+          "opening_delay_s": 0.0,
+          "closing_delay_s": 0.01,
+          "minimum_open_s": 0.02,
+          "initial_open": true,
+          "fail_open": false,
+          "fail_close": false,
+          "breaker_failure_delay_s": 0.1,
+          "breaker_failure_current_a": 1.0,
+          "backup_breaker_ids": [],
+          "reclose_dead_s": 0.2,
+          "maximum_reclose_shots": 0,
+          "interlock_with": [],
+          "synchronism": {
+            "maximum_angle_rad": 0.17453292519943295,
+            "maximum_voltage_difference_pu": 0.1,
+            "maximum_frequency_difference_hz": 0.1,
+            "minimum_live_voltage_pu": 0.1,
+            "allow_dead_receiver": true,
+            "minimum_incoming_voltage_pu": 0.8,
+            "maximum_incoming_voltage_pu": 1.2,
+            "maximum_incoming_frequency_deviation_hz": 1.0
+          }
+        }
+      ],
+      "relays": [],
+      "transfers": [
+        {
+          "id": "ats",
+          "primary_breaker_id": "grid-cb",
+          "reserve_breaker_id": "reserve-cb",
+          "primary_voltage": {
+            "kind": "source",
+            "id": "source"
+          },
+          "reserve_voltage": {
+            "kind": "generator",
+            "id": "g"
+          },
+          "dropout_pu": 0.7,
+          "pickup_pu": 0.9,
+          "detection_delay_s": 0.02,
+          "dead_time_s": 0.02
+        }
+      ]
+    },
+    "takeover_oels": [],
+    "esst1a_exciters": [],
+    "generator_field_thermal": [],
+    "oel2c_limiters": [],
+    "underexcitation_limiters": [],
+    "overexcitation_limiters": [],
+    "generator_thermal": [],
+    "faults": [],
+    "machines": [
+      {
+        "model": "GENCLS",
+        "generator_id": "g",
+        "rated_va": 1000000.0,
+        "inertia_s": 1.0,
+        "x_d_prime_pu": 0.25,
+        "damping_pu": 1.0,
+        "governor": null,
+        "exciter": null,
+        "stabilizer": null,
+        "stabilizer_connection": "SEXS"
+      }
+    ]
+  },
+  "options": {
+    "tolerance": 1e-10,
+    "max_iterations": 80,
+    "max_outer": 20,
+    "max_pv_refinements": 4,
+    "apply_regulators": true,
+    "inverter_current_limit_model": false,
+    "approximate_phase_shift": false
+  }
+}

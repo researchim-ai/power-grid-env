@@ -71,22 +71,26 @@ end AuxReference;
 
 
 class NativeAux(NativeExciter):
-    def __init__(self,p,kind,current0,voltage0,out,root,stop,tolerance,*,generator_id=None):
+    def __init__(self,p,kind,current0,voltage0,out,root,stop,tolerance,*,generator_id=None,prepared_archive=None,prepared_identity=None):
         if kind not in ('oel','pss'):raise ValueError('known EX02 native block required')
         if not all(math.isfinite(v) for v in (current0,voltage0,stop,tolerance)) or stop<=0 or not 0<tolerance<=1e-6:raise ValueError('finite initial values, positive horizon and native tolerance required')
         if kind=='oel' and (p.current_limit_pu-current0<=1e-7 or p.integral_gain*p.tracking_time_s*(p.current_limit_pu-current0)<=1e-8):raise ValueError('native initial takeover OEL limit or boundary')
         if kind=='pss' and min(abs(voltage0-p.VCL),abs(voltage0-p.VCU),abs(p.LSMIN),abs(p.LSMAX))<=1e-7:raise ValueError('native initial PSS limiter or voltage boundary')
         self.generator_id=generator_id or getattr(p,'generator_id','pss')
-        self.kind=kind;self.p=p;self.identity=verify(root);root=Path(root).resolve();out=Path(out).resolve();out.mkdir(parents=True,exist_ok=False)
+        self.kind=kind;self.p=p;self.identity=verify(root) if prepared_archive is None else prepared_identity;root=Path(root).resolve();out=Path(out).resolve();out.mkdir(parents=True,exist_ok=False)
         source=source_oel(p,current0) if kind=='oel' else source_pss(p,voltage0)
         (out/'Reference.mo').write_text(source)
         msl=root/'libraries/ModelicaStandardLibrary-4.0.0'
         files=[msl/'Complex.mo',msl/'ModelicaServices/package.mo',msl/'Modelica/package.mo',out/'Reference.mo']
-        script='setCompiler("gcc");\nsetCXXCompiler("g++");\nsetCommandLineOptions("--tearingMethod=minimalTearing");\nsetModelicaPath('+json.dumps(str(msl))+');\n'
-        script+=''.join('loadFile('+json.dumps(str(f))+');\n' for f in files)
-        script+='buildModelFMU(AuxReference,version="2.0",fmuType="me");\ngetErrorString();\n';(out/'run.mos').write_text(script)
-        with (out/'compiler.log').open('w') as log:subprocess.run([str(root/'runtime/usr/bin/omc'),'run.mos'],cwd=out,env=environment(root),stdout=log,stderr=subprocess.STDOUT,timeout=120,check=True)
         archive=out/'AuxReference.fmu'
+        if prepared_archive is None:
+            script='setCompiler("gcc");\nsetCXXCompiler("g++");\nsetCommandLineOptions("--tearingMethod=minimalTearing");\nsetModelicaPath('+json.dumps(str(msl))+');\n'
+            script+=''.join('loadFile('+json.dumps(str(f))+');\n' for f in files)
+            script+='buildModelFMU(AuxReference,version="2.0",fmuType="me");\ngetErrorString();\n';(out/'run.mos').write_text(script)
+            with (out/'compiler.log').open('w') as log:subprocess.run([str(root/'runtime/usr/bin/omc'),'run.mos'],cwd=out,env=environment(root),stdout=log,stderr=subprocess.STDOUT,timeout=120,check=True)
+        else:
+            import shutil
+            shutil.copyfile(prepared_archive,archive)
         if not archive.is_file():raise ValueError('EX02 native compilation failed: '+str(out))
         folder=out/'unpacked';folder.mkdir()
         with zipfile.ZipFile(archive) as z:
@@ -107,7 +111,7 @@ class NativeAux(NativeExciter):
         rates=np.empty(self.nx);self.f.getDerivatives(np.ctypeslib.as_ctypes(rates),self.nx);self.initial_residual=float(max(abs(rates)))
         if not np.isfinite(rates).all() or self.initial_residual>1e-8:raise ValueError('native auxiliary initial state not stationary')
         import shutil
-        shutil.copyfile(msl/'LICENSE',out/'MSL-LICENSE.txt')
+        shutil.copyfile(msl/'LICENSE' if prepared_archive is None else Path(prepared_archive).parent/'MSL-LICENSE.txt',out/'MSL-LICENSE.txt')
         self.identity=self.identity|dict(auxiliary_kind=kind,MSL_blocks_unmodified=True,wrapper_sha256=sha(out/'Reference.mo'),model='declared_absolute_PI_back_calculation_v1' if kind=='oel' else 'canonical_IEEEST_MODE1_MSL_cascade')
 
     def set_inputs(self,values):

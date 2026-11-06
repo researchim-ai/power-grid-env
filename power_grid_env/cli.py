@@ -75,6 +75,8 @@ def main(argv: list[str] | None = None) -> int:
 
     dol=sub.add_parser('industrial-dol',help='bounded industrial DOL/restart study pack')
     dol.add_argument('pack');dol.add_argument('--out',required=True);dol.add_argument('--cancel-file')
+    fit=sub.add_parser('identify-motor',help='bounded steady Gamma fit with separate held-out observations')
+    fit.add_argument('observations');fit.add_argument('--out',required=True)
 
     run_spec = sub.add_parser("run-study", help="запуск сохранённого исследования")
     run_spec.add_argument("spec")
@@ -118,7 +120,198 @@ def main(argv: list[str] | None = None) -> int:
         command.add_argument('directory');command.add_argument('--out',required=True)
         if name.endswith('replay'):command.add_argument('--cancel-file')
 
+    workbench=sub.add_parser('workbench',help='local versioned engineering projects and offline reports')
+    wb=workbench.add_subparsers(dest='workbench_command',required=True)
+    for name in ['create','revise']:
+        cmd=wb.add_parser(name);cmd.add_argument('study');cmd.add_argument('--dir',required=True)
+    cmd=wb.add_parser('import');cmd.add_argument('--source',required=True);cmd.add_argument('--sidecar');cmd.add_argument('--dir',required=True)
+    for name in ['check','status','cancel','clear-cancel']:
+        cmd=wb.add_parser(name);cmd.add_argument('--dir',required=True)
+        if name=='check':cmd.add_argument('--revision')
+    cmd=wb.add_parser('run');cmd.add_argument('run_id');cmd.add_argument('--dir',required=True);cmd.add_argument('--revision');cmd.add_argument('--resume-from');cmd.add_argument('--max-steps',type=int);cmd.add_argument('--timeout',type=float,default=120.);cmd.add_argument('--checkpoint-every',type=int,default=96)
+    for name in ['verify','export']:
+        cmd=wb.add_parser(name);cmd.add_argument('run_id');cmd.add_argument('--dir',required=True)
+        if name=='export':cmd.add_argument('--out',required=True)
+    cmd=wb.add_parser('restore');cmd.add_argument('archive');cmd.add_argument('--dir',required=True)
+    cmd=wb.add_parser('compare');cmd.add_argument('baseline');cmd.add_argument('candidate');cmd.add_argument('--dir',required=True);cmd.add_argument('--out',required=True);cmd.add_argument('--absolute',type=float,default=1e-8);cmd.add_argument('--relative',type=float,default=1e-6);cmd.add_argument('--time-tolerance',type=float,default=1e-9)
+
+    steady = sub.add_parser('steady-study', help='shared balanced AC PF/OPF/estimation/N-1 studies')
+    commands = steady.add_subparsers(dest='steady_command', required=True)
+    cmd = commands.add_parser('import-matpower'); cmd.add_argument('--source', required=True); cmd.add_argument('--out', required=True)
+    cmd = commands.add_parser('derive'); cmd.add_argument('directory'); cmd.add_argument('--task', choices=['power_flow', 'n1'], required=True); cmd.add_argument('--out', required=True)
+    cmd = commands.add_parser('run'); cmd.add_argument('--study', required=True); cmd.add_argument('--out', required=True)
+    cmd.add_argument('--resume-from'); cmd.add_argument('--max-cases', type=int); cmd.add_argument('--cancel-file'); cmd.add_argument('--time-budget', type=float)
+    for name in ['verify', 'export']:
+        cmd = commands.add_parser(name); cmd.add_argument('directory')
+        if name == 'export': cmd.add_argument('--out', required=True)
+
+    phase = sub.add_parser('phase-study', help='SI phase-domain networks, physical search and guarded surrogates')
+    phase_commands = phase.add_subparsers(dest='phase_command', required=True)
+    cmd = phase_commands.add_parser('initialize'); cmd.add_argument('--study', required=True); cmd.add_argument('--out', required=True); cmd.add_argument('--duration', type=float, required=True); cmd.add_argument('--sample', type=float, required=True); cmd.add_argument('--max-step', type=float, required=True)
+    cmd = phase_commands.add_parser('run'); cmd.add_argument('--study', required=True); cmd.add_argument('--out', required=True)
+    cmd = phase_commands.add_parser('search'); cmd.add_argument('--protocol', required=True); cmd.add_argument('--out', required=True)
+    cmd.add_argument('--max-points', type=int); cmd.add_argument('--resume-from'); cmd.add_argument('--cancel-file')
+    cmd = phase_commands.add_parser('train'); cmd.add_argument('directory'); cmd.add_argument('--out', required=True)
+    cmd.add_argument('--max-error', type=float, required=True); cmd.add_argument('--degree', type=int, choices=[1,2], default=2); cmd.add_argument('--seed', type=int, default=41)
+    cmd = phase_commands.add_parser('predict'); cmd.add_argument('directory'); cmd.add_argument('--point', required=True); cmd.add_argument('--out', required=True); cmd.add_argument('--screen-only', action='store_true')
+    for name in ['verify', 'export']:
+        cmd = phase_commands.add_parser(name); cmd.add_argument('directory')
+        if name == 'export': cmd.add_argument('--out', required=True)
+
+    for name in ['protected-motor','sensitivity-study']:
+        cmd=sub.add_parser(name,help='full-winding protected DOL workflow' if name=='protected-motor' else 'audited full-study hybrid parameter derivatives')
+        cmd.add_argument('--out',required=True)
+        if name=='sensitivity-study':
+            cmd.add_argument('--study',required=True);cmd.add_argument('--protocol',required=True)
+        else:
+            from power_grid_env.motor_catalog import CATALOG_IDS
+            choice=cmd.add_mutually_exclusive_group(required=True);choice.add_argument('--study');choice.add_argument('--catalog',choices=CATALOG_IDS)
+            cmd.add_argument('--mode',choices=['restart','locked','temperature','cool_reclose'],default='restart');cmd.add_argument('--require-acceptable',action='store_true')
+
+    campaign=sub.add_parser('campaign',help='bounded reproducible engineering campaigns')
+    actions=campaign.add_subparsers(dest='campaign_action',required=True)
+    cmd=actions.add_parser('run');cmd.add_argument('--plan',required=True);cmd.add_argument('--out',required=True);cmd.add_argument('--resume-from');cmd.add_argument('--recover-from');cmd.add_argument('--cancel-file')
+    cmd=actions.add_parser('grid');cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+    for name in ['verify','export','import']:
+        cmd=actions.add_parser(name);cmd.add_argument('source')
+        if name!='verify':cmd.add_argument('--out',required=True)
+
+    cmd=sub.add_parser('identify-dynamic-motor',help='dynamic Gamma identification with free held-out replay')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+
     args = parser.parse_args(argv)
+    if args.command=='identify-dynamic-motor':
+        from power_grid_env.advanced_studies import run_dynamic_identification_artifact
+        from power_grid_env.study_artifacts import read_json
+        try:
+            result=run_dynamic_identification_artifact(read_json(args.input),args.out)
+            print(json.dumps({k:result.get(k) for k in ['completed','passed','identifiable','reason']}));return 0 if result['passed'] else 2
+        except (ValueError,OSError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+    if args.command=='campaign':
+        from power_grid_env.campaign import expand_grid,run_campaign,verify_campaign
+        from power_grid_env.study_artifacts import read_json,verify,export_zip,extract_zip
+        try:
+            action=args.campaign_action
+            if action=='run':
+                result=run_campaign(read_json(args.plan),args.out,resume_from=args.resume_from,recover_from=args.recover_from,cancel_file=args.cancel_file)
+                print(json.dumps({k:result[k] for k in ['id','completed','passed','halt_reason']}));return 0 if result['passed'] else 2
+            if action=='grid':
+                plan=expand_grid(read_json(args.input))
+                with Path(args.out).open('x',encoding='utf-8') as stream:stream.write(plan.model_dump_json(indent=2)+'\n')
+                result=dict(cases=len(plan.cases),id=plan.id)
+            elif action=='verify':result=dict(manifest_sha256=verify_campaign(Path(args.source)))
+            elif action=='export':
+                verify_campaign(Path(args.source));result=export_zip(Path(args.source),Path(args.out))
+            else:
+                target=extract_zip(Path(args.source),Path(args.out))
+                try:verify_campaign(target)
+                except (ValueError,KeyError,OSError):
+                    import shutil
+                    shutil.rmtree(target);raise
+                result=dict(directory=str(target))
+            print(json.dumps(result));return 0
+        except (ValueError,OSError,KeyError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+    if args.command in {'protected-motor','sensitivity-study'}:
+        from power_grid_env.study_artifacts import read_json
+        from power_grid_env.advanced_studies import run_protected_artifact,run_sensitivity_artifact
+        try:
+            if args.command=='protected-motor' and args.catalog:
+                from power_grid_env.motor_catalog import protected_catalog_study
+                document=protected_catalog_study(args.catalog,args.mode).model_dump(mode='json')
+            else:document=read_json(args.study)
+            result=run_protected_artifact(document,args.out) if args.command=='protected-motor' else run_sensitivity_artifact(document,read_json(args.protocol),args.out)
+            print(json.dumps({k:result[k] for k in ['completed','available','engineering_acceptable','status','reason'] if k in result},ensure_ascii=False,allow_nan=False))
+            return 0 if result.get('completed') and result.get('available',True) and (args.command!='protected-motor' or not args.require_acceptable or result.get('engineering_acceptable',False)) else 2
+        except (ValueError,TypeError,KeyError,OSError,RuntimeError) as exc:
+            print(json.dumps(dict(completed=False,status='rejected',error=str(exc)),ensure_ascii=False));return 2
+    if args.command == 'phase-study':
+        from power_grid_env.study_artifacts import read_json, verify, export_zip
+        from power_grid_env.phase_research import run_phase_study, run_search, train_from_search, query_model
+        try:
+            if args.phase_command == 'initialize':
+                from power_grid_env.phase_network import periodic_initialization
+                from power_grid_env.phase_research import PhaseStudy, EmtOptions
+                from power_grid_env.study_artifacts import encoded
+                original = PhaseStudy.model_validate(read_json(args.study))
+                if original.mode != 'harmonic': raise ValueError('periodic initialization requires a harmonic study')
+                prepared = PhaseStudy(id=original.id+'-periodic-emt', case=periodic_initialization(original.case), mode='emt', emt=EmtOptions(duration_s=args.duration, sample_s=args.sample, max_step_s=args.max_step))
+                target = Path(args.out)
+                if target.exists(): raise ValueError('new initialized study output required')
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with target.open('xb') as stream: stream.write(encoded(prepared.model_dump(mode='json')))
+                result = dict(completed=True, study=str(target))
+            elif args.phase_command == 'run': result = run_phase_study(read_json(args.study), args.out)
+            elif args.phase_command == 'search': result = run_search(read_json(args.protocol), args.out, max_points=args.max_points, resume_from=args.resume_from, cancel_file=args.cancel_file)
+            elif args.phase_command == 'train': result = train_from_search(args.directory, args.out, maximum_holdout_error=args.max_error, degree=args.degree, seed=args.seed)
+            elif args.phase_command == 'predict': result = query_model(args.directory, json.loads(args.point), args.out, screen_only=args.screen_only)
+            elif args.phase_command == 'verify': result = dict(integrity_verified=True, manifest_sha256=verify(args.directory))
+            else: result = export_zip(args.directory, args.out)
+            print(json.dumps(result, ensure_ascii=False, allow_nan=False))
+            return 2 if result.get('completed') is False or result.get('accepted') is False or result.get('conclusive') is False else 0
+        except (ValueError, TypeError, KeyError, OSError, RuntimeError) as exc:
+            print(json.dumps(dict(completed=False, status='rejected', error=str(exc)), ensure_ascii=False)); return 2
+    if args.command == 'steady-study':
+        from power_grid_env.study_artifacts import read_json, encoded, export_zip, verify
+        from power_grid_env.steady_study import run_steady_study
+        try:
+            if args.steady_command == 'import-matpower':
+                from power_grid_env.matpower_case import load_case
+                from power_grid_env.balanced_ac import case_document
+                path = Path(args.out)
+                if path.exists(): raise ValueError('new import output required')
+                data = encoded(case_document(load_case(args.source)))
+                path.parent.mkdir(parents=True, exist_ok=True)
+                with path.open('xb') as stream: stream.write(data)
+                result = dict(completed=True, case=str(path), profile='balanced MATPOWER literal numeric matrices; no unbalanced Network conversion')
+            elif args.steady_command == 'derive':
+                from power_grid_env.steady_study import derive_dispatch_study
+                path = Path(args.out)
+                if path.exists(): raise ValueError('new derived study output required')
+                payload = encoded(derive_dispatch_study(args.directory, args.task))
+                path.parent.mkdir(parents=True, exist_ok=True)
+                with path.open('xb') as stream: stream.write(payload)
+                result = dict(completed=True, study=str(path))
+            elif args.steady_command == 'run':
+                result = run_steady_study(read_json(args.study), args.out, resume_from=args.resume_from,
+                    max_cases=args.max_cases, cancel_file=args.cancel_file, time_budget_s=args.time_budget)
+            elif args.steady_command == 'verify':
+                result = dict(integrity_verified=True, manifest_sha256=verify(args.directory))
+            else:
+                result = export_zip(args.directory, args.out)
+            print(json.dumps(result, ensure_ascii=False, allow_nan=False))
+            return 0 if result.get('completed', True) else 2
+        except (ValueError, TypeError, KeyError, OSError, RuntimeError) as exc:
+            print(json.dumps(dict(completed=False, status='rejected', error=str(exc)), ensure_ascii=False)); return 2
+    if args.command=='workbench':
+        from power_grid_env.engineering_project import EngineeringProject,import_engineering_project
+        from power_grid_env.study_artifacts import read_json
+        from power_grid_env.study_spec import StudySpec
+        try:
+            name=args.workbench_command;project=EngineeringProject(args.dir)
+            if name=='create':
+                project=EngineeringProject.create(args.dir,StudySpec.model_validate(read_json(args.study)));result=project.check()
+            elif name=='revise':result=dict(revision=project.revise(StudySpec.model_validate(read_json(args.study))))
+            elif name=='import':result=import_engineering_project(args.source,args.dir,sidecar=args.sidecar)
+            elif name=='check':result=project.check(args.revision)
+            elif name=='status':result=project.descriptor()
+            elif name=='cancel':project.request_cancel();result=dict(cancel_requested=True)
+            elif name=='clear-cancel':project.clear_cancel();result=dict(cancel_requested=False)
+            elif name=='run':result=project.run(args.run_id,revision=args.revision,resume_from=args.resume_from,max_steps=args.max_steps,timeout_s=args.timeout,checkpoint_every=args.checkpoint_every)
+            elif name=='verify':
+                path,meta=project.verify_run(args.run_id);result=dict(integrity_verified=True,run=meta)
+            elif name=='export':result=project.export(args.run_id,args.out)
+            elif name=='restore':project=EngineeringProject.from_export(args.archive,args.dir);result=project.descriptor()
+            elif name=='compare':
+                from power_grid_env.engineering_report import compare_runs
+                if Path(args.out).resolve().is_relative_to(project.root) or Path(args.out).exists():raise ValueError('new comparison output outside project required')
+                left,_=project.verify_run(args.baseline);right,_=project.verify_run(args.candidate)
+                result=compare_runs(left,right,absolute=args.absolute,relative=args.relative,time_absolute_s=args.time_tolerance);write_json(Path(args.out),result)
+            print(json.dumps(result,ensure_ascii=False))
+            return 2 if result.get('ok') is False or result.get('passed') is False or result.get('completed') is False else 0
+        except (ValueError,OSError,KeyError,RuntimeError) as exc:
+            print(json.dumps(dict(completed=False,status='rejected',error=str(exc)),ensure_ascii=False));return 2
     if args.command == "import":
         network, report = import_network(Path(args.source), Path(args.sidecar) if args.sidecar else None)
         write_json(Path(args.report), report)
@@ -155,6 +348,15 @@ def main(argv: list[str] | None = None) -> int:
         write_viewer(Path(args.out), viewer_bundle(network.model_dump(mode="json"), trace, 0.95, 1.05))
         print(args.out)
         return 0
+    if args.command=='identify-motor':
+        from power_grid_env.motor_identification import MotorIdentification,identify
+        try:
+            path=Path(args.observations)
+            if path.stat().st_size>16000000:raise ValueError('motor identification input byte budget')
+            spec=MotorIdentification.model_validate_json(path.read_text());result=identify(spec)
+        except (ValueError,OSError) as exc:result=dict(completed=False,passed=False,status='rejected',detail=str(exc))
+        write_json(Path(args.out),result);print(json.dumps(dict(completed=result['completed'],passed=result['passed'])))
+        return 0 if result['passed'] else 2
     if args.command == "schemas":
         from power_grid_env.schema_export import export_schemas
 

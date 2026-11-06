@@ -17,7 +17,7 @@ from power_grid_env.study_spec import StudySpec,run_study
 from power_grid_env.evidence import package_fingerprint
 from power_grid_env.report import write_json,sha256_file
 
-NAMES=('matched_island','overcurrent','breaker_failure','manual_inhibit','measurement_loss')
+NAMES=('matched_island','overcurrent','breaker_failure','manual_inhibit','measurement_loss','standby_transfer','failed_primary_transfer')
 LIMITS=dict(delta=2e-6,omega=2e-8,bus_voltage_pu=2e-7,electrical_power_pu=2e-7,event_time_s=2e-8)
 
 
@@ -32,6 +32,7 @@ def example(name):
     breakers=[dict(id='grid-cb',target_kind='source',target_id='source',opening_delay_s=.01),dict(id='line-cb',target_kind='line',target_id='feeder',opening_delay_s=.01)]
     relays=[];events=[];faults=[]
     if name=='matched_island':events=[dict(time_s=.1,kind='source_open',equipment_id='source'),dict(time_s=.4,kind='source_close',equipment_id='source')]
+    elif name.endswith('_transfer'):pass
     else:
         faults=[CoupledFault(id='fault',node_id='plant',apply_s=.1,clear_s=.4,r_ohm=1.,x_ohm=0.)]
         relays=[dict(id='oc',kind='overcurrent',measurement_kind='line',measurement_id='feeder',breaker_id='line-cb',pickup=50.,time_multiplier_s=.02)]
@@ -40,13 +41,22 @@ def example(name):
         breakers[1].update(maximum_reclose_shots=1,reclose_dead_s=.1)
         events=[dict(time_s=.18,kind='breaker_open',equipment_id='line-cb')]
     if name=='measurement_loss':events=[dict(time_s=.09,kind='relay_measurement_lost',equipment_id='oc')]
+    transfers=[];net=b.build()
+    if name.endswith('_transfer'):
+        net.generators[0].p_w=0.;breakers[0]['fail_open']=name=='failed_primary_transfer'
+        breakers.append(dict(id='reserve-cb',target_kind='generator',target_id='g',initial_open=True,closing_delay_s=.01))
+        transfers=[dict(id='ats',primary_breaker_id='grid-cb',reserve_breaker_id='reserve-cb',primary_voltage=dict(kind='source',id='source'),reserve_voltage=dict(kind='generator',id='g'),detection_delay_s=.02,dead_time_s=.02)]
+        events=[dict(time_s=.1,kind='source_voltage',equipment_id='source',value=0.),dict(time_s=.4,kind='source_voltage',equipment_id='source',value=1.),dict(time_s=.5,kind='source_close',equipment_id='source')]
     cfg=CoupledSettings(duration_s=.6,step_s=.005,motors=[motor],machines=[ClassicalMachine(generator_id='g',rated_va=1e6,inertia_s=1.,damping_pu=1.,x_d_prime_pu=.25)],
         event_policy='coincident_roots_v1',rtol=1e-9,atol=1e-11,events=[CoupledEvent(**e) for e in events],faults=faults,
-        network_automation=NetworkAutomation(breakers=breakers,relays=relays))
-    return StudySpec(id='automation-'+name,study='coupled_rms',backend='scipy',network=b.build(),coupled=cfg)
+        network_automation=NetworkAutomation(breakers=breakers,relays=relays,transfers=transfers))
+    return StudySpec(id='automation-'+name,study='coupled_rms',backend='scipy',network=net,coupled=cfg)
 
 
 def reference(name,spec):
+    if name not in NAMES or spec.model_dump(mode='json')!=example(name).model_dump(mode='json'):
+        raise ValueError('reference supports only the explicitly frozen authored cases')
+    if name.endswith('_transfer'):return transfer_reference(name)
     # Explicit SI equivalent, independently declared constants.
     vbase=10000/math.sqrt(3);source=vbase;zgrid=2.2+9j;zg=25j;yl=(300000-100000j)/10000**2
     def initial_power(theta):
@@ -90,14 +100,55 @@ def reference(name,spec):
     den=1/zg+yl+1/zgrid+1.;a=(1-1/zgrid/den)/zgrid;b=-(1/zg/den)/zgrid
     lower=abs(a)*abs(source)-abs(b)*eabs
     if name not in {'matched_island','measurement_loss'} and lower<=50:raise ValueError('analytic pickup bound does not justify timeline')
-    return dict(completed=True,time_s=times.tolist(),channels=channels,expected_events=expected,minimum_fault_pickup_bound_a=float(lower),independent_SI_equations=True)
+    return dict(completed=True,time_s=times.tolist(),channels=channels,channel_inventory=sorted(channels),expected_events=expected,minimum_fault_pickup_bound_a=float(lower),independent_SI_equations=True)
+
+
+def transfer_reference(name):
+    """Standby machine, independent grid/load Thevenin solve and swing RHS.
+
+    Before transfer the disconnected generator produces no terminal current.
+    Its zero shaft-power passport then supplies the island from kinetic energy;
+    this is deliberately not an invented regulated constant-speed generator.
+    """
+    success=name=='standby_transfer';vbase=10000/math.sqrt(3);zg=25j;zgrid=2.2+9j;yl=(300000-100000j)/10000**2
+    initial_voltage=vbase/(1+zgrid*yl);state=np.array([np.angle(initial_voltage),1.]);times=np.r_[np.arange(120)*.005,.6]
+    states={0.:state.copy()};bounds=[0.,.1,.13,.16,.4,.5,.6]
+    def switches(t):return (not success or t<.13),success and t>=.16,(0. if .1<=t<.4 else vbase)
+    def physical(x,on_grid,on_gen,source):
+        eg=vbase*np.exp(1j*x[0]);yg=1/zg if on_gen else 0.;ys=1/zgrid if on_grid else 0.
+        voltage=(yg*eg+ys*source)/(yl+yg+ys);current=(eg-voltage)/zg if on_gen else 0j
+        return voltage,3*(eg*np.conj(current)).real/1e6
+    for left,right in zip(bounds,bounds[1:]):
+        on_grid,on_gen,source=switches((left+right)/2)
+        def rhs(t,x):
+            pe=physical(x,on_grid,on_gen,source)[1]
+            return [2*math.pi*50*(x[1]-1),(-pe-(x[1]-1))/2]
+        grid=sorted(set([float(t) for t in times if left<t<=right]+[right]))
+        sol=solve_ivp(rhs,(left,right),state,method='DOP853',rtol=2e-12,atol=1e-13,max_step=.0005,t_eval=grid)
+        if not sol.success:raise ValueError('independent standby transfer integration failed')
+        states.update(zip(sol.t,sol.y.T.copy()));state=sol.y[:,-1].copy()
+    c={k:[] for k in ['g.delta','g.omega','g.bus_voltage_pu','g.electrical_power_pu','g.connected','source.connected','grid-cb.closed','reserve-cb.closed']}
+    for t in times:
+        x=states[float(t)];on_grid,on_gen,source=switches(t);v,pe=physical(x,on_grid,on_gen,source)
+        for key,value in zip(c,[x[0],x[1],abs(v)/vbase,pe,on_gen,on_grid,on_grid,on_gen]):c[key].append(float(value))
+    expected=[('breaker_open','grid-cb',.13),('breaker_close','reserve-cb',.16)] if success else []
+    return dict(completed=True,time_s=times.tolist(),channels=c,channel_inventory=sorted(c),expected_events=expected,independent_SI_equations=True,
+        expected_attempts=[] if success else [dict(kind='breaker_open',equipment_id='grid-cb',time_s=.13,outcome='failed_to_operate')],
+        expected_blocks=[dict(kind='breaker_close',equipment_id='grid-cb',time_s=.5,reason='interlocked_breaker_closed')] if success else
+                        [dict(kind='transfer_blocked',equipment_id='ats',time_s=.15,reason='primary_not_open')])
 
 
 def compare(primary,ref):
-    if not primary.get('completed'):raise ValueError('primary automation simulation incomplete')
+    if not primary.get('completed') or not ref.get('completed'):raise ValueError('automation simulation incomplete')
+    required={'g.delta','g.omega','g.bus_voltage_pu','g.electrical_power_pu'}
+    if not required<=ref.get('channels',{}).keys() or sorted(ref['channels'])!=ref['channel_inventory']:raise ValueError('incomplete reference channel inventory')
+    if len(ref['time_s'])<2 or not np.isfinite(ref['time_s']).all() or np.any(np.diff(ref['time_s'])<=0):raise ValueError('invalid reference axis')
     times=np.asarray(primary['time_s']);errors={}
+    if not np.isfinite(times).all() or np.any(np.diff(times)<0):raise ValueError('invalid primary axis')
     for key,wanted in ref['channels'].items():
+        if key not in primary['channels']:raise ValueError('missing primary channel')
         values=primary['channels'][key];actual=[]
+        if len(values)!=len(times) or not np.isfinite(values).all() or len(wanted)!=len(ref['time_s']) or not np.isfinite(wanted).all():raise ValueError('invalid automation channels')
         for t in ref['time_s']:
             indexes=np.flatnonzero(np.isclose(times,t,rtol=0,atol=1e-12))
             if not len(indexes):raise ValueError('missing reference sample')
@@ -113,7 +164,13 @@ def compare(primary,ref):
                     e['kind'] in {'network_relay_trip','breaker_failure_confirmed'} or
                     e['kind'] in {'breaker_open','breaker_close'} and e.get('outcome')=='applied']
     checks.append(actual_actions==[(kind,id_) for kind,id_,_ in ref['expected_events']])
-    return dict(passed=all(checks) and all(error<=LIMITS[key.split('.',1)[1]] for key,error in errors.items()),errors=errors,event_checks=checks,limits=LIMITS)
+    for blocked in ref.get('expected_blocks',[]):
+        checks.append(any(e['kind']==blocked['kind'] and e.get('equipment_id')==blocked['equipment_id'] and abs(e['time_s']-blocked['time_s'])<=LIMITS['event_time_s'] and
+                          e.get('reason',e.get('synchronism',{}).get('reason'))==blocked['reason'] for e in primary['event_log']))
+    for attempt in ref.get('expected_attempts',[]):
+        checks.append(any(e['kind']==attempt['kind'] and e.get('equipment_id')==attempt['equipment_id'] and abs(e['time_s']-attempt['time_s'])<=LIMITS['event_time_s'] and e.get('outcome')==attempt['outcome'] for e in primary['event_log']))
+    limits={key:LIMITS.get(key.split('.',1)[1],0.) for key in errors}
+    return dict(passed=all(checks) and all(error<=limits[key] for key,error in errors.items()),errors=errors,event_checks=checks,limits=limits)
 
 
 def run(out):

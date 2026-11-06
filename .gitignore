@@ -257,3 +257,9 @@ Thumbs.db
 # Local JUnit output; model XML elsewhere remains visible.
 /main-tests.xml
 /junit*.xml
+
+# Optional hash-pinned compiled FMI replay cache (metadata stays in requirements).
+/data/external/joint-long-fmu/
+
+# Incomplete atomic-manifest publication after a process crash.
+.pge-manifest-*

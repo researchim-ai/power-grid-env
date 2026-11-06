@@ -107,7 +107,9 @@ class OEL2CPassport(BaseModel):
 
 class OEL2CDynamics:
     """Pure RHS between explicit state/clock events; no trial-call mutations."""
-    def __init__(self,p):self.p=p;self.context={}
+    def __init__(self,p):
+        self.p=p;self.context={}
+        self._accepted_branch_roots={}
 
     def criteria(self,x):
         p=self.p;band=p.current_comparison_tolerance_pu if p.model=='OEL2C_Dynawo_equilibrium_guard_v2_SEXS_summation' else 0.
@@ -268,7 +270,15 @@ class OEL2CDynamics:
                 c[label+'_start']=float(time) if value else None;c[label+'_expired']=False
             log.append(dict(time_s=float(time),kind='oel2c_transition',transition=name,value=bool(value)))
         for root in sorted(roots):
-            if root.startswith('branch_'):branch(root[7:],not c[root[7:]])
+            if root.startswith('branch_'):
+                name=root[7:]
+                # A time root is only representable to a few time ULPs. Its
+                # decoded state can remain on the old side of the guard.
+                # Do not undo an accepted crossing when the SAME state is
+                # refreshed at the SAME clock. A state change or later clock
+                # still receives the ordinary strict branch reconciliation.
+                self._accepted_branch_roots[name]=(float(time),self.criteria(x)[name],not c[name])
+                branch(name,not c[name])
             elif root.endswith('_deadline'):
                 label=root[:-9]
                 # A simultaneous branch cancellation resets its timer first.
@@ -281,6 +291,7 @@ class OEL2CDynamics:
                 else:x[a]=lo if side=='lower' else hi;c[label+'_bound']=-1 if side=='lower' else 1
                 log.append(dict(time_s=float(time),kind='oel2c_transition',transition=root,value=float(x[a])))
         for name,value in self.criteria(x).items():
+            if self._accepted_branch_roots.get(name)==(float(time),value,c[name]):continue
             if (not c[name] and value>eps) or (c[name] and value < -eps):branch(name,not c[name])
         for label,delay in [('enable',self.p.tEn),('reset',self.p.tOff)]:
             if c[label+'_start'] is not None and not c[label+'_expired'] and time>=c[label+'_start']+delay:

@@ -78,3 +78,24 @@ def test_equal_parallel_cages_collapse_to_equivalent_single_cage():
     assert a['completed'] and c['completed']
     for key in ['m.current_alpha_a','m.current_beta_a','m.speed_rad_s','m.torque_nm']:
         assert a['channels'][key]==pytest.approx(c['channels'][key],abs=2e-6)
+
+
+def test_transformer_executes_full_winding_network_not_only_parameter_conversion():
+    from benchmarks.flux_network_native import example as make
+    net,settings=make('transformer_tap');settings.duration_s=.004
+    r=run_flux_network(net,settings);assert r['completed'],r
+    assert r['maximum_kcl_relative_residual']<1e-8 and r['maximum_energy_relative_residual']<1e-7
+    assert len(r['channels']['tx.current_alpha_a'])==len(r['time_s'])
+
+
+def test_energy_quadratures_do_not_feed_back_into_physics():
+    net,settings=example();model=FluxNetwork(net,settings);state=model.initial_state()
+    changed=state.copy();changed[model.dynamic_end:]=[1e9,-1e9,1e8,-1e8,5e9]
+    assert np.array_equal(model.rhs(.001,state),model.rhs(.001,changed))
+
+
+def test_numerical_linearization_work_is_charged_to_rhs_budget():
+    net,settings=example();settings.runtime_limits.maximum_rhs_evaluations=3
+    result=run_flux_network(net,settings)
+    assert not result['completed'] and result['status']=='runtime_limit_exceeded'
+    assert result['reason']=='rhs_evaluations'

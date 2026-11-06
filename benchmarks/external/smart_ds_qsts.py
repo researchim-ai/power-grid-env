@@ -28,13 +28,14 @@ DAY_STEPS = 96
 WEEK_STEPS = 7 * DAY_STEPS
 
 
-def run(out: Path, *, steps: int) -> dict[str, Any]:
-    master = FEEDER / "Master.dss"
+def run(out: Path, *, steps: int, feeder: Path | None = None) -> dict[str, Any]:
+    feeder = FEEDER if feeder is None else Path(feeder)
+    master = feeder / "Master.dss"
     if not master.exists():
         payload = {"verdict": "data_unavailable", "reason": "мастер фидера не скачан"}
         write_json(out / "qsts.json", payload)
         return payload
-    profiles = _required_profiles(FEEDER / "LoadShapes.dss")
+    profiles = _required_profiles(feeder / "LoadShapes.dss")
     missing = [name for name in profiles.values() if not name.exists()]
     if missing:
         payload = {
@@ -44,7 +45,7 @@ def run(out: Path, *, steps: int) -> dict[str, Any]:
         }
         write_json(out / "qsts.json", payload)
         return payload
-    work = _work_copy(FEEDER)
+    work = _work_copy(feeder)
     from power_grid_env.importer import import_network
     from power_grid_env.backend_opendss import solve_network
 
@@ -81,9 +82,9 @@ def run(out: Path, *, steps: int) -> dict[str, Any]:
     if checkpoint is not None:
         write_json(out / f"checkpoint_{steps}.json", checkpoint)
     payload = {
-        "feeder": "p1uhs0_1247--p1udt104",
+        "feeder": feeder.name,
         "evidence": ["synthetic_scale", "conversion_consistency"],
-        "selection_rule": "самый маленький Master.dss в opendss_no_loadshapes, при равенстве по пути, до решения",
+        "selection_rule": "explicit preselected cached feeder, own loadshape files",
         "window": {
             "start_index": 0,
             "steps": steps,
@@ -360,18 +361,19 @@ def _timing(samples: list[float]) -> dict[str, float]:
     return {"cold_s": samples[0], "warm_p50_s": pct(0.50), "warm_p95_s": pct(0.95), "n": float(len(samples))}
 
 
-def engine_window(steps: int = 2) -> dict[str, Any]:
+def engine_window(steps: int = 2, *, feeder: Path | None = None, out: Path | None = None) -> dict[str, Any]:
     """Те же множители P и Q, что у прямого solve, но через Engine и его JSON-снимок.
 
     Окно короткое: полный год здесь не считается. Второй фидер без своих CSV не подключается.
     """
-    master = FEEDER / "Master.dss"
+    feeder = FEEDER if feeder is None else Path(feeder)
+    master = feeder / "Master.dss"
     if steps < 1 or not master.exists():
         return {"verdict": "data_unavailable", "reason": "мастер фидера не скачан"}
-    profiles = _required_profiles(FEEDER / "LoadShapes.dss")
+    profiles = _required_profiles(feeder / "LoadShapes.dss")
     if any(not path.exists() for path in profiles.values()):
         return {"verdict": "data_unavailable", "reason": "нет CSV профилей этого фидера"}
-    work = _work_copy(FEEDER)
+    work = _work_copy(feeder)
     from power_grid_env.backend_opendss import solve_network
     from power_grid_env.importer import import_network
     from power_grid_env.scenarios import Scenario
@@ -409,17 +411,17 @@ def engine_window(steps: int = 2) -> dict[str, Any]:
     engine = Engine(network, scenario)
     engine.reset()
     gaps = [_voltage_gap(direct_rows[0], engine.net, engine.last_result)]
-    if steps >= 2:
-        snapshot = json.loads(json.dumps(engine.snapshot()))
-        restored = Engine(network.model_copy(deep=True), scenario)
-        restored.restore(snapshot)
-        restored.step_control({"kind": "hold"})
-        engine.step_control({"kind": "hold"})
-        gaps.append(_voltage_gap(direct_rows[1], engine.net, engine.last_result))
-        gaps.append(_voltage_gap(direct_rows[1], restored.net, restored.last_result))
-    for step in range(2, steps):
-        engine.step_control({"kind": "hold"})
-        gaps.append(_voltage_gap(direct_rows[step], engine.net, engine.last_result))
+    midpoint=max(1,steps//2);restored=None;snapshot=None;restored_samples=0
+    for step in range(1,steps):
+        if step==midpoint:
+            snapshot=json.loads(json.dumps(engine.snapshot()))
+            restored=Engine(network.model_copy(deep=True),scenario);restored.restore(snapshot)
+            if out is not None:write_json(Path(out)/'engine-checkpoint.json',snapshot)
+        engine.step_control({"kind":"hold"})
+        gaps.append(_voltage_gap(direct_rows[step],engine.net,engine.last_result))
+        if restored is not None:
+            restored.step_control({"kind":"hold"})
+            gaps.append(_voltage_gap(direct_rows[step],restored.net,restored.last_result));restored_samples+=1
     peak = max((item[0] for item in gaps), default=None)
     verdict = "pass" if gaps and all(item[1] == "pass" and item[0] <= 1e-5 for item in gaps) else "fail"
     return {
@@ -430,6 +432,8 @@ def engine_window(steps: int = 2) -> dict[str, Any]:
         "gate_voltage_pu": 1e-5,
         "evidence": "conversion_consistency",
         "q_profile": "third column of load_profile",
+        "restored_from_sample_index": midpoint-1 if snapshot is not None else None,
+        "restored_post_checkpoint_samples": restored_samples,
     }
 
 

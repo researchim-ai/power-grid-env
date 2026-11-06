@@ -11,7 +11,7 @@ import json
 import re
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, model_serializer
 
 PhaseName = Literal["A", "B", "C", "N"]
 Quality = Literal["measured", "nameplate", "estimated", "assumed", "derived", "missing"]
@@ -335,10 +335,28 @@ class StudyFault(BaseModel):
     id: str
     bus_id: str | None = None
     line_id: str | None = None
-    kind: Literal["3ph", "slg", "ll", "llg"]
+    kind: Literal["3ph", "slg", "ll", "llg", "llg_common"]
     phases: list[Literal["A", "B", "C"]]
     r_ohm: float
     x_ohm: float = 0.0
+    phase_leg_r_ohm: float | None = Field(default=None,gt=0,allow_inf_nan=False)
+    phase_leg_x_ohm: float | None = Field(default=None,ge=0,allow_inf_nan=False)
+
+    @model_serializer(mode='wrap')
+    def preserve_legacy_fault(self,handler):
+        result=handler(self)
+        for key in ['phase_leg_r_ohm','phase_leg_x_ohm']:
+            if getattr(self,key) is None:result.pop(key,None)
+        return result
+
+    @model_validator(mode='after')
+    def common_point(self):
+        supplied=self.phase_leg_r_ohm is not None or self.phase_leg_x_ohm is not None
+        if self.kind=='llg_common':
+            import math
+            if self.phase_leg_r_ohm is None or self.phase_leg_x_ohm is None or self.r_ohm<=0 or not math.isfinite(self.r_ohm) or not math.isfinite(self.x_ohm):raise ValueError('common-point LLG requires finite ground impedance and explicit positive-R phase legs')
+        elif supplied:raise ValueError('phase-leg impedances belong only to llg_common')
+        return self
 
 
 class HarmonicComponent(BaseModel):
@@ -727,7 +745,8 @@ def validate_network_rules(network: Network) -> list[str]:
             errors.append(f"{fault.id}: отрицательное сопротивление КЗ")
         if fault.bus_id is None and fault.line_id is None:
             errors.append(f"{fault.id}: КЗ должно ссылаться на узел или линию")
-        if len(fault.phases) != {"3ph": 3, "slg": 1, "ll": 2, "llg": 2}[fault.kind]:
+        if len(set(fault.phases))!=len(fault.phases):errors.append(f'{fault.id}: duplicate fault phases')
+        if len(fault.phases) != {"3ph": 3, "slg": 1, "ll": 2, "llg": 2, "llg_common":2}[fault.kind]:
             errors.append(f"{fault.id}: число фаз не соответствует виду КЗ")
     return errors
 

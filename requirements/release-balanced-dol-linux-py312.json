@@ -37,7 +37,28 @@
     "tests/test_extended_equipment_reference.py",
     "tests/test_network_automation_reference.py",
     "tests/test_ex04_preflight.py",
-    "tests/test_multivoltage_rms.py"
+    "tests/test_multivoltage_rms.py",
+    "tests/test_flux_network_native.py",
+    "tests/test_automation_dae.py",
+    "tests/test_core_flux_network.py",
+    "tests/test_motor_identification.py",
+    "tests/test_phase_fault_corpus.py",
+    "tests/test_engineering_project.py",
+    "tests/test_local_qsts_acceptance.py",
+    "tests/test_balanced_ac_workflows.py",
+    "tests/test_ac_estimation.py",
+    "tests/test_phase_network.py",
+    "tests/test_phase_research.py",
+    "tests/test_hybrid_sensitivity.py",
+    "tests/test_motor_catalog.py",
+    "tests/test_extended_duration_matrix.py",
+    "tests/test_study_sensitivity.py",
+    "tests/test_protected_motor.py",
+    "tests/test_advanced_studies.py",
+    "tests/test_long_islands.py",
+    "tests/test_campaign.py",
+    "tests/test_campaign_parallel.py",
+    "tests/test_dynamic_motor_identification.py"
   ],
   "collection_contract": "Collect all tests; every node outside the required files is explicitly outside_profile, never passed. Required setup, call and teardown must pass without skips or xfail.",
   "scope": [
@@ -73,10 +94,12 @@
     },
     {
       "id": "independent-release-host",
-      "status": "pending",
-      "reason": "Requires a published exact commit, successful workflow_dispatch, live GitHub API bindings and fresh signed GitHub-hosted-runner attestation verification."
+      "status": "cancelled_not_passed",
+      "reason": "External publication and CI cancelled by explicit user instruction; local reproducibility is checked separately."
     }
   ],
   "independent_host_verified": false,
-  "industrial_release_qualified": false
+  "industrial_release_qualified": false,
+  "delivery_policy": "local_only_no_GitHub_no_CI",
+  "remote_execution_required": false
 }

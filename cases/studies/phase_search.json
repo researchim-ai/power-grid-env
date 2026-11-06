@@ -1,0 +1,111 @@
+{
+  "id": "authored-grid",
+  "study": {
+    "id": "rlc",
+    "mode": "harmonic",
+    "case": {
+      "schema_version": "power-grid-env.phase-network/v1",
+      "id": "authored-rlc",
+      "nodes": [
+        "source",
+        "load"
+      ],
+      "frequency_hz": 50.0,
+      "sources": [
+        {
+          "id": "grid",
+          "node": "source",
+          "tones": [
+            {
+              "order": 1,
+              "rms": 230.0,
+              "phase_rad": 0.0
+            }
+          ],
+          "envelope": [
+            [
+              0.0,
+              1.0
+            ]
+          ]
+        }
+      ],
+      "resistors": [
+        {
+          "id": "load-r",
+          "frm": "load",
+          "to": "0",
+          "resistance_ohm": 20.0
+        }
+      ],
+      "capacitors": [
+        {
+          "id": "load-c",
+          "frm": "load",
+          "to": "0",
+          "capacitance_f": 0.0001
+        }
+      ],
+      "inductors": [
+        {
+          "id": "line",
+          "frm": "source",
+          "to": "load",
+          "resistance_ohm": 1.0,
+          "initial_current_a": 0.0,
+          "saturation_flux_vs": 0.0,
+          "saturation_current_a": 4.0
+        }
+      ],
+      "inductance_h": [
+        [
+          0.02
+        ]
+      ],
+      "injections": [],
+      "converters": [],
+      "events": [],
+      "initial_voltage_v": {},
+      "sequence_monitors": {},
+      "sequence_neutrals": {},
+      "provenance": {
+        "all": "authored SI reference; no measured parameters"
+      }
+    },
+    "orders": [
+      1
+    ]
+  },
+  "axes": [
+    {
+      "id": "load",
+      "parameter": "resistance_ohm",
+      "equipment_id": "load-r",
+      "values": [
+        16.0,
+        18.0,
+        20.0,
+        22.0,
+        24.0
+      ]
+    },
+    {
+      "id": "line",
+      "parameter": "inductor_resistance_ohm",
+      "equipment_id": "line",
+      "values": [
+        0.8,
+        0.9,
+        1.0,
+        1.1,
+        1.2
+      ]
+    }
+  ],
+  "objective": {
+    "kind": "node_rms_v",
+    "equipment_id": "load",
+    "sense": "max",
+    "threshold": 300.0
+  }
+}

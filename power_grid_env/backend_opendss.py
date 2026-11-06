@@ -257,12 +257,26 @@ def _solve_once(network: Network, options: SolveOptions) -> SolveResult:
             for transformer in network.transformers
         },
     )
-    if topology.errors:
+    fault_errors=[]
+    reserved_ids={x.id for group in [network.lines,network.transformers,network.loads,network.sources,network.generators,network.shunts,network.study_faults] for x in group}
+    if len({f.id for f in network.study_faults})!=len(network.study_faults):fault_errors.append('duplicate study-fault IDs')
+    for fault in network.study_faults:
+        bus=_fault_bus(fault,topology)
+        if bus is None or fault.line_id is not None:fault_errors.append(f'{fault.id}: unresolved or ambiguous fault target; split a line fault into an explicit node first')
+        elif not set(fault.phases)<=set(topology.buses[bus].phases):fault_errors.append(f'{fault.id}: fault phase missing at target bus')
+        count={'3ph':3,'slg':1,'ll':2,'llg':2,'llg_common':2}[fault.kind]
+        if len(fault.phases)!=count or len(set(fault.phases))!=count:fault_errors.append(f'{fault.id}: invalid fault phase inventory')
+        if not math.isfinite(fault.r_ohm) or not math.isfinite(fault.x_ohm) or fault.r_ohm<0:fault_errors.append(f'{fault.id}: invalid finite fault impedance')
+        if fault.kind=='llg_common':
+            ids=[fault.id+':leg:'+p for p in fault.phases]+[fault.id+':ground']
+            if any(id_ in reserved_ids for id_ in ids):fault_errors.append(f'{fault.id}: common-fault output IDs collide with equipment')
+            reserved_ids.update(ids)
+    if topology.errors or fault_errors:
         return SolveResult(
             status="invalid_model",
             converged=False,
-            warnings=list(topology.errors),
-            diagnostics={"topology_errors": topology.errors},
+            warnings=list(topology.errors)+fault_errors,
+            diagnostics={"topology_errors": topology.errors,'fault_errors':fault_errors},
             **base,
         )
     policy_error = _source_policy_error(network, topology)
@@ -686,9 +700,11 @@ def _render(
         bus_id = _fault_bus(fault, topology)
         if bus_id is None or topology.bus_island[bus_id] not in energized_islands:
             continue
-        for element_name, command in _fault_commands(fault, bus_token[bus_id]):
+        for fault_part,(element_name, command) in enumerate(_fault_commands(fault, bus_token[bus_id])):
             script.append(command)
-            registry.append((element_name, fault.id))
+            equipment_id=fault.id
+            if fault.kind=='llg_common':equipment_id=fault.id+(':leg:'+fault.phases[fault_part] if fault_part<len(fault.phases) else ':ground')
+            registry.append((element_name, equipment_id))
     bases = sorted({f"{bus.nominal_ll_v / 1000.0:.8g}" for bus in topology.buses.values() if bus.nominal_ll_v > 0})
     if bases:
         script.append("Set voltagebases=[" + " ".join(bases) + "]")
@@ -1004,6 +1020,17 @@ def _fault_bus(fault: StudyFault, topology: Topology) -> str | None:
 
 
 def _fault_commands(fault: StudyFault, bus_token: str) -> list[tuple[str, str]]:
+    if fault.kind=='llg_common':
+        # Two explicitly finite phase legs meet at one floating fault point;
+        # its single ground impedance is not duplicated for each phase.
+        internal=_token('faultpoint',fault.id)
+        result=[]
+        for phase in fault.phases:
+            name=f"Reactor.{_token('f',fault.id+':leg:'+phase)}"
+            result.append((name,f'New {name} phases=1 bus1={bus_token}.{_PHASE_NODE[phase]} bus2={internal}.1 r={fault.phase_leg_r_ohm:.12g} x={fault.phase_leg_x_ohm:.12g}'))
+        name=f"Reactor.{_token('f',fault.id+':ground')}"
+        result.append((name,f'New {name} phases=1 bus1={internal}.1 bus2={internal}.0 r={fault.r_ohm:.12g} x={fault.x_ohm:.12g}'))
+        return result
     if fault.kind == "ll":
         nodes = [_PHASE_NODE[phase] for phase in fault.phases]
         name = f"Reactor.{_token('f', fault.id)}"

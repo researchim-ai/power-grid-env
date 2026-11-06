@@ -1,0 +1,364 @@
+{
+  "coordinates": "peak_alpha_beta_steady",
+  "initial": {
+    "id": "m1",
+    "node_id": "a",
+    "stator_r_ohm": 4.07,
+    "unsaturated_h": 0.30600000000000005,
+    "saturation_beta_per_vs": 0.924,
+    "saturation_exponent": 7,
+    "core_loss_s": 0.00115,
+    "cages": [
+      {
+        "resistance_ohm": 2.125,
+        "leakage_h": 0.025300000000000003
+      }
+    ],
+    "pole_pairs": 2,
+    "inertia_kg_m2": 0.03,
+    "fan_nm_per_rad_s2": 0.0005917157124712526,
+    "viscous_nm_per_rad_s": 0.0,
+    "initial_speed_rad_s": 0.0,
+    "locked_rotor": false,
+    "thermal": null,
+    "provenance": {
+      "electrical": "https://aalto-electric-drives.github.io/motulator/drive_examples/current_vector/plot_2kw_im_sat_cvc.html",
+      "magnetics": "https://aalto-electric-drives.github.io/motulator/drive_examples/current_vector/plot_2kw_im_sat_cvc.html",
+      "mechanical": "Authored J=0.03 kg m2 and fan-load stress",
+      "core_loss": "Published motulator constant eddy-current conductance equations; Gc=0.001 S is authored stress data, not a measured passport"
+    }
+  },
+  "fitting": [
+    {
+      "frequency_hz": 15.0,
+      "mechanical_rad_s": 45.710173109731485,
+      "voltage_alpha_v": 28.274333882308134,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 0.4396665775236829,
+      "current_beta_a": -0.8014122028531783,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 15.0,
+      "mechanical_rad_s": 0.0,
+      "voltage_alpha_v": 28.274333882308134,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 4.226494630947363,
+      "current_beta_a": -1.566708797438056,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 15.0,
+      "mechanical_rad_s": 32.98672286269282,
+      "voltage_alpha_v": 65.97344572538564,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 5.574763271919136,
+      "current_beta_a": -1.9327344291919548,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 15.0,
+      "mechanical_rad_s": 45.710173109731485,
+      "voltage_alpha_v": 103.67255756846318,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 1.899109279588242,
+      "current_beta_a": -4.004690953037774,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 15.0,
+      "mechanical_rad_s": 0.0,
+      "voltage_alpha_v": 103.67255756846318,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 15.499514397539409,
+      "current_beta_a": -5.74663538430399,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 30.0,
+      "mechanical_rad_s": 65.97344572538564,
+      "voltage_alpha_v": 56.54866776461627,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 4.331675403806971,
+      "current_beta_a": -1.9386021960623825,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 30.0,
+      "mechanical_rad_s": 91.42034621946297,
+      "voltage_alpha_v": 131.9468914507713,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 1.7477325913515906,
+      "current_beta_a": -1.9751500279442833,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 30.0,
+      "mechanical_rad_s": 0.0,
+      "voltage_alpha_v": 131.9468914507713,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 15.025645473619186,
+      "current_beta_a": -10.494538168299997,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 30.0,
+      "mechanical_rad_s": 65.97344572538564,
+      "voltage_alpha_v": 207.34511513692635,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 15.919479811877988,
+      "current_beta_a": -7.207750873564867,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 50.0,
+      "mechanical_rad_s": 152.36724369910496,
+      "voltage_alpha_v": 94.2477796076938,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 1.1940234201651827,
+      "current_beta_a": -0.8912287159170438,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 50.0,
+      "mechanical_rad_s": 0.0,
+      "voltage_alpha_v": 94.2477796076938,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 6.882414943904358,
+      "current_beta_a": -7.870969929288823,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 50.0,
+      "mechanical_rad_s": 109.95574287564276,
+      "voltage_alpha_v": 219.9114857512855,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 14.019504289760299,
+      "current_beta_a": -9.195851233914011,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 50.0,
+      "mechanical_rad_s": 152.36724369910496,
+      "voltage_alpha_v": 345.57519189487726,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 4.4830934408860195,
+      "current_beta_a": -4.472469597786125,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 50.0,
+      "mechanical_rad_s": 0.0,
+      "voltage_alpha_v": 345.57519189487726,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 25.39915892796098,
+      "current_beta_a": -29.01792891609496,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 75.0,
+      "mechanical_rad_s": 164.93361431346412,
+      "voltage_alpha_v": 141.3716694115407,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 6.812341425871366,
+      "current_beta_a": -6.38424250337897,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 75.0,
+      "mechanical_rad_s": 228.55086554865744,
+      "voltage_alpha_v": 329.86722862692824,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 4.09749537145305,
+      "current_beta_a": -2.3694189566890804,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 75.0,
+      "mechanical_rad_s": 0.0,
+      "voltage_alpha_v": 329.86722862692824,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 14.260198269180645,
+      "current_beta_a": -24.128959258698703,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 75.0,
+      "mechanical_rad_s": 164.93361431346412,
+      "voltage_alpha_v": 518.3627878423159,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 25.127809331605818,
+      "current_beta_a": -23.75756947632984,
+      "sigma_a": 0.001
+    }
+  ],
+  "validation": [
+    {
+      "frequency_hz": 15.0,
+      "mechanical_rad_s": 32.98672286269282,
+      "voltage_alpha_v": 28.274333882308134,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 2.388932648173423,
+      "current_beta_a": -0.8275364295280767,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 15.0,
+      "mechanical_rad_s": 45.710173109731485,
+      "voltage_alpha_v": 65.97344572538564,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 1.0327341543553636,
+      "current_beta_a": -1.9000848682632294,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 15.0,
+      "mechanical_rad_s": 0.0,
+      "voltage_alpha_v": 65.97344572538564,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 9.861884346308452,
+      "current_beta_a": -3.655708540486943,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 15.0,
+      "mechanical_rad_s": 32.98672286269282,
+      "voltage_alpha_v": 103.67255756846318,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 8.781441690636447,
+      "current_beta_a": -3.1016307532400873,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 30.0,
+      "mechanical_rad_s": 91.42034621946297,
+      "voltage_alpha_v": 56.54866776461627,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 0.7474374814069147,
+      "current_beta_a": -0.8327695735863836,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 30.0,
+      "mechanical_rad_s": 0.0,
+      "voltage_alpha_v": 56.54866776461627,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 6.439208396070957,
+      "current_beta_a": -4.49740120630596,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 30.0,
+      "mechanical_rad_s": 65.97344572538564,
+      "voltage_alpha_v": 131.9468914507713,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 10.10822314824777,
+      "current_beta_a": -4.526087119905649,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 30.0,
+      "mechanical_rad_s": 91.42034621946297,
+      "voltage_alpha_v": 207.34511513692635,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 2.9024190964437055,
+      "current_beta_a": -4.230108262161791,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 30.0,
+      "mechanical_rad_s": 0.0,
+      "voltage_alpha_v": 207.34511513692635,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 23.641127208853284,
+      "current_beta_a": -16.512805142588757,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 50.0,
+      "mechanical_rad_s": 109.95574287564276,
+      "voltage_alpha_v": 94.2477796076938,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 6.007473911131812,
+      "current_beta_a": -3.9389824765307155,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 50.0,
+      "mechanical_rad_s": 152.36724369910496,
+      "voltage_alpha_v": 219.9114857512855,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 2.788462369170657,
+      "current_beta_a": -2.112029095862071,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 50.0,
+      "mechanical_rad_s": 0.0,
+      "voltage_alpha_v": 219.9114857512855,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 16.063386773421453,
+      "current_beta_a": -18.3698780367588,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 50.0,
+      "mechanical_rad_s": 109.95574287564276,
+      "voltage_alpha_v": 345.57519189487726,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 22.104534370541472,
+      "current_beta_a": -14.624359288143168,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 75.0,
+      "mechanical_rad_s": 228.55086554865744,
+      "voltage_alpha_v": 141.3716694115407,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 1.7552925390522227,
+      "current_beta_a": -1.0014344359549854,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 75.0,
+      "mechanical_rad_s": 0.0,
+      "voltage_alpha_v": 141.3716694115407,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 6.107458284692018,
+      "current_beta_a": -10.335339968927835,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 75.0,
+      "mechanical_rad_s": 164.93361431346412,
+      "voltage_alpha_v": 329.86722862692824,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 15.899457683479017,
+      "current_beta_a": -14.905977874868814,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 75.0,
+      "mechanical_rad_s": 228.55086554865744,
+      "voltage_alpha_v": 518.3627878423159,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 6.514130031258378,
+      "current_beta_a": -4.889006081223949,
+      "sigma_a": 0.001
+    },
+    {
+      "frequency_hz": 75.0,
+      "mechanical_rad_s": 0.0,
+      "voltage_alpha_v": 518.3627878423159,
+      "voltage_beta_v": 0.0,
+      "current_alpha_a": 22.744879361347074,
+      "current_beta_a": -38.379939194251754,
+      "sigma_a": 0.001
+    }
+  ],
+  "data_provenance": "Synthetic original motulator 0.19.0 steady Gamma RHS; not laboratory measurements",
+  "maximum_evaluations": 2000,
+  "maximum_wall_s": 60.0,
+  "validation_tolerance_sigma": 5.0,
+  "maximum_condition": 1000000.0
+}
