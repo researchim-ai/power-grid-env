@@ -58,7 +58,16 @@
     "tests/test_long_islands.py",
     "tests/test_campaign.py",
     "tests/test_campaign_parallel.py",
-    "tests/test_dynamic_motor_identification.py"
+    "tests/test_dynamic_motor_identification.py",
+    "tests/test_motor_recordings.py",
+    "tests/test_dynamic_identification_audit.py",
+    "tests/test_calibrated_motor_study.py",
+    "tests/test_noisy_acceptance_contract.py",
+    "tests/test_sampled_integrator.py",
+    "tests/test_stator_resistance_anchor.py",
+    "tests/test_llm_training.py",
+    "tests/test_motor_engineering.py",
+    "tests/test_comparison.py"
   ],
   "collection_contract": "Collect all tests; every node outside the required files is explicitly outside_profile, never passed. Required setup, call and teardown must pass without skips or xfail.",
   "scope": [

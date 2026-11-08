@@ -1,0 +1,14 @@
+import {mkdir,readFile,writeFile,copyFile,cp,rm} from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+import path from 'node:path';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const project=path.dirname(root);const plan=await readFile(path.join(project,'plans/CURRENT_STATUS.md'),'utf8');
+const tests=Number(plan.match(/Обязательная регрессия текущего кода:\s*(\d+)/)?.[1]);
+if(!tests)throw new Error('Project validation count not found in CURRENT_STATUS.md');
+await mkdir(path.join(root,'assets'),{recursive:true});
+await writeFile(path.join(root,'assets/site-data.json'),JSON.stringify({required_tests:tests,profile:'local declared scope',snapshot:'2026-11-06',physical_solver_connected:false},null,2)+'\n');
+await copyFile(path.join(project,'plans/CURRENT_STATUS.md'),path.join(root,'assets/project-status.md'));
+await copyFile(path.join(project,'LICENSE'),path.join(root,'assets/LICENSE.txt'));
+await rm(path.join(root,'dist'),{recursive:true,force:true});await mkdir(path.join(root,'dist'));
+for(const name of ['index.html','styles.css','app.js','assets'])await cp(path.join(root,name),path.join(root,'dist',name),{recursive:true});
+console.log('Static website built in web/dist. No external dependencies or services.');

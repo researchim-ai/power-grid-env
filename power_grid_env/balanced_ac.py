@@ -160,15 +160,15 @@ def solve_power_flow(case, *, tolerance_pu=1e-9, max_iterations=40, enforce_q_li
     nonref = [i for i in range(n) if i != slack]
     pv = {i for i, b in enumerate(case.buses) if b.type_code == 2}
     pq = {i for i, b in enumerate(case.buses) if b.type_code == 1}
-    vm = np.array([b.vm for b in case.buses]); theta = np.radians([b.va_deg for b in case.buses])
+    vm = np.array([b.vm for b in case.buses], dtype=float); theta = np.radians([b.va_deg for b in case.buses])
     theta -= theta[slack]
     y = _ybus(case, index)
-    pg = np.array([0. if g.pg is None else g.pg for g in case.generators])
-    qg = np.array([0. if g.qg is None else g.qg for g in case.generators])
+    pg = np.array([0. if g.pg is None else g.pg for g in case.generators], dtype=float)
+    qg = np.array([0. if g.qg is None else g.qg for g in case.generators], dtype=float)
     for gen in case.generators:
         if index[gen.bus] != slack and gen.pg is None:
             raise ValueError('non-reference generator needs an explicit Pg schedule')
-    pset = -np.array([b.pd for b in case.buses]); qset = -np.array([b.qd for b in case.buses])
+    pset = -np.array([b.pd for b in case.buses], dtype=float); qset = -np.array([b.qd for b in case.buses], dtype=float)
     for i, g in enumerate(case.generators):
         pset[index[g.bus]] += pg[i]; qset[index[g.bus]] += qg[i]
     pset /= case.base_mva; qset /= case.base_mva

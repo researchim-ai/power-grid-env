@@ -1,0 +1,8 @@
+# Direct versions exercised locally; not a complete transitive lock or CUDA lock.
+# Use a separate environment. Core simulator does not require this stack.
+torch==2.7.0
+transformers==4.57.0
+trl==0.27.2
+datasets==4.5.0
+accelerate==1.9.0
+tokenizers==0.22.1

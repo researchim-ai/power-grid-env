@@ -1,0 +1,5 @@
+{
+  "schema_version": "power-grid-env.llm-generation/v1",
+  "seed": 31,
+  "variants_per_family": 3
+}

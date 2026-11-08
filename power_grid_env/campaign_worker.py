@@ -22,6 +22,16 @@ def main():
         from power_grid_env.advanced_studies import protected_html
         study=ProtectedMotorStudy.model_validate(case.study);result=run_protected_motor(study)
         if result.get('completed'):(out/'report.html').write_text(protected_html(study,result),encoding='utf-8')
+    elif case.kind=='anchored_dynamic_identification':
+        from power_grid_env.stator_resistance_anchor import run_anchored_identification
+        result=run_anchored_identification(case.study,out/'anchor')
+        (out/'report.html').write_text('<!doctype html><html lang="ru"><meta charset="utf-8"><title>DC anchor study</title><a href="anchor/report.html">DC-опора и три условных подбора</a></html>',encoding='utf-8')
+        if result.get('passed'):write_json(out/'passport.json',read_json(out/'anchor/passport.json'))
+    elif case.kind=='dynamic_identification_audit':
+        from power_grid_env.dynamic_identification_audit import DynamicIdentificationAudit,audit_identification,audit_html
+        spec=DynamicIdentificationAudit.model_validate(case.study);result=audit_identification(spec)
+        (out/'report.html').write_text(audit_html(spec,result),encoding='utf-8')
+        if result.get('passed'):write_json(out/'passport.json',result['passport'])
     elif case.kind=='dynamic_motor_identification':
         from power_grid_env.dynamic_motor_identification import DynamicMotorIdentification,identify_dynamic
         from power_grid_env.advanced_studies import dynamic_identification_html

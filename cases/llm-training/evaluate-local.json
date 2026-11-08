@@ -1,0 +1,9 @@
+{
+  "corpus": "reports/llm-corpus",
+  "checkpoint": "/absolute/path/to/local/grpo-checkpoint",
+  "output": "reports/llm-heldout",
+  "split": "test",
+  "max_context_tokens": 16384,
+  "max_new_tokens": 512,
+  "use_cpu": false
+}

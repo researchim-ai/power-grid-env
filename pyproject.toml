@@ -25,6 +25,7 @@ dependencies = [
 dev = ["pytest>=8"]
 rms = ["andes>=2.0,<3"]
 benchmark = ["pandapower>=3.5,<3.6", "pandas>=2.3,<3"]
+llm-training = ["torch>=2.7,<3", "transformers>=4.57,<5", "trl>=0.27,<0.28", "datasets>=4.5,<5", "accelerate>=1.9,<2"]
 
 [project.scripts]
 power-grid = "power_grid_env.cli:main"

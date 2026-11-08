@@ -61,6 +61,7 @@ class DynamicMotorIdentification(BaseModel):
     maximum_wall_s:float=Field(default=120.,gt=0,le=600.)
     maximum_condition:float=Field(default=1e6,gt=1,le=1e10)
     tolerance_sigma:float=Field(default=5.,gt=0,le=100)
+    replay_method:Literal['dop853','sample_rk4']='dop853'
 
     @model_validator(mode='after')
     def applicable(self):
@@ -116,23 +117,38 @@ class WorkBudget:
         self.evaluations+=1
 
 
-def replay(p,trace,budget,*,conditional=False):
+def replay(p,trace,budget,*,conditional=False,method=None,accuracy_factor=1.,subdivisions=1):
     times=np.asarray(trace.time_s);omega=2*math.pi*trace.frequency_hz
     rotation=np.exp(-1j*omega*times);voltage=(np.array(trace.voltage_alpha_v)+1j*np.array(trace.voltage_beta_v))*rotation
     speed=np.asarray(trace.speed_rad_s);measured_speed=CubicSpline(times,speed) if conditional else None
-    def rhs(t,x):
+    def physical_rhs(t,x,u):
         budget.rhs();ps=x[0]+1j*x[1];pr=x[2]+1j*x[3];w=float(measured_speed(t)) if conditional else x[4]
-        u=np.interp(t,times,voltage.real)+1j*np.interp(t,times,voltage.imag)
         current,rotor,torque=_currents(p,ps,pr)
         ds=u-p.stator_r_ohm*current-1j*omega*ps
         dr=-p.cages[0].resistance_ohm*rotor-1j*(omega-p.pole_pairs*w)*pr
         dw=0. if p.locked_rotor or conditional else (torque-p.fan_nm_per_rad_s2*w*abs(w)-p.viscous_nm_per_rad_s*w)/p.inertia_kg_m2
         return [ds.real,ds.imag,dr.real,dr.imag,dw]
+    def rhs(t,x):
+        u=np.interp(t,times,voltage.real)+1j*np.interp(t,times,voltage.imag)
+        return physical_rhs(t,x,u)
     x=[*trace.initial_stator_flux_vs,*trace.initial_rotor_flux_vs,speed[0]]
-    solution=solve_ivp(rhs,(0.,times[-1]),x,t_eval=times,method='DOP853',rtol=2e-9,atol=2e-11,max_step=min(.002,1/(20*trace.frequency_hz)))
-    if not solution.success or solution.y.shape!=(5,len(times)) or not np.isfinite(solution.y).all():raise ValueError('complete finite dynamic replay required')
-    ps=solution.y[0]+1j*solution.y[1];pr=solution.y[2]+1j*solution.y[3];current,_,torque=_currents(p,ps,pr)
-    return dict(current=current/rotation,speed=speed if conditional else solution.y[4],torque=torque,stator_flux=ps/rotation,rotor_flux=pr/rotation)
+    method=method or budget.spec.replay_method
+    if not 0 < accuracy_factor <= 1:raise ValueError('accuracy factor must tighten existing tolerances')
+    stats=None
+    if method=='sample_rk4':
+        from power_grid_env.sampled_integrator import integrate_sampled
+        def interval(index):
+            left=times[index];delta=times[index+1]-left;start=voltage[index];change=voltage[index+1]-start
+            return lambda t,state:physical_rhs(t,state,start+((t-left)/delta)*change)
+        values,stats=integrate_sampled(times,x,interval,rtol=2e-9*accuracy_factor,atol=2e-11*accuracy_factor,subdivisions=subdivisions)
+    elif method=='dop853':
+        solution=solve_ivp(rhs,(0.,times[-1]),x,t_eval=times,method='DOP853',rtol=2e-9*accuracy_factor,atol=2e-11*accuracy_factor,max_step=min(.002,1/(20*trace.frequency_hz)))
+        if not solution.success:raise ValueError('complete finite dynamic replay required')
+        values=solution.y
+    else:raise ValueError('supported replay method required')
+    if values.shape!=(5,len(times)) or not np.isfinite(values).all():raise ValueError('complete finite dynamic replay required')
+    ps=values[0]+1j*values[1];pr=values[2]+1j*values[3];current,_,torque=_currents(p,ps,pr)
+    return dict(current=current/rotation,speed=speed if conditional else values[4],torque=torque,stator_flux=ps/rotation,rotor_flux=pr/rotation,integration=stats)
 
 
 def _rank(matrix,maximum_condition):
@@ -209,6 +225,6 @@ def identify_dynamic(spec):
         if mechanical.get('estimated'):p.provenance['mechanical']=origin
         p.provenance['dynamic_identification']=origin
         if code!=package_fingerprint():raise ValueError('dynamic identification producer changed')
-        return dict(completed=True,passed=passed,reason=reason,identifiable=bool(identifiable),method='conditional_rotating_flux_fit_integral_mechanics_free_heldout_replay',passport=p.model_dump(mode='json'),seed_passport=spec.initial.model_dump(mode='json'),electrical=electrical,mechanical=mechanical,parameters=names,assessments=assessments,trajectories=trajectories,code_sha256=code,dataset_sha256=digest,trace_provenance={t.id:t.provenance for t in spec.fitting+spec.validation},protocol_sha256=input_digest,optimizer=dict(success=bool(fitted.success),message=str(fitted.message),nfev=fitted.nfev,active_mask=fitted.active_mask.tolist()),calibration_domain=dict(frequency_hz=[min(t.frequency_hz for t in spec.fitting),max(t.frequency_hz for t in spec.fitting)],voltage_peak_alpha_beta_v=[min(float(min(np.hypot(t.voltage_alpha_v,t.voltage_beta_v))) for t in spec.fitting),max(float(max(np.hypot(t.voltage_alpha_v,t.voltage_beta_v))) for t in spec.fitting)],speed_rad_s=[min(min(t.speed_rad_s) for t in spec.fitting),max(max(t.speed_rad_s) for t in spec.fitting)]),interpolation=dict(voltage='linear rotating-frame alpha-beta',conditional_speed='cubic not-a-knot; not used in free replay'),known_initial_fluxes=True,electrical_parameter_bounds={n:[float(v/4),float(v*4)] for n,v in zip(names,seed)},evaluations=budget.evaluations,rhs_evaluations=budget.rhs_calls,elapsed_s=time.monotonic()-budget.started,field_validated=False,statistical_confidence_claimed=False,industrial_release_qualified=False)
+        return dict(completed=True,passed=passed,reason=reason,identifiable=bool(identifiable),method='conditional_rotating_flux_fit_integral_mechanics_free_heldout_replay',passport=p.model_dump(mode='json'),seed_passport=spec.initial.model_dump(mode='json'),electrical=electrical,mechanical=mechanical,parameters=names,assessments=assessments,trajectories=trajectories,code_sha256=code,dataset_sha256=digest,trace_provenance={t.id:t.provenance for t in spec.fitting+spec.validation},protocol_sha256=input_digest,optimizer=dict(success=bool(fitted.success),message=str(fitted.message),nfev=fitted.nfev,njev=fitted.njev,residual_evaluations=budget.evaluations,numeric_jacobian_residual_evaluations=budget.evaluations-fitted.nfev,active_mask=fitted.active_mask.tolist()),replay_method=spec.replay_method,calibration_domain=dict(frequency_hz=[min(t.frequency_hz for t in spec.fitting),max(t.frequency_hz for t in spec.fitting)],voltage_peak_alpha_beta_v=[min(float(min(np.hypot(t.voltage_alpha_v,t.voltage_beta_v))) for t in spec.fitting),max(float(max(np.hypot(t.voltage_alpha_v,t.voltage_beta_v))) for t in spec.fitting)],speed_rad_s=[min(min(t.speed_rad_s) for t in spec.fitting),max(max(t.speed_rad_s) for t in spec.fitting)]),interpolation=dict(voltage='linear rotating-frame alpha-beta',conditional_speed='cubic not-a-knot; not used in free replay'),known_initial_fluxes=True,electrical_parameter_bounds={n:[float(v/4),float(v*4)] for n,v in zip(names,seed)},evaluations=budget.evaluations,rhs_evaluations=budget.rhs_calls,elapsed_s=time.monotonic()-budget.started,field_validated=False,statistical_confidence_claimed=False,industrial_release_qualified=False)
     except (ValueError,ArithmeticError,TimeoutError,np.linalg.LinAlgError) as exc:
         return dict(completed=False,passed=False,identifiable=False,status='runtime_limit_exceeded' if isinstance(exc,TimeoutError) else 'identification_failed',reason=str(exc),code_sha256=code,dataset_sha256=digest,protocol_sha256=input_digest,evaluations=budget.evaluations,rhs_evaluations=budget.rhs_calls,field_validated=False)

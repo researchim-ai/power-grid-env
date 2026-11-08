@@ -1,0 +1,29 @@
+{
+  "schema": "power-grid-env.local-vlm-target/v1",
+  "model": "Qwen/Qwen3.5-4B",
+  "local_checkpoint": "/home/user/workspace/cad-env/artifacts/models/qwen35-4b",
+  "revision_from_local_origin": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+  "remote_origin_authenticated": false,
+  "architecture": "Qwen3_5ForConditionalGeneration",
+  "model_type": "qwen3_5",
+  "processor": "Qwen3VLProcessor",
+  "weight_dtype": "BF16",
+  "config_sha256": "ddc63e1c717afa86c865bb5e01313d89d72bb53b97ad4a8a03ba8510c0621670",
+  "weights": [
+    {
+      "file": "model.safetensors-00001-of-00002.safetensors",
+      "bytes": 5329398688,
+      "sha256": "26a93f066e1916adb13453dae5a0c707c0fbc71299ed98779571a907b8e74c61"
+    },
+    {
+      "file": "model.safetensors-00002-of-00002.safetensors",
+      "bytes": 3990429408,
+      "sha256": "cb544bd9bfae93dc59b0f22b292f5933573854a7f9b97835c67060d7d910e188"
+    }
+  ],
+  "local_processor_environment": "/home/user/workspace/cad-env/.venv-qwen35",
+  "processor_tested_transformers": "5.22.1",
+  "current_text_only_training_recipe_compatible": false,
+  "multimodal_training_qualified": false,
+  "inspection": "reports/qwen35-local-preflight-2026-11-08/inspection.json"
+}

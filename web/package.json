@@ -1,0 +1,14 @@
+{
+  "name": "power-grid-env-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A local-first, dependency-free presentation of power-grid-env",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs",
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs"
+  },
+  "engines": { "node": ">=20" }
+}

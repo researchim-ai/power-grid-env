@@ -42,7 +42,7 @@ class Rule(StrictModel):
 
 class CampaignCase(StrictModel):
     id:str=Field(pattern=r'^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$')
-    kind:Literal['protected_motor','study','sensitivity','dynamic_motor_identification']
+    kind:Literal['protected_motor','study','sensitivity','dynamic_motor_identification','dynamic_identification_audit','anchored_dynamic_identification']
     study:dict
     protocol:dict|None=None
     rules:list[Rule]=Field(default_factory=list,max_length=64)
@@ -55,6 +55,12 @@ class CampaignCase(StrictModel):
         if self.kind=='protected_motor':
             from power_grid_env.protected_motor import ProtectedMotorStudy
             self.study=ProtectedMotorStudy.model_validate(self.study).model_dump(mode='json')
+        elif self.kind=='anchored_dynamic_identification':
+            from power_grid_env.stator_resistance_anchor import AnchoredDynamicIdentification
+            self.study=AnchoredDynamicIdentification.model_validate(self.study).model_dump(mode='json')
+        elif self.kind=='dynamic_identification_audit':
+            from power_grid_env.dynamic_identification_audit import DynamicIdentificationAudit
+            self.study=DynamicIdentificationAudit.model_validate(self.study).model_dump(mode='json')
         elif self.kind=='dynamic_motor_identification':
             from power_grid_env.dynamic_motor_identification import DynamicMotorIdentification
             self.study=DynamicMotorIdentification.model_validate(self.study).model_dump(mode='json')
@@ -145,7 +151,17 @@ def assessment(case,result):
             rows.append(dict(path=rule.path,operator=rule.operator,limit=rule.value,actual=value,passed=bool(passed)))
         except (ValueError,KeyError,IndexError,TypeError):rows.append(dict(path=rule.path,operator=rule.operator,limit=rule.value,actual=None,passed=False,reason='missing_or_invalid_metric'))
     completed=result.get('completed') is True and result.get('solved') is not False
-    available=(result.get('available') is True if case.kind=='sensitivity' else result.get('passed') is True and result.get('identifiable') is True if case.kind=='dynamic_motor_identification' else True)
+    available=(result.get('available') is True if case.kind=='sensitivity' else result.get('passed') is True and result.get('identifiable') is True if case.kind in {'dynamic_motor_identification','dynamic_identification_audit','anchored_dynamic_identification'} else True)
+    if case.kind=='dynamic_identification_audit':available=available and result.get('fit_passed') is True and result.get('raw_residuals_passed') is True
+    if case.kind=='anchored_dynamic_identification':
+        cases=result.get('cases')
+        available=available and result.get('total_work_budget_satisfied') is True and result.get('bracket_completed') is True and result.get('skipped_cases')==[] and isinstance(cases,list) and len(cases)==3 and all(isinstance(row,dict) and isinstance(row.get('id'),str) and row.get('passed') is True and row.get('completed') is True and row.get('identifiable') is True for row in cases) and {row.get('id') for row in cases}=={'nominal','lower','upper'}
+        if available:
+            from power_grid_env.stator_resistance_anchor import resistance_interval
+            anchor=resistance_interval(case.study['stator_resistance_measurement'])
+            total=result.get('rhs_evaluations')
+            available=result.get('anchor')==anchor and type(total) is int and 0<=total<=case.study['maximum_total_rhs_evaluations'] and all(type(row.get('rhs_evaluations')) is int and row['rhs_evaluations']>=0 and type(row.get('resistance_ohm')) in (int,float) and row['resistance_ohm']==anchor[row['id']+'_ohm'] for row in cases)
+            if available:available=sum(row['rhs_evaluations'] for row in cases)==total
     return dict(numerically_completed=completed,available=available,passed=bool(completed and available and all(r['passed'] for r in rows)),rules=rows)
 
 

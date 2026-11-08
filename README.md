@@ -1,5 +1,16 @@
 # power-grid-env
 
+Зарегистрированные внешние сравнения AC/pandapower, RMS/ANDES и
+full-winding/motulator с явным coverage: [протокол R01.1](docs/COMPARISON_PROTOCOL_RU.md).
+
+Пуск и самозапуск с аудитом энергии вала, I²t, тепловой реплики и проверкой
+трёх шагов: [инженерный пакет](docs/MOTOR_ENGINEERING_RU.md).
+
+Генерация проверяемых LLM-задач, SFT-диалоги, физические награды GRPO и локальное
+обучение/оценка checkpoint: [руководство](docs/LLM_TRAINING_RU.md).
+Первый профиль — восстановление питания; обучение инженерного LLM и превосходство
+над другими моделерами пока не заявляются.
+
 [English](README.en.md)
 
 [Текущий статус, открытые блоки и очередь работ](plans/CURRENT_STATUS.md)
@@ -327,3 +338,42 @@ HTML/CSV. Доступны сетки параметров, отмена, вос
 Приёмка требует свободного воспроизведения отдельных проверочных трасс;
 неидентифицируемый результат не получает принятого паспорта. Сохраняются графики,
 JSON и происхождение данных. [Метод, единицы и ограничения](docs/DYNAMIC_MOTOR_IDENTIFICATION_RU.md).
+
+### Записи CSV и паспорт двигателя
+
+`python -m power_grid_env.cli motor-recordings import --input cases/motor-recordings/protocol.json --out /tmp/motor-recordings`
+готовит синхронные фазные либо αβ-записи с явными единицами и калибровками.
+Исходные CSV, диагностика и графики сохраняются в проверяемом переносимом пакете.
+`python -m power_grid_env.cli identify-dynamic-motor --recordings /tmp/motor-recordings --out /tmp/motor-identified`
+сначала проверяет преобразование по сохранённым исходникам, затем выполняет подбор.
+[Формат, готовый пример и границы применимости](docs/MOTOR_RECORDINGS_RU.md).
+
+### Идентификация при шуме и контроль датчиков
+
+`python -m power_grid_env.cli audit-dynamic-motor --input cases/noisy-identification/linear-noise.json --out /tmp/noise-audit`
+дополнительно проверяет среднее, RMS и дрейф невязок относительно исходных
+наблюдений. Явное сглаживание тренировочной скорости не изменяет hold-out
+или данные итоговой приёмки. Доступны изолированные серии и примеры отказа
+при ошибках датчиков. [Метод и воспроизводимый корпус](docs/NOISY_IDENTIFICATION_RU.md).
+
+### Калиброванные измерения
+
+`python -m power_grid_env.cli calibrated-motor --input cases/calibrated-motor/study.json --out /tmp/calibrated-motor`
+объединяет CSV, явные опоры калибровки и физическую идентификацию. Проверяются
+объявленные диапазоны датчиков; неизвестные совместные масштабы датчиков/машины
+и неизвестные начальные потоки отклоняются. [Метод, неоднозначность масштаба и ограничения](docs/CALIBRATED_MOTOR_STUDY_RU.md).
+
+### Шумное напряжение и шаги по узлам записи
+
+`python -m power_grid_env.cli calibrated-motor --input cases/sampled-identification/study.json --out /tmp/sampled-motor`
+повторяет прежний отказавший 0.01 V опыт методом `sample_rk4` без фильтрации
+входа. Метод задаётся явно; DOP853 остаётся по умолчанию.
+[Точность, ресурсы и границы переноса](docs/SAMPLED_IDENTIFICATION_RU.md).
+
+### Независимая DC-опора Rs
+
+`python -m power_grid_env.cli anchor-dynamic-motor --input cases/anchored-identification/locked-dc-anchor.json --out /tmp/anchored-motor`
+добавляет независимые установившиеся DC U/I данные для Rs при той же температуре.
+Номинал и границы допустимого сопротивления проверяются отдельными raw-аудитами.
+Это новый условный протокол; он не заменяет отсутствующее измерение истинным
+паспортом. [Подключение, пределы и приёмка](docs/STATOR_RESISTANCE_ANCHOR_RU.md).

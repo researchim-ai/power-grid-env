@@ -1,0 +1,3 @@
+Copyright (c) 2011-2015 by tyPoland Lukasz Dziedzic (http://www.typoland.com/) with Reserved Font Name "Lato". Licensed under the SIL Open Font License, Version 1.1 (http://scripts.sil.org/OFL). 
+
+Grid Sans is a Unicode subset of Lato used by this website, renamed to respect the Reserved Font Name. The font software remains under SIL OFL-1.1; see FONT-LICENSE.txt.

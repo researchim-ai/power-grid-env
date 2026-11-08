@@ -177,14 +177,117 @@ def main(argv: list[str] | None = None) -> int:
         if name!='verify':cmd.add_argument('--out',required=True)
 
     cmd=sub.add_parser('identify-dynamic-motor',help='dynamic Gamma identification with free held-out replay')
+    inputs=cmd.add_mutually_exclusive_group(required=True)
+    inputs.add_argument('--input');inputs.add_argument('--recordings',help='sealed CSV import directory, semantically verified before solving')
+    cmd.add_argument('--out',required=True)
+
+    cmd=sub.add_parser('motor-recordings',help='audited synchronous CSV preparation for dynamic motor identification')
+    actions=cmd.add_subparsers(dest='recording_action',required=True)
+    cmd=actions.add_parser('import');cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+    cmd=actions.add_parser('verify');cmd.add_argument('directory')
+
+    cmd=sub.add_parser('audit-dynamic-motor',help='raw-observation residual audit with explicit training-speed processing')
     cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
 
+    cmd=sub.add_parser('calibrated-motor',help='known-calibration CSV import and raw-observation motor audit')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+
+    cmd=sub.add_parser('anchor-dynamic-motor',help='independent bounded DC stator resistance and three conditional raw audits')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+
+    cmd=sub.add_parser('llm-data',help='physical LLM corpus, SFT exports and GRPO plan rewards')
+    actions=cmd.add_subparsers(dest='llm_data_action',required=True)
+    cmd=actions.add_parser('generate');cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+    cmd=actions.add_parser('verify');cmd.add_argument('directory')
+    cmd=actions.add_parser('export');cmd.add_argument('directory');cmd.add_argument('--out',required=True);cmd.add_argument('--split',choices=['train','dev','test'],default='train');cmd.add_argument('--kind',choices=['prompts','plans','steps','tools'],default='plans')
+    cmd=actions.add_parser('score-group');cmd.add_argument('directory');cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True);cmd.add_argument('--split',choices=['train','dev','test'],default='train')
+    cmd=actions.add_parser('evaluate');cmd.add_argument('directory');cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True);cmd.add_argument('--split',choices=['dev','test'],default='test')
+
+    cmd=sub.add_parser('motor-engineering',help='three-grid DOL/restart shaft-energy and I2t study')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-motor-engineering',help='verify sealed three-grid motor engineering artifacts')
+    cmd.add_argument('directory')
+
+    cmd=sub.add_parser('verify-comparison',help='recompute cross-simulator coverage/errors from sealed normalized traces')
+    cmd.add_argument('directory')
+
     args = parser.parse_args(argv)
+    if args.command=='verify-comparison':
+        from power_grid_env.comparison import verify_comparison
+        try:
+            r=verify_comparison(args.directory);print(json.dumps(r,ensure_ascii=False));return 0 if r['required_comparisons_passed'] else 2
+        except (ValueError,OSError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+    if args.command in {'motor-engineering','verify-motor-engineering'}:
+        from power_grid_env.motor_engineering import run_engineering,verify_engineering
+        from power_grid_env.study_artifacts import read_json
+        try:
+            r=verify_engineering(args.directory) if args.command=='verify-motor-engineering' else run_engineering(read_json(args.input),args.out)
+            print(json.dumps(r,ensure_ascii=False));return 0 if r.get('verified') or r.get('validation_passed') else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+    if args.command=='llm-data':
+        from power_grid_env.llm_training import generate_corpus,verify_corpus,export_public_dataset,CorpusVerifier,evaluate_predictions,_read_lines
+        from power_grid_env.study_artifacts import read_json,encoded,seal
+        try:
+            if args.llm_data_action=='generate':
+                r=generate_corpus(read_json(args.input),args.out);result=dict(counts=r['counts'],producer_sha256=r['producer_sha256'])
+            elif args.llm_data_action=='verify':result=verify_corpus(args.directory)
+            elif args.llm_data_action=='export':result=export_public_dataset(args.directory,args.out,split=args.split,kind=args.kind)
+            elif args.llm_data_action=='evaluate':
+                raw=_read_lines(args.input);result=evaluate_predictions(args.directory,raw,split=args.split)
+                out=Path(args.out)
+                if out.exists():raise ValueError('new evaluation result directory required')
+                out.mkdir(parents=True);(out/'predictions.jsonl').write_bytes(b''.join(encoded(r)+b'\n' for r in raw));(out/'result.json').write_bytes(encoded(result));seal(out)
+            else:
+                raw=read_json(args.input)
+                if not isinstance(raw,dict) or set(raw)!={'task_id','completions'}:raise ValueError('group input requires task_id and completions only')
+                result=CorpusVerifier(args.directory,allowed_splits=(args.split,)).group(raw['task_id'],raw['completions'])
+                out=Path(args.out)
+                if out.exists():raise ValueError('new group result directory required')
+                out.mkdir(parents=True);(out/'input.json').write_bytes(encoded(raw));(out/'result.json').write_bytes(encoded(result));seal(out)
+            print(json.dumps(result,ensure_ascii=False));return 2 if result.get('status') in {'discard_simulation_failure','unqualified_simulation_failure'} else 0
+        except (ValueError,OSError,RuntimeError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+    if args.command=='anchor-dynamic-motor':
+        from power_grid_env.stator_resistance_anchor import run_anchored_identification
+        from power_grid_env.study_artifacts import read_json
+        try:
+            result=run_anchored_identification(read_json(args.input),args.out)
+            print(json.dumps({k:result.get(k) for k in ['completed','passed','reason','rhs_evaluations']}));return 0 if result['passed'] else 2
+        except (ValueError,OSError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+    if args.command=='calibrated-motor':
+        from power_grid_env.calibrated_motor_study import run_calibrated_study
+        try:
+            result=run_calibrated_study(args.input,args.out)
+            print(json.dumps({k:result.get(k) for k in ['completed','passed','reason']}));return 0 if result['passed'] else 2
+        except (ValueError,OSError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+    if args.command=='audit-dynamic-motor':
+        from power_grid_env.dynamic_identification_audit import run_audit_artifact
+        from power_grid_env.study_artifacts import read_json
+        try:
+            result=run_audit_artifact(read_json(args.input),args.out)
+            print(json.dumps({k:result.get(k) for k in ['completed','passed','fit_passed','raw_residuals_passed','reason']}));return 0 if result['passed'] else 2
+        except (ValueError,OSError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+    if args.command=='motor-recordings':
+        from power_grid_env.motor_recordings import import_recordings,verify_recordings
+        try:
+            result=import_recordings(args.input,args.out) if args.recording_action=='import' else verify_recordings(args.directory)
+            print(json.dumps(result,ensure_ascii=False));return 0
+        except (ValueError,OSError) as exc:
+            print(json.dumps(dict(prepared=False,error=str(exc)),ensure_ascii=False));return 2
     if args.command=='identify-dynamic-motor':
         from power_grid_env.advanced_studies import run_dynamic_identification_artifact
         from power_grid_env.study_artifacts import read_json
         try:
-            result=run_dynamic_identification_artifact(read_json(args.input),args.out)
+            if args.recordings:
+                from power_grid_env.motor_recordings import load_recordings
+                document=load_recordings(args.recordings)
+            else:document=read_json(args.input)
+            result=run_dynamic_identification_artifact(document,args.out)
             print(json.dumps({k:result.get(k) for k in ['completed','passed','identifiable','reason']}));return 0 if result['passed'] else 2
         except (ValueError,OSError) as exc:
             print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2

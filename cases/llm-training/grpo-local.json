@@ -1,0 +1,12 @@
+{
+  "mode": "grpo",
+  "corpus": "reports/llm-corpus",
+  "checkpoint": "/absolute/path/to/local/sft-checkpoint",
+  "output": "reports/llm-grpo",
+  "max_steps": 100,
+  "max_length": 16384,
+  "max_completion_length": 512,
+  "num_generations": 4,
+  "learning_rate": 0.000001,
+  "use_cpu": false
+}

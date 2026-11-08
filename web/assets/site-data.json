@@ -1,0 +1,6 @@
+{
+  "required_tests": 1341,
+  "profile": "local declared scope",
+  "snapshot": "2026-11-06",
+  "physical_solver_connected": false
+}

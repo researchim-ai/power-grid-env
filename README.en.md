@@ -1,5 +1,16 @@
 # power-grid-env
 
+Registered AC/pandapower, RMS/ANDES and full-winding/motulator comparisons
+with explicit coverage and no unsupported speed claims: [R01.1 protocol](docs/COMPARISON_PROTOCOL_RU.md).
+
+Motor start/restart studies now include shaft-work balance, I²t, thermal-replica
+checks and three-grid engineering decisions: [scope and commands](docs/MOTOR_ENGINEERING_RU.md).
+
+Verified LLM task generation, SFT conversations, physical GRPO rewards and local
+checkpoint training/evaluation: [guide](docs/LLM_TRAINING_EN.md).
+The first profile is feeder restoration; trained engineering-LLM quality and
+superiority over other simulators have not been established.
+
 [Русский](README.md)
 
 [Current status, remaining blocks and work queue (Russian)](plans/CURRENT_STATUS.md)
@@ -339,3 +350,51 @@ traces. Approval requires free electromechanical replay of separate held-out
 traces, identifiability and declared resolution checks. The output includes
 an approved passport only on success, offline plots, JSON and data provenance.
 [Method, units and limitations](docs/DYNAMIC_MOTOR_IDENTIFICATION_RU.md).
+
+### Motor CSV recordings
+
+`python -m power_grid_env.cli motor-recordings import --input cases/motor-recordings/protocol.json --out /tmp/motor-recordings`
+prepares synchronous instantaneous phase or αβ recordings with explicit units,
+sensor calibration and sequence screening. Original CSV bytes, diagnostics and
+offline plots are retained in a sealed, portable package.
+`python -m power_grid_env.cli identify-dynamic-motor --recordings /tmp/motor-recordings --out /tmp/motor-identified`
+recomputes and verifies the conversion before fitting. Import success does not
+approve a motor passport. The included example uses frozen original-motulator
+synthetic observations, not equipment measurements.
+[Protocol, example and limits](docs/MOTOR_RECORDINGS_RU.md).
+
+### Noise and sensor residual audits
+
+`python -m power_grid_env.cli audit-dynamic-motor --input cases/noisy-identification/linear-noise.json --out /tmp/noise-audit`
+checks raw-observation residual mean, RMS and half-window drift in addition to
+the existing peak limits. Explicit training-speed smoothing leaves the hold-out
+unchanged; final acceptance always uses raw observations. Isolated campaigns
+and deliberately rejected sensor-bias examples are included. These are bounded
+engineering criteria, not statistical confidence guarantees.
+[Method and reproducible corpus](docs/NOISY_IDENTIFICATION_RU.md).
+
+### Known-calibration measurement workflow
+
+`python -m power_grid_env.cli calibrated-motor --input cases/calibrated-motor/study.json --out /tmp/calibrated-motor`
+combines CSV preparation, explicit measurement references and physical raw-data
+acceptance. Declared instrument rails are checked before fitting. Joint unknown
+sensor/motor scales and unknown initial fluxes are rejected; references remain
+author declarations, not authenticated calibration certificates.
+[Scale ambiguity, workflow and limits](docs/CALIBRATED_MOTOR_STUDY_RU.md).
+
+### Noisy voltage and input-knot integration
+
+`python -m power_grid_env.cli calibrated-motor --input cases/sampled-identification/study.json --out /tmp/sampled-motor`
+replays the frozen B18 0.01 V failure using explicitly selected `sample_rk4`.
+Input signals are not filtered; DOP853 remains the default. Accuracy is checked
+against tighter DOP853 and step refinement, with unchanged physical gates.
+[Resources and qualified transfer limits](docs/SAMPLED_IDENTIFICATION_RU.md).
+
+### Independent DC resistance reference
+
+`python -m power_grid_env.cli anchor-dynamic-motor --input cases/anchored-identification/locked-dc-anchor.json --out /tmp/anchored-motor`
+adds independent settled DC U/I observations for stator resistance at equal
+declared temperature. Nominal/lower/upper conditional fits must all pass raw
+acceptance before the nominal passport is approved. Deterministic bounds are
+not statistical confidence intervals; the original problem without the extra
+reference remains separate. [Contract and limits](docs/STATOR_RESISTANCE_ANCHOR_RU.md).
