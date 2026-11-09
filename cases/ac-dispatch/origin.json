@@ -1,0 +1,14 @@
+{
+  "case14": {
+    "path": "cases/ac-reactive-arc/reference-inputs/case14.json",
+    "sha256": "4fb56c756bc145fd47998d8b323ada43eef36ec61a83704942147be450d76790"
+  },
+  "case30": {
+    "path": "cases/ac-reactive-arc/reference-inputs/case30.json",
+    "sha256": "0ecc7f0cfc35c5a562aa855df969bc628c69453b0e9ad2c3d0b9c4914077ba00"
+  },
+  "case118": {
+    "path": "cases/ac-reactive-arc/reference-inputs/case118.json",
+    "sha256": "4f550738e882f2ad38e96056c08fd3dd2d132aba8426817dc3f51b92da678af2"
+  }
+}

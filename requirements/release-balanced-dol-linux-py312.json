@@ -67,7 +67,19 @@
     "tests/test_stator_resistance_anchor.py",
     "tests/test_llm_training.py",
     "tests/test_motor_engineering.py",
-    "tests/test_comparison.py"
+    "tests/test_comparison.py",
+    "tests/test_motor_robustness.py",
+    "tests/test_motor_transfer.py",
+    "tests/test_flux_initialization.py",
+    "tests/test_ieee_ac_comparison.py",
+    "tests/test_balanced_sparse.py",
+    "tests/test_large_ac.py",
+    "tests/test_ac_continuation.py",
+    "tests/test_ac_pseudo_arc.py",
+    "tests/test_ac_reactive_arc.py",
+    "tests/test_ac_envelope.py",
+    "tests/test_ac_dispatch.py",
+    "tests/test_ac_dispatch_arc.py"
   ],
   "collection_contract": "Collect all tests; every node outside the required files is explicitly outside_profile, never passed. Required setup, call and teardown must pass without skips or xfail.",
   "scope": [

@@ -97,7 +97,9 @@ def _target(spec, axis):
     elif axis.parameter == 'line_series_impedance':
         items = spec.network.lines
     else:
-        items = spec.induction.motors
+        settings = spec.coupled if spec.study == 'coupled_rms' else spec.induction
+        if settings is None:raise ValueError('explicit motor settings required')
+        items = settings.motors
     target = next((item for item in items if item.id == axis.equipment_id), None)
     if target is None:
         raise ValueError('unknown parameter target: '+axis.id)

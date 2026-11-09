@@ -83,6 +83,52 @@ power-grid pilot cases/industrial/plant --out /tmp/pilot.json
 
 Внешний контроллер — отдельный процесс со строками JSON (`initialize`, `reset`, `act`, `close`). Примеры: `examples/controllers`. Subprocess не изолирует файлы и сеть недоверенного кода.
 
+### Пределы на ветви AC-режимов
+
+```bash
+power-grid ac-envelope --input cases/ac-envelope/analytic-exits.json --out reports/my-ac-envelope
+power-grid verify-ac-envelope reports/my-ac-envelope
+```
+
+Продолжение ветви с Q-ограничениями поддерживает мониторинг Vmin/Vmax,
+полной мощности на обоих концах ветви и явно заданных токовых пределов в pu.
+Сохраняются уточнённые интервалы входа/выхода, исходные нарушения и наихудшие
+наблюдённые запасы. `completed=true` означает завершённое исследование;
+допустимость точной цели указана отдельно в `target_within_monitored_limits`.
+В этом аналитическом примере цель достигается с нарушениями.
+
+IEEE14/30/118 проверены по независимым расчётам pandapower на двух шагах.
+Демонстрационные токовые пороги в этих примерах — авторские, не паспортные
+амперы оборудования. Монитор не отключает аппараты и не доказывает отсутствие
+скрытых пересечений между точками. Подробности — в
+[протоколе сравнения](docs/COMPARISON_PROTOCOL_RU.md).
+
+### Распределённая балансировка P/Q
+
+```bash
+power-grid ac-dispatch --input cases/ac-dispatch/slack-q-limit.json --out reports/my-ac-dispatch
+power-grid verify-ac-dispatch reports/my-ac-dispatch
+```
+
+Участники распределяют активный небаланс по явным весам с ограничениями P.
+Q-предел прежнего slack может освободить напряжение, сохранив опорный угол;
+угловую опору можно задать отдельно. Все исходные Pg должны быть указаны явно.
+Тот же профиль подключён к CPF/envelope через `options.dispatch` при
+`enforce_q_limits=true`. Динамика частоты и автоматическое образование островов
+не моделируются.
+
+### CPF и envelope с распределением нагрузки
+
+```bash
+power-grid ac-envelope --input cases/ac-dispatch-arc/analytic-entry.json --out reports/my-dispatch-envelope
+power-grid verify-ac-envelope reports/my-dispatch-envelope
+```
+
+P-насыщение/возврат участников, Q-пределы всех регулирующих генераторов и сетевые
+ограничения проверяются на одной ветви. Отчёт объединяет обнаруженные события
+в `timeline_groups`; допустимость точной цели остаётся отдельным признаком.
+Чистый CPF-пример: `cases/ac-pseudo-arc/distributed-participation.json`.
+
 ## Модель
 
 Канонический JSON не подставляет заземление и группу соединений. Импорт DSS требует sidecar: иначе звезда не считается заземлённой, а `r1/x1` не становятся фазной матрицей. Формат выбран в [ADR 0002](docs/adr/0002-import-format.md).

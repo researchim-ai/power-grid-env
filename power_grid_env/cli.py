@@ -211,7 +211,115 @@ def main(argv: list[str] | None = None) -> int:
     cmd=sub.add_parser('verify-comparison',help='recompute cross-simulator coverage/errors from sealed normalized traces')
     cmd.add_argument('directory')
 
+    cmd=sub.add_parser('motor-robustness',help='finite parameter design with three-grid engineering audit per point')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-motor-robustness',help='recompute finite-design engineering evidence')
+    cmd.add_argument('directory')
+
+    cmd=sub.add_parser('motor-transfer',help='explicit RMS/Gamma single-cage passport referral and omission report')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-motor-transfer',help='recompute sealed passport referral')
+    cmd.add_argument('directory')
+
+    cmd=sub.add_parser('warm-flux-study',help='periodic full-winding network initialization and study')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-warm-flux-study',help='verify warm-state equilibrium and trajectory integrity')
+    cmd.add_argument('directory')
+
+    cmd=sub.add_parser('ac-continuation',help='bounded adaptive load interpolation with Newton rollback')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-ac-continuation',help='recompute continuation step balance and rollback checks')
+    cmd.add_argument('directory')
+
+    cmd=sub.add_parser('ac-pseudo-arc',help='sparse tangent/hyperplane AC branch tracing')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-ac-pseudo-arc',help='recompute branch equations, tangents and hyperplanes')
+    cmd.add_argument('directory')
+
+    cmd=sub.add_parser('ac-envelope',help='trace AC branch and bracket observed voltage, MVA and explicit pu-current limits')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-ac-envelope',help='recompute branch limits, observations and event brackets')
+    cmd.add_argument('directory')
+
+    cmd=sub.add_parser('ac-dispatch',help='bounded distributed active balancing and Q limits including former slack')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-ac-dispatch',help='recompute distributed dispatch equations and allocation')
+    cmd.add_argument('directory')
+
     args = parser.parse_args(argv)
+    if args.command in {'ac-dispatch','verify-ac-dispatch'}:
+        from power_grid_env.ac_dispatch import run_dispatch,verify_dispatch
+        from power_grid_env.study_artifacts import read_json
+        try:
+            if args.command=='verify-ac-dispatch':public=verify_dispatch(args.directory)
+            else:
+                r=run_dispatch(read_json(args.input),args.out)
+                public=dict(completed=r['completed'],reason=r['reason'],iterations=r['iterations'],audit=r['audit'],stability_proven=False)
+            print(json.dumps(public,ensure_ascii=False));return 0 if public['completed'] else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError,KeyError,TypeError) as exc:
+            print(json.dumps(dict(completed=False,error=str(exc)),ensure_ascii=False));return 2
+
+    if args.command in {'ac-envelope','verify-ac-envelope'}:
+        from power_grid_env.ac_envelope import run_envelope,verify_envelope
+        from power_grid_env.study_artifacts import read_json
+        try:
+            if args.command=='verify-ac-envelope':public=verify_envelope(args.directory)
+            else:
+                r=run_envelope(read_json(args.input),args.out);trace=r['trace'];report=r['envelope']
+                public=dict(completed=bool(trace['completed'] and report['completed']),target_reached=trace['completed'],monitor_completed=report['completed'],
+                    target_within_monitored_limits=report['target_within_monitored_limits'],monitored_limits=len(report['limits']),base_violations=len(report['base_violations']),observed_events=len(report['events']),p_control_changes=len(trace.get('p_control_changes',[])),q_control_changes=len(trace.get('control_changes',[])),timeline_complete=report['timeline_complete'],reason=report['reason'],trace_reason=trace['reason'],stability_proven=False)
+            print(json.dumps(public,ensure_ascii=False));return 0 if public['completed'] else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError,KeyError,TypeError) as exc:
+            print(json.dumps(dict(completed=False,error=str(exc)),ensure_ascii=False));return 2
+
+    if args.command in {'ac-pseudo-arc','verify-ac-pseudo-arc'}:
+        from power_grid_env.ac_pseudo_arc import run_pseudo_arc,verify_pseudo_arc
+        from power_grid_env.study_artifacts import read_json
+        try:
+            r=verify_pseudo_arc(args.directory) if args.command=='verify-ac-pseudo-arc' else run_pseudo_arc(read_json(args.input),args.out)
+            public=r if args.command=='verify-ac-pseudo-arc' else dict(completed=r['completed'],reason=r['reason'],accepted_points=len(r['points']),sampled_turns=len(r['turns']),control_changes=len(r.get('control_changes',[])),p_control_changes=len(r.get('p_control_changes',[])),stability_proven=False,target_absence_proven=False)
+            print(json.dumps(public,ensure_ascii=False));return 0 if r['completed'] else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError,KeyError,TypeError) as exc:
+            print(json.dumps(dict(completed=False,error=str(exc)),ensure_ascii=False));return 2
+
+    if args.command in {'ac-continuation','verify-ac-continuation'}:
+        from power_grid_env.ac_continuation import run_continuation,verify_continuation
+        from power_grid_env.study_artifacts import read_json
+        try:
+            r=verify_continuation(args.directory) if args.command=='verify-ac-continuation' else run_continuation(read_json(args.input),args.out)
+            public=r if args.command=='verify-ac-continuation' else {k:r[k] for k in ['completed','status','reason','accepted_progress','producer_sha256','target_loads_exact','scope']}
+            if args.command=='ac-continuation':public['attempt_count']=len(r['attempts'])
+            print(json.dumps(public,ensure_ascii=False));return 0 if r['completed'] else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError,KeyError,TypeError) as exc:
+            print(json.dumps(dict(completed=False,error=str(exc)),ensure_ascii=False));return 2
+
+    if args.command in {'warm-flux-study','verify-warm-flux-study'}:
+        from power_grid_env.warm_flux import run_warm_flux,verify_warm_flux
+        from power_grid_env.study_artifacts import read_json
+        try:
+            r=verify_warm_flux(args.directory) if args.command=='verify-warm-flux-study' else run_warm_flux(read_json(args.input),args.out)
+            print(json.dumps(r,ensure_ascii=False));return 0 if r['numerically_qualified'] else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError,KeyError,TypeError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+
+    if args.command in {'motor-transfer','verify-motor-transfer'}:
+        from power_grid_env.motor_transfer import run_transfer,verify_transfer
+        from power_grid_env.study_artifacts import read_json
+        try:
+            r=verify_transfer(args.directory) if args.command=='verify-motor-transfer' else run_transfer(read_json(args.input),args.out)
+            print(json.dumps(r,ensure_ascii=False));return 0
+        except (ValueError,OSError,ArithmeticError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+
+    if args.command in {'motor-robustness','verify-motor-robustness'}:
+        from power_grid_env.motor_robustness import run_robustness,verify_robustness
+        from power_grid_env.study_artifacts import read_json
+        try:
+            r=verify_robustness(args.directory) if args.command=='verify-motor-robustness' else run_robustness(read_json(args.input),args.out)
+            print(json.dumps(r,ensure_ascii=False));return 0 if r['all_points_qualified'] else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+
     if args.command=='verify-comparison':
         from power_grid_env.comparison import verify_comparison
         try:

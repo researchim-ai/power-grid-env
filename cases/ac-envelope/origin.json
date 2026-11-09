@@ -1,0 +1,50 @@
+{
+  "case14": {
+    "source": "cases/ac-reactive-arc/reference-inputs/case14.json",
+    "sha256": "4fb56c756bc145fd47998d8b323ada43eef36ec61a83704942147be450d76790",
+    "explicit_current_limits": [
+      {
+        "branch_index": 0,
+        "terminal": "from",
+        "maximum_pu": 1.567117312250957
+      },
+      {
+        "branch_index": 0,
+        "terminal": "to",
+        "maximum_pu": 1.5581695311387427
+      }
+    ]
+  },
+  "case30": {
+    "source": "cases/ac-reactive-arc/reference-inputs/case30.json",
+    "sha256": "0ecc7f0cfc35c5a562aa855df969bc628c69453b0e9ad2c3d0b9c4914077ba00",
+    "explicit_current_limits": [
+      {
+        "branch_index": 0,
+        "terminal": "from",
+        "maximum_pu": 0.1262079583367566
+      },
+      {
+        "branch_index": 0,
+        "terminal": "to",
+        "maximum_pu": 0.11631842613708265
+      }
+    ]
+  },
+  "case118": {
+    "source": "cases/ac-reactive-arc/reference-inputs/case118.json",
+    "sha256": "4f550738e882f2ad38e96056c08fd3dd2d132aba8426817dc3f51b92da678af2",
+    "explicit_current_limits": [
+      {
+        "branch_index": 0,
+        "terminal": "from",
+        "maximum_pu": 0.19751491501765955
+      },
+      {
+        "branch_index": 0,
+        "terminal": "to",
+        "maximum_pu": 0.17964682838621568
+      }
+    ]
+  }
+}

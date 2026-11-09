@@ -70,11 +70,12 @@ class VfDrive:
 class PhaseMotor:
     """Direct isolated-star alpha-beta machine port; zero-sequence current blocked."""
     def __init__(self,parameters):
-        self.p=parameters.passport;self.machine=GammaWinding(self.p);self.n=1+len(self.p.cages);self.at=2*self.n
+        self.p=parameters.passport;self.initial_currents=parameters.initial_currents_ab_a;self.machine=GammaWinding(self.p);self.n=1+len(self.p.cages);self.at=2*self.n
         self.size=self.at+1+(2 if self.p.thermal else 0)
 
     def initial(self):
         x=np.zeros(self.size);x[self.at]=self.p.initial_speed_rad_s
+        if self.initial_currents is not None:x[:self.at]=np.array(self.initial_currents).ravel()
         if self.p.thermal:x[self.at+1:]=self.p.thermal.ambient_c
         return x
 

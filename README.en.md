@@ -84,6 +84,52 @@ power-grid pilot cases/industrial/plant --out /tmp/pilot.json
 
 An external controller is a separate process speaking JSON lines (`initialize`, `reset`, `act`, `close`). Examples live in `examples/controllers`. The subprocess does not isolate the filesystem or the network of untrusted code.
 
+### Limits along an AC solution branch
+
+```bash
+power-grid ac-envelope --input cases/ac-envelope/analytic-exits.json --out reports/my-ac-envelope
+power-grid verify-ac-envelope reports/my-ac-envelope
+```
+
+Continuation with Q-limit control supports Vmin/Vmax, terminal apparent-power
+ratings and separately specified pu-current limits. Artifacts include refined
+entry/exit intervals, initial violations and worst observed margins.
+`completed=true` means the study finished; the exact target's limit status is
+reported separately as `target_within_monitored_limits`. The analytical example
+reaches a target that violates limits.
+
+IEEE14/30/118 were compared with independent pandapower solves at two step sizes.
+Example current thresholds are author-defined demonstrations, not equipment
+ampere ratings. Monitoring does not trip equipment or exclude hidden crossings
+between samples. See the [comparison protocol](docs/COMPARISON_PROTOCOL_RU.md)
+for the bounded qualification scope.
+
+### Bounded distributed balancing
+
+```bash
+power-grid ac-dispatch --input cases/ac-dispatch/slack-q-limit.json --out reports/my-ac-dispatch
+power-grid verify-ac-dispatch reports/my-ac-dispatch
+```
+
+Explicit participation weights share the active imbalance within P limits.
+The former slack's Q limit can release its voltage without losing the phase
+reference; the angle reference can be selected separately. All initial Pg
+schedules must be explicit. The same static profile is connected to CPF/envelope via `options.dispatch`
+with `enforce_q_limits=true`. Frequency dynamics and automatic islanding are
+outside this profile.
+
+### Distributed continuation and operating envelope
+
+```bash
+power-grid ac-envelope --input cases/ac-dispatch-arc/analytic-entry.json --out reports/my-dispatch-envelope
+power-grid verify-ac-envelope reports/my-dispatch-envelope
+```
+
+P saturation/release, Q limits on all voltage controllers and network limits
+use the same solution branch. Detected events are combined in `timeline_groups`;
+the exact target's limit status remains a separate flag.
+Pure CPF example: `cases/ac-pseudo-arc/distributed-participation.json`.
+
 ## Model
 
 Canonical JSON does not invent grounding or a vector group. DSS import requires a sidecar; otherwise a wye winding is not treated as grounded, and `r1/x1` are not turned into a phase-impedance matrix. The format choice is recorded in [ADR 0002](docs/adr/0002-import-format.md).

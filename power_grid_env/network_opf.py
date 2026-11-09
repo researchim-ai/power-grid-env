@@ -172,6 +172,8 @@ class _Prepared:
 def _prepare(case: OpfCase) -> _Prepared:
     from power_grid_env.balanced_ac import validate_case, components
     validate_case(case)
+    from power_grid_env.balanced_ac import MAX_DENSE_BUSES
+    if len(case.buses)>MAX_DENSE_BUSES:raise ValueError('dense OPF is limited to 512 buses; large sparse PF does not extend OPF')
     if len(components(case)) != 1:
         raise ValueError("OPF requires a connected single-reference case")
     ids = [bus.id for bus in case.buses]
@@ -383,6 +385,7 @@ def audit_feasibility(
     qg: np.ndarray,
     *,
     tolerance: float = 1e-4,
+    matrix_format: str = "dense",
 ) -> dict[str, Any]:
     """Независимая проверка: те же Ybus-формулы, без обращения к SLSQP."""
     from power_grid_env.balanced_ac import validate_case
@@ -397,7 +400,14 @@ def audit_feasibility(
                     feasible=False, errors=['nonfinite or incorrectly shaped operating point'])
     vm, theta, pg, qg = arrays
     index = {bus.id: position for position, bus in enumerate(case.buses)}
-    ybus = _ybus(case, index)
+    if matrix_format not in {'dense','sparse'}:raise ValueError('audit matrix_format must be dense/sparse')
+    if matrix_format=='sparse':
+        from power_grid_env.balanced_sparse import admittance
+        ybus=admittance(case,index)
+    else:
+        from power_grid_env.balanced_ac import MAX_DENSE_BUSES
+        if len(case.buses)>MAX_DENSE_BUSES:raise ValueError('dense audit is limited to 512 buses; select sparse matrix_format')
+        ybus = _ybus(case, index)
     p_calc, q_calc = _injections(vm, theta, ybus)
     if not np.all(np.isfinite(p_calc)) or not np.all(np.isfinite(q_calc)):
         return dict(max_mismatch_pu=None, flows_within_rating=False, angles_within_limit=False,
@@ -406,9 +416,10 @@ def audit_feasibility(
     worst = 0.0
     voltage_ok = True
     generator_ok = True
+    p_total=np.zeros(len(case.buses));q_total=np.zeros(len(case.buses))
+    for k,gen in enumerate(case.generators):p_total[index[gen.bus]]+=pg[k];q_total[index[gen.bus]]+=qg[k]
     for bus, spec in enumerate(case.buses):
-        p_gen = sum(pg[k] for k, gen in enumerate(case.generators) if index[gen.bus] == bus)
-        q_gen = sum(qg[k] for k, gen in enumerate(case.generators) if index[gen.bus] == bus)
+        p_gen=p_total[bus];q_gen=q_total[bus]
         worst = max(worst, abs(p_calc[bus] - (p_gen - spec.pd) / case.base_mva))
         worst = max(worst, abs(q_calc[bus] - (q_gen - spec.qd) / case.base_mva))
         voltage_ok &= spec.vmin - 1e-6 <= vm[bus] <= spec.vmax + 1e-6
@@ -418,13 +429,15 @@ def audit_feasibility(
         generator_ok &= generator.qmin - 1e-3 <= value <= generator.qmax + 1e-3
     flow_ok = True
     angle_ok = True
+    voltage=vm*np.exp(1j*theta)
     for branch in case.branches:
         if branch.status != 1:
             continue
         separation = math.degrees(theta[index[branch.fbus]] - theta[index[branch.tbus]])
         if separation < branch.angmin_deg - 1e-3 or separation > branch.angmax_deg + 1e-3:
             angle_ok = False
-        ends = _branch_mva(vm, theta, branch, index, case.base_mva)
+        ff,ft,tf,tt=_branch_quad(branch);vf,vt=voltage[index[branch.fbus]],voltage[index[branch.tbus]]
+        ends=(abs(vf*np.conj(ff*vf+ft*vt)*case.base_mva),abs(vt*np.conj(tf*vf+tt*vt)*case.base_mva))
         if not all(math.isfinite(v) for v in ends) or (branch.rate_a > 0 and any(flow > branch.rate_a + 1e-3 for flow in ends)):
             flow_ok = False
     return dict(max_mismatch_pu=float(worst), flows_within_rating=flow_ok,

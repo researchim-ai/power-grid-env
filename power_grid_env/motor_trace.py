@@ -74,22 +74,23 @@ def _read_csv(path, expected_sha):
 
 def validate_motor_result(spec, report, motor_id, voltage_measurement_location='grid_side'):
     """Validate identity, horizon and channels; return time and SI I/U/speed."""
-    if spec.study != 'motor_start' or spec.backend != 'scipy' or spec.induction is None or spec.coupled is not None:
+    settings = spec.coupled if spec.study == 'coupled_rms' else spec.induction
+    if spec.study not in {'motor_start', 'coupled_rms'} or spec.backend != 'scipy' or settings is None:
         raise ValueError('motor_start/scipy study required')
-    if not isinstance(report, dict) or report.get('completed') is not True or report.get('study') != 'motor_start' or report.get('backend') != 'scipy':
+    if not isinstance(report, dict) or report.get('completed') is not True or report.get('study') != spec.study or report.get('backend') != 'scipy':
         raise ValueError('completed motor simulation required')
-    if report.get('study_id') != spec.id or report.get('network_sha256') != canonical_hash(spec.network) or report.get('settings') != spec.induction.model_dump(mode='json'):
+    if report.get('study_id') != spec.id or report.get('network_sha256') != canonical_hash(spec.network) or report.get('settings') != settings.model_dump(mode='json'):
         raise ValueError('simulation identity/settings mismatch')
     if report.get('code_sha256') != package_fingerprint():
         raise ValueError('stale simulation code')
-    motor = next((m for m in spec.induction.motors if m.id == motor_id), None)
+    motor = next((m for m in settings.motors if m.id == motor_id), None)
     if motor is None:
         raise ValueError('unknown motor ID')
     time = np.asarray(report.get('time_s', []), dtype=float)
     sides = report.get('sample_side', [])
     if time.ndim != 1 or len(time) < 2 or len(sides) != len(time) or not np.isfinite(time).all() or np.any(np.diff(time) < 0):
         raise ValueError('invalid simulation time grid')
-    if abs(time[0]) > 1e-9 or abs(time[-1]-spec.induction.duration_s) > 1e-9:
+    if abs(time[0]) > 1e-9 or abs(time[-1]-settings.duration_s) > 1e-9:
         raise ValueError('incomplete simulation horizon')
     for i in range(len(time)-1):
         if time[i] == time[i+1] and (sides[i] != 'pre_event' or sides[i+1] != 'post_event'):

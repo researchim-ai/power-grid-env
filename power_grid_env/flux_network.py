@@ -10,7 +10,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.sparse import csc_matrix, bmat, diags
 from scipy.sparse.linalg import splu
-from pydantic import BaseModel,ConfigDict,Field,model_validator
+from pydantic import BaseModel,ConfigDict,Field,model_validator,model_serializer
 from power_grid_env.flux_machine import FluxMachinePassport,GammaWinding
 from power_grid_env.runtime_limits import RuntimeLimits,IntegrationBudget,RuntimeLimitExceeded
 from power_grid_env.topology import compile_topology
@@ -26,8 +26,12 @@ class FluxSourceEvent(BaseModel):
     voltage_pu: float=Field(ge=0,le=2)
 
 
+from power_grid_env.flux_initialization import FluxOperatingPoint
+
+
 class FluxNetworkSettings(BaseModel):
     model_config=ConfigDict(extra='forbid',allow_inf_nan=False)
+    operating_point: FluxOperatingPoint | None=None
     motors: list[FluxMachinePassport]=Field(min_length=1,max_length=16)
     duration_s: float=Field(default=.5,gt=0,le=5)
     step_s: float=Field(default=.00025,gt=0)
@@ -38,8 +42,15 @@ class FluxNetworkSettings(BaseModel):
     events: list[FluxSourceEvent]=Field(default_factory=list,max_length=64)
     runtime_limits: RuntimeLimits=Field(default_factory=RuntimeLimits)
 
+    @model_serializer(mode='wrap')
+    def canonical_initialization(self,handler):
+        data=handler(self)
+        if self.operating_point is None:data.pop('operating_point',None)
+        return data
+
     @model_validator(mode='after')
     def bounded(self):
+        if self.operating_point and any(p.thermal or p.core_loss_s or p.initial_speed_rad_s!=0 for p in self.motors):raise ValueError('periodic initialization requires zero passport speed and no thermal/core-loss states')
         if self.step_s>self.duration_s or math.ceil(self.duration_s/self.step_s)>100000:
             raise ValueError('flux network sampling budget')
         if len({m.id for m in self.motors})!=len(self.motors):raise ValueError('duplicate flux motor ID')
@@ -146,6 +157,7 @@ class FluxNetwork:
     def resistive_load(self,load,bus,conductance):raise ValueError('pure-resistance load requires a conductive flux-coordinate profile')
 
     def initial_state(self):
+        if hasattr(self,'_periodic_initial_state'):return self._periodic_initial_state.copy()
         x=np.zeros(self.dimension)
         for model,(_,speed,temperature) in zip(self.motors,self.addresses):
             x[speed]=model.p.initial_speed_rad_s
@@ -229,14 +241,18 @@ class FluxNetwork:
 
 
 def run_flux_network(network,settings):
-    budget=IntegrationBudget(settings.runtime_limits)
+    budget=IntegrationBudget(settings.runtime_limits);stage='network_scope'
     try:
         if any(p.core_loss_s for p in settings.motors):
             from power_grid_env.core_flux_network import CoreFluxNetwork
             circuit=CoreFluxNetwork(network,settings)
         else:circuit=FluxNetwork(network,settings)
+        if settings.operating_point:
+            stage='periodic_initialization'
+            from power_grid_env.flux_initialization import initialize_periodic
+            initialize_periodic(circuit)
     except (ValueError,ArithmeticError,RuntimeError) as exc:
-        return dict(completed=False,solved=False,status='rejected',reason='flux_network_scope',detail=str(exc),code_sha256=package_fingerprint())
+        return dict(completed=False,solved=False,status='initialization_failed' if stage=='periodic_initialization' else 'rejected',reason=stage if stage=='periodic_initialization' else 'flux_network_scope',detail=str(exc),code_sha256=package_fingerprint())
     state=circuit.initial_state();initial_energy=circuit.stored_energy(state);channels={};times=[];sides=[];max_kcl=0.;max_energy=0.;nfev=njev=nlu=0
     def values(time,x):
         quantities=circuit.quantities(time,x);edge,rows,voltage,pin,source_resistor,source_currents,kcl=quantities
@@ -304,7 +320,7 @@ def run_flux_network(network,settings):
     except (ValueError,ArithmeticError,RuntimeError) as exc:
         return dict(completed=False,solved=True,status='numerically_not_converged',detail=str(exc),runtime_budget=budget.report(),event_log=event_log,code_sha256=package_fingerprint())
     core=any(p.core_loss_s for p in settings.motors)
-    return dict(completed=True,solved=True,status='completed',model='balanced_RL_full_winding_Gamma_network',network_sha256=canonical_hash(network),code_sha256=package_fingerprint(),
+    return dict(**({'initialization':circuit.initialization} if settings.operating_point else {}),completed=True,solved=True,status='completed',model='balanced_RL_full_winding_Gamma_network',network_sha256=canonical_hash(network),code_sha256=package_fingerprint(),
                 settings=settings.model_dump(mode='json'),time_s=times,sample_side=sides,channels=channels,event_log=event_log,
                 maximum_kcl_relative_residual=max_kcl,maximum_energy_relative_residual=max_energy,runtime_budget=budget.report(),
                 integration=dict(method='Radau_full_winding_flux_coordinates_with_core_loss' if core else 'Radau_full_winding_current_coordinates',nfev=nfev,njev=njev,nlu=nlu,states=circuit.dimension,network_sparse_factorizations=circuit.factorizations,original_KCL_preserved=True,artificial_grounding_or_capacitance=False,

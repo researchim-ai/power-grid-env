@@ -223,3 +223,63 @@ def test_cli_and_schema(packet,tmp_path,capsys):
     assert main(['verify-motor-engineering',str(packet)])==0
     export_schemas(tmp_path/'schema');assert read_json(tmp_path/'schema/motor-engineering.schema.json')['title']=='MotorEngineeringPlan'
     assert 'verified' in capsys.readouterr().out
+
+
+def multibus_case():
+    plan=MotorEngineeringPlan.model_validate(read_json(ROOT/'cases/motor-engineering/multibus-generator-restart.json'))
+    case=plan.cases[0].model_copy(deep=True)
+    case.study.coupled.duration_s=.3
+    case.study.coupled.events=[e for e in case.study.coupled.events if e.time_s<.3]
+    for window in case.voltage_windows:
+        window.from_s=0;window.to_s=.3;window.minimum_voltage_pu=0;window.maximum_voltage_pu=2
+    case=IndustrialDOLCase.model_validate(case.model_dump(mode='json'))
+    return case
+
+
+@pytest.fixture(scope='module')
+def multibus_trace():
+    case=multibus_case()
+    return case,run_study(case.study)
+
+
+def test_generator_backed_multibus_motor_audit(multibus_trace):
+    c,r=multibus_trace
+    a=audit_motor(c,r)
+    assert a['passed'] and set(a['motors'])=={m.id for m in c.study.coupled.motors}
+    assert not a['engineering_assessment']['within_limits']
+    assert any(m['metrics']['electromagnetic_work_j']>0 for m in a['motors'].values())
+
+
+@pytest.mark.parametrize('defect',['study_kind','machine_setting','network','code','motor_power'])
+def test_coupled_audit_rejects_wrong_identity_or_physics(multibus_trace,defect):
+    c,r=copy.deepcopy(multibus_trace)
+    if defect=='study_kind':r['study']='motor_start'
+    elif defect=='machine_setting':r['settings']['machines'][0]['inertia_s']+=1
+    elif defect=='network':r['network_sha256']='0'*64
+    elif defect=='code':r['code_sha256']='0'*64
+    else:
+        r['channels']['m.p_w'][-1]+=1000
+        assert not audit_motor(c,r)['passed'];return
+    with pytest.raises(ValueError):audit_motor(c,r)
+
+
+def test_coupled_three_grid_roundtrip_and_stored_audit_tampering(tmp_path):
+    out=tmp_path/'coupled'
+    result=run_engineering(dict(id='coupled-roundtrip',purpose='regression',cases=[multibus_case()]),out)
+    assert result['completed'] and result['validation_passed']
+    assert not result['engineering_acceptable']
+    assert verify_engineering(out)['verified']
+    path=out/'multibus_prestart_gen_staggered/grid-2/audit.json'
+    audit=read_json(path);audit['motors']['m']['metrics']['i2t_pu2_s']+=1
+    path.write_bytes(encoded(audit));(out/'manifest.json').unlink();seal(out)
+    with pytest.raises(ValueError,match='physical audit'):verify_engineering(out)
+
+
+def test_multibus_registry_has_explicit_synthetic_conversion_and_negative_case():
+    plan=MotorEngineeringPlan.model_validate(read_json(ROOT/'cases/motor-engineering/multibus-generator-restart.json'))
+    assert plan.purpose=='regression' and len(plan.cases)==3
+    assert {c.study.study for c in plan.cases}=={'motor_start','coupled_rms'}
+    for c in plan.cases:
+        assert 'not a fitted double-cage equivalent' in c.parameter_provenance
+        settings=c.study.coupled or c.study.induction
+        assert all(m.model=='single_cage' and m.rotor2_r_pu is None for m in settings.motors)

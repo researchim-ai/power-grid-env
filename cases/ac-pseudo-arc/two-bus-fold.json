@@ -1,0 +1,130 @@
+{
+  "start": {
+    "schema": "power-grid-env.balanced-ac/v1",
+    "name": "two-bus-closed-form",
+    "base_mva": 1.0,
+    "buses": [
+      {
+        "id": 0,
+        "type_code": 3,
+        "pd": 0.0,
+        "qd": 0.0,
+        "gs": 0.0,
+        "bs": 0.0,
+        "vm": 1.0,
+        "va_deg": 0.0,
+        "vmin": 0.02,
+        "vmax": 2.0
+      },
+      {
+        "id": 1,
+        "type_code": 1,
+        "pd": 0.1,
+        "qd": 0.0,
+        "gs": 0.0,
+        "bs": 0.0,
+        "vm": 1.0,
+        "va_deg": 0.0,
+        "vmin": 0.02,
+        "vmax": 2.0
+      }
+    ],
+    "generators": [
+      {
+        "bus": 0,
+        "qmin": -100,
+        "qmax": 100,
+        "pmin": -100,
+        "pmax": 100,
+        "cost": [
+          0.0
+        ],
+        "pg": 0.0,
+        "qg": 0.0
+      }
+    ],
+    "branches": [
+      {
+        "fbus": 0,
+        "tbus": 1,
+        "r": 0.0,
+        "x": 1.0,
+        "b": 0.0,
+        "rate_a": 100.0,
+        "ratio": 0.0,
+        "angle_deg": 0.0,
+        "status": 1,
+        "angmin_deg": -180,
+        "angmax_deg": 180
+      }
+    ],
+    "published_cost": null
+  },
+  "target": {
+    "schema": "power-grid-env.balanced-ac/v1",
+    "name": "two-bus-closed-form",
+    "base_mva": 1.0,
+    "buses": [
+      {
+        "id": 0,
+        "type_code": 3,
+        "pd": 0.0,
+        "qd": 0.0,
+        "gs": 0.0,
+        "bs": 0.0,
+        "vm": 1.0,
+        "va_deg": 0.0,
+        "vmin": 0.02,
+        "vmax": 2.0
+      },
+      {
+        "id": 1,
+        "type_code": 1,
+        "pd": 0.7,
+        "qd": 0.0,
+        "gs": 0.0,
+        "bs": 0.0,
+        "vm": 1.0,
+        "va_deg": 0.0,
+        "vmin": 0.02,
+        "vmax": 2.0
+      }
+    ],
+    "generators": [
+      {
+        "bus": 0,
+        "qmin": -100,
+        "qmax": 100,
+        "pmin": -100,
+        "pmax": 100,
+        "cost": [
+          0.0
+        ],
+        "pg": 0.0,
+        "qg": 0.0
+      }
+    ],
+    "branches": [
+      {
+        "fbus": 0,
+        "tbus": 1,
+        "r": 0.0,
+        "x": 1.0,
+        "b": 0.0,
+        "rate_a": 100.0,
+        "ratio": 0.0,
+        "angle_deg": 0.0,
+        "status": 1,
+        "angmin_deg": -180,
+        "angmax_deg": 180
+      }
+    ],
+    "published_cost": null
+  },
+  "options": {},
+  "provenance": {
+    "kind": "analytic",
+    "equations": "Im(V)=-P; Re(V)^2-Re(V)+P^2=0; E=X=1, Q=0",
+    "exact_turn_lambda": 0.6666666666666666
+  }
+}

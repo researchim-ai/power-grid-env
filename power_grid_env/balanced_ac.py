@@ -9,12 +9,13 @@ import math
 import numpy as np
 
 from power_grid_env.network_opf import (
-    Branch, Bus, GeneratorSpec, OpfCase, _branch_complex, _injections,
+    Branch, Bus, GeneratorSpec, OpfCase, _branch_quad, _injections,
     _state_derivatives, _ybus, audit_feasibility,
 )
 
 SCHEMA = 'power-grid-env.balanced-ac/v1'
-MAX_BUSES = 512
+MAX_BUSES = 2048
+MAX_DENSE_BUSES = 512
 
 
 def validate_case(case: OpfCase) -> None:
@@ -23,7 +24,7 @@ def validate_case(case: OpfCase) -> None:
     if not math.isfinite(case.base_mva) or case.base_mva <= 0:
         raise ValueError('positive finite base_mva required')
     if not 1 <= len(case.buses) <= MAX_BUSES:
-        raise ValueError(f'balanced dense case requires 1..{MAX_BUSES} buses')
+        raise ValueError(f'balanced case requires 1..{MAX_BUSES} buses')
     ids = [b.id for b in case.buses]
     if any(type(i) is not int for i in ids) or len(set(ids)) != len(ids):
         raise ValueError('unique integer bus IDs required')
@@ -37,22 +38,24 @@ def validate_case(case: OpfCase) -> None:
             raise ValueError('unsupported bus type or voltage bounds')
     if not case.generators or len(case.generators) > 4096 or len(case.branches) > 8192:
         raise ValueError('bounded nonempty generator list and branch list required')
+    id_set=set(ids)
     for gen in case.generators:
         values = [gen.qmin, gen.qmax, gen.pmin, gen.pmax, *gen.cost]
         values.extend(v for v in (gen.pg, gen.qg) if v is not None)
-        if type(gen.bus) is not int or gen.bus not in ids or not all(math.isfinite(v) for v in values):
+        if type(gen.bus) is not int or gen.bus not in id_set or not all(math.isfinite(v) for v in values):
             raise ValueError('invalid generator bus or nonfinite parameter')
         if gen.pmin > gen.pmax or gen.qmin > gen.qmax or not gen.cost or len(gen.cost) > 8:
             raise ValueError('invalid generator bounds or polynomial')
+    generator_buses={g.bus for g in case.generators if type(g.bus) is int}
     for bus in case.buses:
-        if bus.type_code in (2, 3) and not any(g.bus == bus.id for g in case.generators):
+        if bus.type_code in (2, 3) and bus.id not in generator_buses:
             raise ValueError('voltage-controlled bus has no generator')
     for branch in case.branches:
         values = [branch.r, branch.x, branch.b, branch.rate_a, branch.ratio,
                   branch.angle_deg, branch.angmin_deg, branch.angmax_deg]
         if not all(math.isfinite(v) for v in values):
             raise ValueError('nonfinite branch parameter')
-        if type(branch.fbus) is not int or type(branch.tbus) is not int or branch.fbus not in ids or branch.tbus not in ids or branch.fbus == branch.tbus:
+        if type(branch.fbus) is not int or type(branch.tbus) is not int or branch.fbus not in id_set or branch.tbus not in id_set or branch.fbus == branch.tbus:
             raise ValueError('invalid branch endpoints')
         if type(branch.status) is not int or branch.status not in (0, 1) or branch.ratio < 0 or branch.rate_a < 0:
             raise ValueError('invalid branch status, tap or MVA rating')
@@ -110,9 +113,12 @@ def components(case):
 
 def branch_results(case, vm, theta):
     index = {b.id: i for i, b in enumerate(case.buses)}
-    rows = []
+    rows = [];voltage=np.asarray(vm)*np.exp(1j*np.asarray(theta))
     for i, branch in enumerate(case.branches):
-        f, t = _branch_complex(vm, theta, branch, index, case.base_mva) if branch.status else (0j, 0j)
+        if branch.status:
+            ff,ft,tf,tt=_branch_quad(branch);vf,vt=voltage[index[branch.fbus]],voltage[index[branch.tbus]]
+            f=vf*np.conj(ff*vf+ft*vt)*case.base_mva;t=vt*np.conj(tf*vf+tt*vt)*case.base_mva
+        else:f,t=0j,0j
         angle = math.degrees(theta[index[branch.fbus]] - theta[index[branch.tbus]])
         rows.append(dict(
             branch_index=i, from_bus=branch.fbus, to_bus=branch.tbus, in_service=bool(branch.status),
@@ -136,7 +142,7 @@ def _allocate(total, low, high):
     return low + (total-sum(low))*width/sum(width) if sum(width) else low.copy()
 
 
-def solve_power_flow(case, *, tolerance_pu=1e-9, max_iterations=40, enforce_q_limits=True):
+def solve_power_flow(case, *, tolerance_pu=1e-9, max_iterations=40, enforce_q_limits=True, linear_solver="auto"):
     """Connected single-slack PF with fixed Pg and monotone PV→PQ Q-limit switching.
 
     Limit violations are distinct from Newton nonconvergence. No OPF redispatch,
@@ -147,6 +153,9 @@ def solve_power_flow(case, *, tolerance_pu=1e-9, max_iterations=40, enforce_q_li
         raise ValueError('invalid Newton accuracy/budget')
     if type(enforce_q_limits) is not bool:
         raise ValueError('Q-limit policy must be boolean')
+    if linear_solver not in {'auto','dense','sparse'}:raise ValueError('linear_solver must be auto/dense/sparse')
+    sparse=linear_solver=='sparse' or (linear_solver=='auto' and len(case.buses)>128)
+    if not sparse and len(case.buses)>MAX_DENSE_BUSES:raise ValueError('dense AC is limited to 512 buses; use sparse or auto')
     groups = components(case)
     if len(groups) != 1:
         slack_id = next(b.id for b in case.buses if b.type_code == 3)
@@ -162,9 +171,17 @@ def solve_power_flow(case, *, tolerance_pu=1e-9, max_iterations=40, enforce_q_li
     pq = {i for i, b in enumerate(case.buses) if b.type_code == 1}
     vm = np.array([b.vm for b in case.buses], dtype=float); theta = np.radians([b.va_deg for b in case.buses])
     theta -= theta[slack]
-    y = _ybus(case, index)
+    if sparse:
+        from power_grid_env.balanced_sparse import admittance,derivatives,stored_bytes
+        from scipy.sparse import bmat
+        from scipy.sparse.linalg import splu
+        y=admittance(case,index)
+    else:y = _ybus(case, index)
+    maximum_jacobian_stored_values=maximum_jacobian_bytes=0
     pg = np.array([0. if g.pg is None else g.pg for g in case.generators], dtype=float)
     qg = np.array([0. if g.qg is None else g.qg for g in case.generators], dtype=float)
+    units_by_bus=[[] for _ in range(n)]
+    for i,gen in enumerate(case.generators):units_by_bus[index[gen.bus]].append(i)
     for gen in case.generators:
         if index[gen.bus] != slack and gen.pg is None:
             raise ValueError('non-reference generator needs an explicit Pg schedule')
@@ -185,12 +202,20 @@ def solve_power_flow(case, *, tolerance_pu=1e-9, max_iterations=40, enforce_q_li
                 return dict(completed=False, converged=False, status='nonfinite_residual', iterations=iterations, voltage_collapse_claimed=False)
             if residual <= tolerance_pu:
                 converged = True; break
-            dp, dq, dpv, dqv = _state_derivatives(vm, theta, y)
-            jac = np.block([[dp[np.ix_(nonref, nonref)], dpv[np.ix_(nonref, qrows)]],
-                            [dq[np.ix_(qrows, nonref)], dqv[np.ix_(qrows, qrows)]]])
+            dp,dq,dpv,dqv=derivatives(vm,theta,y) if sparse else _state_derivatives(vm,theta,y)
+            if sparse:
+                jac=bmat([[dp[nonref,:][:,nonref],dpv[nonref,:][:,qrows]],
+                          [dq[qrows,:][:,nonref],dqv[qrows,:][:,qrows]]],format='csc')
+                maximum_jacobian_stored_values=max(maximum_jacobian_stored_values,jac.nnz)
+                maximum_jacobian_bytes=max(maximum_jacobian_bytes,stored_bytes(jac))
+            else:
+                jac=np.block([[dp[np.ix_(nonref,nonref)],dpv[np.ix_(nonref,qrows)]],
+                              [dq[np.ix_(qrows,nonref)],dqv[np.ix_(qrows,qrows)]]])
+                maximum_jacobian_stored_values=max(maximum_jacobian_stored_values,jac.size)
+                maximum_jacobian_bytes=max(maximum_jacobian_bytes,jac.nbytes)
             try:
-                step = np.linalg.solve(jac, -mis)
-            except np.linalg.LinAlgError:
+                step = splu(jac).solve(-mis) if sparse else np.linalg.solve(jac, -mis)
+            except (np.linalg.LinAlgError,RuntimeError):
                 return dict(completed=False, converged=False, status='singular_jacobian', iterations=iterations, voltage_collapse_claimed=False)
             improved = False
             for factor in (1., .5, .25, .125, .0625, .03125, .015625, .0078125):
@@ -210,7 +235,7 @@ def solve_power_flow(case, *, tolerance_pu=1e-9, max_iterations=40, enforce_q_li
         changed = False
         if enforce_q_limits:
             for bus in sorted(pv, key=lambda i: case.buses[i].id):
-                units = [i for i, g in enumerate(case.generators) if index[g.bus] == bus]
+                units = units_by_bus[bus]
                 needed = q[bus]*case.base_mva + case.buses[bus].qd
                 low = sum(case.generators[i].qmin for i in units); high = sum(case.generators[i].qmax for i in units)
                 if needed < low-1e-7 or needed > high+1e-7:
@@ -222,7 +247,7 @@ def solve_power_flow(case, *, tolerance_pu=1e-9, max_iterations=40, enforce_q_li
             break
     p, q = _injections(vm, theta, y)
     for bus in range(n):
-        units = [i for i, g in enumerate(case.generators) if index[g.bus] == bus]
+        units = units_by_bus[bus]
         if not units:
             continue
         if bus == slack:
@@ -231,9 +256,9 @@ def solve_power_flow(case, *, tolerance_pu=1e-9, max_iterations=40, enforce_q_li
         if bus == slack or case.buses[bus].type_code == 2:
             qg[units] = _allocate(q[bus]*case.base_mva+case.buses[bus].qd,
                                   [case.generators[i].qmin for i in units], [case.generators[i].qmax for i in units])
-    audit = audit_feasibility(case, vm, theta, pg, qg, tolerance=max(tolerance_pu*10, 1e-8))
+    audit = audit_feasibility(case, vm, theta, pg, qg, tolerance=max(tolerance_pu*10, 1e-8),matrix_format='sparse' if sparse else 'dense')
     return dict(completed=converged, converged=converged, status='converged' if converged else 'newton_not_converged',
-                iterations=iterations, max_mismatch_pu=residual, bus_ids=[b.id for b in case.buses],
+                iterations=iterations,linear_solver=dict(requested=linear_solver,used='sparse' if sparse else 'dense',ybus_stored_values=y.nnz if sparse else y.size,ybus_bytes=stored_bytes(y) if sparse else y.nbytes,maximum_jacobian_stored_values=maximum_jacobian_stored_values,maximum_jacobian_bytes=maximum_jacobian_bytes), max_mismatch_pu=residual, bus_ids=[b.id for b in case.buses],
                 vm_pu=vm.tolist(), va_deg=np.degrees(theta).tolist(), pg_mw=pg.tolist(), qg_mvar=qg.tolist(),
                 pv_to_pq=switched, audit=audit, branches=branch_results(case, vm, theta),
                 within_limits=bool(converged and audit['feasible']), voltage_collapse_claimed=False)

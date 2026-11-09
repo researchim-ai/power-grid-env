@@ -8,7 +8,7 @@ from typing import Literal
 import math
 
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator,model_serializer
 from scipy.integrate import solve_ivp
 from scipy.linalg import lu_factor, lu_solve, null_space
 from power_grid_env.flux_machine import FluxMachinePassport
@@ -156,12 +156,20 @@ class Drive(Strict):
 
 
 class MotorPort(Strict):
+    initial_currents_ab_a: list[tuple[float,float]] | None=Field(default=None,min_length=2,max_length=5)
     id: str
     nodes: tuple[str,str,str]
     passport: FluxMachinePassport
 
+    @model_serializer(mode='wrap')
+    def canonical_initial_state(self,handler):
+        data=handler(self)
+        if self.initial_currents_ab_a is None:data.pop('initial_currents_ab_a',None)
+        return data
+
     @model_validator(mode='after')
     def valid(self):
+        if self.initial_currents_ab_a is not None and len(self.initial_currents_ab_a)!=1+len(self.passport.cages):raise ValueError('initial current inventory must match stator and every rotor cage')
         if len(set(self.nodes))!=3 or '0' in self.nodes:raise ValueError('motor port requires distinct phase nodes')
         if self.passport.core_loss_s:raise ValueError('direct phase motor currently requires zero Gc')
         if self.passport.locked_rotor and self.passport.initial_speed_rad_s:raise ValueError('locked rotor requires zero speed')

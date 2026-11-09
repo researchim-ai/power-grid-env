@@ -14,6 +14,20 @@ def export_schemas(directory: Path) -> None:
     directory.mkdir(parents=True,exist_ok=True)
     for name,model in [('comparison-plan',ComparisonPlan),('comparison-trace',ComparisonTrace)]:
         (directory/(name+'.schema.json')).write_text(json.dumps(model.model_json_schema(),ensure_ascii=False,indent=2),encoding='utf-8')
+    from power_grid_env.ac_dispatch import DispatchOptions
+    (directory/'ac-dispatch-options.schema.json').write_text(json.dumps(DispatchOptions.model_json_schema(),ensure_ascii=False,indent=2),encoding='utf-8')
+    from power_grid_env.ac_envelope import EnvelopeOptions
+    (directory/'ac-envelope-options.schema.json').write_text(json.dumps(EnvelopeOptions.model_json_schema(),ensure_ascii=False,indent=2),encoding='utf-8')
+    from power_grid_env.ac_pseudo_arc import PseudoArcOptions
+    (directory/'ac-pseudo-arc-options.schema.json').write_text(json.dumps(PseudoArcOptions.model_json_schema(),ensure_ascii=False,indent=2),encoding='utf-8')
+    from power_grid_env.ac_continuation import ContinuationOptions
+    (directory/'ac-continuation-options.schema.json').write_text(json.dumps(ContinuationOptions.model_json_schema(),ensure_ascii=False,indent=2),encoding='utf-8')
+    from power_grid_env.warm_flux import WarmFluxStudy
+    (directory/'warm-flux-study.schema.json').write_text(json.dumps(WarmFluxStudy.model_json_schema(),ensure_ascii=False,indent=2),encoding='utf-8')
+    from power_grid_env.motor_transfer import MotorTransferPlan
+    (directory/'motor-transfer.schema.json').write_text(json.dumps(MotorTransferPlan.model_json_schema(),ensure_ascii=False,indent=2),encoding='utf-8')
+    from power_grid_env.motor_robustness import MotorRobustnessPlan
+    (directory/'motor-robustness.schema.json').write_text(json.dumps(MotorRobustnessPlan.model_json_schema(),ensure_ascii=False,indent=2),encoding='utf-8')
     from power_grid_env.motor_engineering import MotorEngineeringPlan
     directory.mkdir(parents=True,exist_ok=True)
     (directory/'motor-engineering.schema.json').write_text(json.dumps(MotorEngineeringPlan.model_json_schema(),ensure_ascii=False,indent=2),encoding='utf-8')

@@ -43,9 +43,9 @@ class MotorEngineeringPlan(BaseModel):
     def profile(self):
         if len({c.id for c in self.cases})!=len(self.cases):raise ValueError('unique engineering case IDs required')
         for case in self.cases:
-            s=case.study;settings=s.induction
-            if s.study!='motor_start' or settings is None or len(settings.motors)>8 or settings.duration_s>10:
-                raise ValueError('bounded motor_start profile: at most eight motors and ten seconds')
+            s=case.study;settings=s.coupled if s.study=='coupled_rms' else s.induction
+            if s.study not in {'motor_start','coupled_rms'} or settings is None or len(settings.motors)>8 or settings.duration_s>10:
+                raise ValueError('bounded balanced RMS profile: at most eight motors and ten seconds')
             if settings.duration_s/settings.step_s*4>16000:raise ValueError('refined output budget exceeded')
             if settings.event_trace!='all':raise ValueError('full event trace required for three-grid v1')
             if any(m.model!='single_cage' for m in settings.motors):raise ValueError('single-cage shaft/algebra audit v1 required')
@@ -66,9 +66,10 @@ def product_integrals(t,a,b):
 
 def audit_motor(case,report,limits=None):
     case=IndustrialDOLCase.model_validate(case);limits=MotorAuditLimits.model_validate(limits or {})
-    if case.study.study!='motor_start' or any(m.model!='single_cage' for m in case.study.induction.motors):
-        raise ValueError('single-cage motor_start audit required')
-    verdict=assessment(case,report);settings=case.study.induction
+    settings=case.study.coupled if case.study.study=='coupled_rms' else case.study.induction
+    if case.study.study not in {'motor_start','coupled_rms'} or settings is None or any(m.model!='single_cage' for m in settings.motors):
+        raise ValueError('single-cage balanced RMS audit required')
+    verdict=assessment(case,report)
     rows={}
     for motor in settings.motors:
         t,_=validate_motor_result(case.study,report,motor.id)
@@ -206,7 +207,8 @@ def run_engineering(document,out,*,cancelled=None):
             if cancelled is not None and cancelled():reason='cancelled';break
             if remaining<=0:reason='total_timeout';break
             if package_fingerprint()!=code:reason='producer_changed';break
-            refined=case.model_copy(deep=True);refined.study.induction.step_s/=2**level
+            refined=case.model_copy(deep=True);settings=refined.study.coupled if refined.study.study=='coupled_rms' else refined.study.induction
+            settings.step_s/=2**level
             result=run_isolated_rms(refined.study,timeout_s=min(remaining,plan.per_run_timeout_s),cancelled=cancelled,
                                     max_result_bytes=min(64000000,max(1,220000000-used)))
             write(case.id+f'/grid-{level}/study.json',refined.study.model_dump(mode='json'))
@@ -235,7 +237,8 @@ def verify_engineering(root):
     for case,row in zip(plan.cases,summary['cases'],strict=True):
         audits=[]
         for level in range(3):
-            refined=case.model_copy(deep=True);refined.study.induction.step_s/=2**level
+            refined=case.model_copy(deep=True);settings=refined.study.coupled if refined.study.study=='coupled_rms' else refined.study.induction
+            settings.step_s/=2**level
             path=root/case.id/f'grid-{level}'
             if read_json(path/'study.json')!=refined.study.model_dump(mode='json'):raise ValueError('refined study differs from plan')
             audit=audit_motor(refined,read_json(path/'result.json'),plan.limits)
