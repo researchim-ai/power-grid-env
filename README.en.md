@@ -444,3 +444,143 @@ declared temperature. Nominal/lower/upper conditional fits must all pass raw
 acceptance before the nominal passport is approved. Deterministic bounds are
 not statistical confidence intervals; the original problem without the extra
 reference remains separate. [Contract and limits](docs/STATOR_RESISTANCE_ANCHOR_RU.md).
+
+
+Sparse CPF/envelope scaling covers IEEE118/PEGASE1354 and authored,
+lightly loaded 600/2048-bus networks, with three repeats and separate sparse
+reference checks. IEEE300 and RTE1888 remain unresolved diagnostics.
+Run `python -m benchmarks.ac_scale_acceptance --out reports/ac-scale-local`
+with BLAS/OMP/MKL threads set to one; check the stored evidence using
+`python -m benchmarks.ac_scale_acceptance --verify reports/ac-scale-local`.
+Timing and Linux peak RSS are local observations, not a superiority claim
+or qualification of arbitrary networks of those sizes.
+
+
+Explicit Pg schedule preparation: `ac-prepare-schedule --input INPUT --out OUTPUT`
+and `verify-ac-schedule OUTPUT`. Declared adjustable schedules are projected
+inside unchanged P bounds while preserving total generation by default.
+This is input preparation; electrical feasibility requires a separate AC study.
+Derived RTE1888 validation: `python -m benchmarks.ac_schedule_acceptance --out reports/ac-admission-local`.
+The original invalid schedule remains a separate rejected input.
+
+
+Bounded loading investigation: `power-grid ac-loading-screen --input cases/ac-loading/ieee300-investigation.json --out reports/loading-local`.
+A separately implemented CPF using PP electrical equations confirms the
+sampled IEEE300 turn near load factor 0.972077896 with unchanged P/Q bounds.
+This describes the selected branch; it is not a safe loading certificate,
+a dynamic stability result, or proof that other nominal solutions do not exist.
+
+
+Local load sensitivities and bus influence rankings:
+`power-grid ac-sensitivity --input cases/ac-sensitivity/two-bus.json --out reports/sensitivity-demo`.
+Sparse forward/adjoint derivatives are checked using separate nonlinear
+IEEE300 perturbations. Classical derivatives are refused near control
+switches; rankings are not operating recommendations or stability certificates.
+
+
+Finite signed load scenarios:
+`power-grid ac-counterfactual --input cases/ac-counterfactual/two-bus.json --out reports/counter-demo`.
+Local predictions are compared with nonlinear branch replay. Control switches,
+operating-limit violations and unreached targets remain distinct outcomes.
+Separate electrical references checked 242 states across six registered scenarios.
+
+
+Phase-domain motor physics now supports mixed Gc=0/Gc>0 fleets with saturation,
+1–4 rotor cages and thermal coupling. Eddy-current conductance behind Rs is
+stamped into KCL; its current is excluded from torque. Five coupled RLC studies
+are checked against a separate flux-state ODE reference. Example:
+`power-grid phase-study run --study cases/phase-core/thermal_multicage.json --out reports/phase-core-local`.
+Hysteresis and manufacturer accuracy are outside this qualification.
+
+
+Averaged V/f drive: motor core losses feed back into rectifier demand and
+DC-link energy; an optional averaged braking resistor dissipates regeneration.
+Six coupled RLC/drive scenarios, including grid export and undervoltage, are
+checked against a separate all-flux ODE implementation. Example:
+`power-grid phase-study run --study cases/vf-core/braking_resistor.json --out reports/vf-core-local`.
+Constant efficiencies and averaged controls are used; semiconductor switching and FOC are outside this profile.
+
+
+### Diode-fed drives and inverter current control
+
+An optional six-pulse diode front end supports zero-voltage DC precharge,
+resistor bypass events and passive reverse blocking. A prescribed-frame PI
+motor-current loop includes DC voltage saturation and tracking anti-windup.
+Seven ready-to-run studies are in `cases/diode-drive/`; run the separate ODE
+comparison with `python -m benchmarks.diode_drive_acceptance --out reports/diode-independent`.
+The bridge has resistive commutation and the inverter is averaged: this is
+not switching EMT, rotor-flux FOC or an OEM-qualified controller.
+See [R06.3 model boundaries](docs/PHASE_NETWORK_AND_RESEARCH_RU.md).
+
+
+### Switching drive with rotor-flux FOC and thermal trips
+
+`power-grid switching-drive run --study cases/switching-drive/foc_start.json --out reports/switching-local`
+simulates source R–L reactors, inductive diode commutation, the floating DC link,
+a PWM MOSFET inverter with dead time and body diodes, sensored rotor-flux FOC,
+and three thermal RC nodes with latched trips. Seven studies are available in
+`cases/switching-drive/`. An extended profile supports saturated 1–4-cage Gamma motors with eddy-current
+core loss and an explicitly declared nominal FOC observer model.
+See [R06.4 equations, independent stage oracle and scope](docs/PHASE_NETWORK_AND_RESEARCH_RU.md).
+
+
+### Saturated multicage motors in switching studies
+
+Seven studies in `cases/switching-extended/` exercise saturation, 1–4 rotor
+cages and eddy-current core loss. A radial discrete gradient preserves nonlinear
+magnetic storage accounting; terminal currents are solved again at gate changes.
+Run the independent winding ODE and coupled stage checks with
+`python -m benchmarks.switching_extended_acceptance --out reports/extended-independent`.
+See [R06.5 model and validation scope](docs/PHASE_NETWORK_AND_RESEARCH_RU.md).
+
+
+### Winding temperatures and R(T)
+
+The switching drive supports `motor.thermal`, initial stator/rotor temperatures,
+and separate latched winding trips. Rs/Rr(T), electrical losses and the two-lump
+thermal network are solved together; heat is stored and cooled without double counting.
+Seven studies are in `cases/switching-winding-thermal/`; run
+`python -m benchmarks.switching_thermal_acceptance --out reports/winding-thermal-independent`.
+FOC still uses an explicit nominal model. See [R06.6 scope and results](docs/PHASE_NETWORK_AND_RESEARCH_RU.md).
+
+
+FOC now offers an explicit `observer_mode: "multicage_current"`, retaining
+1–4 rotor cages and saturation in its separate observer passport. Inputs are
+current and shaft speed; true plant flux/temperature are never supplied.
+Examples: `cases/multicage-observer/`. Run the independent ODE acceptance and
+replay with `python -m benchmarks.multicage_observer_acceptance`.
+Core loss and thermal adaptation inside the observer remain unsupported;
+see [R06.7 scope](docs/PHASE_NETWORK_AND_RESEARCH_RU.md).
+
+
+Imposed-PWM motor+shaft dynamics are now compared directly with original
+motulator **0.19.0** using `benchmarks.pwm_motor_comparison` and four registered
+protocols in `cases/pwm-motor-comparison/`. Full flux/current/torque/speed
+inventories and step convergence are checked; `--verify` reruns the solves.
+This is a prescribed terminal-voltage benchmark, not a complete external
+converter/FOC comparison or a simulator ranking.
+[Protocol and R06.8 scope](docs/COMPARISON_PROTOCOL_RU.md).
+
+
+Added motulator **0.23.1** comparison under common error caps, with repeated
+fresh-process wall/CPU/RSS measurements: `python -m benchmarks.pwm_accuracy_budget`.
+A separate closed-loop RL/diode/DC/PWM/FOC/motor implementation validates a
+bounded linear profile: `python -m benchmarks.closed_loop_acceptance`.
+Study fixtures: `cases/closed-loop-independent/`.
+[Results and R06.9 scope](docs/COMPARISON_PROTOCOL_RU.md).
+
+
+New runtime API `power_grid_env.prescribed_voltage.voltage_step` accelerates
+prescribed-voltage Gamma steps using exact elimination of 1–4 rotor cages,
+saturation/core loss and a coupled shaft. Across four registered motor+shaft
+cases it measured 1.67–3.13x faster than the native motulator 0.23.1 reference
+under unchanged error caps. Unknown-voltage networks retain the Norton port;
+this is not a general simulator ranking.
+[Evidence and R06.10 scope](docs/COMPARISON_PROTOCOL_RU.md).
+
+
+The drive's unknown-voltage Norton/MNA path now uses cached assembly and guarded
+direct/SVD selection. Eight registered studies measured **1.14–1.20x** speedup
+against the previous implementation under unchanged physical acceptance rules.
+Floating-star gauges retain a rank-tolerant solve without an added ground path.
+[Evidence and R06.11 scope](docs/COMPARISON_PROTOCOL_RU.md).

@@ -1,0 +1,86 @@
+{
+  "schema": "power-grid-env.pwm-motor-comparison/v1",
+  "row_channels": [
+    "stator_flux_alpha_vs",
+    "stator_flux_beta_vs",
+    "rotor_flux_alpha_vs",
+    "rotor_flux_beta_vs",
+    "current_alpha_a",
+    "current_beta_a",
+    "speed_rad_s",
+    "torque_nm"
+  ],
+  "case": "saturated_pwm",
+  "motor": {
+    "id": "saturated_pwm",
+    "node_id": "motor",
+    "stator_r_ohm": 3.7,
+    "unsaturated_h": 0.34,
+    "saturation_beta_per_vs": 0.84,
+    "saturation_exponent": 7,
+    "cages": [
+      {
+        "resistance_ohm": 2.5,
+        "leakage_h": 0.023
+      }
+    ],
+    "pole_pairs": 2,
+    "inertia_kg_m2": 0.03,
+    "fan_nm_per_rad_s2": 0.0005917157124712526,
+    "viscous_nm_per_rad_s": 0.0,
+    "initial_speed_rad_s": 0.0,
+    "locked_rotor": false,
+    "thermal": null,
+    "provenance": {
+      "electrical": "https://aalto-electric-drives.github.io/motulator/drive_examples/current_vector/plot_2kw_im_sat_cvc.html",
+      "magnetics": "https://aalto-electric-drives.github.io/motulator/drive_examples/current_vector/plot_2kw_im_sat_cvc.html",
+      "mechanical": "authored inertia/fan benchmark, not identified OEM data"
+    }
+  },
+  "duration_s": 0.04,
+  "carrier_hz": 2000.0,
+  "fundamental_hz": 30.0,
+  "dc_v": 540.0,
+  "modulation": 0.8,
+  "zero_voltage_windows": [],
+  "sample_s": 0.0002,
+  "limits": {
+    "flux_vs": 5e-05,
+    "current_a": 0.005,
+    "speed_rad_s": 0.005,
+    "torque_nm": 0.005
+  },
+  "reference": {
+    "package": "motulator",
+    "version": "0.23.1",
+    "wheel_sha256": "dc184858cead49aa31c2e9f4bfbb149b6489850aad2360f1005b012fa3218000",
+    "method": "DOP853",
+    "max_step_s": 0.0002,
+    "rtol_grid": [
+      0.0001,
+      1e-06,
+      1e-08
+    ],
+    "atol_rule": "rtol*1e-3"
+  },
+  "scope": "one single-cage Gamma motor, prescribed ideal two-level terminal voltage, free shaft; no inverter diode network, dead time, source RL/DC dynamics, controller or thermal model",
+  "primary_steps_s": [
+    0.0001,
+    5e-05,
+    2e-05,
+    1e-05
+  ],
+  "measured_repeats": 3,
+  "oracle_refinement": [
+    {
+      "rtol": 1e-12,
+      "atol": 1e-13,
+      "max_step_s": 2e-05
+    },
+    {
+      "rtol": 1e-13,
+      "atol": 1e-14,
+      "max_step_s": 1e-05
+    }
+  ]
+}

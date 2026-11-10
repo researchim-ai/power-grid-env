@@ -1,0 +1,68 @@
+{
+  "schema": "power-grid-env.pwm-motor-comparison/v1",
+  "row_channels": [
+    "stator_flux_alpha_vs",
+    "stator_flux_beta_vs",
+    "rotor_flux_alpha_vs",
+    "rotor_flux_beta_vs",
+    "current_alpha_a",
+    "current_beta_a",
+    "speed_rad_s",
+    "torque_nm"
+  ],
+  "case": "linear_pwm",
+  "motor": {
+    "id": "linear_pwm",
+    "node_id": "motor",
+    "stator_r_ohm": 3.7,
+    "unsaturated_h": 0.34,
+    "saturation_beta_per_vs": 0.0,
+    "saturation_exponent": 7,
+    "cages": [
+      {
+        "resistance_ohm": 2.5,
+        "leakage_h": 0.023
+      }
+    ],
+    "pole_pairs": 2,
+    "inertia_kg_m2": 0.03,
+    "fan_nm_per_rad_s2": 0.0005917157124712526,
+    "viscous_nm_per_rad_s": 0.0,
+    "initial_speed_rad_s": 0.0,
+    "locked_rotor": false,
+    "thermal": null,
+    "provenance": {
+      "electrical": "https://aalto-electric-drives.github.io/motulator/drive_examples/current_vector/plot_2kw_im_sat_cvc.html",
+      "magnetics": "https://aalto-electric-drives.github.io/motulator/drive_examples/current_vector/plot_2kw_im_sat_cvc.html",
+      "mechanical": "authored inertia/fan benchmark, not identified OEM data"
+    }
+  },
+  "duration_s": 0.04,
+  "carrier_hz": 2000.0,
+  "fundamental_hz": 30.0,
+  "dc_v": 540.0,
+  "modulation": 0.8,
+  "zero_voltage_windows": [],
+  "sample_s": 0.0002,
+  "levels": {
+    "coarse": 2e-05,
+    "fine": 1e-05,
+    "finest": 5e-06
+  },
+  "limits": {
+    "flux_vs": 5e-05,
+    "current_a": 0.005,
+    "speed_rad_s": 0.005,
+    "torque_nm": 0.005
+  },
+  "reference": {
+    "package": "motulator",
+    "version": "0.19.0",
+    "wheel_sha256": "f2aae0c1d0caf435f0bb9d7b87eda781bc4e4bc9fc7439122fb1b64fd42448eb",
+    "method": "DOP853",
+    "rtol": 1e-11,
+    "atol": 1e-12,
+    "max_step_s": 5e-05
+  },
+  "scope": "one single-cage Gamma motor, prescribed ideal two-level terminal voltage, free shaft; no inverter diode network, dead time, source RL/DC dynamics, controller or thermal model"
+}

@@ -160,8 +160,8 @@ def run_protected_motor(study):
         if not np.isfinite([stored,residual,mismatch]).all():raise ValueError('nonfinite protected motor balance')
         row={n+'.voltage_v':float(v[k]) for k,n in enumerate(model.case.nodes)}
         row.update({'motor.'+k:float(value) for k,value in values.items()})
-        state_m=state[sl];z=state_m[:motor.at].reshape(-1,2);currents=z[:,0]+1j*z[:,1]
-        temperature=state_m[motor.at+1:] if p.thermal else None;q=motor.machine.quantities(currents,state_m[motor.at],temperature)
+        state_m=state[sl]
+        temperature=state_m[motor.at+1:] if p.thermal else None;q=motor.quantities(state_m,_space(v[[model.index[n] for n in study.case.motors[0].nodes]]))
         row.update({'motor.stator_flux_alpha_vs':q['psi'].real,'motor.stator_flux_beta_vs':q['psi'].imag,'motor.stator_copper_w':q['stator_copper_w'],
                     'relay.level':state[theta],'relay.latched':float(latched),'breaker.opened':float(opened),'breaker.clamp_energy_j':state[arc]})
         for k,flux in enumerate(q['rotor_flux']):row['motor.cage'+str(k+1)+'_flux_alpha_vs']=flux.real;row['motor.cage'+str(k+1)+'_flux_beta_vs']=flux.imag

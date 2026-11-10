@@ -97,15 +97,24 @@ def source_hashes():
     return {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
 
 
-def compare_states(d,folder):
+def compare_states(d,folder,stored=None):
     from power_grid_env.ac_pseudo_arc import make_family,PseudoArcOptions
     from power_grid_env.balanced_ac import case_from_document
     from benchmarks.ac_dispatch_sparse_reference import solve_reference
     from benchmarks.ac_dispatch_arc_acceptance import states,compare,event_estimates
     study=dict(trace=read_json(folder/'trace.json'),envelope=read_json(folder/'envelope.json'));o=PseudoArcOptions.model_validate(d['options']);family=make_family(case_from_document(d['start']),case_from_document(d['target']),o);refs=[];checks=[];cache={}
-    for label,lam,state in states(study):
-        if lam not in cache:cache[lam]=solve_reference(family.load_case(lam),o.dispatch.model_dump(mode='json'))
-        ref=cache[lam];c=compare(family,lam,state,ref);refs.append(dict(label=label,reference=ref,comparison=c));checks.append(c)
+    sampled=states(study)
+    if stored is not None and len(stored)!=len(sampled):raise ValueError('reference inventory differs')
+    for index,(label,lam,state) in enumerate(sampled):
+        if stored is not None:
+            entry=stored[index]
+            if entry['label']!=label:raise ValueError('reference label differs')
+            ref=entry['reference']
+        elif lam not in cache:cache[lam]=solve_reference(family.load_case(lam),o.dispatch.model_dump(mode='json'))
+        if stored is None:ref=cache[lam]
+        c=compare(family,lam,state,ref)
+        if stored is not None and c!=stored[index]['comparison']:raise ValueError('stored comparison differs')
+        refs.append(dict(label=label,reference=ref,comparison=c));checks.append(c)
     return refs,dict(states=len(checks),passed=all(c['passed'] for c in checks),maximum_voltage_error_pu=max((c['errors']['voltage_pu'] for c in checks),default=0.),maximum_pg_error_mw=max((c['errors']['pg_mw'] for c in checks),default=0.),maximum_delta_error_mw=max((c['delta_error_mw'] for c in checks),default=0.),events=event_estimates(study))
 
 
@@ -135,15 +144,96 @@ def run(out):
                 except ValueError as exc:note=dict(completed=False,error=str(exc))
                 (folder/'diagnostic-reference.json').write_bytes(encoded(note));row['reference_base_completed']=note['completed'];row['qualification_claimed']=False
             rows.append(row);print(json.dumps(row),flush=True)
-        if role=='qualification':rows.append(step_comparison(name,levels))
+        if role=='qualification':rows.append(requested_step_comparison(name,levels))
     unchanged=code==package_fingerprint() and source_hashes()==sources;qualified=all(r['passed'] for r in rows if r.get('role')=='qualification' or r.get('step_refinement'))
     s=dict(schema='pge-ac-scale/v1',producer_sha256=code,source_hashes=sources,rows=rows,qualified_profiles_passed=bool(qualified and unchanged),source_unchanged=unchanged,all_registered_profiles_completed=all(r['completed'] for r in rows if 'completed' in r),open_diagnostics=[r['case'] for r in rows if r.get('role')=='diagnostic' and not r['completed']],reference='separate sparse Newton + original PP 3.5.6 Ybus/dSbus_dV, separately initialized classical PF; no primary state or electrical implementation',reference_continuation_executed=False,superiority_proven=False,host_load_controlled=False)
     (out/'summary.json').write_bytes(encoded(s));seal(out);return s
 
 
+def requested_step_comparison(name,levels):
+    """Compare only requested lambda [0,1]; retain overshoot events explicitly."""
+    from benchmarks.ac_dispatch_arc_acceptance import step_comparison
+    bounded=[];excluded=[]
+    for row in levels:
+        events=row['events'];outside=[e for e in events if e['lambda_mid'] is not None and not 0<=e['lambda_mid']<=1]
+        bounded.append(dict(events=[e for e in events if e not in outside]))
+        excluded.append(dict(step=row['step'],events=outside))
+    result=step_comparison(name,bounded)
+    return dict(result,comparison_interval=[0.,1.],extrapolation_events=excluded)
+
+
+def verify_result(out):
+    """Recompute physical conclusions from sealed evidence, without timing replay.
+
+    Resource receipts are checked for consistency, not authenticated host telemetry.
+    Stored independent solutions are checked electrically; Newton is not replayed.
+    """
+    import math
+    from power_grid_env.ac_envelope import verify_envelope
+    from benchmarks.ac_dispatch_arc_acceptance import step_comparison
+    out=Path(out);identity=verify(out);summary=read_json(out/'summary.json');rows=[]
+    if summary['schema']!='pge-ac-scale/v1' or summary['producer_sha256']!=package_fingerprint() or summary['source_hashes']!=source_hashes():raise ValueError('current registered inputs and producers required')
+    for name,role in SPECS:
+        levels=[]
+        for step in STEPS if role=='qualification' else STEPS[:1]:
+            folder=out/name/str(step);d=read_json(folder/'input.json');expected=read_json(DATA/(name+'.json'));expected['options'].update(step=step,maximum_step=step)
+            if d!=expected:raise ValueError('registered scaling input differs')
+            verify(folder/'runs');m=read_json(folder/'runs/measurement.json')
+            if m['producer_sha256']!=package_fingerprint() or m['input_sha256']!=hashlib.sha256(encoded(d)).hexdigest():raise ValueError('measurement identity differs')
+            validate_measurement(m)
+            hashes=[];last=None
+            for i in range(len(m['physical_hashes'])):
+                run=folder/'runs'/str(i);v=verify_envelope(run)
+                if read_json(run/'input.json')!=d:raise ValueError('repeat input differs')
+                study=dict(trace=read_json(run/'trace.json'),envelope=read_json(run/'envelope.json'))
+                hashes.append(hashlib.sha256(encoded(physical(study))).hexdigest())
+                last=dict(completed=bool(study['trace']['completed'] and study['envelope']['completed']),status=study['trace']['reason'],monitor_status=study['envelope']['reason'],accepted_points=len(study['trace']['points']),operating_events=len(study['envelope']['events']),p_events=len(study['trace']['p_control_changes']),q_events=len(study['trace']['control_changes']),timeline_complete=study['envelope']['timeline_complete'],verified=v['verified'])
+            if hashes!=m['physical_hashes'] or (last is not None and last!=m['result']):raise ValueError('repeat physical evidence differs')
+            if hashes:
+                from power_grid_env.ac_pseudo_arc import make_family,PseudoArcOptions
+                from power_grid_env.balanced_ac import case_from_document
+                from power_grid_env.balanced_sparse import stored_bytes
+                trace=read_json(folder/'runs/0/trace.json');matrix=None
+                if trace['points']:
+                    f=make_family(case_from_document(d['start']),case_from_document(d['target']),PseudoArcOptions.model_validate(d['options']));point=trace['points'][0]
+                    _,j=f.evaluate(f.pack(point['result'],0.),True);border=f.bordered(j,np.array(point['tangent']))
+                    matrix=dict(sample='initial accepted state, not maximum fill or peak allocation',shape=list(j.shape),jacobian_nnz=j.nnz,jacobian_bytes=stored_bytes(j),bordered_bytes=stored_bytes(border),ybus_bytes=stored_bytes(f.system.y),hypothetical_dense_jacobian_bytes=int(j.shape[0]*j.shape[1]*8),dense_allocated=False)
+                if matrix!=m['matrix']:raise ValueError('matrix storage receipt differs')
+            repeat_ok=len(hashes)==3 and len(set(hashes))==1
+            row=dict(case=name,role=role,step=step,buses=len(d['start']['buses']),generators=len(d['start']['generators']),branches=len(d['start']['branches']),completed=m['result']['completed'],status=m['result']['status'],repeat_physical_equal=repeat_ok,median_wall_s=m['median_wall_s'],median_cpu_s=m['median_cpu_s'],process_peak_rss_mib=m['process_peak_rss_mib'],matrix=m['matrix'])
+            if role=='qualification':
+                if not repeat_ok:raise ValueError('three reproducible qualification runs required')
+                _,comparison=compare_states(d,folder/'runs/0',read_json(folder/'references.json'));row.update(comparison)
+                row['passed']=bool(row['completed'] and repeat_ok and comparison['passed'] and all(e['localized'] for e in row['events']));levels.append(row)
+            else:
+                note=read_json(folder/'diagnostic-reference.json');row['reference_base_completed']=note['completed'];row['qualification_claimed']=False
+            rows.append(row)
+        if role=='qualification':rows.append(requested_step_comparison(name,levels))
+    passed=all(r['passed'] for r in rows if r.get('role')=='qualification' or r.get('step_refinement'))
+    if summary['rows']!=rows or not summary['source_unchanged'] or summary['qualified_profiles_passed']!=passed or summary['all_registered_profiles_completed']!=all(r['completed'] for r in rows if 'completed' in r) or summary['open_diagnostics']!=[r['case'] for r in rows if r.get('role')=='diagnostic' and not r['completed']]:raise ValueError('scaling conclusion differs')
+    if any(summary[k] for k in ['superiority_proven','host_load_controlled','reference_continuation_executed']):raise ValueError('unsupported scaling claim')
+    return dict(verified=True,passed=passed,manifest_sha256=identity,scope='sealed repeated physical studies and independent electrical comparisons; resource arithmetic only, no clock replay or host authentication')
+
+
+def validate_measurement(m):
+    import math
+    samples=m['samples'];count=len(m['physical_hashes'])
+    if m['repeats']!=3 or (count not in (0,3)) or len(samples)!=(count or 1):raise ValueError('invalid repeat inventory')
+    if not count and (m['result']['status']!='input_or_execution_rejected' or m['result']['completed']):raise ValueError('missing rejection diagnostic')
+    for s in samples:
+        for key in ['wall_s','cpu_s']+(['verification_wall_s'] if count else []):
+            if not isinstance(s[key],(float,int)) or not math.isfinite(s[key]) or s[key]<0:raise ValueError('invalid resource sample')
+    for key in ['wall_s','cpu_s']:
+        if m['median_'+key]!=statistics.median(s[key] for s in samples):raise ValueError('resource median differs')
+    if not math.isfinite(m['process_peak_rss_mib']) or m['process_peak_rss_mib']<=0:raise ValueError('invalid RSS')
+    if len(m['affinity'])!=1 or any(m['threads'].get(k)!='1' for k in ['OPENBLAS_NUM_THREADS','OMP_NUM_THREADS','MKL_NUM_THREADS']) or m['host_load_controlled']:raise ValueError('unsupported execution policy')
+
+
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--prepare',action='store_true');p.add_argument('--worker',action='store_true');p.add_argument('--input');p.add_argument('--out');a=p.parse_args()
-    if a.prepare:prepare()
+    p=argparse.ArgumentParser();p.add_argument('--prepare',action='store_true');p.add_argument('--worker',action='store_true');p.add_argument('--input');p.add_argument('--out');p.add_argument('--verify');a=p.parse_args()
+    if a.verify:
+        r=verify_result(a.verify);print(json.dumps(r));raise SystemExit(0 if r['passed'] else 2)
+    elif a.prepare:prepare()
     elif a.worker:worker(a.input,a.out)
     else:
         r=run(a.out);print(json.dumps(r));raise SystemExit(0 if r['qualified_profiles_passed'] else 2)

@@ -1,0 +1,2 @@
+# Optional local comparison only; verified PyPI release on 2026-11-11.
+motulator==0.23.1 --hash=sha256:dc184858cead49aa31c2e9f4bfbb149b6489850aad2360f1005b012fa3218000

@@ -1,0 +1,171 @@
+{
+  "schema_version": "power-grid-env.switching-drive/v1",
+  "id": "four_cage_mismatch",
+  "motor": {
+    "id": "m",
+    "node_id": "grid",
+    "stator_r_ohm": 3.7,
+    "unsaturated_h": 0.34,
+    "saturation_beta_per_vs": 2.0,
+    "saturation_exponent": 7,
+    "cages": [
+      {
+        "resistance_ohm": 2.5,
+        "leakage_h": 0.023
+      },
+      {
+        "resistance_ohm": 5.0,
+        "leakage_h": 0.018
+      },
+      {
+        "resistance_ohm": 6.0,
+        "leakage_h": 0.022
+      },
+      {
+        "resistance_ohm": 7.0,
+        "leakage_h": 0.026
+      }
+    ],
+    "pole_pairs": 2,
+    "inertia_kg_m2": 0.03,
+    "fan_nm_per_rad_s2": 0.0001,
+    "viscous_nm_per_rad_s": 0.0,
+    "initial_speed_rad_s": 0.0,
+    "locked_rotor": false,
+    "thermal": null,
+    "provenance": {
+      "electrical": "https://aalto-electric-drives.github.io/motulator/drive_examples/current_vector/plot_2kw_im_sat_cvc.html; added cage/core values are authored, not measured",
+      "magnetics": "published radial power-law form; authored beta=2/Vs, exponent=7",
+      "mechanical": "J=0.03 kg m2; authored mechanical benchmark",
+      "extra_cages": "Authored passive RL branches, not measured skin-depth data",
+      "core_loss": "authored 0.006 S eddy-current conductance; not an iron-loss map"
+    }
+  },
+  "observer_motor": {
+    "id": "m-observer",
+    "node_id": "grid",
+    "stator_r_ohm": 3.7,
+    "unsaturated_h": 0.34,
+    "saturation_beta_per_vs": 2.0,
+    "saturation_exponent": 7,
+    "cages": [
+      {
+        "resistance_ohm": 3.25,
+        "leakage_h": 0.023
+      },
+      {
+        "resistance_ohm": 6.5,
+        "leakage_h": 0.018
+      },
+      {
+        "resistance_ohm": 7.800000000000001,
+        "leakage_h": 0.022
+      },
+      {
+        "resistance_ohm": 9.1,
+        "leakage_h": 0.026
+      }
+    ],
+    "pole_pairs": 2,
+    "inertia_kg_m2": 0.03,
+    "fan_nm_per_rad_s2": 0.0001,
+    "viscous_nm_per_rad_s": 0.0,
+    "initial_speed_rad_s": 0.0,
+    "locked_rotor": false,
+    "thermal": null,
+    "provenance": {
+      "electrical": "https://aalto-electric-drives.github.io/motulator/drive_examples/current_vector/plot_2kw_im_sat_cvc.html; added cage/core values are authored, not measured; deliberate +30% rotor R mismatch",
+      "magnetics": "published radial power-law form; authored beta=2/Vs, exponent=7",
+      "mechanical": "J=0.03 kg m2; authored mechanical benchmark",
+      "extra_cages": "Authored passive RL branches, not measured skin-depth data",
+      "core_loss": "authored 0.006 S eddy-current conductance; not an iron-loss map"
+    }
+  },
+  "observer_mode": "multicage_current",
+  "control": {
+    "flux_reference_vs": 0.6,
+    "flux_ramp_s": 0.025,
+    "speed_reference_rad_s": 30.0,
+    "speed_ramp_s": 0.1,
+    "current_limit_peak_a": 10.0,
+    "speed_kp_nm_per_rad_s": 0.8,
+    "speed_ki_nm_per_rad": 2.0,
+    "current_kp_ohm": 7.129535592281415,
+    "current_ki_ohm_per_s": 712.9535592281414,
+    "antiwindup_per_s": 100.0,
+    "voltage_utilization": 0.9,
+    "torque_enable_flux_fraction": 0.05,
+    "provenance": "authored sensored rotor-flux FOC/PI tuning, not OEM"
+  },
+  "thermal": {
+    "ambient_c": 25.0,
+    "initial_c": [
+      25.0,
+      25.0,
+      25.0
+    ],
+    "capacity_j_per_k": [
+      40.0,
+      30.0,
+      50.0
+    ],
+    "conductance_w_per_k": [
+      2.0,
+      2.0,
+      1.0
+    ],
+    "trip_c": [
+      150.0,
+      150.0,
+      150.0
+    ],
+    "resistance_alpha_per_k": 0.004,
+    "provenance": "authored three thermal lumps, not a module impedance fit"
+  },
+  "duration_s": 0.08,
+  "max_step_s": 1e-05,
+  "sample_s": 0.0002,
+  "pwm_frequency_hz": 2500.0,
+  "dead_time_s": 2e-06,
+  "grid_ln_rms_v": 230.0,
+  "grid_frequency_hz": 50.0,
+  "grid_envelope": [
+    [
+      0.0,
+      1.0
+    ]
+  ],
+  "source_inductance_h": 0.003,
+  "source_resistance_ohm": 0.3,
+  "precharge_resistance_per_phase_ohm": 20.0,
+  "precharge_ready_v": 450.0,
+  "precharge_min_s": 0.002,
+  "dc_capacitance_f": 0.002,
+  "rail_earth_capacitance_f": 2e-06,
+  "initial_dc_v": 540.0,
+  "bleed_ohm": 2000.0,
+  "rectifier_drop_v": 0.9,
+  "rectifier_resistance_ohm": 0.15,
+  "mosfet_resistance_ohm": 0.2,
+  "body_diode_drop_v": 0.9,
+  "body_diode_resistance_ohm": 0.15,
+  "switching_on_j": 0.001,
+  "switching_off_j": 0.0007,
+  "switching_reference_v": 600.0,
+  "switching_reference_a": 10.0,
+  "switching_temperature_per_k": 0.002,
+  "enable_dc_v": 460.0,
+  "disable_dc_v": 380.0,
+  "brake_resistance_ohm": 40.0,
+  "brake_start_v": 650.0,
+  "brake_full_v": 700.0,
+  "gate_block_windows": [],
+  "load_torque_nm": 0.0,
+  "provenance": {
+    "network": "authored 230V LN / 3mH source RL and explicit 2uF rail-earth C",
+    "semiconductors": "authored linear on-R, diode Vf/R; ideal blocking; not charge-dynamic devices",
+    "switching": "authored reference Eon/Eoff linear |I|/Iref*Vdc/Vref and temperature factor",
+    "thermal": "authored RC heat/ambient paths; three latching thresholds",
+    "control": "authored saturated multicage current-model observer; sampled current/speed only; nominal R, no core-current separation"
+  }
+}

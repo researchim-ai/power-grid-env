@@ -186,14 +186,18 @@ def monitor_trace(document,trace,*,cancelled=None):
 
 
 def run_envelope(document,out,*,cancelled=None):
-    if set(document)-{'start','target','options','monitor','provenance'}:raise ValueError('unknown envelope input fields')
+    if set(document)-{'start','target','options','monitor','provenance','initial_state'}:raise ValueError('unknown envelope input fields')
     if len(encoded(document))>16000000:raise ValueError('envelope input budget exceeded')
     arc_o=PseudoArcOptions.model_validate(document.get('options',{}));o=EnvelopeOptions.model_validate(document.get('monitor',{}))
     start=case_from_document(document['start']);target=case_from_document(document['target']);limits_for(start,o)
     # Validate compatibility before publishing a directory.
     make_family(start,target,arc_o)
+    if document.get('initial_state') is not None:
+        from power_grid_env.ac_dispatch import audit_dispatch
+        if arc_o.dispatch is None:raise ValueError('audited seed requires distributed controls')
+        audit_dispatch(start,arc_o.dispatch,document['initial_state'],branches_required=False)
     out=Path(out);out.mkdir(parents=True,exist_ok=False);(out/'input.json').write_bytes(encoded(document));code=package_fingerprint()
-    trace=trace_power_flow(start,target,arc_o.model_dump(mode='json'),cancelled=cancelled)
+    trace=trace_power_flow(start,target,arc_o.model_dump(mode='json'),cancelled=cancelled,**(dict(initial_state=document['initial_state']) if document.get('initial_state') is not None else {}))
     report=monitor_trace(document,trace,cancelled=cancelled)
     if code!=package_fingerprint() or trace['producer_sha256']!=code:raise ValueError('envelope producer changed during study')
     for name,r in [('trace.json',trace),('envelope.json',report)]:

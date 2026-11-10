@@ -9,7 +9,7 @@ import math,time
 from pathlib import Path
 import numpy as np
 from pydantic import BaseModel,ConfigDict,Field,model_validator
-from power_grid_env.ac_dispatch import DispatchOptions,solve_dispatch
+from power_grid_env.ac_dispatch import DispatchOptions,solve_dispatch,audit_dispatch
 from scipy.sparse import bmat,csc_matrix
 from scipy.sparse.linalg import splu
 from power_grid_env.balanced_ac import case_document,case_from_document,solve_power_flow,_allocate
@@ -207,23 +207,30 @@ def make_family(start,target,options):
     return PolarFamily(start,target)
 
 
-def trace_power_flow(start,target,options=None,*,cancelled=None,_backend=None):
+def trace_power_flow(start,target,options=None,*,cancelled=None,_backend=None,initial_state=None):
     o=PseudoArcOptions.model_validate(options or {});o=PseudoArcOptions.model_validate(o.model_dump(mode='json'))
     if not o.minimum_step<=o.step<=o.maximum_step:raise ValueError('minimum <= initial <= maximum arc step required')
     start=case_from_document(case_document(start));target=case_from_document(case_document(target));family=make_family(start,target,o) if _backend is None else _backend.family(start,target)
     if o.enforce_q_limits and _backend is not None:raise ValueError('reference backend does not implement projected Q controls')
     backend='native' if _backend is None else _backend.name
     family.audit_options=ContinuationOptions(tolerance_pu=o.tolerance_pu,enforce_q_limits=o.enforce_q_limits)
+    if initial_state is not None:
+        if o.dispatch is None or _backend is not None:raise ValueError('audited initial state requires native distributed P/Q controls')
+        audit_dispatch(start,o.dispatch,initial_state,branches_required=False)
+        import copy
+        initial_state=copy.deepcopy(initial_state)
     code=package_fingerprint();began=time.monotonic();points=[];attempts=[];turns=[];final=None;reason='maximum_attempts';after=None
     if cancelled is not None and cancelled():return outcome(o,code,'cancelled',[],[],[],None,began,backend)
-    if o.dispatch is not None:
+    if initial_state is not None:
+        base=initial_state
+    elif o.dispatch is not None:
         seed_options=o.dispatch.model_copy(update={'maximum_wall_s':min(o.maximum_wall_s,o.dispatch.maximum_wall_s)})
         seed=solve_dispatch(start,seed_options.model_dump(mode='json'),cancelled=cancelled)
         if not seed['completed'] and seed['reason'] in {'cancelled','wall_deadline','producer_changed'}:return outcome(o,code,seed['reason'],[],[],[],None,began,backend)
         base=seed['result'] if seed['completed'] else dict(completed=False)
     else:
         base=solve_power_flow(start,linear_solver='sparse',enforce_q_limits=o.enforce_q_limits,tolerance_pu=o.tolerance_pu) if _backend is None else _backend.solve(start,0.)
-    if o.enforce_q_limits and base.get('completed'):
+    if initial_state is None and o.enforce_q_limits and base.get('completed'):
         seed=family.pack(base,0.);fixed=np.zeros(family.size+1);fixed[-1]=1.
         adjusted,_,_=correct(family,seed,fixed,o)
         if adjusted is not None:base=family.result(adjusted)
@@ -316,11 +323,15 @@ def trace_power_flow(start,target,options=None,*,cancelled=None,_backend=None):
 
 
 def run_pseudo_arc(document,out):
-    if set(document)-{'start','target','options','provenance'}:raise ValueError('unknown pseudo-arc input fields')
+    if set(document)-{'start','target','options','provenance','initial_state'}:raise ValueError('unknown pseudo-arc input fields')
     start=case_from_document(document['start']);target=case_from_document(document['target']);compatible(start,target)
     if len(encoded(document))>16000000:raise ValueError('pseudo-arc input budget exceeded')
+    if document.get('initial_state') is not None:
+        o=PseudoArcOptions.model_validate(document.get('options',{}))
+        if o.dispatch is None:raise ValueError('audited seed requires distributed controls')
+        audit_dispatch(start,o.dispatch,document['initial_state'],branches_required=False)
     out=Path(out);out.mkdir(parents=True,exist_ok=False)
-    (out/'input.json').write_bytes(encoded(document));r=trace_power_flow(start,target,document.get('options'))
+    (out/'input.json').write_bytes(encoded(document));r=trace_power_flow(start,target,document.get('options'),initial_state=document.get('initial_state'))
     raw=encoded(r)
     if len(raw)>64000000:raise ValueError('pseudo-arc result budget exceeded')
     (out/'result.json').write_bytes(raw);seal(out);return r
@@ -338,6 +349,10 @@ def audit_trace(document,r,*,allow_reference=False):
     if r['reason'] not in allowed or (r['completed']!=(r['reason']=='target_reached')):raise ValueError('invalid branch termination claim')
     points=r['points']
     if len(points)>o.maximum_points or len(r['attempts'])>o.maximum_attempts:raise ValueError('branch inventory exceeds budgets')
+    if document.get('initial_state') is not None:
+        if o.dispatch is None or r['backend']!='native':raise ValueError('audited seed requires native distributed controls')
+        audit_dispatch(start,o.dispatch,document['initial_state'],branches_required=False)
+        if points and encoded(snapshot(document['initial_state']))!=encoded(points[0]['result']):raise ValueError('initial branch state differs from declared seed')
     vectors=[];tangents=[]
     def check_state(lam,result,tangent):
         u=family.pack(result,lam)

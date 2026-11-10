@@ -122,7 +122,43 @@ class Converter(Strict):
         return self
 
 
+class InverterCurrentControl(Strict):
+    direct_peak_a: float
+    quadrature_peak_a: float = 0.
+    ramp_s: float = Field(gt=0)
+    kp_ohm: float = Field(gt=0)
+    ki_ohm_per_s: float = Field(gt=0)
+    antiwindup_per_s: float = Field(gt=0)
+    provenance: str = Field(min_length=1)
+
+    @model_validator(mode='after')
+    def valid(self):
+        if not self.provenance.strip():raise ValueError('current control provenance required')
+        return self
+
+
+class DiodeFrontEnd(Strict):
+    diode_resistance_ohm: float = Field(gt=0)
+    series_resistance_ohm: float = Field(gt=0)
+    precharge_resistance_ohm: float = Field(gt=0)
+    diode_drop_v: float = Field(default=.8,ge=0)
+    precharge_bypassed: bool = False
+    provenance: str = Field(min_length=1)
+
+    @model_validator(mode='after')
+    def valid(self):
+        if not self.provenance.strip():raise ValueError('diode front-end provenance required')
+        return self
+
+
 class Drive(Strict):
+    current_control: InverterCurrentControl | None = None
+    diode_front_end: DiodeFrontEnd | None = None
+    braking_resistance_ohm: float | None=Field(default=None,gt=0)
+    braking_start_v: float | None=Field(default=None,gt=0)
+    braking_full_v: float | None=Field(default=None,gt=0)
+    braking_provenance: str | None=None
+    motor_initial_fluxes_ab_vs: list[tuple[float,float]] | None=Field(default=None,min_length=2,max_length=5)
     id: str
     nodes: tuple[str,str,str]
     motor: FluxMachinePassport
@@ -132,7 +168,7 @@ class Drive(Strict):
     rectifier_tau_s: float = Field(default=.002,gt=0)
     dc_capacitance_f: float = Field(gt=0)
     dc_reference_v: float = Field(gt=0)
-    initial_dc_v: float = Field(gt=0)
+    initial_dc_v: float = Field(ge=0)
     dc_kp_per_s: float = Field(default=20.,ge=0)
     dc_ki_per_s2: float = Field(default=100.,ge=0)
     bleed_ohm: float = Field(default=1e6,gt=0)
@@ -147,15 +183,32 @@ class Drive(Strict):
     pll_ki_per_s2: float = Field(default=500.,ge=0)
     connected: bool = True
 
+    @model_serializer(mode='wrap')
+    def canonical_flux(self,handler):
+        result=handler(self)
+        if self.current_control is None:result.pop('current_control',None)
+        if self.diode_front_end is None:result.pop('diode_front_end',None)
+        if self.motor_initial_fluxes_ab_vs is None:result.pop('motor_initial_fluxes_ab_vs',None)
+        if self.braking_resistance_ohm is None:
+            for key in ['braking_resistance_ohm','braking_start_v','braking_full_v','braking_provenance']:result.pop(key,None)
+        return result
+
     @model_validator(mode='after')
     def valid(self):
+        if self.diode_front_end is None and self.initial_dc_v<=0:raise ValueError('active front end requires positive initial DC voltage')
+        if self.diode_front_end is not None and self.rectifier_efficiency!=1.:raise ValueError('diode front end uses explicit losses; rectifier_efficiency must be one')
         if len(set(self.nodes))!=3 or '0' in self.nodes:raise ValueError('drive needs distinct explicit phase nodes')
-        if self.motor.core_loss_s:raise ValueError('drive Gamma current-coordinate profile does not support positive core-loss conductance')
+        if self.motor_initial_fluxes_ab_vs is not None and len(self.motor_initial_fluxes_ab_vs)!=1+len(self.motor.cages):raise ValueError('drive initial flux inventory must include stator and every cage')
+        braking=[self.braking_resistance_ohm,self.braking_start_v,self.braking_full_v]
+        if any(v is not None for v in braking):
+            if any(v is None for v in braking) or not self.dc_reference_v<=self.braking_start_v<self.braking_full_v or not self.braking_provenance or not self.braking_provenance.strip():raise ValueError('braking requires resistance, reference<=start<full voltages and provenance')
+        elif self.braking_provenance is not None:raise ValueError('braking provenance without braking parameters')
         if self.motor.locked_rotor and self.motor.initial_speed_rad_s:raise ValueError('locked rotor requires zero initial speed')
         return self
 
 
 class MotorPort(Strict):
+    initial_fluxes_ab_vs: list[tuple[float,float]] | None=Field(default=None,min_length=2,max_length=5)
     initial_currents_ab_a: list[tuple[float,float]] | None=Field(default=None,min_length=2,max_length=5)
     id: str
     nodes: tuple[str,str,str]
@@ -165,20 +218,23 @@ class MotorPort(Strict):
     def canonical_initial_state(self,handler):
         data=handler(self)
         if self.initial_currents_ab_a is None:data.pop('initial_currents_ab_a',None)
+        if self.initial_fluxes_ab_vs is None:data.pop('initial_fluxes_ab_vs',None)
         return data
 
     @model_validator(mode='after')
     def valid(self):
         if self.initial_currents_ab_a is not None and len(self.initial_currents_ab_a)!=1+len(self.passport.cages):raise ValueError('initial current inventory must match stator and every rotor cage')
         if len(set(self.nodes))!=3 or '0' in self.nodes:raise ValueError('motor port requires distinct phase nodes')
-        if self.passport.core_loss_s:raise ValueError('direct phase motor currently requires zero Gc')
+        if self.initial_fluxes_ab_vs is not None and len(self.initial_fluxes_ab_vs)!=1+len(self.passport.cages):raise ValueError('initial flux inventory must match stator and every rotor cage')
+        if self.initial_fluxes_ab_vs is not None and self.initial_currents_ab_a is not None:raise ValueError('declare currents or fluxes, not both')
+        if self.passport.core_loss_s and self.initial_currents_ab_a is not None:raise ValueError('positive Gc requires explicit flux initialization, not current coordinates')
         if self.passport.locked_rotor and self.passport.initial_speed_rad_s:raise ValueError('locked rotor requires zero speed')
         return self
 
 
 class PhaseEvent(Strict):
     time_s: float = Field(gt=0)
-    kind: Literal['resistance', 'converter_connection']
+    kind: Literal['resistance', 'converter_connection', 'drive_precharge_bypass']
     equipment_id: str
     value: float
 
@@ -237,6 +293,7 @@ class PhaseCase(Strict):
             if key in seen: raise ValueError('ambiguous simultaneous action on one component')
             seen.add(key)
             if event.kind == 'resistance' and (event.equipment_id not in resistor_ids or event.value <= 0): raise ValueError('resistance event needs a known resistor and positive R')
+            if event.kind == 'drive_precharge_bypass' and (event.equipment_id not in {d.id for d in self.drives if d.diode_front_end is not None} or event.value not in (0.,1.)):raise ValueError('precharge bypass event needs a diode drive and 0/1')
             if event.kind == 'converter_connection' and (event.equipment_id not in converter_ids or event.value not in (0.,1.)): raise ValueError('connection event needs a converter and 0/1')
         return self
 
@@ -252,6 +309,7 @@ def _space(v):
 
 class PhaseNetwork:
     def __init__(self, case):
+        case=PhaseCase.model_validate(case.model_dump(mode='json'))
         self.case=case; self.index={n:i for i,n in enumerate(case.nodes)}; self.n=len(case.nodes)
         self.known=[self.index[s.node] for s in case.sources]; self.free=[i for i in range(self.n) if i not in self.known]
         self.a=self._incidence(case.inductors); self.l=np.asarray(case.inductance_h,dtype=float).reshape((len(case.inductors),)*2)
@@ -295,10 +353,18 @@ class PhaseNetwork:
         self.drives={d.id:VfDrive(d) for d in case.drives}
         for name,drive in self.drives.items():self.slices[name]=slice(cursor,cursor+drive.size);cursor+=drive.size
         from power_grid_env.vf_drive import PhaseMotor
-        self.motors={m.id:PhaseMotor(m) for m in case.motors}
+        from power_grid_env.phase_core_motor import PhaseCoreMotor
+        self.motors={m.id:(PhaseCoreMotor(m) if m.passport.core_loss_s else PhaseMotor(m)) for m in case.motors}
+        self.core_motors=[m for m in case.motors if m.passport.core_loss_s]
         for name,motor in self.motors.items():self.slices[name]=slice(cursor,cursor+motor.size);cursor+=motor.size
         self.size=cursor
         if self.size > 512: raise ValueError('phase dynamic-state budget exceeded')
+        for d in case.drives:
+            if d.diode_front_end is not None:
+                for node in d.nodes:
+                    idx=self.index[node]
+                    if idx in self.free and np.any(abs(self.ua[list(self.free).index(idx)])>1e-12):
+                        raise ValueError('diode drive terminals require voltage boundaries or fully dynamic capacitance; nonlinear algebraic bridge not supported')
         self.context(-1.)
 
     def _incidence(self, branches):
@@ -310,18 +376,24 @@ class PhaseNetwork:
 
     def context(self,t):
         resistances={b.id:b.resistance_ohm for b in self.case.resistors}; self.connected={c.id:c.connected for c in [*self.case.converters,*self.case.drives]}
+        self.precharge_bypassed={d.id:d.diode_front_end.precharge_bypassed for d in self.case.drives if d.diode_front_end is not None}
         for event in sorted(self.case.events,key=lambda e:(e.time_s,e.kind,e.equipment_id)):
             if event.time_s<=t:
                 if event.kind=='resistance':resistances[event.equipment_id]=event.value
+                elif event.kind=='drive_precharge_bypass':self.precharge_bypassed[event.equipment_id]=bool(event.value)
                 else:self.connected[event.equipment_id]=bool(event.value)
         self.resistances=resistances; self.g=np.zeros((self.n,self.n))
         for b in self.case.resistors:
             a=self._incidence([b])[:,0]; self.g+=np.outer(a,a)/resistances[b.id]
         self.gff=self.g[np.ix_(self.free,self.free)]; self.gfk=self.g[np.ix_(self.free,self.known)]
         if self.ua.shape[1]:
-            gaa=self.ua.T@self.gff@self.ua
+            reference_g=self.g.copy()
+            for motor in self.core_motors:
+                model=self.motors[motor.id];_,conductance=model.terminal_relation(model.initial());nodes=[self.index[n] for n in motor.nodes]
+                reference_g[np.ix_(nodes,nodes)]+=conductance*(np.eye(3)-np.ones((3,3))/3)
+            gaa=self.ua.T@reference_g[np.ix_(self.free,self.free)]@self.ua
             if np.linalg.matrix_rank(gaa)<len(gaa):raise ValueError('floating algebraic node or inductor cutset; explicit resistive reference required')
-            self.gaa=lu_factor(gaa)
+            self.gaa=None if self.core_motors else lu_factor(gaa)
 
     def boundary(self,t,derivative=False):
         return np.array([s.value(t,self.case.frequency_hz,derivative) for s in self.case.sources])
@@ -338,18 +410,39 @@ class PhaseNetwork:
             currents=_abc(actual); conv[c.id]=actual
             j[[self.index[n] for n in c.nodes]]+=currents
         for drive in self.case.drives:
-            actual=self.drives[drive.id].current(x[self.slices[drive.id]]) if self.connected[drive.id] else 0j
+            actual=self.drives[drive.id].current(x[self.slices[drive.id]]) if self.connected[drive.id] and drive.diode_front_end is None else 0j
             j[[self.index[n] for n in drive.nodes]]+=_abc(actual)
-        for motor in self.case.motors:j[[self.index[n] for n in motor.nodes]]-=_abc(self.motors[motor.id].current(x[self.slices[motor.id]]))
+        for motor in self.case.motors:
+            if not motor.passport.core_loss_s:j[[self.index[n] for n in motor.nodes]]-=_abc(self.motors[motor.id].current(x[self.slices[motor.id]]))
+            else:
+                offset,_=self.motors[motor.id].terminal_relation(x[self.slices[motor.id]])
+                j[[self.index[n] for n in motor.nodes]]-=_abc(offset)
         return j,conv
 
     def fields(self,t,x):
         v=np.zeros(self.n); v[self.known]=self.boundary(t)
         current=x[self.nd:self.nd+self.ni]; j,conv=self.injection(t,x)
         vf=self.ud@x[:self.nd]
-        forcing=j[self.free]-self.gfk@v[self.known]-self.a[self.free]@current
-        if self.ua.shape[1]:vf+=self.ua@lu_solve(self.gaa,self.ua.T@(forcing-self.gff@vf))
         v[self.free]=vf
+        for d in self.case.drives:
+            if d.diode_front_end is not None:
+                from power_grid_env.diode_front_end import bridge_port
+                nodes=[self.index[n] for n in d.nodes]
+                state=x[self.slices[d.id]]
+                actual,_=bridge_port(_space(v[nodes]),max(0.,state[4]),d.diode_front_end,connected=self.connected[d.id],bypassed=self.precharge_bypassed[d.id])
+                j[nodes]+=_abc(actual)
+        port_g=np.zeros_like(self.g) if self.core_motors else None
+        for motor in self.core_motors:
+            _,conductance=self.motors[motor.id].terminal_relation(x[self.slices[motor.id]]);nodes=[self.index[n] for n in motor.nodes]
+            port_g[np.ix_(nodes,nodes)]+=conductance*(np.eye(3)-np.ones((3,3))/3)
+        total_g=self.g if port_g is None else self.g+port_g
+        gff=total_g[np.ix_(self.free,self.free)];gfk=total_g[np.ix_(self.free,self.known)]
+        forcing=j[self.free]-gfk@v[self.known]-self.a[self.free]@current
+        if self.ua.shape[1]:
+            factor=self.gaa if port_g is None else lu_factor(self.ua.T@gff@self.ua)
+            vf+=self.ua@lu_solve(factor,self.ua.T@(forcing-gff@vf))
+        v[self.free]=vf
+        if port_g is not None:j-=port_g@v
         return v,current,j,conv
 
     def magnetic(self,current):
@@ -388,7 +481,7 @@ class PhaseNetwork:
                 dx[sl]=[frequency,(reference.real-ia)/c.current_tau_s,(reference.imag-ib)/c.current_tau_s,(power.real-pf)/c.power_tau_s,(power.imag-qf)/c.power_tau_s]
             info[c.id]=dict(p_w=float(power.real),q_var=float(power.imag),frequency_hz=float(frequency/(2*np.pi)),current_vector_peak_a=abs(actual[c.id]),limited=abs(reference)>=limit*(1-1e-10),connected=self.connected[c.id])
         for drive in self.case.drives:
-            rate,values=self.drives[drive.id].rates(t,_space(v[[self.index[n] for n in drive.nodes]]),x[self.slices[drive.id]],self.connected[drive.id])
+            rate,values=self.drives[drive.id].rates(t,_space(v[[self.index[n] for n in drive.nodes]]),x[self.slices[drive.id]],self.connected[drive.id],self.precharge_bypassed.get(drive.id,False))
             dx[self.slices[drive.id]]=rate;info[drive.id]=values
         for motor in self.case.motors:
             rate,values=self.motors[motor.id].rates(t,_space(v[[self.index[n] for n in motor.nodes]]),x[self.slices[motor.id]])
@@ -448,7 +541,7 @@ def run_emt(case, *, duration_s, sample_s, max_step_s, rtol=1e-7, atol=1e-9, met
     if model.size==0:raise ValueError('time-domain study needs at least one dynamic state; use harmonic study for a static circuit')
     if any(e.time_s>=duration_s for e in case.events):raise ValueError('all switching events must be inside the study window')
     if any(t>duration_s for s in case.sources for t,_ in s.envelope):raise ValueError('envelope breakpoint exceeds the study window')
-    scalars=(int(duration_s/sample_s)+2*len(case.events)+sum(len(s.envelope) for s in case.sources)+3)*(model.n+model.ni+16*(len(case.converters)+len(case.drives)+len(case.motors))+6)
+    scalars=(int(duration_s/sample_s)+2*len(case.events)+sum(len(s.envelope) for s in case.sources)+3)*(model.n+model.ni+16*len(case.converters)+64*len(case.drives)+24*len(case.motors)+6)
     if scalars>2_000_000 or duration_s/max_step_s>200_000:raise ValueError('EMT sample/step budget exceeded')
     times=[];sides=[];channels={};event_log=[];energy=[];residuals=[];baseline=None
     x=np.r_[model.initial(),0.,0.];t0=0.;calls=0

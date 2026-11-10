@@ -145,6 +145,13 @@ def main(argv: list[str] | None = None) -> int:
         cmd = commands.add_parser(name); cmd.add_argument('directory')
         if name == 'export': cmd.add_argument('--out', required=True)
 
+    switching = sub.add_parser('switching-drive', help='event-resolved PWM/FOC/inductive diode drive and thermal protection')
+    switching_commands = switching.add_subparsers(dest='switching_command', required=True)
+    cmd = switching_commands.add_parser('run'); cmd.add_argument('--study',required=True);cmd.add_argument('--out',required=True)
+    for name in ['verify','export']:
+        cmd=switching_commands.add_parser(name);cmd.add_argument('directory')
+        if name=='export':cmd.add_argument('--out',required=True)
+
     phase = sub.add_parser('phase-study', help='SI phase-domain networks, physical search and guarded surrogates')
     phase_commands = phase.add_subparsers(dest='phase_command', required=True)
     cmd = phase_commands.add_parser('initialize'); cmd.add_argument('--study', required=True); cmd.add_argument('--out', required=True); cmd.add_argument('--duration', type=float, required=True); cmd.add_argument('--sample', type=float, required=True); cmd.add_argument('--max-step', type=float, required=True)
@@ -246,7 +253,72 @@ def main(argv: list[str] | None = None) -> int:
     cmd=sub.add_parser('verify-ac-dispatch',help='recompute distributed dispatch equations and allocation')
     cmd.add_argument('directory')
 
+    cmd=sub.add_parser('ac-prepare-schedule',help='explicitly project Pg schedules inside unchanged P bounds; not an AC feasibility result')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-ac-schedule',help='recompute prepared Pg schedule and provenance')
+    cmd.add_argument('directory')
+
+    cmd=sub.add_parser('ac-loading-screen',help='bounded distributed P/Q loading scan; sampled turns are not absence certificates')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-ac-loading-screen',help='recompute loading-screen observations and native physical audits')
+    cmd.add_argument('directory')
+
+    cmd=sub.add_parser('ac-sensitivity',help='local sparse forward/adjoint load sensitivities with switching guard')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-ac-sensitivity',help='recompute local sensitivity equations and rankings')
+    cmd.add_argument('directory')
+
+    cmd=sub.add_parser('ac-counterfactual',help='finite signed load change, local prediction and audited nonlinear replay')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-ac-counterfactual',help='verify baseline, prediction, finite branch and comparison')
+    cmd.add_argument('directory')
+
     args = parser.parse_args(argv)
+    if args.command in {'ac-counterfactual','verify-ac-counterfactual'}:
+        from power_grid_env.ac_counterfactual import run_counterfactual,verify_counterfactual
+        from power_grid_env.study_artifacts import read_json
+        try:
+            if args.command=='verify-ac-counterfactual':public=verify_counterfactual(args.directory)
+            else:
+                r=run_counterfactual(read_json(args.input),args.out)
+                public={k:r[k] for k in ['completed','requested_change_reached','reason','linear_prediction_available','linear_applicability','active_set_changed']}
+            print(json.dumps(public,ensure_ascii=False));return 0 if public['completed'] else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError,KeyError,TypeError) as exc:
+            print(json.dumps(dict(completed=False,error=str(exc)),ensure_ascii=False));return 2
+
+    if args.command in {'ac-sensitivity','verify-ac-sensitivity'}:
+        from power_grid_env.ac_sensitivity import run_sensitivities,verify_sensitivities
+        from power_grid_env.study_artifacts import read_json
+        try:
+            if args.command=='verify-ac-sensitivity':public=verify_sensitivities(args.directory)
+            else:
+                r=run_sensitivities(read_json(args.input),args.out)
+                public=dict(completed=r['completed'],reason=r['reason'],guard=r['guard'],certified_trust_region=False)
+            print(json.dumps(public,ensure_ascii=False));return 0 if public['completed'] else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError,KeyError,TypeError) as exc:
+            print(json.dumps(dict(completed=False,error=str(exc)),ensure_ascii=False));return 2
+
+    if args.command in {'ac-loading-screen','verify-ac-loading-screen'}:
+        from power_grid_env.ac_loading_screen import run_loading_screen,verify_loading_screen
+        from power_grid_env.study_artifacts import read_json
+        try:
+            public=verify_loading_screen(args.directory) if args.command=='verify-ac-loading-screen' else run_loading_screen(read_json(args.input),args.out)
+            print(json.dumps(public,ensure_ascii=False));return 0 if public['completed'] else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError,KeyError,TypeError) as exc:
+            print(json.dumps(dict(completed=False,error=str(exc)),ensure_ascii=False));return 2
+
+    if args.command in {'ac-prepare-schedule','verify-ac-schedule'}:
+        from power_grid_env.ac_schedule import run_schedule,verify_schedule
+        from power_grid_env.study_artifacts import read_json
+        try:
+            if args.command=='verify-ac-schedule':public=verify_schedule(args.directory)
+            else:
+                r=run_schedule(read_json(args.input),args.out)
+                public=dict(completed=r['completed'],reason=r['reason'],original_total_mw=r['original_total_mw'],target_total_mw=r['target_total_mw'],electrical_feasibility_proven=False)
+            print(json.dumps(public,ensure_ascii=False));return 0 if public['completed'] else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError,KeyError,TypeError) as exc:
+            print(json.dumps(dict(completed=False,error=str(exc)),ensure_ascii=False));return 2
+
     if args.command in {'ac-dispatch','verify-ac-dispatch'}:
         from power_grid_env.ac_dispatch import run_dispatch,verify_dispatch
         from power_grid_env.study_artifacts import read_json
@@ -435,6 +507,18 @@ def main(argv: list[str] | None = None) -> int:
             result=run_protected_artifact(document,args.out) if args.command=='protected-motor' else run_sensitivity_artifact(document,read_json(args.protocol),args.out)
             print(json.dumps({k:result[k] for k in ['completed','available','engineering_acceptable','status','reason'] if k in result},ensure_ascii=False,allow_nan=False))
             return 0 if result.get('completed') and result.get('available',True) and (args.command!='protected-motor' or not args.require_acceptable or result.get('engineering_acceptable',False)) else 2
+        except (ValueError,TypeError,KeyError,OSError,RuntimeError) as exc:
+            print(json.dumps(dict(completed=False,status='rejected',error=str(exc)),ensure_ascii=False));return 2
+    if args.command == 'switching-drive':
+        from power_grid_env.study_artifacts import read_json,verify,export_zip
+        from power_grid_env.switching_drive import run_switching_artifact
+        try:
+            if args.switching_command=='run':
+                r=run_switching_artifact(read_json(args.study),args.out)
+                print(json.dumps(dict(completed=r['completed'],metrics=r['metrics']),allow_nan=False));return 0
+            if args.switching_command=='verify':
+                print(json.dumps(dict(verified=True,manifest_sha256=verify(args.directory),scope='integrity only; not physics replay')));return 0
+            export_zip(args.directory,args.out);print(json.dumps(dict(exported=True)));return 0
         except (ValueError,TypeError,KeyError,OSError,RuntimeError) as exc:
             print(json.dumps(dict(completed=False,status='rejected',error=str(exc)),ensure_ascii=False));return 2
     if args.command == 'phase-study':
