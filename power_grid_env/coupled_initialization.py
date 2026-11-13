@@ -15,6 +15,8 @@ def initialize_coupled(model,*,require_stable=True):
     tolerance=requested.tolerance if requested else 1e-8
     speeds=np.zeros(len(settings.motors))
     state=model.initial_state()
+    if ng==0 and not steady:
+        return state,dict(mode='motor_only_cold_start',thermal_state='passport',generator_constraints=0)
     ptarget=np.array([g.p_w/m.rated_va for g,m in zip(model.generators,model.gen_passports)])
     vtarget=np.array([g.v_set_pu for g in model.generators])
     regulating={i:p for i,g in enumerate(model.generators) for p in settings.oel2c_limiters if p.generator_id==g.id and p.initialization=='current_regulating_equilibrium'}

@@ -6,6 +6,40 @@ with explicit coverage and no unsupported speed claims: [R01.1 protocol](docs/CO
 Motor start/restart studies now include shaft-work balance, I²t, thermal-replica
 checks and three-grid engineering decisions: [scope and commands](docs/MOTOR_ENGINEERING_RU.md).
 
+Independent continuous checks now cover saturated multicage drives, losses and
+heating: [six executable PHY-20 cases](cases/multicage-continuous/README.md).
+The two–four-cage equations are separate from runtime; the single-cage limit is
+checked against original motulator. Qualification is limited to the stated cases.
+
+Separate PHY-21 tracks cover 2000 buses / 128 motors / 32 generators, 45-second
+islands, protection cascades and phase RLC transients:
+[measured matrix and exact coverage](cases/network-dynamic/README.md).
+
+Feeder design now checks every scenario on three grids, audits the results and
+provides topology-held-out decision/refusal examples:
+[DES-01 scope and commands](cases/design-curriculum/README.md).
+
+Cable and transformer selection with combined static and dynamic checks:
+[DES-02 profile and commands](cases/equipment-design/README.md).
+
+Published manufacturer data with field-level provenance and deterministic compilation:
+[DES-02 catalog profile](cases/equipment-catalog/README.md).
+
+Sampled start pickup and discrete primary/backup relay coordination:
+[protection screen](cases/protection-screen/README.md).
+
+Closed-loop relay and breaker actions in a motor-only network:
+[closed-loop protection](cases/closed-loop-protection/README.md).
+
+Inverse-time relay clock replay and all16 pickup/time tolerance corners:
+[inverse protection](cases/inverse-protection/README.md).
+
+Full start, sag and restart studies at all16 tolerance corners, Radau/DAE:
+[full protection envelope](cases/full-protection-envelope/README.md).
+
+Full inverse-family corner matrices and an explicitly verified backup-setting revision:
+[VI/EI family qualification](cases/full-inverse-families/README.md).
+
 Verified LLM task generation, SFT conversations, physical GRPO rewards and local
 checkpoint training/evaluation: [guide](docs/LLM_TRAINING_EN.md).
 The first profile is feeder restoration; trained engineering-LLM quality and
@@ -584,3 +618,99 @@ direct/SVD selection. Eight registered studies measured **1.14–1.20x** speedup
 against the previous implementation under unchanged physical acceptance rules.
 Floating-star gauges retain a rank-tolerant solve without an added ground path.
 [Evidence and R06.11 scope](docs/COMPARISON_PROTOCOL_RU.md).
+
+
+R06.12 extends the independent full closed-loop reference to saturation,
+1/2/4 rotor cages, Gc loss and winding RC/R(T):
+`python -m benchmarks.extended_closed_loop_acceptance`. Separate refinement
+and Cauchy temporal-budget stages retain failed attempts and return a failure
+when their criteria are unmet. Equation agreement does not establish absolute
+time-domain accuracy; the default-budget double-cage profile remains unqualified.
+Runnable JSON: `cases/closed-loop-extended-independent/`.
+[Results, reproduction and R06.12 limits](docs/COMPARISON_PROTOCOL_RU.md).
+
+
+Public `switching-drive qualify` checks temporal self-consistency across
+successively halved steps and retains all results, failures and physical-unit
+caps in a sealed artifact. It exposes `power_grid_env.switching_convergence`,
+an explicit `step_budget`, CLI `--max-levels`/`--limits`, and ZIP export.
+A passing Cauchy profile is not an absolute error bound or industrial
+certification. [R06.13 commands and resource scope](docs/PHASE_NETWORK_AND_RESEARCH_RU.md).
+
+R06.13 also confirms a separate deep double-cage profile at 39.0625 ns with
+an explicit higher budget: roughly one million steps for 40 ms. The default
+budget still correctly rejects that case. [Status and scope](plans/CURRENT_STATUS.md).
+
+
+R06.14 accelerates the existing calculation with unchanged steps and result
+values: five 40-ms workloads measured 1.14–1.22x against R06.13. The precise
+million-step double-cage median decreased from 267.83 to 219.16 s.
+760 selected tests passed; fresh fine qualification and independent comparison
+are retained. [Results and limits](plans/CURRENT_STATUS.md).
+
+R06.15 adds **experimental adaptive midpoint integration**: set
+`"adaptive": {}` in a switching-drive study to enable it. A full trial step
+is compared with two half steps; rejected trials leave physical state intact.
+Source-current zero crossings are localized separately. Numerical energy
+corrections appear in `integration_event_log` and are never counted as heat.
+`integration` reports probe costs, rejected trials and accepted steps.
+Fixed stepping remains the default. Local estimates do not guarantee global
+accuracy; `switching-drive qualify` deliberately rejects adaptive studies.
+To compare three decreasing budgets, run
+`python -m benchmarks.switching_adaptive_acceptance --reference-root PATH --out PATH`.
+The reference directory must contain four complete `<case>.json` results.
+Archived production trajectories are regression comparators, not independent
+physical ground truth.
+In the historical R06.15 matrix, double-cage passed budget 0.2 but rejected
+0.1/0.05 at the minimum step. These failures are retained; see R06.17 below
+for the subsequent correction and bounded validated profile.
+Ready-to-run inputs are in `cases/switching-adaptive/`, for example:
+`power-grid switching-drive run --study cases/switching-adaptive/double_cage.json --out reports/adaptive-example`.
+These examples use authored parameters rather than measured plant data.
+
+R06.16 fixes the reproduced floating-motor-pole minimum-step solver failure:
+separate Newton stopping scales for motor rows and a trial step at the nearest
+diode hinge. `circuit_solver` accepts `auto` (legacy for fixed steps,
+motor-scaled for adaptive), `legacy`, and `motor_scaled`. The latter can be
+explicitly used for fixed-mesh studies. 538 selected tests passed; the saved
+failure state is checked against independent mixed equations. Double-cage
+budgets 0.1/0.05 now complete, but still exceed archived global error caps.
+The overall adaptive profile remains experimental.
+
+R06.17 adds motor-current zero events and consistent grouping when free-phase
+currents vanish together. Flux is never projected; accepted states and energy
+come from native half steps. **12/12 full runs** (four models × budgets
+0.2/0.1/0.05) pass the original caps and the 0.85 adjacent-difference reduction
+criterion. 564 selected tests, four independently checked event pieces, and
+an exact installed-wheel full replay pass. This is a bounded authored/reference
+profile, not an absolute accuracy guarantee for arbitrary networks or OEM
+qualification. The original fixed-step path is preserved.
+
+Source workflow with sealed runs and archived reference JSON:
+`python -m benchmarks.switching_adaptive_budget_qualification --runs RUNS --reference-root REFERENCES --out OUT`.
+It checks event residuals, work counters, physics audits, physical differences
+and reduction without relaxing the registered protocol caps. Public
+`switching-drive qualify` remains a fixed-mesh workflow.
+
+R06.18 checks full trajectories using a different formulation: **8 primary
+runs and 8 continuous references** across four authored profiles. The original
+motulator **0.23.1** motor RHS is connected to independently expressed source
+RL, diodes, DC rails, MOSFET/body-diode bridge, FOC/PWM and thermal equations.
+DOP853 and Radau agree within 1% of the registered physical caps; all primary
+runs pass those caps. Production imports are forbidden in reference workers.
+This uses an external **motor component**, not the entire motulator simulator,
+and establishes no universal ranking.
+
+Output times now follow the declared sample grid, with gate permission
+using that canonical time. Electrical snapshots remain pre-switch; permission
+uses the right-hand policy. All eight before/after physical arrays, energy
+ledgers and counters match exactly; timestamps and four boundary labels change.
+676 selected tests passed. Ready inputs are in `cases/continuous-drive/`.
+Full source benchmark:
+`python -m benchmarks.continuous_drive_acceptance --python REFERENCE_PYTHON --wheel MOTULATOR_WHEEL --out OUT`.
+The authenticated 0.23.1 wheel must be installed separately; normal runtime
+installation does not run or require this optional benchmark.
+
+Cold/hot fault-current screening now provides continuous bounds for a passive radial feeder and conservative relay/duty checks, with independent nodal comparisons. Scope and commands: [cold/hot envelope](cases/fault-temperature-envelope/README.md).
+
+Motor-fed faults: phase-preserving source/motor attribution, separate feeder/source currents and dynamic per-port RMS I²t checks. [Scope and examples](cases/motor-fault-contribution/README.md).

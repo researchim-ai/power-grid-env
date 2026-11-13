@@ -5,6 +5,7 @@ subtraction of nearly equal energies. Iron-loss current is Gc*dPsi_s/dt;
 it contributes to terminal current and heat, never to electromagnetic torque.
 """
 import math
+import itertools
 import numpy as np
 from power_grid_env.pwm_bridge import T,AB
 
@@ -29,7 +30,11 @@ class SwitchingMagnetics:
         return p.stator_r_ohm*factor[0],self.rr*factor[1]
 
     def radial_gradient(self,old,mid):
-        p=self.p;new=2*mid-old;a=math.hypot(old[0],old[1]);b=math.hypot(new[0],new[1]);power=p.saturation_exponent+2
+        p=self.p
+        if not p.saturation_beta_per_vs:
+            coefficient=.5/p.unsaturated_h
+            return 2*mid*coefficient,2*coefficient*self.eye2
+        new=2*mid-old;a=math.hypot(old[0],old[1]);b=math.hypot(new[0],new[1]);power=p.saturation_exponent+2
         coefficient=.5/p.unsaturated_h;gradient_coefficient=np.zeros(2)
         if p.saturation_beta_per_vs and a+b>0:
             # (b**power-a**power)/(b*b-a*a), with its equal-radius limit.
@@ -50,7 +55,7 @@ class SwitchingMagnetics:
     def magnetic_currents(self,flux):
         p=self.p;z=np.asarray(flux).reshape(self.n,2);ir=(z[1:]-z[0])/self.leakage[:,None]
         force=z[0]*(1+(p.saturation_beta_per_vs*np.linalg.norm(z[0]))**p.saturation_exponent)/p.unsaturated_h-sum(ir)
-        return np.r_[force,ir.ravel()]
+        return np.concatenate((force,ir.ravel()))
 
     def affine(self,old,h,speed,guess,temperature=None):
         p=self.p;rs,rr=self.resistances(temperature);matrix=self.linear_reluctance.copy();gradient,jac=self.radial_gradient(old[:2],guess[:2]);matrix[:2,:2]+=jac-self.eye2/p.unsaturated_h
@@ -59,15 +64,16 @@ class SwitchingMagnetics:
         # expressed in flux increments. This yields a Norton voltage port.
         physical=matrix.copy();physical[:2,:2]+=p.core_loss_s*2/h*self.eye2
         physical_offset=offset.copy();physical_offset[:2]-=p.core_loss_s*2/h*old[:2]
-        resistance=np.repeat(np.r_[rs,rr],2)
+        resistance=np.repeat(np.concatenate(([rs],rr)),2)
         left=2/h*self.identity+resistance[:,None]*physical
         spin=self.spin_unit*p.pole_pairs*speed
         for k in range(1,self.n):left[2*k:2*k+2,2*k:2*k+2]-=spin
-        rhs=-resistance*(matrix@old+offset)
+        old_current=matrix@old+offset
+        rhs=-resistance*old_current
         for k in range(1,self.n):rhs[2*k:2*k+2]+=spin@old[2*k:2*k+2]
         B=self.input_matrix
         solved=np.linalg.solve(left,np.column_stack([rhs,B]));offset_delta=solved[:,0];offset_flux=old+offset_delta;gain_flux=solved[:,1:]
-        motor_offset=(matrix@old+offset)[:2]+physical[:2]@offset_delta;motor_gain=physical[:2]@gain_flux
+        motor_offset=old_current[:2]+physical[:2]@offset_delta;motor_gain=physical[:2]@gain_flux
         return dict(offset_delta=offset_delta,offset_flux=offset_flux,gain_flux=gain_flux,motor_offset=motor_offset,motor_gain=motor_gain,
                     physical_matrix=physical,physical_offset=physical_offset,gradient=gradient,jacobian=jac,guess=guess.copy())
 
@@ -78,7 +84,7 @@ class SwitchingMagnetics:
         torque=1.5*p.pole_pairs*(force[1]*z[0,0]-force[0]*z[0,1])
         stator_copper=1.5*rs*(current@current);rotor_copper=1.5*sum(rr*np.sum(ir*ir,axis=1));copper=stator_copper+rotor_copper
         core=1.5*p.core_loss_s*(ds@ds)
-        return dict(currents=np.r_[current,ir.ravel()],torque_nm=float(torque),copper_w=float(copper),stator_copper_w=float(stator_copper),rotor_copper_w=float(rotor_copper),stator_resistance_ohm=float(rs),rotor_resistances_ohm=rr.tolist(),core_w=float(core),constitutive_residual_v=float(max(abs(expected-voltage))))
+        return dict(currents=np.concatenate((current,ir.ravel())),torque_nm=float(torque),copper_w=float(copper),stator_copper_w=float(stator_copper),rotor_copper_w=float(rotor_copper),stator_resistance_ohm=float(rs),rotor_resistances_ohm=rr.tolist(),core_w=float(core),constitutive_residual_v=float(max(abs(expected-voltage))))
 
     def terminal_current(self,flux,rails,gates,channel_r,diode_r,drop,temperature=None):
         """Instantaneous core-feedthrough solve at fixed flux and DC rails.
@@ -113,5 +119,24 @@ free gauge when all diodes and channels are blocked.
                 new=base@trial-rhs+(u-l)/diode_r
                 if max(abs(new))<max(abs(residual)) or difference < -1e-14:
                     voltage=trial;break
-            else:raise RuntimeError('instantaneous core-current solve failed')
-        raise RuntimeError('instantaneous core-current solve did not converge')
+            else:break
+        # At a diode hinge the descent method can stall in the isolated-star
+        # common-mode nullspace. There are only 3**3 passive diode states;
+        # enumerate them without perturbing flux, rails, gates or tolerances.
+        for status in itertools.product((-1,0,1),repeat=3):
+            state=np.asarray(status);on=state!=0
+            if not np.any(gates) and not np.any(on):
+                trial=-T@offset/conductance
+                lo=max(rails[1]-drop-trial);hi=min(rails[0]+drop-trial)
+                if lo>hi:continue
+                trial+=min(hi,max(lo,float(np.mean(rails))))
+            else:
+                matrix=base+np.diag(on/diode_r)
+                forcing=rhs+np.where(state>0,(rails[0]+drop)/diode_r,np.where(state<0,(rails[1]-drop)/diode_r,0.))
+                trial=np.linalg.solve(matrix,forcing)
+            upper=trial-rails[0]-drop;lower=rails[1]-trial-drop
+            if np.any((state==0)&((upper>1e-10)|(lower>1e-10))) or np.any((state==1)&(upper < -1e-10)) or np.any((state==-1)&(lower < -1e-10)):continue
+            residual=base@trial-rhs+(np.maximum(upper,0.)-np.maximum(lower,0.))/diode_r
+            if not np.all(np.isfinite(trial)) or max(abs(residual))>=1e-9:continue
+            result=magnetic.copy();result[:2]=offset+conductance*(AB@trial);return result
+        raise RuntimeError('instantaneous core-current passive active-set solve failed')

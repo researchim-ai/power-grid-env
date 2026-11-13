@@ -1,0 +1,64 @@
+{
+  "id": "radial-lv-demo",
+  "voltage_v": 400,
+  "demand_kva": 100,
+  "lagging_power_factor": 0.8,
+  "max_drop_percent": 5,
+  "installation": {
+    "source": {
+      "reference": "Synthetic engineering fixture, not a manufacturer product or normative table",
+      "conditions": "Three loaded phases, one circuit, explicit operating resistance; correction factors supplied for demonstration only"
+    },
+    "method": "synthetic tray installation",
+    "ambient_c": 40,
+    "temperature_factor": 0.9,
+    "grouping_factor": 0.85,
+    "other_factor": 1,
+    "length_m": 100,
+    "clearing_s": 0.1,
+    "breaker_interrupting_a": 15000
+  },
+  "cables": [
+    {
+      "id": "c95",
+      "source": {
+        "reference": "Synthetic engineering fixture, not a manufacturer product or normative table",
+        "conditions": "Three loaded phases, one circuit, explicit operating resistance; correction factors supplied for demonstration only"
+      },
+      "area_mm2": 95,
+      "ampacity_a": 250,
+      "r_operating_ohm_km": 0.25,
+      "x_ohm_km": 0.08,
+      "k_a_sqrt_s_mm2": 143,
+      "rated_voltage_v": 1000
+    },
+    {
+      "id": "c16",
+      "source": {
+        "reference": "Synthetic engineering fixture, not a manufacturer product or normative table",
+        "conditions": "Three loaded phases, one circuit, explicit operating resistance; correction factors supplied for demonstration only"
+      },
+      "area_mm2": 16,
+      "ampacity_a": 70,
+      "r_operating_ohm_km": 1.5,
+      "x_ohm_km": 0.08,
+      "k_a_sqrt_s_mm2": 143,
+      "rated_voltage_v": 1000
+    }
+  ],
+  "transformers": [
+    {
+      "id": "t250",
+      "source": {
+        "reference": "Synthetic engineering fixture, not a manufacturer product or normative table",
+        "conditions": "Three loaded phases, one circuit, explicit operating resistance; correction factors supplied for demonstration only"
+      },
+      "secondary_v": 400,
+      "rating_kva": 250,
+      "impedance_percent": 4,
+      "resistance_percent": 1,
+      "short_time_a": 10000,
+      "short_time_s": 1
+    }
+  ]
+}

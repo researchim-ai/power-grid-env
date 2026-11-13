@@ -253,7 +253,7 @@ class PhaseCase(Strict):
     converters: list[Converter] = Field(default_factory=list, max_length=16)
     drives: list[Drive] = Field(default_factory=list,max_length=8)
     motors: list[MotorPort] = Field(default_factory=list,max_length=16)
-    events: list[PhaseEvent] = Field(default_factory=list, max_length=256)
+    events: list[PhaseEvent] = Field(default_factory=list, max_length=512)
     initial_voltage_v: dict[str, float] = Field(default_factory=dict)
     sequence_monitors: dict[str, tuple[str, str, str]] = Field(default_factory=dict)
     sequence_neutrals: dict[str,str] = Field(default_factory=dict)

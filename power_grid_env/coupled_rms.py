@@ -79,7 +79,7 @@ class CoupledSettings(InductionSettings):
     overexcitation_limiters: list[OverexcitationLimiter] = Field(default_factory=list,max_length=32)
     generator_thermal: list[GeneratorThermalProtection] = Field(default_factory=list,max_length=32)
     faults: list[CoupledFault] = Field(default_factory=list,max_length=100)
-    machines: list[ClassicalMachine | RoundRotorMachine] = Field(min_length=1,max_length=32)
+    machines: list[ClassicalMachine | RoundRotorMachine] = Field(min_length=0,max_length=32)
     events: list[CoupledEvent | ESST1APortEvent] = Field(default_factory=list,max_length=512)
 
     @model_serializer(mode='wrap')
@@ -91,6 +91,8 @@ class CoupledSettings(InductionSettings):
 
     @model_validator(mode='after')
     def supported_machines(self):
+        if not self.machines and self.operating_point is not None:
+            raise ValueError('motor-only coupled profile currently requires cold initialization')
         limit=8 if self.capacity_profile=='standard' else 32
         if len(self.machines)>limit:raise ValueError('generator capacity exceeds selected profile')
         for items in [self.takeover_oels,self.esst1a_exciters,self.generator_field_thermal,self.oel2c_limiters,self.underexcitation_limiters,self.overexcitation_limiters,self.generator_thermal]:
@@ -126,8 +128,8 @@ def validate_coupled(network,settings):
         try:passport.model_validate(machine.model_dump(mode='json'))
         except ValueError as exc:errors.append(f'{machine.generator_id}: invalid machine/controller passport: {exc}')
     generator_limit=8 if settings.capacity_profile=='standard' else 32
-    if not 1<=len(settings.machines)<=generator_limit or len({m.generator_id for m in settings.machines})!=len(settings.machines):
-        errors.append('one to eight unique generator passports required')
+    if not 0<=len(settings.machines)<=generator_limit or len({m.generator_id for m in settings.machines})!=len(settings.machines):
+        errors.append('zero to eight unique generator passports required')
     other_ids={item.id for group in (network.sources,network.lines,network.transformers,network.loads,network.switches) for item in group}
     if any(g.id in other_ids for g in network.generators):
         errors.append('generator ID collides with another canonical device')
@@ -276,7 +278,7 @@ class CoupledNetwork(InductionNetwork):
         passports={m.generator_id:m for m in settings.machines}
         self.generators=list(network.generators)
         self.gen_passports=[passports[g.id] for g in self.generators]
-        self.gen_buses=np.array([lookup[self.topology.terminal_bus[g.terminal_id]] for g in self.generators])
+        self.gen_buses=np.array([lookup[self.topology.terminal_bus[g.terminal_id]] for g in self.generators],dtype=int)
         self.gen_z=np.array([complex(m.armature_r_pu,m.x_d_subtransient_pu) if m.model=='GENROU' else 1j*m.x_d_prime_pu for m in self.gen_passports])
         self.gen_factors=np.array([m.rated_va/network.s_base_va for m in self.gen_passports])
         self.gen_y=self.gen_factors/self.gen_z

@@ -1644,3 +1644,188 @@ GitHub/CI/индексация/commit/push не выполнялись.
 остался защёлкнутым при охлаждении ниже threshold, floating-star использовал
 SVD, а precharge/four-cage прогоны действительно использовали direct solves.
 Всего 64 протокольные траектории и 64 replay, не 64 уникальные схемы.
+
+
+## Расширенный независимый closed-loop профиль R06.12
+
+Для неизвестного сетевого напряжения теперь есть отдельный смешанный
+source/RL/diode/DC/PWM/nominal FOC эталон с насыщением, 1–4 клетками,
+eddy-current Gc и optional двухузловыми winding RC/R(T). Не использует
+production RHS/ports/control. Опубликованный корпус охватывает 1/2/4 клетки;
+трёхклеточный inventory дополнительно проверяется коротким тестом.
+Исследования: `cases/closed-loop-extended-independent/`.
+
+Три воспроизводимых этапа:
+
+```bash
+python -m benchmarks.extended_closed_loop_acceptance --out reports/extended-base
+python -m benchmarks.extended_closed_loop_refinement --source reports/extended-base --out reports/extended-refined
+python -m benchmarks.extended_temporal_budget --source reports/extended-base --refined reports/extended-refined --out reports/extended-budget
+```
+
+Для numerical replay замените `--out` на `--verify` с тем же каталогом;
+`--source` и `--refined` сохраняются. SHA-256 проверяет точную целостность,
+а numerical replay допускает только указанное в comparison protocol округление.
+Обе реализации разделяют математическую midpoint/discrete-gradient схему;
+temporal self-consistency не доказывает абсолютную continuous-time accuracy.
+
+Для обычного расчёта одного JSON без benchmark-кода:
+
+```bash
+python -m power_grid_env.cli switching-drive run --study cases/closed-loop-extended-independent/warm_four_winding.json --out reports/warm-four
+```
+
+Применимость: balanced eight-node drive, ideal blocking devices с on-R/Vf,
+явный номинальный observer, fixed semiconductor resistance и zero switching
+energy. Динамические winding/electronics trips в reference отвергаются, а не
+замалчиваются. Параметры авторские, OEM accuracy не установлена. Production
+runtime поддерживает более широкие опции; этот эталон их ещё не квалифицирует.
+
+
+## Публичная temporal-проверка R06.13
+
+Обычный профиль с default accepted-step budget:
+
+```bash
+python -m power_grid_env.cli switching-drive qualify --study cases/closed-loop-extended-independent/warm_four_winding.json --out reports/warm-temporal --max-levels 6
+```
+
+Углублённый зарегистрированный double-cage профиль требует явных ресурсов:
+
+```bash
+python -m power_grid_env.cli switching-drive qualify --study cases/closed-loop-extended-independent/double_cage.json --out reports/double-temporal --max-levels 9 --step-budget 2000000
+```
+
+На 40-ms задаче самый мелкий исследованный шаг — 39.0625 ns, около миллиона
+accepted steps для одной траектории. Это дорогой bounded test case, не
+универсальная рекомендация по шагу. Default max-levels=6, допустимо 3..9;
+ресурсы автоматически не повышаются. Непрошедший default-budget профиль
+остаётся отрицательным результатом, даже если другой ресурсный профиль прошёл.
+
+В `--limits FILE.json` можно явно задать положительные physical-unit caps;
+они сохраняются в `protocol.json`. Python API:
+`qualify_switching_drive(study, max_levels=6, limits=None)` и
+`run_switching_qualification_artifact(study, out, max_levels=6, limits=None)`
+из `power_grid_env.switching_convergence`. В API параметры после study/out
+являются keyword-only. Schema результата:
+`power-grid-env.switching-temporal-qualification/v1`.
+
+Артефакт содержит canonical `study.json`, `protocol.json`, для каждого
+вычисленного уровня — вход, полный result и assessment, затем `summary.json`
+и SHA-256 manifest. В summary различаются `qualified`, `levels_exhausted`,
+`step_budget_exhausted`; сбои решателя записываются в attempts как
+`solver_failed`, разрывая трёхсеточную цепочку. Последующие более мелкие
+уровни могут продолжить поиск, но старые отказы остаются в истории.
+
+```bash
+python -m power_grid_env.cli switching-drive verify reports/warm-temporal
+python -m power_grid_env.cli switching-drive export reports/warm-temporal --out reports/warm-temporal.zip
+```
+
+Эта проверка повторяет production solver на разных шагах и не является
+независимым reference или bound абсолютной continuous-time ошибки. General
+DAE/phase-network масштабирование, адаптивное ускорение и физическая/OEM
+валидация требуют своих отдельных профилей.
+
+
+Для повторного обычного расчёта берите `level-N/study.json` выбранного
+уровня из qualification artifact: исходный верхний study сохраняет стартовый
+шаг. Например, в девятиуровневом double-cage случае выбран `level-8/study.json`.
+Проверка целостности и переоценка сохранённых данных не выполняют симуляцию.
+`benchmarks.switching_qualification_reassessment` маркирует такие данные
+отдельно и проверяет совместимость numerical modules с исходным wheel.
+
+
+## Hot-path R06.14
+
+Проверка производительности и физической эквивалентности прежней реализации:
+
+```bash
+python -m benchmarks.switching_hotpath_acceptance --out reports/hotpath-comparison
+python -m benchmarks.switching_hotpath_acceptance --verify reports/hotpath-comparison
+```
+
+Это 30 полных прогонов, включая шесть миллионных deep trajectories; полный
+replay также затратен. Команда `--verify` сохраняет исходные timing/RSS
+измерения и повторяет численные результаты. Во время timing protocol не
+следует запускать другие CPU-heavy исследования. Независимая mixed-reference
+сверка остаётся отдельным `extended_closed_loop_acceptance` workflow.
+
+Обновлённый runtime переиспользует только локальные Newton evaluations
+внутри одного trial. Насыщение, winding R(T), защиты и границы PWM не получают
+нового кэширования состояния. Собственные accepted-step budgets и temporal
+qualification продолжают действовать без ослабления limits.
+
+### R06.15 — адаптивные переходные процессы привода
+
+Экспериментальный `adaptive` в switching-drive study сохраняет PWM/control/
+sampling boundaries внешнего scheduler. Принятый переход состоит из одного
+или двух native midpoint шагов до ближайшего события; observer получает
+суммарные интегралы, а не последний midpoint за весь интервал. Отвергнутые
+попытки не изменяют физические массивы, реле и накопления энергии. Бюджеты
+принятых шагов и probe evaluations контролируются отдельно. Нулевая
+поверхность source-current локализуется с явной численной энергетической
+поправкой, не с подменой её нагревом.
+
+Режим не включён по умолчанию. Его локальная ошибка имеет явный floor;
+применимость проверяется полными траекториями и независимыми audits.
+Расширение на switching-energy, все варианты реле и material R(T) требует
+отдельной матрицы внешней валидации, даже если unit tests проходят.
+
+### R06.16 — устойчивость слабых motor-node уравнений
+
+`circuit_solver: motor_scaled` отделяет остановку Newton слабых motor rows
+от C/h масштаба DC-накопителя. Пробный шаг начинает поиск у ближайшего
+переключения диода, чтобы большой Newton-direction не исчерпывал лимит
+backtracking возле границы. Режим доступен и на фиксированной сетке;
+`auto` выбирает его для adaptive, сохраняя legacy fixed-step арифметику.
+Сохранены physical equations, статические semiconductor branch laws и
+энергетические накопления; не добавлены fictitious leakage или damping.
+
+Исходные min-step solver failures устранены на сохранённом state и полных
+0.1/0.05 double-cage прогонах. Однако tighter trajectories пока не проходят
+исторические глобальные caps. Следующая очередь — motor/body-diode hybrid
+transitions и независимый continuous-time reference, включая проверку
+переключений на нуле motor current; source-zero restart сам по себе не
+доказывает корректность всех переключений двигателя.
+
+### R06.17 — event-aligned motor zero current
+
+Адаптивный switching интегратор завершает шаг при переходе тока свободной
+фазы через ноль. Идентичности и времена coarse/fine событий должны
+согласоваться. При одновременном исчезновении всего вектора токов
+изолированной звезды используется общая идентичность участвующих фаз в
+пределах прежнего current tolerance. Потокосцепления и температура не
+проецируются; accepted state/energy в точности равны native полушагам.
+Добавлены root residual telemetry, проверки отсутствия chatter, rollback
+при старом ошибочном распознавании и независимые mixed-equation проверки
+принятых подшагов на двух состояниях.
+
+Это ограниченный профиль авторами заданных двигателей/semiconductors.
+Остаются отдельными направлениями full independent continuous-time
+validation, переключательные потери/thermal trips/material R(T) в едином
+профиле, charge-dynamic EMT и измеренное масштабирование больших сетей.
+Успех reference-профиля не является абсолютным error bound для любой study.
+
+### R06.18 — непрерывный closed-loop эталон привода
+
+`benchmarks.continuous_drive_reference` использует оригинальную single-cage
+Gamma машину motulator0.23.1 и независимо собранный full source/RL/diode/DC/
+channel/body-diode/thermal circuit. Положительный Gc даёт passive algebraic
+terminal feedthrough; source-current constraints обрабатываются guards
+непрерывного ODE-интегратора. FOC/observer/PWM выражены отдельно. Production
+imports и заранее загруженные production modules запрещены. DOP853/Radau
+подтверждают полнотраекторное согласие, а не только совпадение motor stages.
+
+Проверены linear/saturated starts, sag/block/recovery и warm winding R(T).
+Профиль не включает multicage external machine, switching-energy jumps,
+semiconductor R(T), active brake, protections и charge-dynamic recovery.
+Эти сочетания остаются следующей очередью. Все8 primary runs проходят
+исходные caps против обоих reference methods; это bounded authored profile,
+не absolute error theorem, field qualification или полный внешний рейтинг.
+
+Выходной clock исправлен отдельно от интегратора: uniform sample tags
+канонизированы, gate permission использует правую сторону sampling time,
+а electrical values сохраняют pre-switch convention. Четыре старые gate
+labels на границах block windows исправлены. Mathematical plant и все
+физические before/after arrays/ledgers/counters не изменились.

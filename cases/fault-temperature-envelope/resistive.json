@@ -1,0 +1,50 @@
+{
+  "id": "cold-hot-resistive-lv",
+  "source": {
+    "reference": "owner://cold-hot-demo/v1",
+    "conditions": "Authored 20..90 C copper, voltage .95..1.05, entire feeder, bolted three-phase faults; not a normative envelope; resistive variant 0..0.01 ohm per-phase fault resistance"
+  },
+  "conductor_c": {
+    "minimum": 20,
+    "maximum": 90
+  },
+  "voltage_factor": {
+    "minimum": 0.95,
+    "maximum": 1.05
+  },
+  "position_pu": {
+    "minimum": 0,
+    "maximum": 1
+  },
+  "fault_resistance_ohm": {
+    "minimum": 0,
+    "maximum": 0.01
+  },
+  "primary": {
+    "breaker_opening_s": 0.02,
+    "curve": "very_inverse",
+    "interrupting_a": 15000,
+    "pickup_a": 1000,
+    "pickup_tolerance": 0.05,
+    "source": {
+      "conditions": "Authored generic very_inverse relay settings; continuous progress, .05s exponential reset/.95 dropout; no CT/OEM model; pickup/time tolerances applied by explicit corner plans",
+      "reference": "owner://protection-screen-demo/v1"
+    },
+    "time_multiplier": 0.01,
+    "time_tolerance": 0.1
+  },
+  "backup": {
+    "breaker_opening_s": 0.03,
+    "curve": "very_inverse",
+    "interrupting_a": 15000,
+    "pickup_a": 1200,
+    "pickup_tolerance": 0.05,
+    "source": {
+      "conditions": "Authored generic very_inverse relay settings; continuous progress, .05s exponential reset/.95 dropout; no CT/OEM model; pickup/time tolerances applied by explicit corner plans",
+      "reference": "owner://protection-screen-demo/v1"
+    },
+    "time_multiplier": 0.07,
+    "time_tolerance": 0.1
+  },
+  "grading_margin_s": 0.01
+}

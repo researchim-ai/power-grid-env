@@ -147,6 +147,7 @@ def main(argv: list[str] | None = None) -> int:
 
     switching = sub.add_parser('switching-drive', help='event-resolved PWM/FOC/inductive diode drive and thermal protection')
     switching_commands = switching.add_subparsers(dest='switching_command', required=True)
+    cmd = switching_commands.add_parser('qualify');cmd.add_argument('--study',required=True);cmd.add_argument('--out',required=True);cmd.add_argument('--max-levels',type=int,default=6);cmd.add_argument('--step-budget',type=int);cmd.add_argument('--limits')
     cmd = switching_commands.add_parser('run'); cmd.add_argument('--study',required=True);cmd.add_argument('--out',required=True)
     for name in ['verify','export']:
         cmd=switching_commands.add_parser(name);cmd.add_argument('directory')
@@ -209,6 +210,52 @@ def main(argv: list[str] | None = None) -> int:
     cmd=actions.add_parser('export');cmd.add_argument('directory');cmd.add_argument('--out',required=True);cmd.add_argument('--split',choices=['train','dev','test'],default='train');cmd.add_argument('--kind',choices=['prompts','plans','steps','tools'],default='plans')
     cmd=actions.add_parser('score-group');cmd.add_argument('directory');cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True);cmd.add_argument('--split',choices=['train','dev','test'],default='train')
     cmd=actions.add_parser('evaluate');cmd.add_argument('directory');cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True);cmd.add_argument('--split',choices=['dev','test'],default='test')
+
+    cmd=sub.add_parser('protection-envelope-store',help='full finite-corner studies in individually bounded artifacts')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-protection-envelope-store',help='verify index and all17 owner-anchored studies')
+    cmd.add_argument('directory');cmd.add_argument('--input')
+
+    cmd=sub.add_parser('protection-envelope',help='all16 pickup/time corners plus nominal closed-loop study')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-protection-envelope',help='recompute all corner derivations, physical audits and clocks')
+    cmd.add_argument('directory');cmd.add_argument('--input')
+
+    cmd=sub.add_parser('closed-loop-protection',help='three-grid actual motor relay and breaker actions')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-closed-loop-protection',help='recompute action evidence and physical audits')
+    cmd.add_argument('directory');cmd.add_argument('--input')
+
+    cmd=sub.add_parser('protection-screen',help='sampled start and discrete fault coordination screen')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--study',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-protection-screen',help='recompute portable protection evidence and owner anchor')
+    cmd.add_argument('directory');cmd.add_argument('--input')
+
+    cmd=sub.add_parser('catalog-design',help='traceable passport extracts plus three-grid equipment study')
+    cmd.add_argument('--catalog',required=True);cmd.add_argument('--input',required=True);cmd.add_argument('--proposal',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-catalog-design',help='recompute passport derivations, physical evidence and owner anchors')
+    cmd.add_argument('directory');cmd.add_argument('--catalog');cmd.add_argument('--input');cmd.add_argument('--proposal')
+
+    cmd=sub.add_parser('equipment-design',help='catalog sizing plus mandatory three-grid motor studies')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--proposal',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-equipment-design',help='recompute coupled equipment evidence and owner anchors')
+    cmd.add_argument('directory');cmd.add_argument('--input');cmd.add_argument('--proposal')
+
+    cmd=sub.add_parser('electrical-sizing',help='bounded owner-catalog cable and transformer checks')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--proposal',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-electrical-sizing',help='recompute sizing and optional owner anchors')
+    cmd.add_argument('directory');cmd.add_argument('--input');cmd.add_argument('--proposal')
+
+    cmd=sub.add_parser('feeder-design',help='evaluate a catalog feeder proposal against all mandatory motor scenarios')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--proposal',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-feeder-design',help='recompute three-grid design evidence and optional owner anchors')
+    cmd.add_argument('directory');cmd.add_argument('--input');cmd.add_argument('--proposal')
+    corpus=sub.add_parser('feeder-corpus',help='owner-side topology-held-out feeder design data and evaluation')
+    actions=corpus.add_subparsers(dest='feeder_corpus_action',required=True)
+    cmd=actions.add_parser('generate');cmd.add_argument('--out',required=True)
+    cmd=actions.add_parser('verify');cmd.add_argument('directory')
+    cmd=actions.add_parser('export');cmd.add_argument('directory');cmd.add_argument('--out',required=True);cmd.add_argument('--split',choices=['train','dev','test'],default='train');cmd.add_argument('--kind',choices=['prompts','sft'],default='prompts')
+    cmd=actions.add_parser('evaluate');cmd.add_argument('directory');cmd.add_argument('--predictions',required=True);cmd.add_argument('--out',required=True);cmd.add_argument('--split',choices=['dev','test'],default='test')
 
     cmd=sub.add_parser('motor-engineering',help='three-grid DOL/restart shaft-energy and I2t study')
     cmd.add_argument('--input',required=True);cmd.add_argument('--out',required=True)
@@ -398,6 +445,91 @@ def main(argv: list[str] | None = None) -> int:
             r=verify_comparison(args.directory);print(json.dumps(r,ensure_ascii=False));return 0 if r['required_comparisons_passed'] else 2
         except (ValueError,OSError) as exc:
             print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+    if args.command in {'protection-envelope-store','verify-protection-envelope-store'}:
+        from power_grid_env.protection_envelope_store import run_store,verify_store
+        from power_grid_env.study_artifacts import read_json
+        try:
+            r=run_store(read_json(args.input),args.out) if args.command=='protection-envelope-store' else verify_store(args.directory,expected_envelope=read_json(args.input) if args.input else None)
+            print(json.dumps(r,ensure_ascii=False));return 0 if r['passes_all_enumerated_corners'] else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+    if args.command in {'protection-envelope','verify-protection-envelope'}:
+        from power_grid_env.protection_envelope import run_envelope,verify_envelope
+        from power_grid_env.study_artifacts import read_json
+        try:
+            r=run_envelope(read_json(args.input),args.out) if args.command=='protection-envelope' else verify_envelope(args.directory,expected_envelope=read_json(args.input) if args.input else None)
+            print(json.dumps(r,ensure_ascii=False));return 0 if r['passes_all_enumerated_corners'] else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+    if args.command in {'closed-loop-protection','verify-closed-loop-protection'}:
+        from power_grid_env.closed_loop_protection import run_closed_loop,verify_closed_loop
+        from power_grid_env.study_artifacts import read_json
+        try:
+            r=run_closed_loop(read_json(args.input),args.out) if args.command=='closed-loop-protection' else verify_closed_loop(args.directory,expected_plan=read_json(args.input) if args.input else None)
+            print(json.dumps(r,ensure_ascii=False));return 0 if r['passes_declared_profile'] else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+    if args.command in {'protection-screen','verify-protection-screen'}:
+        from power_grid_env.protection_design import run_screen,verify_screen
+        from power_grid_env.study_artifacts import read_json
+        try:
+            r=run_screen(read_json(args.input),args.study,args.out) if args.command=='protection-screen' else verify_screen(args.directory,expected_plan=read_json(args.input) if args.input else None)
+            print(json.dumps(r,ensure_ascii=False));return 0 if r['passes_declared_screen'] else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+    if args.command in {'catalog-design','verify-catalog-design'}:
+        from power_grid_env.equipment_catalog import run_catalog,verify_catalog
+        from power_grid_env.study_artifacts import read_json
+        try:
+            if args.command=='catalog-design':
+                r=run_catalog(read_json(args.catalog),read_json(args.input),read_json(args.proposal),args.out)
+            else:
+                r=verify_catalog(args.directory,expected_catalog=read_json(args.catalog) if args.catalog else None,expected_brief=read_json(args.input) if args.input else None,expected_selection=read_json(args.proposal) if args.proposal else None)
+            print(json.dumps(r,ensure_ascii=False));return 0 if r['equipment']['meets_declared_requirements'] else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+    if args.command in {'equipment-design','verify-equipment-design'}:
+        from power_grid_env.equipment_design import run_equipment,verify_equipment
+        from power_grid_env.study_artifacts import read_json
+        try:
+            if args.command=='equipment-design':
+                r=run_equipment(read_json(args.input),read_json(args.proposal),args.out)
+            else:
+                r=verify_equipment(args.directory,expected_task=read_json(args.input) if args.input else None,expected_selection=read_json(args.proposal) if args.proposal else None)
+            print(json.dumps(r,ensure_ascii=False));return 0 if r['meets_declared_requirements'] else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+    if args.command in {'electrical-sizing','verify-electrical-sizing'}:
+        from power_grid_env.electrical_sizing import run_sizing,verify_sizing
+        from power_grid_env.study_artifacts import read_json
+        try:
+            if args.command=='electrical-sizing':
+                r=run_sizing(read_json(args.input),read_json(args.proposal),args.out)
+            else:
+                r=verify_sizing(args.directory,expected_task=read_json(args.input) if args.input else None,expected_selection=read_json(args.proposal) if args.proposal else None)
+            print(json.dumps(r,ensure_ascii=False));return 0 if r['passes_declared_checks'] else 2
+        except (ValueError,OSError,ArithmeticError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+    if args.command in {'feeder-design','verify-feeder-design'}:
+        from power_grid_env.design_study import run_design,verify_design
+        from power_grid_env.study_artifacts import read_json
+        try:
+            r=verify_design(args.directory,expected_task=read_json(args.input) if args.input else None,expected_proposal=read_json(args.proposal) if args.proposal else None) if args.command=='verify-feeder-design' else run_design(read_json(args.input),read_json(args.proposal),args.out)
+            print(json.dumps(r,ensure_ascii=False));return 0 if r['meets_declared_dynamic_requirements'] else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+    if args.command=='feeder-corpus':
+        from power_grid_env.design_corpus import generate_corpus,verify_corpus,export_dataset,evaluate
+        from power_grid_env.study_artifacts import read_json
+        try:
+            action=args.feeder_corpus_action
+            if action=='generate':r=generate_corpus(args.out)
+            elif action=='verify':r=verify_corpus(args.directory)
+            elif action=='export':r=export_dataset(args.directory,args.out,split=args.split,kind=args.kind)
+            else:r=evaluate(args.directory,read_json(args.predictions),args.out,split=args.split)
+            print(json.dumps(r,ensure_ascii=False));return 0
+        except (ValueError,OSError,RuntimeError,ArithmeticError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
     if args.command in {'motor-engineering','verify-motor-engineering'}:
         from power_grid_env.motor_engineering import run_engineering,verify_engineering
         from power_grid_env.study_artifacts import read_json
@@ -513,6 +645,13 @@ def main(argv: list[str] | None = None) -> int:
         from power_grid_env.study_artifacts import read_json,verify,export_zip
         from power_grid_env.switching_drive import run_switching_artifact
         try:
+            if args.switching_command=='qualify':
+                from power_grid_env.switching_convergence import run_switching_qualification_artifact
+                study=read_json(args.study)
+                if args.step_budget is not None:study['step_budget']=args.step_budget
+                limits=read_json(args.limits) if args.limits else None
+                r=run_switching_qualification_artifact(study,args.out,max_levels=args.max_levels,limits=limits)
+                print(json.dumps(dict(completed=r['completed'],qualified=r['qualified'],status=r['status'],selected_step_s=r['selected_step_s'],absolute_error_certified=False),allow_nan=False));return 0 if r['qualified'] else 2
             if args.switching_command=='run':
                 r=run_switching_artifact(read_json(args.study),args.out)
                 print(json.dumps(dict(completed=r['completed'],metrics=r['metrics']),allow_nan=False));return 0

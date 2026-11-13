@@ -1,15 +1,972 @@
 # Текущий статус и очередь развития
 
-Обновлено: **11 ноября 2026 года**.
+Обновлено: **13 ноября 2026 года**.
 
-Последний завершённый блок — R06.11: cache assembly/per-trial context и
-проверенный direct/SVD выбор в неизвестном Norton/MNA-порту ключевого привода.
-На 8 зарегистрированных before/after workflows выигрыш 1.14–1.20x; это fixed
-8-node drive, не общий DAE/phase-network и не внешний рейтинг. Следующие
-приоритеты — оставшиеся motor-port/floating-gauge расходы и независимый
-closed-loop oracle для расширенной физики/событий, затем общая DAE-сеть.
-Профиль заданного напряжения R06.10 остаётся отдельным измерением.
-Общее превосходство продукта не заявляется; R04/R05 для AI — отдельная очередь.
+## R06.31 / DES-04 — подпитка КЗ двигателями и физические токи портов
+
+Добавлен `motor_fault_contribution`: фазовое разложение замороженных ЭДС
+одно-клеточных асинхронных машин и источника, произвольная точка КЗ на
+радиальном кабеле, постоянный Z нагрузки, точный болт/конечный импеданс,
+несколько машин и отключённый источник. Подавление ЭДС сохраняет импеданс;
+отключение машины удаляет ветвь. Проверяются KCL, невязка и суперпозиция.
+Источник, кабельные порты, двигатели и КЗ имеют отдельные физические токи.
+
+- **216** независимых скалярных сравнений, max ошибка3.1e-12A.
+- **24** динамических запуска:4 сценария ×2 решателя ×3 сетки;3с разгона
+  до КЗ, cold/hot/пониженное U, upstream-КЗ и отключение двигателя во время КЗ.
+- **168** условных алгебраических срезов и **12** сравнений полных Radau/DAE
+  траекторий прошли. Это не независимая динамическая модель.
+- По-портовое I²t на24 траекториях:8 fine-grid сравнений проходят0.2%,
+  фактический max сдвиг7.084e-5. Полный ток КЗ не подставляется в кабель.
+- **206** целевых тестов без ошибок/пропусков, включая43 новых разложения
+  и8 интегрирования. XML: `reports/motor-fault-complete-tests-2026-11-13.xml`.
+- Первый диагностический прогон сохранил ошибку CT-reference: при upstream-КЗ
+  линейный CT ошибочно сравнивался с источником. После исправления привязки
+  добавлен regression и заново выполнены все24 запуска. Положительный пакет:
+  `reports/motor-fault-contribution-qualified-2026-11-13/`.
+
+Поставка: `reports/motor-fault-delivery-2026-11-13/delivery.json`, закреплённый
+wheel и6 точных повторов установленного пакета вне исходников с запретом
+импорта benchmark/tests/reference packages. Тот же host и общие зависимости;
+это не независимая машина. Пакеты исходных траекторий привязаны хешами.
+
+Документация и остальные пакеты:
+[cases/motor-fault-contribution](../cases/motor-fault-contribution/README.md).
+DES-04 остаётся **in_progress**: это снимки single-cage RMS и измеренное I²t,
+не общая граница динамической подпитки и не квалификация селективности с ней.
+Остаются связанные защиты с этими сценариями, более широкие машины/топологии,
+нагруженная инициализация, несимметрия, DC/peak и температурная обратная связь.
+Новый runtime имеет новый fingerprint; прежние R06.29/R06.30 доказательства
+относятся к своим закреплённым версиям, не автоматически к текущему пакету.
+
+## R06.30 / DES-04 — холодный/горячий диапазон токов КЗ
+
+Добавлен `power_grid_env.fault_temperature_envelope`: независимый от запуска
+динамики инженерный экран выбранной пассивной радиальной сети. Непрерывные
+границы токов по температуре меди, напряжению, месту и сопротивлению КЗ
+следуют из монотонности положительных последовательных импедансов.
+Для времён защит, селективности и I²t используются достаточные интервальные
+оценки; отрицательная оценка селективности может быть неопределённой.
+
+- Источники: существующий паспортный каталог, медь20..90°C, c=.95..1.05,
+  вся длина кабеля, Rкз=0 и отдельный профиль0..0.01Ω. Rт фиксировано.
+- Два sealed-пакета `reports/fault-temperature-{envelope,resistive}-qualified-2026-11-13`:
+  **4802 узловые точки и86436 проверок времён с допусками**, все пройдены.
+- Резистивный профиль: I=3405.965..6314.769A, primary clear≤86.183ms,
+  достаточный запас grading≥101.182ms; оба аппарата и заданные тепловые
+  ограничения проходят. Это постоянный RMS ток, не интеграл динамического КЗ.
+- **155 целевых тестов**, включая20 новых, без ошибок/пропусков;
+  `reports/fault-temperature-final-tests-2026-11-13.xml`.
+- Отрицательные тесты сохраняют отсутствие чувствительности при Rкз=1Ω;
+  JSON null не превращается в успешное отключение. Артефакт проверяется
+  пересчётом с обязательными owner-inputs, включая защиту от resealed-подмены.
+
+Пример и команды: [cases/fault-temperature-envelope](../cases/fault-temperature-envelope/README.md).
+DES-04 остаётся **in_progress**: холодный/горячий экран закрыт только в этом
+пассивном профиле; motor contribution, динамическая R(T), peak/earth faults,
+общие топологии и непрерывная динамическая селективность остаются открытыми.
+Runtime расширен новым модулем, поэтому package fingerprint изменился.
+Исторические1836 динамических запусков относятся к закреплённому runtime R06.29
+и его wheel, а не к новой общей квалификации текущего пакета. GitHub/CI и git
+операции не выполнялись.
+
+## R06.29 / DES-04 — все три inverse-семейства, найденный EI отказ и отдельная ревизия
+
+DES-04 остаётся **in_progress**; полный finite-corner профиль расширен на
+Very Inverse и Extremely Inverse. Пройдены SI с backup TMS=.06, VI с .07
+и **отдельный согласованный EI-вариант с .06**. Исходный EI с .08 не объявляется
+прошедшим: у него найден и сохранён воспроизводимый отрицательный контроль.
+Нативный runtime не менялся, package fingerprint остаётся прежним.
+
+Содержательный результат:
+
+- Исходная EI TMS=.08 проходит nominal, но corner0011 (primary pickup/time−,
+  backup pickup/time+) не выдерживает потерю измерения основной защиты.
+  Оба решателя и три сетки дают complete/numerically_qualified=true,
+  passes_declared_profile=false. Backup progress достигает≈.8827298335<1,
+  и реле не trip до prescribed fault removal в.8с. Clock audits тоже проходят:
+  отказ не подменяется ошибкой численного интегрирования. Проверено36 реальных
+  grid runs исходного контроля; вся16-corner матрица исходной EI не исполнялась.
+- Создан отдельный вариант backup TMS=.06. Меняются только project setting
+  и envelope label. Оборудование, pickup/tolerances, primary setting, apply/clear,
+  horizon, opening delays и все критерии сохраняются. Revision helper строго
+  сравнивает canonical data с исключением ровно этих двух полей и пишет hashes.
+  Это authored candidate, не автоматическая оптимизация или OEM-рекомендация.
+- **1224 новых положительных grid runs**:VI и revised-EI ×2решателя ×17вариантов
+  (16углов+nominal) ×6сценариев ×3сетки. Все проходят исходные4с пуск/провалы/
+  самозапуск и1с аварийные случаи. Нормальные final-speed/voltage/current/thermal
+  критерии не ослаблены, время снятия КЗ не продлено ради успеха.
+- SI612 из предыдущего этапа повторно проверены/связаны по hashes с тем же
+  текущим runtime; не переинтегрированы и не считаются новыми расчётами.
+  Итого положительная full-family база **1836**, плюс36 исходных отрицательных
+  EI controls отдельно. Требования трёх семейств имеют общий normalized hash;
+  исключаются только явные relay-design choices, source descriptions и labels.
+
+Проверки:
+
+- Всего918 пар Radau/DAE,1836 conditional SI-unit algebra/measurement checks,
+  918 measured fault-duty checks в положительной базе. Новые VI/EI references
+  рассчитаны заново; прежний SI reference закреплён сохранёнными producer bytes
+  из предыдущей delivery, а не приписан изменённому benchmark script.
+  SI oracle — физические единицы и saved EMF inputs, не независимая ODE-траектория.
+- Общий acceptance collector сверяет оба17-study store каждого семейства,
+  owner mapping, curves, source/index hashes, все reference children, duty,
+  общие требования, исходный rejection и допустимую revision. Внешние исходные
+  данные/производитель этим не аутентифицируются; normative_approval=false.
+- **20 новых tests passed**:immutability изменения TMS, запрещённые изменения
+  критериев/оборудования/событий/допусков, все corner recipes, общность requirements
+  и полнота family layout. Прежние441 passing tests сохранены с тем же numerical
+  runtime; они **не запускались заново** в этом этапе.461 — число разных
+  сохранённых passing checks, не размер нового pytest run.3 ANDES tests всё ещё
+  unavailable/deselected, полный suite проекта не заявляется пройденным.
+- Закреплённый прежний wheel переиспользован offline, без rebuild/новых зависимостей:
+  code fingerprint и wheel SHA совпадают. В новой venv вне checkout перенесены
+  VI corner1100, revised-EI corner0011 и original-EI corner0011. Все проверены
+  с owner anchors. Заново выполнены9 grid-0 DAE runs:6 VI scenarios,2 revised-EI
+  fault cases и1 original-EI failing case. Каналы/времена/события совпали точно;
+  исходный отказ воспроизведён как отказ, а не превращён в успешный результат.
+  Parent/all9 workers блокировали benchmarks/tests/motulator; тот же host/shared
+  dependencies, не OS sandbox и не независимая машина.
+
+Материалы: cases/full-inverse-families/README.md;
+сводная квалификация: reports/three-family-envelope-qualified-2026-11-13/;
+поставка/индекс: reports/three-family-envelope-delivery-2026-11-13/;
+VI stores: reports/full-vi-radau-2026-11-13/, reports/full-vi-dae-2026-11-13/;
+revised-EI stores: reports/full-ei-radau-2026-11-13/, reports/full-ei-dae-2026-11-13/;
+original controls: reports/original-ei-radau-2026-11-13/, reports/original-ei-dae-2026-11-13/;
+revision proof: reports/full-ei-revision-2026-11-13/;
+новые tests: reports/full-inverse-family-tests-2026-11-13.xml.
+Package fingerprint (без изменений):
+`9d4f382a9e8ef62c2d8889f1eeb01d08405ea2b0b3a380245ed7bd7e1de1fbc0`.
+
+Открыто: внутренние точки/непрерывная неопределённость, cold/hot и связанный
+нагрев, общий machine-fault duty, mixed-curve stages, CT/instantaneous/reset/
+reclose, земляные/ударные токи, broader DES-03 topologies и loaded motor-only
+initialization. Доказан только один authored75кВА/400В двухузловой профиль,
+а не произвольные модели/масштабы или серийные аппараты. Все rewards=null;
+полный DES-04/нормативное одобрение не заявляются. GitHub/CI/git mutations
+не выполнялись.
+
+## R06.28 / DES-04 — полный пуск/восстановление на всех SI corners, оба решателя
+
+DES-04 остаётся **in_progress**; ограниченный полный SI corner-профиль закрыт.
+Исходные три нормальных4с сценария (пуск, повторные провалы, выбег/самозапуск)
+и три аварийных1с сценария выполнены на каждом из16 крайних сочетаний pickup/TMS
+основной/резервной ступени плюс nominal, на Radau и network_dae, по3сетки.
+Исходные требования нормальных случаев, включая final speed>=.9, не ослаблены.
+Это следующий уровень после короткого0.2/0.6с brief предыдущего этапа.
+
+Реализация:
+
+- protection_envelope_store.py и CLI protection-envelope-store /
+  verify-protection-envelope-store: каждый из17 studies имеет отдельный bounded
+  manifest, индекс — свой manifest с именами/recipe/result hashes/объёмами.
+  Global artifact caps не увеличены. Верхний store не является обычным sealed
+  study artifact; требуется специализированный verifier всего индекса и данных.
+  Extra/missing/reordered studies, подмена metadata, ссылки и перезапись
+  существующего output отвергаются. Incomplete не даёт complete positive store.
+- Streamed paired reference проверяет готовые запечатанные пары по мере
+  появления и публикует положительный итог только после проверки обоих индексов.
+  В конце повторно проверены все child manifests и index identities.
+- Дополнительный measured-duty benchmark использует фактические аварийные
+  RMS-трассы: время до действительного открытия, I²t кабеля, pre-opening RMS
+  аппарата, sampled transformer RMS и заданные токовые/временные пределы.
+  Для основной ступени проверен owner clearing budget; резерв — отдельно по
+  фактической нагрузке и заданной стойкости. Фиксированные R/X и начальная
+  температура остаются допущениями, electrothermal feedback не добавлялся.
+
+Результаты текущего producer:
+
+- **612 фактических расчётных grid runs**:17вариантов ×6сценариев ×3сетки ×
+  2решателя. Все варианты complete, numerically qualified и проходят профиль.
+  Все4с нормальные требования проверены на каждом углу, а не только nominal.
+- **306 пар Radau/DAE**, **612 условно независимых SI-проверок** сетевой
+  алгебры/измерений и **306 measured fault-duty checks** прошли.
+  SI reference использует сохранённые EMF: не независимая differential trajectory.
+- Max clock replay errors по сеткам:
+ 3.8743753e-7,9.7134876e-8,2.4481142e-8 при прежнем допуске2e-4.
+  Primary clearing на fine grid: absolute t=.1635045134–.1772387320с,
+  то есть63.5045..77.2387мс от КЗ в.1с, внутри owner budget100мс.
+  Максимальное fine-pair relative change measured I²t≈5.081e-8 при cap.002.
+  Это sampled quantities в заявленном fixed-RMS профиле, не continuous extrema.
+- **441 различных selected tests passed**:431 основной выборки плюс10 новых
+  аналитических/отрицательных duty tests. Всего29 новых проверок этапа.
+  Три ANDES tests по-прежнему явно deselected из-за отсутствующего extra,
+  не объявлены пройденными; полный suite проекта не запускался.
+  Storage scheduling tests используют явно обозначенный fake backend;
+  физическую квалификацию обеспечивают отдельные612 реальных интегрирований.
+- Payload raw studies **1,016,956,128 bytes** в двух отдельных stores.
+  Лимиты256MB на один bounded artifact сохранены, материалы читаются по studies.
+  Source-boundary proof: против предыдущего wheel добавлен только store module,
+  изменён только cli.py; все другие runtime Python files побайтово совпадают,
+  включая уравнения машин/сети/реле. Старые traces не переименовывались:
+  все612 прогонов выполнены с новым package fingerprint.
+- Offline установленный wheel вне checkout проверил **перенесённый306-grid
+  Radau store** и два конкретных DAE corners. Заново выполнены **9 grid-0 DAE
+  runs**:все6 сценариев corner1100 и3 аварийных corner0011. Каналы/времена/
+  события совпали точно, clocks/actions перепроверены. Parent/all9 workers
+  блокировали benchmarks/tests/motulator. Тот же host/shared dependencies,
+  не OS sandbox и не независимая машина.
+
+Команды/границы: cases/full-protection-envelope/README.md.
+Stores: reports/full-si-envelope-radau-2026-11-13/ и
+reports/full-si-envelope-dae-2026-11-13/;
+paired reference: reports/full-si-envelope-reference-2026-11-13/;
+measured duty: reports/full-si-envelope-duty-2026-11-13/;
+поставка/индекс: reports/full-protection-envelope-delivery-2026-11-13/;
+тесты: reports/full-protection-envelope-final-tests-2026-11-13.xml и
+reports/full-protection-duty-tests-2026-11-13.xml;
+source intervention: reports/full-envelope-source-boundary-2026-11-13.json.
+Package fingerprint:
+`9d4f382a9e8ef62c2d8889f1eeb01d08405ea2b0b3a380245ed7bd7e1de1fbc0`.
+
+Открыто: full corner matrices Very/Extremely Inverse, внутренние точки и
+непрерывная неопределённость, cold/hot/связанный нагрев и общий machine-fault duty,
+CT/instantaneous/reset/reclose модели и более широкие топологии DES-03.
+Проверен один authored75кВА/400В мотор и радиальные два узла. Не заявлены
+произвольный масштаб, все положения/виды КЗ, OEM-стойкость, normative approval
+или полный DES-04. Все rewards=null.16крайних точек не доказывают внутренность
+диапазона. Automated resume store пока отсутствует; partial данные сохраняются,
+повторное исполнение требует нового output. GitHub/CI/git mutations не выполнялись.
+
+## R06.27 / DES-04 — inverse-time часы и все16 конечных углов допусков
+
+DES-04 остаётся **in_progress**, заявленные inverse/finite-corner профили прошли.
+Добавлены relay_clock_audit.py, protection_envelope.py и CLI protection-envelope /
+verify-protection-envelope. ClosedLoopPlan поддерживает явный
+clock_policy=sampled_integral; прежний definite_analytic остаётся отдельным
+режимом. Нативные уравнения машины/сети и relay ODE не менялись в этом этапе.
+
+Inverse trip проверяется восстановлением прогресса по event-sided RMS-токам,
+а не расчётом времени по одному начальному току КЗ. Восстановитель использует
+свои коэффициенты/выражения, трёхточечную гауссову квадратуру интерполянта тока,
+разделение при pickup и точный exponential reset. Шаги нулевой длины отделяют
+скачки. Проверяются progress, достижение1 при trip, latch/event coverage,
+дальнейшие задержки и реальные состояния аппаратов. Допуск2e-4 не меняется
+агентом через план. Это sampled audit, не доказательство непрерывных экстремумов.
+
+Матрицы и доказательства:
+
+- **108 уникальных физических grid runs**:Standard/Very/Extremely Inverse ×
+  Radau/network_dae ×6 нормальных/аварийных сценариев ×3 сетки.
+  Полные пуск, повторные провалы, самозапуск и три аварийных сценария сохранены.
+  SI/Radau18-run пакет уже был рассчитан с тем же текущим producer и owner plan,
+  проверен и скопирован без переинтегрирования; команда matrix выполнила90 новых
+  runs. Копирование не посчитано ещё18 расчётами.
+- **54 пары Radau/DAE** прошли сравнение состояний и pre/post событий.
+  Времена сравниваются с1e-7с без интерполяции через скачки; другие fixed caps
+  сохранены. SI-алгебра отдельно проверяет напряжения и relay/fault currents.
+- **204 физических grid runs**:Standard Inverse, Radau, все16 декартовых
+  сочетаний ±5% pickup/±10% TMS основной/резервной ступени плюс nominal;
+ 4сценария ×3сетки. Конкретные effective settings и знаки сохранены в recipes,
+  применённые допуски обнуляются в effective plans. Все17 исследований прошли.
+  Negative corner не скрывается, incomplete не проходит, reward=null.
+- Это отдельный явно записанный **ранний пусковой/аварийный brief**:
+  normal0.2с с minimum_final_speed=0; faults0.6с, apply0.1/clear0.5с.
+  Полные разгон и повторные восстановления на всех углах **не квалифицированы**.
+  Изначальный длинный brief не редактировался; оба набора имеют свои данные/hashes.
+- Независимые SI-уравнения перепроверили **все204 corner traces**.
+  Максимальные clock replay errors на трёх сетках:
+ 6.2571309e-8,1.5642095e-8,3.9165762e-9. Это наблюдаемое уменьшение ошибки,
+  не доказательство универсального порядка сходимости. SI oracle использует
+  сохранённые EMF-состояния: независимость алгебры/измерений, не всей ODE-траектории.
+- **412 selected tests passed**,0 failures/errors/skips;36 новых tests:
+  аналитические часы трёх кривых, независимая quadrature, exact reset,
+  threshold clipping, event-sided corruption, полные corner recipes,
+  cancellation/negative scheduling, настоящий inverse closed loop и подмена
+  progress/measurement.3 ANDES tests явно deselected из-за отсутствующего extra,
+  как зафиксировано в предыдущем этапе. Полный suite проекта не запускался.
+- Установленный offline wheel вне checkout заново выполнил **9 DAE grid-0
+  fault runs**:3семейства ×3аварийных сценария. Все физические каналы/события
+  совпали точно; часы восстановлены повторно. Перенесённые17 corner plans и
+  три18-grid DAE пакета проверены с owner anchors. Parent/all9 workers блокировали
+  benchmarks/tests/motulator. Тот же host/shared dependencies, не OS sandbox
+  и не независимая машина.
+
+Команды/границы: cases/inverse-protection/README.md.
+Family artifacts: reports/inverse-protection-families-2026-11-13/;
+corner artifacts: reports/inverse-protection-envelope-2026-11-13/;
+corner SI oracle: reports/inverse-protection-envelope-reference-2026-11-13/;
+поставка/индекс: reports/inverse-protection-delivery-2026-11-13/;
+тесты: reports/inverse-protection-final-tests-2026-11-13.xml.
+Большие family/corner пакеты имеют отдельные manifests; delivery содержит
+их anchors и не выдаётся за единый контейнер всех raw traces.
+Package fingerprint:
+`03f53f56d691c02b736af462d83a4f8e03b21ac58c0b5250c6fd90b72b56016a`.
+
+Далее: полный run-up/recovery на углах, другие inverse families/DAE corners,
+внутренние точки и непрерывная неопределённость, cold/hot и machine-fault duty,
+CT/instantaneous/reset/reclose модели и топологии DES-03. Задержки аппаратов,
+reset/dropout, схема и измерения в текущих углах фиксированы.16 крайних точек
+не доказывают пригодность всех внутренних параметров. OEM и нормативное
+одобрение, пригодность проекта и полный DES-04 не заявляются; reward=null.
+GitHub/CI/git mutations не выполнялись.
+
+## R06.26 / DES-04 — замкнутые действия защит в motor-only сети
+
+DES-04 остаётся **in_progress**. Добавлены closed_loop_protection.py и CLI
+closed-loop-protection / verify-closed-loop-protection. Компилятор переносит
+выбранное оборудование в coupled-модель и подключает непрерывные часы реле,
+основной выключатель линии и резервный выключатель источника. Проверяются
+реальные изменения сети и остаточный поток двигателя после отключения.
+
+CoupledSettings допускает явно заданный machines=[] при отсутствии генераторов.
+Пустой gen_buses имеет dtype=int; motor-only cold-state инициализируется без
+фиктивных PV-генераторов. Loaded motor-only initialization явно запрещена.
+Генераторные сети по-прежнему требуют своих паспортов. Существующие уравнения
+генераторов не изменялись; это не квалификация произвольного масштаба motor-only.
+
+Профиль: single-cage75 кВА/400 В, выбранные кабель Nexans/Trihal-equivalent,
+радиальные два узла. Нормальные критерии оборудования сохраняются. Аварийные
+критерии заданы в плане отдельно: отключённая установка не обязана разгоняться.
+Номинальные definite-уставки; допуски RelaySetting в динамике не варьируются.
+
+Результаты:
+
+- **36 фактических grid runs**:6 случаев ×3 сетки ×Radau/network_dae.
+  На обоих решателях все случаи численно квалифицированы и проходят профиль.
+  Нормальные: пуск, повторные провалы, выбег/самозапуск без nuisance trips.
+  Аварийные: downstream КЗ в0.1с, основное размыкание в0.16с; failed-to-open,
+  подтверждение отказа и резервное размыкание в0.21с; реальная потеря измерения
+  в0.05с и резервное реле с размыканием источника в0.38с.
+- Verifier пересчитывает motor shaft/algebra/I²t/thermal audits, согласие сеток,
+  точную компиляцию плана, временную последовательность событий, отсутствие
+  нежелательных trip, точный набор open actions, состояния аппаратов и
+  электрическую изоляцию. Owner plan передаётся отдельно. Cancelled/incomplete
+  или ошибочные действия не могут пройти; reward=null всегда.
+- **18 сравнений пар Radau/DAE** (все cases/grids) прошли. Времена и стороны
+  событий сравниваются отдельно, без интерполяции через скачки.
+  Независимые SI-уравнения подтверждают напряжения и relay/fault currents
+  на обеих траекториях. Входами служат сохранённые EMF-состояния двигателя:
+  это независимая алгебра/измерения, **не независимая дифференциальная траектория**.
+- **376 selected tests passed**,0 failures/errors/skips,29 новых closed-loop tests.
+  Первичная расширенная регрессия:163 passed,3 failed из-за отсутствующего
+  ANDES extra. Эти3 внешние проверки явно deselected в финальной выборке,
+  исходный отрицательный JUnit сохранён; внешняя ANDES-регрессия не заявляется
+  пройденной. Полный suite проекта не запускался.
+- Offline установленный wheel вне checkout заново выполнил **3 grid-0 DAE
+  аварийных случая**: каналы, времена и события совпали точно. Перенесённый
+  полный18-grid DAE artifact проверен с owner plan. Parent и все3 workers
+  блокировали benchmarks/tests/motulator; тот же host/shared dependencies,
+  не независимая машина и не OS sandbox.
+
+Материалы: cases/closed-loop-protection/README.md;
+поставка: reports/closed-loop-protection-delivery-2026-11-13/;
+первичные: reports/closed-loop-protection-radau-qualified-2026-11-13/ и
+reports/closed-loop-protection-dae-qualified-2026-11-13/;
+эталон: reports/closed-loop-protection-reference-qualified-2026-11-13/;
+тесты: reports/closed-loop-protection-final-tests-2026-11-13.xml.
+Package fingerprint:
+`b4df6df6d0053bcfb9ecd0844cb2ea51d0e7eee824796d351a8d6741b1c5ca61`.
+Предварительные first-артефакты сохранены со своим producer. После замены
+начальной недоступности измерения на действительное событие потери измерения
+обе18-grid матрицы рассчитаны заново, старые результаты не переименовывались.
+
+Открыто: замкнутые inverse/instantaneous стадии и допуски; CT/reset-модели,
+холодные/горячие границы, общий machine fault duty, земляные/ударные токи,
+более широкие топологии DES-03 и loaded motor-only initialization.
+В этих уравнениях есть остаточная ЭДС двигателя при КЗ, но общая квалификация
+токов КЗ/аппаратной стойкости для всех машин этим не доказана.
+Нормативное одобрение и полный DES-04 не заявляются.
+GitHub/CI/git mutations не выполнялись.
+
+## R06.25 / DES-04 groundwork — проверка уставок пуска и дискретной координации
+
+DES-04 переведён в **in_progress** для предварительного screen; закрытие
+DES-02/03/04 не заявляется. Добавлены protection_design.py, CLI protection-screen /
+verify-protection-screen и воспроизводимый benchmark. Источник — текущий
+owner-anchored catalog-study. Его manifest записан в доверенном плане;
+проверяется весь вложенный каталог и физические аудиты. В переносимый пакет
+копируется исходное исследование. Запись внутрь исходного артефакта запрещена.
+
+Ток фидера восстанавливается из двух фазоров и фактического Zline, включая
+вспомогательные нагрузки; проверено согласие с source P/Q и напряжением.
+Для трёх сеток каждого сценария вычисляются sampled peak и его изменение.
+Строгое условие no-pickup использует нижний допуск pickup и заданный запас.
+Это консервативный критерий: краткий pickup, который реальное реле могло бы
+переждать, здесь может дать отказ. Непрерывный максимум между отсчётами не доказан.
+
+КЗ проверяются после основной защиты в пяти положениях кабеля при трёх
+множителях напряжения (15 точек). Используется одно рабочее температурное
+состояние, не cold/hot envelope. Для definite/трёх IEC inverse-кривых учитываются
+крайние pickup/time tolerances, максимальное открытие выключателя, временной
+запас до раннего trip резервной защиты, owner clearing budget, interrupting
+rating, кабельное I²t и ток/длительность стойкости трансформатора при основной
+и резервной защите. Необнаруживаемое КЗ даёт null-время и отказ, а не Infinity.
+Исходные owner assumptions стойкости трансформатора остаются непроверенными.
+
+Результаты:
+
+- **212 selected tests passed**,0 failures/errors/skips;34 новых protection tests.
+  Полный suite не запускался. Проверены аналитические времена трёх inverse
+  кривых, допуски, ток фидера, перенос, owner anchors, resealed corruption
+  итогов/токов/summary, невозможность наград и границы контракта.
+- Матрица восьми наборов: два допустимых (definite/inverse primary) и шесть
+  отказов по pickup, grading, медленной основной защите, пропущенному КЗ,
+  interrupting и позднему резерву. Matrix verifier заново пересчитывает
+  решения и внешний эталон, включая отрицательные случаи и summary.
+- Физическая основа: **9 новых grid runs** (три сценария ×три сетки).
+  Восемь postprocessors не считаются72 интегрированиями. Базовый sampled
+  peak≈506.011 А; временной запас definite≈.161 с с заданными допусками.
+- **15 независимых OpenDSS решений КЗ**; все токи трёх фаз укладываются
+  в2e-6 relative tolerance. Это не внешний динамический relay reference.
+- Offline установленный wheel вне checkout повторил **9 интегрирований**;
+  времена, каналы, события и результат screen совпали точно (manifest нового
+  источника привязан отдельно). Parent/all9 workers блокировали imports
+  benchmarks/tests/motulator. Перенесённый screen проверен с owner plan.
+  Тот же host/shared dependencies; guard не является OS sandbox.
+
+`reward=null` всегда; closed_loop_protection_qualified=false,
+normative_approval=false. Реле не подключены к интегратору, действий на
+выключатель и сброса/instantaneous stage в этом screen нет. Нельзя использовать
+положительный screen как метку законченного пригодного проекта для обучения.
+Далее нужны closed-loop действия и отказы аппаратов, полные токовые/температурные
+границы, вклад машин в КЗ и расширение топологий вместе с DES-03.
+
+Команды/границы: cases/protection-screen/README.md.
+Матрица: reports/protection-screen-matrix-2026-11-13/;
+переносимый пакет: reports/protection-screen-portable-2026-11-13/;
+поставка: reports/protection-screen-delivery-2026-11-13/;
+тесты: reports/protection-screen-final-tests-2026-11-13.xml.
+Package fingerprint:
+`10e26cff2204076a55c5ac27c26ccb8ce8df75269fd76ad7fdb53e60e87b9de9`.
+Первый protection-catalog-source сохранён с прежним producer; после проверки
+входа timing выполнен новый protection-catalog-qualified с текущим fingerprint.
+GitHub/CI/git mutations не выполнялись.
+
+## R06.24 / DES-02 — прослеживаемые паспортные выдержки и компиляция
+
+Статус **in_progress**. Добавлены equipment_catalog.py и CLI catalog-design /
+verify-catalog-design. Каждое число имеет единицу, источник, locator, дату и
+тип evidence. Manufacturer-поля не могут ссылаться на owner-assumption;
+допущения модели не могут маскироваться ссылкой на product passport.
+В compilation.json сохраняются lineage всех полей, уравнения производных,
+хеши каталога/brief/скомпилированного задания и точная строка температурной
+таблицы. Чтение URL и выполнение внешнего кода отсутствуют: каталог offline.
+
+Численные данные Nexans ref084193001: медный XLPE 4G95, air30 rating298 А,
+Rdc20=.193 Ом/км. Schneider Trihal2018, печатная стр68 / PDF page67 с нуля,
+36kV C0 Ck:250/400 кВА, вторичное400 В, uk6%, Pk120°C4000/5700 Вт.
+Это выдержки опубликованных характеристик, не паспорта серийных аппаратов
+и не подтверждение нынешней доступности. Полные байты документов не архивированы;
+локальные hashes не удостоверяют автора или текущую удалённую страницу.
+Источники/даты/границы описаны в cases/equipment-catalog/README.md.
+
+Rработ вычисляется из Rdc20, явно заданных alpha, температуры и AC/DCfactor;
+ur трансформатора — из нагрузочных потерь, включая добавочные потери,
+при опубликованной температуре. Это не DC-сопротивление обмоток.
+Ток/длительность стойкости трансформатора10000 А/1с остаются **непроверенным
+owner assumption**, а не паспортом Trihal. Реактанс кабеля — общий fallback;
+alpha и AC/DCfactor также явно обозначены. Положительный reward условен
+относительно этих исходных данных, не является независимым OEM-одобрением.
+
+Только50 Гц и одиночная цепь на воздухе. Температурные строки30/40°C1/.91
+переносятся из общей инженерной таблицы с явным указанием допущения;
+совместимость конкретной установки не выводится автоматически.
+Неизвестная температура, интерполяция, групповая/подземная прокладка,
+несогласованные catalog/brief или единицы отвергаются до создания output.
+
+Результаты текущего producer:
+
+- **36 фактических grid runs**:250/400 кВА при30°C,250 кВА при40°C,
+  отказ по аппарату; три сценария ×три сетки на каждый вариант.
+  Все численно квалифицированы; три accepted, один rejected. Матрица
+  заново проверена с независимыми owner catalog/brief/selection anchors.
+- **178 selected tests passed**,0 failures/errors/skips,34 новых catalog tests.
+  Полный suite не запускался. Проверены conversion/lineage, единицы,
+  неизвестные документы, недопустимые условия, cancellation, owner anchors
+  и подмена derivation/lineage/reward после resealing.
+- **Четыре независимых OpenDSS решения КЗ** для новых скомпилированных
+  параметров: два трансформатора ×начало/конец кабеля. Четыре различных
+  публичных численных проверки также проходят на каждом выборе.
+  Это внешняя статическая сверка, не внешняя моторная валидация.
+- Offline установленный wheel вне checkout повторил **9 интегрирований**:
+  физические каналы, времена, события, compilation и verdict совпали точно.
+  Parent и все9 children имели import guards для benchmarks/tests/motulator;
+  перенесённый пакет проверен с owner anchors. Тот же host/shared dependencies,
+  не независимая машина и не OS sandbox.
+
+Поставка: `reports/equipment-catalog-delivery-2026-11-13/`;
+матрица: `reports/equipment-catalog-final-2026-11-13/`;
+эталоны: `reports/equipment-catalog-final-reference-2026-11-13/`;
+тесты: `reports/equipment-catalog-qualified-tests-2026-11-13.xml`.
+Воспроизведение: benchmarks/equipment_catalog_acceptance.py generate/verify/reference.
+Package fingerprint:
+`59405d32b2380fa0a512fdf1afb473d5deb0fd2f35b60d036d5b72ecc287b8a8`.
+Предварительные equipment-catalog-qualified/reference сохранены со старым
+producer; после ограничения50 Гц выполнена новая матрица final, старые
+артефакты не переименовывались в текущую квалификацию.
+
+Далее: подтвердить недостающие выдержки стойкости и AC-параметры, расширить
+условия прокладки с доказанной совместимостью, затем топологии DES-03 и
+координацию DES-04. DES-02 полностью не закрыт. GitHub/CI/git mutations
+не выполнялись.
+
+## DES-02 — совместный выбор оборудования и динамическая приёмка
+
+Статус **in_progress**, ограниченный синтетический сквозной профиль проверен.
+`equipment-design` / `verify-equipment-design` объединяют electrical-sizing и
+DES-01. Выбранный кабель задаёт фактические R/X/длину/rating, трансформатор —
+импеданс Тевенина, приведённый к стороне НН. Положительный вердикт требует
+всех статических проверок и всех обязательных трёхсеточных моторных исследований.
+Исходные критерии и события сохраняются. Статический отказ не пропускает
+динамику; incomplete/numerically_unqualified дают reward=null. Проверяется
+точная компиляция и owner anchors обоих вложенных исследований.
+
+Профиль: два узла, один источник/кабель, 400 В в примере (контракт до 1 кВ),
+один synthetic single-cage 75 кВА, пассивные вспомогательные нагрузки.
+Статическая мощность покрывает nameplate VA двигателей и auxiliary envelope.
+Ограничения сети и положительные реактансы проверяются до создания артефакта.
+Исходный импеданс источника заменяется эквивалентом выбранного трансформатора;
+это не модель его намагничивания/броска тока. Начальные условия таблиц и
+время отключения предоставлены владельцем; нормативное одобрение отсутствует.
+
+Результаты:
+
+- **36 фактических grid runs**: четыре варианта ×три сценария ×три сетки.
+  Пуск, повторные провалы, выбег/повторное включение. Принятый вариант и три
+  отрицательных: недостаточный кабель, отключающая способность и строгая
+  скорость. Все численно квалифицированы и повторно owner-anchored verified.
+  Недостаточный кабель здесь проходит динамику, но отклоняется статически.
+- **144 selected tests passed**, без failures/skips: 27 новых equipment tests,
+  electrical-sizing и прежние design/motor-engineering/project tests.
+  Полный suite не запускался. Проверены cancellation, reward semantics,
+  подмена ТЗ/источника/итогового вердикта после resealing, физические параметры
+  обеих выбранных компонент и границы применимости.
+- Четыре независимых **OpenDSS** решения КЗ: два кабеля ×начало/конец линии.
+  Команды, версии движка и фазные токи сохранены. Допуск 2e-6 задан в producer;
+  четыре численных примера Schneider EIG также прошли. Это внешняя сверка
+  статического эквивалента, не моторных траекторий и не IEC 60909 certification.
+- Установленный offline wheel вне checkout повторил **9 grid runs**;
+  каналы, временные шкалы, события и полный вердикт совпали точно.
+  Во всех девяти workers запрет импорта benchmarks/tests/motulator;
+  все четыре перенесённых варианта повторно проверены. Тот же host и общие
+  system dependencies; import guard не является OS sandbox.
+
+Примеры/команды/источники: `cases/equipment-design/README.md`.
+Поставка: `reports/equipment-design-delivery-2026-11-13/`;
+матрица: `reports/equipment-design-qualified-2026-11-13/`;
+тесты: `reports/equipment-design-final-tests-2026-11-13.xml`.
+Import guard и installed-check сохранены отдельно:
+`reports/equipment-design-installed-protocol-2026-11-13/`.
+Текущий package fingerprint:
+`a2cdfc2fb79bdc7761ce7d58e5e65a365bfc29fee58cc0f98ef8cab5d09f6cb6`.
+Предыдущий exploratory `equipment-design-first` сохранён с собственным старым
+producer, не переименован в текущую квалификацию.
+
+Далее: реальные паспорта и таблицы условий прокладки, расширение топологий,
+КЗ с вкладом двигателей и координация защит. Каталог пока синтетический;
+DES-02 целиком не закрыт. Температура кабеля от пусков, трансформаторный inrush,
+земляные/ударные токи и селективность не следуют из положительного verdict.
+GitHub/CI и операции записи git не выполнялись.
+
+## R06.22 / DES-01 — проверяемый вердикт проектировщика и decision corpus
+
+Закрыт ограниченный DES-01: **выбор эквивалентного импеданса питающей ветви**,
+а не подбор физического кабеля. `run_design` теперь использует существующий
+MotorEngineeringPlan: все обязательные случаи, три сетки, shaft/algebra/I²t/
+thermal audits, grid consensus и bounded isolated workers. `verify_design`
+пересчитывает evidence и при наличии trusted task/proposal anchors отвергает
+подмену ТЗ, каталога или поданного решения. Верификация manifest сама по себе
+не подтверждает личность/полномочия автора.
+
+Вердикт v2 различает accepted/rejected/numerically_unqualified/incomplete.
+Только квалифицированный accepted даёт reward1, квалифицированный отказ по
+критериям —0; недостаточная точность и неполнота дают rewardnull. Поле
+qualified_electrical_design остаётся false: ampacity, fault duty, selectivity
+и нормативное соответствие ещё не выполнены. Independent physics oracle
+для этого workflow не заявлен; это проверка известных уравнений и сеток.
+
+Первый exploratory corpus не был допущен к экспорту: h10ms не проходил thermal
+audit, а выбранный сильный фидер нарушал исходный heat cap3. Сохранён полный
+отрицательный пакет `reports/designer-corpus-first-2026-11-12/`. Теперь compiler
+делит шаг владельца пополам до <=1/(8*f), сохраняя исходные точки, и считает
+три сетки h/h2/h4. Пороговые значения ТЗ и численные допуски не ослабляются.
+Исходные task/proposal **с теми же хешами** пересчитаны заново: все три режима
+численно квалифицированы и вновь отвергнуты по исходному ТЗ, reward0:
+`reports/designer-original-strict-recheck-2026-11-12/`. Старый rewardnull не был
+переклассифицирован без нового расчёта.
+
+Новый корпус содержит шесть явно заданных задач с обычным heat cap8 и строгим
+cap3, разные ID/ТЗ, один синтетический двигатель1MVA/10kV на задачу, по три
+режима (пуск, повторные провалы, выбег/повторное включение) и два импеданса.
+Cap3/8 — безразмерная stator I²-replica, не температура обмотки в °C.
+Два строгих ТЗ не имеют допустимой позиции **в этом каталоге**. Ответ
+no_feasible_option получает1 только при квалифицированном отклонении всех
+позиций; это не утверждение о невозможности других схем или оборудования.
+
+Train: radial/chain (2), dev: fork (1), test: loop/two_paths/ladder (3).
+Полный перебор перестановок до6 узлов даёт каноническую сигнатуру графа,
+поэтому переименование узлов/ветвей не переносит ту же топологию между splits.
+Private verdict/reward/raw evidence не попадают в prompt exports, SFT labels
+экспортируются только из train. Файлы доступны владельцу, это не OS sandbox
+и не секретный benchmark. Корпус детерминированный, имена описательные,
+сильные claims об агентном обобщении на этих fixtures недопустимы.
+
+Результаты:
+
+- **108 фактически выполненных grid runs**: 6 задач ×2 позиции ×3 режима ×3
+  сетки. Все12 решений численно квалифицированы; четыре accepted и восемь
+  rejected, два ТЗ полностью infeasible в своём каталоге.
+- **122 selected tests passed**, без failures/skips: 27 новых проверок DES-01
+  и95 прежних design/motor-engineering/project tests. Полный набор проекта
+  не запускался. Проверены owner anchors, resealed corruption, отмена,
+  topology relabelling, запрет held-out SFT labels и некорректных predictions.
+- Реальные CLI generate/verify/export/evaluate прошли. Экспортированы2
+  decision-only SFT-примера (выбор и отказ) и3 test prompts без private answers.
+  Oracle-контроль получил1.0, constant opt-a0.0. Это контроль scoring plumbing,
+  а не качество обученной модели. Trainer, VLM-adapter и tool-use demonstrations
+  этим блоком не квалифицированы.
+- Оценка использует заново проверенное cached physical evidence конкретных
+  owner task/proposal/current producer; повторной симуляции на каждый score нет.
+  Train evaluations/held-out SFT export, пропущенные/повторные/чужие task IDs,
+  неизвестные позиции и candidate reward injection запрещены.
+- Installed wheel вне checkout повторил9 реальных grid runs (три режима ×три
+  сетки). Parent и все9 дочерних workers имели import guards для benchmarks/
+  tests/motulator; physical channels/clocks/event_log/settings и весь итоговый
+  verdict совпали с corpus в точности, anchored verify и ZIP roundtrip прошли.
+  Это тот же host/OS/system-site-packages, не независимый host/CI и не sandbox.
+
+По сравнению с предыдущим pinned wheel изменены только cli.py/design_study.py,
+добавлен design_corpus.py; все остальные runtime Python sources, включая
+численные уравнения, совпадают в точности. Proof:
+`reports/designer-source-intervention-2026-11-12.json`.
+Новый package fingerprint:
+`f8488820c5408f59bd68c72d981e6b5b4ee5b0f65619ce3e9aa00748673fa5cd`.
+
+Команды/примеры: [cases/design-curriculum](../cases/design-curriculum/README.md).
+Corpus: `reports/designer-corpus-qualified-2026-11-12/`;
+tests: `reports/designer-final-tests-2026-11-12.xml`.
+Поставка: `reports/designer-delivery-2026-11-12/`; установленный пакет и
+исходные результаты: `reports/designer-installed-2026-11-12/`. Перенесённый
+комплект повторно проверен установленным wheel вне checkout: все owner anchors,
+аудиты корпуса и исходный строгий отказ подтверждены без новой интеграции.
+Протокол: `reports/designer-portable-2026-11-12/` (тот же host; reference imports
+заблокированы). Все три комплекта запечатаны manifest-проверкой.
+**Далее — DES-02:** прослеживаемый каталог, исходные installation conditions,
+электрический выбор кабелей/трансформаторов и независимая сверка sizing.
+DES-03/04, VIS-01, LEARN-01 и независимая оценка качества агента остаются открыты.
+GitHub/CI/git mutations не выполнялись.
+
+## R06.21 / PHY-21 — измеренная матрица динамических сетей
+
+Закрыт объявленный ограниченный профиль PHY-21: **12 случаев, 47 primary и
+21 независимо рассчитанная reference trajectory**, новый процесс на каждый
+запуск. Два повтора Radau/network DAE, а для автоматики и островов — ещё
+отдельный DAE-запуск с обратным порядком оборудования, паспортов и команд.
+Фазные случаи рассчитываются Radau и сверяются с точными expm-решениями.
+
+Охват разделён явно:
+
+- Mesh RMS: 64/4/1, 256/8/2, 512/64/16 и 2000/128/32 узлов/двигателей/
+  генераторов, **0.6 s**, групповой пуск и два провала/восстановления питания.
+  Большие точки используют double-cage и GENROU/TGOV1/SEXS. Все узлы и внутренние
+  состояния проверены отдельной SI winding/MNA реализацией с собственным
+  начальным режимом; источник данных — авторские параметры, не конкретная площадка.
+- Два 45-s случая: три одновременно живых острова, механические возмущения,
+  повторное разделение/соединение и безопасно заблокированные несинхронные
+  включения. Три узла, два GENCLS, моторные состояния отключены. Напряжения,
+  частоты/углы и разрешения проверены отдельными SI-уравнениями.
+- Overcurrent → отказ line breaker → upstream backup; успешный АВР и
+  блокировка АВР при неразомкнувшемся основном выключателе. Проверены выдержки,
+  действия, interlocks и break-before-make, в обоих интеграторах и при перестановке.
+- 12/48/96 независимых несимметричных RLC-ветвей, 15/51/99 узлов с источниками,
+  24/96/192 электрических состояния, **20 ms**. Все токи и напряжения совпали
+  с отдельно записанными 4×4 matrix exponentials; повторные изменения R имеют
+  обе стороны события, без скачка тока L/напряжения C.
+
+Ни один из этих результатов не является проверкой всех перечисленных функций
+одновременно в крупнейшей сети. Длительный пуск больших сетей, двигатели при
+островном пуске, arbitrary PSS/OEL/UEL/protection combinations и общая meshed
+несимметричная динамика остаются расширениями.
+
+Первый полный прогон прошёл 11 случаев и корректно отклонил phase96 до
+интегрирования: 288 команд превышали schema limit256. Отрицательная поставка
+сохранена: `reports/network-dynamic-full-2026-11-12/`; она не является
+положительной квалификацией. В `PhaseCase` лимит расширен до512. Точное сравнение
+всех runtime Python sources с предыдущим wheel подтвердило единственную замену
+числа256→512 в этом поле; уравнения и алгоритмы не менялись. 513 команд,
+неоднозначные simultaneous actions и превышение retained-output budget
+по-прежнему отвергаются. **Вся матрица пересчитана заново**, старые timings и
+trajectories не переименовывались под новый producer.
+
+Измерения финального прогона (два fresh-process повтора, один CPU/BLAS thread):
+
+- 64/4/1: 22 states, median Radau3.554 s / DAE9.753 s.
+- 256/8/2: 44 states, median Radau4.992 s / DAE13.490 s.
+- 512/64/16: 480 states, median Radau14.490 s / DAE31.432 s;
+  max current-exec RSS186.09/151.44 MiB.
+- 2000/128/32: 960 states, median Radau33.260 s / DAE91.670 s;
+  median CPU33.252/82.730 s, max current-exec RSS265.55/221.57 MiB.
+
+Здесь DAE не быстрее Radau. VmHWM включает imports/construction/solve/JSON
+serialization, не incremental solver allocations. Compute wall/CPU clocks
+исключают bootstrap/global imports и serialization. Host load/frequency не
+контролировались; время и память не являются рейтингом среди всех решателей.
+Все raw измерения сохранены, compact size/accuracy/time/memory matrix:
+`reports/network-dynamic-resource-matrix-2026-11-12.json`.
+
+**130 selected tests passed**, без skip/deselect: 40 новых PHY-21 +90 прежних
+automation/DAE/islands/RMS-scale/phase tests. Полный набор проекта не запускался.
+Verifier повторно вычисляет physical checks, repeat equality, размерности,
+resource summaries и current producer/input identities. Проверены 12 видов
+resealed corruption, включая timings/RSS, method path, events и waveform.
+Реальные RHS/event/output-budget failures сохраняют completed=false и точный
+resource/limit/attempted; CLI возвращает2 даже при solved=true после успешной
+инициализации. Такие результаты не могут стать положительными SFT/GRPO labels.
+
+Installed wheel вне checkout, при запрещённых imports benchmarks/tests/motulator,
+повторил целиком islands_mismatch и phase96/288commands. Clocks/sides/channels/
+event_log совпали с source matrix **в точности**, ZIP roundtrip прошёл. Это
+тот же host/OS/system-site-packages, не независимый host или внешний CI.
+
+Корпус и команды: [cases/network-dynamic](../cases/network-dynamic/README.md).
+Evidence: `reports/network-dynamic-qualified-2026-11-12/`;
+tests: `reports/network-dynamic-tests-2026-11-12.xml`;
+scope-change proof: `reports/network-dynamic-capacity-intervention-2026-11-12.json`.
+Локальная sealed поставка: `reports/network-dynamic-delivery-2026-11-12/`.
+Все frozen sources, case fixtures, raw results и resource summaries перенесены
+в `/tmp/phy21-transfer-bundle`; установленный wheel повторно проверил все12
+случаев при запрещённых imports motulator/ANDES/pandapower, без checkout
+production imports и без изменения manifest (`python -B -I`). Полная reference
+интеграция при этой проверке повторно не запускалась. Receipt:
+`reports/network-dynamic-portable-2026-11-12/`.
+Новый runtime fingerprint:
+`32f2b7500bee238a5892cec98b8b908e6bfa5635ef4546c71fa99030970ab6d8`.
+Прошлые drive-profile receipts относятся к своему pinned producer; расширение
+phase capacity не переобъявляет их новой полной квалификацией.
+
+**Следующая очередь — DES-01:** включить three-grid физический аудит в verdict
+проектировщика, расширить обязательные сценарии и отделить скрытую оценку.
+Затем DES-02 — прослеживаемый каталог и электрический подбор оборудования.
+GitHub/CI/git mutations не выполнялись.
+
+## R06.20 / PHY-20 — непрерывная независимая сверка многоклеточного привода
+
+Закрыт объявленный ограниченный профиль PHY-20: отдельные уравнения всех
+Gamma-клеток, насыщение, положительный Gc, обмоточные R(T)/RC, source RL,
+диоды/DC, MOSFET/FOC/PWM, switching-energy и тепловая защёлка ротора. Runtime
+физика в этом блоке **не менялась**; проверены ранее реализованные сочетания.
+Это не завершение оставшейся физики сетей или универсальная квалификация.
+
+`benchmarks.multicage_drive_reference` самостоятельно выражает стационарные
+комплексные all-flux уравнения и использует независимую непрерывную схему
+R06.19. Production imports в workers запрещены. **Многоклеточный RHS не является
+внешним motulator simulator.** Одноклеточный предел отдельно проверен с
+неизменённым SHA256-pinned motulator0.23.1 RHS, включая насыщение, winding R(T),
+момент и полную короткую гибридную траекторию. Внешний пакет для самого
+multicage worker не требуется.
+
+Физические проверки сверх сравнения двух интеграторов:
+
+- Одинаковые параллельные клетки с одинаковыми flux-состояниями точно
+  сокращаются к одной клетке с R/n и L/n. Для произвольных различных постоянных
+  времени это сокращение не заявляется.
+- Перестановка клеток сохраняет stator/network, момент, общую температуру
+  и энергию; противоположная разностная мода затухает как exp(−R/L·t).
+- 48 sinusoidal cases совпали с отдельно выведенным equivalent impedance:
+  1–4 клетки ×5/50/200 Hz ×slip0/0.02/1/−0.1, включая генераторный режим,
+  баланс электрической/механической мощности и потерь.
+- 243 проверки runtime-порта: 2–4 клетки ×27 gate states ×zero/energized/unequal
+  fluxes. Проверен ток всех роторных ветвей, а не только первой клетки.
+- Независимые per-cage heat quadratures положительны и в сумме дают полный
+  rotor heat. Это не отдельные температуры клеток: rotor RC-lump пока общий.
+
+Полный корпус: double linear, double/triple/four saturated warm, four-cage
+sag/block/recovery и four-cage rotor trip. Все случаи 4 ms, кроме 12-ms
+восстановления. Параметры дополнительных клеток и ускоренный тепловой стресс
+авторские, не паспорт и не идентифицированная skin-depth характеристика.
+
+Результаты:
+
+- **12/12 primary** budgets0.05/0.0125 и **12/12 continuous references**
+  DOP853/Radau прошли исходные physical caps и events. Максимальный primary
+  channel error0.00289798 cap (0.289798% cap), disagreement references
+  1.61704e-7 cap. Maximum event error3.64205e-10 s при cap1e-8 s;
+  heat error6.62209e-8 J при cap1e-5 J. Это comparison caps, не строгая
+  математическая верхняя граница ошибки решения.
+- **531 selected tests passed:** 339 новых PHY-20 +192 прежних reference/
+  native/evidence checks. Семь прежних reporting-only migration tests явно
+  deselected. Полный набор проекта и production572 повторно не запускались:
+  package Python sources неизменны после R06.19.
+- Recomputing verifier подтвердил все шесть случаев и full declared inventory.
+  Проверены десять видов resealed tampering: limits, source hashes, solver
+  controls, ложное external claim, producer, fourth-cage flux, cage heat,
+  summary, passport и full-inventory flag. Manifest не является внешней подписью.
+- Установленный wheel вне checkout выполнил полный four-cage rotor-trip case,
+  совпал с source result в точности, прошёл continuous comparison и ZIP
+  roundtrip при запрещённых imports benchmarks/tests/motulator. Host/OS и
+  system-site-packages общие; независимый host не заявлен.
+
+Корпус и команды: [cases/multicage-continuous](../cases/multicage-continuous/README.md).
+Evidence: `reports/multicage-continuous-first-matrix-2026-11-12/`;
+tests: `reports/multicage-continuous-tests-2026-11-12.xml`.
+Локальная sealed поставка: `reports/multicage-continuous-delivery-2026-11-12/`.
+Весь bundle перенесён в `/tmp/phy20-transfer-bundle`; установленный wheel
+с bundled benchmark sources/fixtures повторно проверил все шесть случаев
+при запрещённых imports motulator/ANDES/pandapower. Включён явный `python -B -I`,
+чтобы импорт не создавал bytecode внутри sealed inventory. Первый probe без
+`-B` корректно отклонён после появления `__pycache__`; original inventory
+восстановлен, успешный verifier не меняет manifest. Receipts:
+`reports/multicage-continuous-portable-2026-11-12/`.
+Runtime fingerprint остался
+`249dfffd323acdee2b316f53ed0ad7a1b335f9feab4bc5b55e6cc5269bb8f231`.
+
+Для будущего SFT/GRPO зафиксирована неидентифицируемость: нельзя оценивать
+произвольный порядок клеток или эквивалентные паспорта как единственную
+истину по terminal traces. Совпадение отклика не гарантирует уникальные
+физические параметры. Обучающий/публичный VLM-adapter этого корпуса ещё открыт.
+
+**Далее — PHY-21:** измеренное масштабирование phase/DAE сетей, острова,
+каскадные топологические защиты и повторные возмущения. Параллельно остаются
+DES-01 three-grid verdict и DES-02 подбор оборудования. Полный circuit с Gc=0,
+charge dynamics и длительные произвольные режимы этим профилем не закрыты.
+GitHub/CI/git mutations не выполнялись.
+
+## R06.19 / PHY-19 — связанный электротепловой профиль
+
+Закрыт объявленный ограниченный профиль PHY-19: положительный Gc, одна клетка,
+насыщение, нагрев обмоток, semiconductor R(T), коммутационная энергия,
+тормозная ветвь и тепловые защёлки. Это не закрытие всей оставшейся физики.
+
+Реализован отдельный `benchmarks.electrothermal_drive_reference` поверх
+независимой R06.18 схемы и оригинального motulator 0.23.1 RHS. Исторический
+continuous reference не изменён. Новые уравнения включают R25[1+alpha(T−25)],
+RC-нагрев, корни температурных порогов, тормозную проводимость и точный перенос
+switching energy из дифференциальной DC-ёмкости в нагрев инвертора. Поток,
+скорость и common-mode rails при switching jump не сбрасываются.
+
+Выполнены семь исследований: warm losses, switching-energy trip, conduction
+trip, stator trip, brake trip, rectifier trip и lossy block/recovery. Первые
+шесть — 4 ms, восстановление — 12 ms. Малые теплоёмкости намеренно ускоряют
+события; параметры авторские, не OEM/измерения. Любая тепловая защёлка блокирует
+управляемые ключи инвертора, но **не размыкает питающий выключатель** и не
+отключает пассивные диоды. Собственная защёлка тормоза убирает его проводимость.
+
+Новый rectifier case выявил реальный численный дефект: terminal core-current
+Newton застревал возле diode hinge/free common-mode gauge, вызывая min-step
+failure. В `SwitchingMagnetics.terminal_current` добавлен ограниченный перебор
+27 пассивных active sets только после отказа прежнего метода. Допуски KCL
+и physical caps не ослаблены, состояния не проецируются. Сохранённое состояние
+воспроизводит отказ pinned предыдущего wheel; новое решение совпадает с
+исходной внешней машиной. На 54 общих состояниях старый/новый результат
+совпал в точности. Сравнение Python inventory wheel подтверждает единственное
+runtime-изменение — `switching_magnetics.py`; все семь study неизменны.
+
+Итог:
+
+- **14/14 primary trajectories** на budgets 0.05/0.0125 и **14/14 references**
+  DOP853/Radau прошли прежние caps, audits и события. Максимальный primary
+  channel error — 2.59814% соответствующего cap; reference disagreement —
+  1.44937e-7 cap. Максимальная ошибка времени события — 7.554e-11 s при cap1e-8 s;
+  максимум heat error — 3.660e-8 J при ранее принятом extended cap1e-5 J.
+- Независимые reference workers проверяют SHA256 wheel/всех native sources и
+  запрещают production imports. Полный recomputing verifier прошёл 7 случаев:
+  input/controls/native identity/current producer, raw channels/heats/events,
+  assessments, summary и manifest. Manifest обеспечивает целостность, не
+  внешнюю подпись происхождения.
+- **764 selected tests passed:** 572 production/engineering +192 reference/
+  native-port/evidence tests; 7 исторических reporting-only migration tests
+  явно deselected после отдельного численного изменения. Полный набор проекта
+  не запускался. Проверены 27 gate combinations ×2 temperatures, captured
+  failure, forced Newton stall, energy jumps и восемь видов resealed tampering.
+- Прежний warm-core 40-ms профиль повторён на двух primary budgets и прошёл.
+  Независимые reference curves переиспользованы только при точном совпадении
+  reference source, wheel, settings и study; это не повторная квалификация
+  всех прежних R06.18 случаев на новом runtime.
+- Установленный новый wheel вне checkout выполнил полный rectifier-trip case,
+  совпал с source result в точности, прошёл сравнение с continuous reference
+  и ZIP roundtrip. Imports benchmarks/tests/motulator запрещены. Host/OS и
+  system-site-packages общие, независимый host не заявлен.
+
+Корпус: [cases/electrothermal-drive](../cases/electrothermal-drive/README.md).
+Итоговые raw результаты: `reports/electrothermal-drive-corrected-2026-11-12/`.
+Сохранённый отрицательный полный прогон до исправления:
+`reports/electrothermal-drive-qualified-2026-11-12/` (6 passed/1 failed,
+не является положительной квалификацией, несмотря на историческое имя каталога).
+Pinned intervention: `reports/electrothermal-port-ablation-2026-11-12.json`.
+Source fingerprint: `249dfffd323acdee2b316f53ed0ad7a1b335f9feab4bc5b55e6cc5269bb8f231`.
+
+**Следующие блоки:** PHY-20 — continuous multicage/reference и физические
+пределы; PHY-21 — большие связанные phase/DAE сети и топологические защиты.
+Параллельно остаётся DES-01 three-grid verdict, затем DES-02 подбор реального
+оборудования. VLM/SFT/GRPO не считаются выполненными этой проверкой физики.
+GitHub/CI/git mutations не выполнялись.
+
+## Актуальное расширение: агент-проектировщик и оставшаяся физика
+
+По решению владельца добавлена роль **мультимодального инженера-проектировщика
+промышленного электроснабжения и электроприводов**. Его результат — предварительная
+схема, выбор из прослеживаемого каталога и расчётное обоснование по всем режимам ТЗ.
+Экономика исключена. GitHub, внешние CI и автоматические git-действия запрещены.
+Исполняемая очередь с зависимостями и критериями: [agent-designer.yaml](agent-designer.yaml).
+Это продолжение R06.18, а не объявление всей физики или проектировщика готовыми.
+
+Порядок закрытия:
+
+1. **PHY-19:** независимый совместный профиль switching-energy, semiconductor
+   R(T), торможения и тепловых отключений. Компоненты уже существуют; требуется
+   проверка комбинации непрерывным эталоном, энергобалансом и сходимостью событий.
+2. **PHY-20:** независимая непрерывная сверка многоклеточных насыщенных машин,
+   потерь в стали и нагрева обмоток, с проверкой предельных случаев.
+3. **PHY-21:** измеренное масштабирование связанных phase/DAE сетей, островов,
+   каскадных защит и повторных возмущений. Публиковать время и peak RSS вместе
+   с точностью; старые размерные точки не считать новой квалификацией.
+4. **DES-01 → DES-04:** неизменяемое ТЗ и каталог → электрический выбор
+   оборудования → редактирование схемы → совместные пуск/КЗ/защиты/резервирование.
+5. **VIS-01 → LEARN-01 → EVAL-01:** реальные публичные схемы и осциллограммы,
+   квалификация мультимодального адаптера Qwen3.5-4B, SFT/GRPO и независимые
+   семейства задач. Обученная инженерная модель пока не получена.
+
+### DES-01: первый исполняемый профиль, частично реализован
+
+`power_grid_env.design_study` и CLI `feeder-design` принимают доверенное ТЗ
+с обязательными моторными сценариями и предложение с одним `option_id`.
+Агент не может менять критерии, выдумывать каталог или исключать неудачные
+режимы. Выбранный полный импеданс ветви применяется одинаково во всех режимах;
+расчёты выполняются существующими изолированными workers. Сохраняются ТЗ,
+предложение, результаты сценариев, хеши и общий manifest. Solver failure и
+невыполненный сценарий не дают положительного заключения.
+
+Это **выбор эквивалентного питающего импеданса**, пока не выбор физического
+кабеля: ampacity/derating, КЗ, селективность и нормативное соответствие не
+проверяются; `qualified_electrical_design=false` даже при успехе динамики.
+Пример с прямым пуском и провалом/восстановлением:
+
+```bash
+python -m power_grid_env.cli feeder-design --input cases/design/industrial-feeder.json --proposal cases/design/stiff.json --out reports/design-stiff
+python -m power_grid_env.cli feeder-design --input cases/design/industrial-feeder.json --proposal cases/design/weak.json --out reports/design-weak
+```
+
+Код возврата 0 означает выполнение только объявленных динамических критериев;
+2 — нарушение либо ошибку. Выходной каталог должен быть новым. Параметры
+примеров авторские, не паспорт действующей установки. До завершения DES-01
+остаются three-grid audit в verdict, расширение сценариев и скрытый evaluation
+split. Следующие блоки не закрываются фактом появления этого интерфейса.
+
+Выполнены CLI-расчёты обоих примеров: stiff прошёл оба режима, weak нарушил
+оба при успешно завершившемся решателе. Итоговая скорость stiff ~0.98662 pu,
+weak ~0.18128/0.17707 pu; минимальное напряжение в объявленных окнах stiff
+~0.96994/0.97171 pu, weak ~0.30997/0.30642 pu. Это различает непригодный
+проект и ошибку расчёта. Оба верхних manifest проверены. Эти synthetic
+результаты не являются независимой повторной верификацией физического ядра.
+Проверка изменения: **95 passed** (`test_design_study`, `test_motor_engineering`,
+`test_engineering_project`), включая 15 новых тестов контракта и реальных
+расчётов; проверена подмена proposal после sealing. Полный набор проекта
+и прежняя R06.18 matrix на изменённом package fingerprint не перезапускались.
+
+Предыдущий блок — R06.18: полная непрерывная сверка одноклеточного привода
+с внешним motor RHS motulator0.23.1 и независимо записанным source/RL/diode/
+DC/bridge/FOC/PWM/thermal circuit. Четыре scenarios ×2 primary budgets и
+четыре×2 reference methods: все8 primary и8 continuous references passed.
+DOP853/Radau disagreement <=1% исходных caps; фактический максимум0.006625%
+cap, максимум primary error27.23% cap. 676 selected tests passed. Исправлена
+report-only ошибка sample clock/gate permission на границах block window;
+все8 before/after physical arrays/ledgers/counters совпали в точности.
+Сеть и контроллер reference — независимый adapter, а не целый motulator
+simulator; universal superiority/OEM accuracy не заявлены. Далее —
+switching-energy/thermal protections/device R(T), multicage continuous
+reference и измеренное масштабирование phase/DAE сетей.
 
 ## Сравнение с другими моделерами и порядок развития — 9 ноября
 
@@ -3384,3 +4341,568 @@ GitHub/CI/индексация/commit/push не выполнялись.
 остался защёлкнутым при охлаждении ниже threshold, floating-star использовал
 SVD, а precharge/four-cage прогоны действительно использовали direct solves.
 Всего 64 протокольные траектории и 64 replay, не 64 уникальные схемы.
+
+
+## R06.12 — расширенная независимая сверка полного привода
+
+Следующий пробел после R06.11 — физическая проверка нелинейного моторного
+порта в полной замкнутой сети, а не ещё один timing microbenchmark.
+Production runtime в этом блоке не менялся: сохранены Norton/MNA, floating
+star, RC и защиты; новые исходники относятся к независимой квалификации.
+
+Добавлено:
+
+- `benchmarks/extended_closed_loop_reference.py`: смешанное независимое
+  решение source/RL/diode/DC/machine/shaft/winding RC, насыщение, все клетки и
+  eddy-current Gc. Endpoint core-feedthrough заново решается при текущих
+  ключах; observer использует только ток/скорость и явный номинальный паспорт.
+- `benchmarks/extended_closed_loop_acceptance.py`: четыре зарегистрированных
+  40-ms сценария, 20/10 us, 17–25 физических каналов, event inventory,
+  интегральные потери статора/ротора/стали и отдельные собственные energy/KCL
+  residual audits. Это 8 primary + 8 independent траекторий.
+- `benchmarks/extended_closed_loop_refinement.py`: ещё 4+4 траектории на 5 us;
+  уменьшение шага отдельно оценивается для network, machine/observer, thermal.
+- `benchmarks/extended_temporal_budget.py`: ограниченный поиск шага по
+  Cauchy-разнице физических каналов; все удачные и неудачные попытки хранятся.
+  Исчерпание бюджета возвращает непрошедший результат и ненулевой exit code.
+- `benchmarks/numerical_replay.py`: точная структура и дискретные данные,
+  finite floating roundoff <=5e-10, время <=5e-13 s, без относительного
+  ослабления. SHA-256 integrity остаётся побитовой. Исходные physical caps
+  не меняются. Учтены NumPy float64 при JSON round trip.
+- `cases/closed-loop-extended-independent/`: четыре публичных canonical JSON,
+  пригодных для обычного CLI без импорта benchmark/reference-пакетов.
+- `tests/test_extended_closed_loop.py`: все 27 gate patterns для Gc endpoint,
+  nonlinear energy divided difference/equal-radius/tiny increments, 1/2/3/4
+  cage inventory, winding heat/температуры, запрет production imports у
+  reference, неполные/нефинитные данные, неподдержанные события, unit caps,
+  numerical replay и совпадение публичных JSON с регистрацией.
+
+Физические границы: common midpoint/discrete-gradient схема у двух решателей,
+авторские параметры добавочных клеток/насыщения/RC, sensored nominal observer,
+fixed semiconductor resistance, zero switching energy. Нет независимого
+continuous-time полного drive oracle, OEM calibration, независимой полной
+trip-localization/switching-energy/variable-device-R(T)/multicage-observer
+проверки. Число клеток и 8-node topology не означают general DAE-scale coverage.
+
+Различаем три вывода: согласие реализаций, уменьшение разницы при уточнении и
+попадание этой разницы в абсолютные physical-unit caps. Первые два не дают
+автоматически третий, а третий не является доказанной абсолютной ошибкой
+относительно непрерывного решения. Непрошедшие попытки не исключаются из
+публикуемого temporal receipt. Превосходство над другими моделерами не заявлено.
+
+
+Диагностическое дополнение: `benchmarks/closed_loop_command_replay.py`
+записывает команды и PWM clock, затем отдельно воспроизводит voltage-only
+и voltage+PWM tape на трёх шагах. Source/DC/диоды/вал/RC продолжают решаться;
+наблюдатель в replay не интегрируется, его output columns — метаданные tape.
+В `double_cage` немонотонность сохранилась даже при fixed duty/edges и
+одинаковом числе gate edges. Одного объяснения через FOC недостаточно;
+причина пока не установлена. Следующий приоритет — выделить plant/network
+временную погрешность и коммутационные интервалы, не менять caps ради pass.
+
+
+Финальная проверка R06.12: **466 тестов**, включая **81 новых**, без failures/skip.
+24 protocol-траектории (12 primary + 12 independent) и 24 numerical replay;
+4 installed-wheel сценария/ZIP восстановления из `/tmp` с запрещёнными
+benchmark/motulator/pandapower/andes imports. Это тот же host/OS и
+system-site-packages, не независимая ОС и не чистый dependency resolver.
+Дополнительный temporal поиск: 24 траекторий, общий passed=false; этот поиск не засчитан как прошедшая квалификация и не replay-qualified.
+- `saturated_single_core`: passed=true, selected_step_s=6.25e-07, сохранено попыток=3.
+- `double_cage`: passed=false, selected_step_s=None, сохранено попыток=3.
+- `saturated_four_core`: passed=true, selected_step_s=6.25e-07, сохранено попыток=3.
+- `warm_four_winding`: passed=true, selected_step_s=6.25e-07, сохранено попыток=3.
+
+Дополнительно 21 frozen-command/PWM diagnostic траекторий: это тот же production solver, не независимая сверка. Observer/control output fields в них являются metadata записанной команды; physical plant/PWM/source/DC/RC/shaft продолжают интегрироваться.
+
+Полный repository test suite не запускался. Runtime package fingerprint
+`0e288ebc922a17abb9bc2abf52c9a5e6ae4e716351e9146d42b86499e5603129` не изменился относительно R06.11.
+Итоговый пакет: `reports/extended-closed-delivery-2026-11-11/`;
+`delivery.json` содержит точные hashes и раздельные критерии.
+GitHub/CI/индексация/commit/push не выполнялись. Универсальное лидерство,
+absolute continuous-time accuracy и общий temporal pass не утверждаются.
+
+
+## R06.13 — публичный temporal workflow и расширенный ресурсный профиль
+
+Реализованы `SwitchingTemporalLimits`, `qualify_switching_drive` и
+`run_switching_qualification_artifact` в `power_grid_env/switching_convergence.py`;
+CLI `switching-drive qualify --study ... --out ... --max-levels ... --limits ...`.
+Сохраняются study/protocol, вход, полный result и assessment каждого уровня,
+итоговый summary и manifest. Проверяются все клетки, observer flux, source/DC,
+скорость, winding/electronics temperatures, physical actions и события.
+Каждая траектория должна пройти собственные energy/KCL/magnetic audits.
+
+Положительный результат требует трёх последовательных аудированных meshes,
+физических Cauchy caps и уменьшения нормированных разностей по трём группам.
+Solver failure разрывает трёхсеточную цепочку; неполный/нефинитный результат,
+пропущенная клетка, неверный clock или плохой баланс не дают qualified.
+Неудачные попытки остаются в артефакте. Native NumPy scalar audit metrics
+нормализуются в JSON-compatible bool без изменения критериев.
+
+Явный `step_budget`: default 300000, range 1000..2000000; default поле
+опускается из canonical JSON. Прежняя плановая оценка 200000 сохранена
+через резерв трети бюджета. Фактический лимит проверяется до следующего
+physical advance; токи, потокосцепления, температуры, энергия и latch
+при отказе не получают дополнительного шага. Плановое превышение отмечается
+`step_budget_exhausted`/`not_run`; фактический RuntimeError принятого-step
+бюджета записывается как `solver_failed` с исходной причиной.
+
+Матрица публичного workflow при max-levels=6/default budget:
+
+- `saturated_single_core`: qualified, 0.625 us, 5 траекторий.
+- `double_cage`: unqualified/levels_exhausted, 6 траекторий. Отказ обязателен.
+- `saturated_four_core`: qualified, 0.625 us, 5 траекторий.
+- `warm_four_winding`: qualified, 0.625 us, 5 траекторий.
+
+`benchmarks.switching_qualification_acceptance` проверяет именно этот
+workflow, включая правильный отрицательный результат. Его passed=true
+не означает all_cases_temporally_qualified=true.
+
+Отдельный double-cage профиль: max-levels=9, step_budget=2000000, финальный
+step=3.90625e-8 s. CLI завершился qualified=true. В последней траектории
+1024754 accepted steps на 40 ms; это дорогой bounded профиль. Разница между
+двумя последними уровнями: stator flux alpha 6.69178e-6 Vs, motor alpha
+current 0.000708053 A, source phase-a current 0.000355463 A. Все прежние
+caps сохранены; разности трёх групп уменьшились. Финальная относительная
+energy ошибка около 2.32e-10, max KCL около 1.28e-5 A. Это не абсолютный
+error bound, не универсальный выбор шага и не подтверждение причины всей
+предыдущей немонотонности. Пробные zero-current guards не дали достаточного
+результата и в production не включены.
+
+Проверки и provenance:
+
+- 537 selected tests, 71 новый; failures/errors/skips=0. Полный repository
+  suite не запускался.
+- 21 native workflow + 9 deep native + 16 independent-comparison trajectories.
+  Это 46 protocol runs, не 46 уникальных схем. Независимый mixed reference
+  разделяет midpoint/discrete-gradient математическую схему с production.
+- Для workflow 21 и independent comparison 16 выполнен numerical replay
+  исходным installed waveform-producer wheel. Deep 9 numerical replay
+  отдельно не выполнялся.
+- После исправления сериализации NumPy bool изменился только qualification
+  scorer. Численные Python-модули проверены побайтово относительно исходного
+  wheel; 21+9 сохранённых траекторий переоценены финальным scorer. Это 30
+  reassessments с new_numerical_trajectories=0, не numerical replay.
+- Два producer IDs сохраняются отдельно: waveform и assessment. Исходный
+  и финальный wheel включены в поставку. Compatibility checker отвергает
+  изменение любого numerical runtime module, несовпадение hash или inventory.
+- Восемь default-budget траекторий R06.12/R06.13 совпали по всем сохранённым
+  значениям в точности. Canonical входные JSON также сохраняются.
+- Финальный installed wheel проверен из /tmp с запрещёнными reference imports:
+  успешная CLI qualification, корректный resource отказ и ZIP round trip.
+  Это два CLI workflows/четыре native trajectories, тот же host/OS и
+  system-site-packages; независимый host не заявлен.
+
+Основные артефакты: `reports/switching-qualification-workflow-2026-11-11/`,
+`reports/switching-qualification-deep-double-2026-11-11/`,
+`reports/switching-qualification-deep-reassessment-2026-11-11/`,
+`reports/switching-qualification-independent-2026-11-11/`,
+`reports/switching-qualification-final-portable-2026-11-11/`.
+Итоговая поставка — `reports/switching-qualification-delivery-2026-11-11/`.
+
+Следующие критерии:
+
+1. Адаптивная/гибридная временная схема с измеренной стоимостью и проверкой
+   error control: уменьшить миллион шагов без ослабления физических caps.
+2. Независимая полная finer-mesh/continuous-time проверка сложного привода,
+   включая switching-energy, thermal trips и variable semiconductor R(T).
+3. Расширение подтверждённых general DAE/phase-network размеров и связей;
+   затем использование явно ограниченных qualification metadata в SFT/GRPO.
+
+Industrial/OEM accuracy, universal superiority, независимый внешний host
+и общий absolute error certificate не заявляются. GitHub/CI/git mutations
+не выполнялись.
+
+
+## R06.14 — ускорение существующего расчёта при сохранении результатов
+
+Профиль 25624 accepted steps показал лишние residual evaluations и allocations.
+Внутри одного неизменного electrical trial теперь переиспользуются уже
+вычисленные residual/diode/forward значения принятого Newton trial. Прежнее
+OR-правило line search сохраняется: residual уменьшился — potential не нужен;
+иначе вычисляется прежний potential merit. Symmetric matrix/gradient создаются
+по потребности. Постоянная часть roundoff threshold вычисляется один раз,
+зависимость от текущего voltage сохраняется. Кэш не переживает trial.
+
+В magnetics beta=0 radial gradient обходит ненужные radius/power/outer операции
+по той же линейной формуле. `np.r_` заменён concatenate в magnetic hot paths;
+повторный `matrix @ old + offset` вычисляется один раз. Rs/Rr(T), core current,
+насыщение, все клетки, winding RC, source/DC/PWM, energy и protections сохраняют
+свои уравнения. Число/положение accepted steps не меняется.
+
+Frozen `benchmarks/switching_hotpath_reference.py` воспроизводит affected
+R06.13 methods/constructor до оптимизации. Совпадение с оригинальными
+сохранёнными R06.13 waveforms проверено на всех пяти workloads, включая
+million-step случай: не только два текущих класса сравниваются друг с другом.
+Это прежняя собственная реализация, не внешний physical oracle.
+
+Paired timing protocol: пять полных 40-ms workloads, три fresh processes на
+реализацию/случай, чередование порядка, BLAS/OMP/MKL=1. Common imports и
+BLAS warm-up вне clocks; constructor и полное формирование result внутри;
+serialization вне clocks. CPU affinity/frequency и посторонняя OS нагрузка
+не изолированы. Во время protocol agent не запускал CPU-heavy validations.
+
+Медианы old → optimized:
+
+- `saturated_single_core`, 10 us: 4.3951 → 3.7607 s, 1.1687x.
+- `double_cage`, 10 us: 2.1005 → 1.7586 s, 1.1944x.
+- `saturated_four_core`, 10 us: 4.3299 → 3.7875 s, 1.1432x.
+- `warm_four_winding`, 10 us: 6.3599 → 5.5712 s, 1.1416x.
+- `deep_double_cage`, 39.0625 ns: 267.8255 → 219.1555 s, 1.2221x,
+  1024754 accepted steps в обоих вариантах.
+
+Это около 12–18% меньше wall time, не 14–22% меньше времени. Четыре 10-us
+случая — timing/equivalence workloads, не temporal qualification этим тестом.
+Deep остаётся дорогим и не становится общим EMT/DAE профилем. External
+simulator speed ranking и универсальный выигрыш не заявлены.
+
+Все 30 results прошли physical-channel/event/energy audits; old/new values
+совпали в точности во всех парах. Три результата каждого implementation
+также совпали между fresh processes. Полный повтор `--verify` всех 30
+выполнять отдельно не стали; available command не означает выполненный replay.
+
+Дополнительная проверка:
+
+- 760 selected tests, failures/errors/skips=0, 223 новых R06.14. Это 216
+  coupled candidates (27 gate patterns × 4 plants × 2 steps), 3 damped Newton
+  comparisons и 4 magnetic-output contracts. Остальные — регрессии прежних
+  numerical/thermal/phase/control/API компонентов. Полный repository suite
+  не запускался.
+- Fresh current CLI qualification на 156.25/78.125/39.0625 ns: qualified,
+  тот же selected step. Все три полных результата совпали с исходными R06.13
+  fine meshes; новый finest result совпал со всеми тремя optimized timing
+  results. Последний проход — дополнительный численный повтор fine trajectory.
+- Независимый mixed-equation/control/PWM reference: 8 current + 8 independent
+  полных trajectories на двух шагах, passed; затем 16 numerical replays,
+  passed. Общая midpoint/discrete-gradient схема не является continuous-time
+  error bound.
+- Installed wheel из /tmp с forbidden reference imports: full warm-four
+  расчёт, короткая CLI qualification, ZIP export/extract. Тот же configured
+  host/OS и system-site-packages; независимая ОС не заявлена.
+- Instrumented cProfile на одинаковом 25624-step случае: residual evaluations
+  104586 → 52315, NumPy index-tricks calls 102586 → 25624. Instrumented wall
+  times не используются как speed claim.
+
+Core protocol: 30 paired timing runs + 3 fresh fine qualification + 16
+independent-comparison runs = 49 trajectories; отдельно 16 independent
+numerical replay и один повтор optimized fine через CLI qualification.
+Это не 49 уникальных схем. Timing repetitions уже входят в 30, не прибавляются
+повторно. Четыре installed-wheel native trajectories — отдельная portable
+проверка (один full run и три коротких qualification levels).
+
+Артефакты:
+
+- `reports/switching-hotpath-qualified-2026-11-11/`: timings, 30 raw results,
+  inputs, checks, identities и manifest.
+- `reports/switching-hotpath-deep-qualification-2026-11-11/`: fresh CLI profile.
+- `reports/switching-hotpath-independent-2026-11-11/`: независимая сверка.
+- `reports/switching-hotpath-original-comparison-2026-11-11/` и
+  `reports/switching-hotpath-fine-reproduction-2026-11-11/`: historical/current
+  result comparisons.
+- `reports/switching-hotpath-tests-2026-11-11.xml`: 760 tests.
+- `reports/switching-hotpath-portable-2026-11-11/`: installed-wheel receipt.
+- `reports/switching-hotpath-delivery-2026-11-11/`: итоговая поставка.
+
+Далее — локальный adaptive/error-control workflow с сохранением energy/events
+и проверкой против fine trajectories, измеренные ресурсы больших DAE/phase
+схем, независимые полные switching-energy/trip/material-R(T) случаи. Около
+миллиона шагов на 40 ms и причина coarse nonmonotonicity остаются открытыми
+инженерными вопросами; R06.14 не объявляет их решёнными.
+GitHub/CI/индексация/commit/push не выполнялись.
+
+## R06.15 — адаптивный midpoint и выявленный предел уточнения
+
+Реализовано:
+
+- Явный opt-in `adaptive` в switching-drive study; штатный fixed-step путь
+  сохраняет прежнюю арифметику и формат результата без adaptive-полей.
+- Step doubling: принимаются два native полушага, без Richardson state
+  extrapolation. Coarse/rejected/root trials имеют собственные массивы,
+  события, реле и энергетические накопления. Цена всех проб учитывается.
+- Отдельные бюджеты accepted steps/probe evaluations, ограничение роста и
+  уменьшения шага, отказ на min_step_s и nonfinite input. Сбой не коммитит
+  физическое состояние.
+- Observer получает точные суммы midpoint-интегралов принятых подшагов;
+  body-diode heat/overlap/peak агрегируются по принятым подшагам.
+- Нулевой ток источника локализуется с bounded numerical projection;
+  энергия коррекции записана отдельно и не приписывается физическому теплу.
+- Fixed-mesh qualification отвергает adaptive: простое уменьшение потолка
+  шага не является проверкой адаптивной сетки.
+- `benchmarks.switching_adaptive_acceptance` сохраняет каждый уровень
+  0.2 → 0.1 → 0.05, входы, fingerprints, hashes архивных результатов,
+  physics audits, физические разности и отказы.
+
+Проверки:
+
+- 526 selected tests passed. Новые проверки: изоляция trials, принятые
+  состояния/энергия против двух native полушагов, rollback при solve/budget
+  failures, winding relay, diode-zero restart, malformed control inputs.
+- Четыре полных fixed-step повтора совпали **в точности** с архивными
+  R06.14 fine results; adaptive-поля отсутствуют.
+- Installed wheel из /tmp: reference imports запрещены, короткий adaptive
+  CLI run, sealed verify, ZIP roundtrip; package fingerprint в wheel
+  совпадает с исходниками. Тот же OS/system-site-packages, не внешний host.
+- Четыре полных 40-ms adaptive прогона с budget 0.2 прошли исходные
+  physical-unit caps, действия автоматики и energy/KCL/magnetic audits.
+  Accepted steps: single core 51090, double-cage 46608, four core 36566,
+  warm-four 47444. Это не доказательство общего CPU speedup: probe/root
+  overhead может сделать другие случаи медленнее fixed-step решения.
+
+**Весь адаптивный профиль пока НЕ квалифицирован.** Double-cage с budget
+0.1 и 0.05 честно останавливается на min_step_s. На диагностическом повторе
+0.1 при t≈28.9197603 ms разность flux coarse/fine =1.99e-8 Vs при h=0.1 ns,
+source-current difference≈1.78e-15 A; source-zero event отсутствует.
+Нельзя считать проблему решённой или ослаблять global caps для получения
+зелёного итога. Требуется разбор algebraic/body-diode switching и
+обусловленности на этой поверхности, затем новый зарегистрированный прогон.
+
+Артефакты: `reports/adaptive-corpus-2026-11-11/` (exploratory matrix),
+`reports/switching-adaptive-refinement-2026-11-11/` (полная refinement matrix),
+`reports/switching-adaptive-minstep-diagnostic-2026-11-11.json`,
+`reports/switching-adaptive-default-replay-2026-11-11.json`,
+`reports/switching-adaptive-tests-2026-11-11.xml`,
+`reports/switching-adaptive-portable-2026-11-11/`.
+Независимый full adaptive oracle, абсолютная ошибка/OEM accuracy и
+лидерство над внешними моделерами не заявляются. GitHub/CI/git mutations
+не выполнялись.
+
+Для воспроизведения minimum-step диагностики без изменения критериев:
+`python -m benchmarks.switching_adaptive_diagnostic --out reports/adaptive-diagnostic.json`.
+Ожидаемый exit code при воспроизведённом отказе — 2.
+
+Итог полной refinement matrix R06.15: **10/12 passed**, 2 ожидаемо
+сохранённых solver rejections (double-cage 0.1/0.05). Single-core,
+four-core и warm-four прошли все три бюджета. Итог всего профиля — false.
+Delivery: `reports/switching-adaptive-delivery-2026-11-11/`;
+package fingerprint `fc7741c3c96e429e3ebdfab249f3a3cf29100de2ae445dd794b5e73ba3875588`.
+
+## R06.16 — Newton/диодная граница на слабом motor pole
+
+Воспроизведён механизм исходного сбоя R06.15 на t≈28.9197603 ms:
+неразрешённая motor row скрывается общим C/h roundoff threshold;
+Newton-direction ~9 kV при ближайшей diode hinge в нескольких microvolts
+требует больше 30 обычных halvings. All-row ужесточение порога испытано и
+отклонено из-за новых line-search failures; его результаты не используются
+как подтверждение production-версии.
+
+Реализованы отдельный stopping scale motor rows и выбор начального
+Newton trial у ближайшей положительной diode hinge. Сохраняются обязательные
+merit/backtracking и прежние физические уравнения. Никаких fictitious leakage,
+ёмкостей, демпфирования или повышения temporal caps не добавлено.
+
+Публичный `circuit_solver`: `auto` (legacy fixed-step, motor-scaled adaptive),
+`legacy`, `motor_scaled`. Default auto не добавляется в canonical JSON.
+Фиксированный legacy путь сохраняет точные прежние результаты; для проверки
+исправленного решателя на равномерной сетке задаётся motor_scaled явно.
+
+Проверки текущих исходников:
+
+- 538 selected tests passed; 12 новых относительно R06.15.
+- Исходный regression state сохранён как data-only JSON в
+  `tests/fixtures/switching_adaptive_hinge.json`. Frozen legacy воспроизводит
+  coarse/two-half flux difference >1e-8 Vs. Новый нормированный estimator на
+  том же state ≈1.330136e-5 вместо 19.90254.
+- Независимые mixed stage equations проверены на h=0.05/0.1/0.2/1 ns:
+  flux atol1e-10 Vs, motor pole potentials atol1e-3 V. Это четыре стадии
+  одного state, не четыре независимые схемы или full trajectories.
+- Fresh default adaptive matrix: single-core/double-cage/four-core/warm-four,
+  четыре полных 40-ms результата, все archival physical-unit caps,
+  discrete actions и energy/KCL/magnetic audits passed.
+- Fresh double-cage budgets 0.2/0.1/0.05: все completed, solver_failures=0.
+  0.2 passed, 0.1/0.05 failed по machine/observer differences к архиву.
+  Их взаимная близость не доказывает absolute accuracy. Общий итог — false.
+- Fresh fixed-mesh motor-scaled refinement 2.5 us → 78.125 ns: шесть полных
+  результатов и все отрицательные оценки сохранены; qualified=false.
+- Четыре full legacy R06.14 fine trajectories воспроизведены в точности.
+- Новый wheel установлен в /tmp venv; reference imports запрещены;
+  regression state и короткий adaptive CLI run passed. Тот же host/OS и
+  system-site-packages, не независимая ОС или индустриальная квалификация.
+
+Артефакты:
+`reports/switching-hinge-tests-2026-11-12.xml`,
+`reports/switching-hinge-matrix-2026-11-12/`,
+`reports/switching-hinge-double-refinement-2026-11-12/`,
+`reports/switching-motor-scaled-fixed-2026-11-12/`,
+`reports/switching-hinge-legacy-replay-2026-11-12.json`.
+Source fingerprint:
+`1e630f468c7c759970002a2be26f1178cfcb45aa25438f6a01c01ea8447e02c3`.
+
+Закрыт конкретный solver failure, а не весь adaptive/global-accuracy блок.
+Следующая инженерная работа: motor/body-diode zero-current transitions,
+независимый полный reference и исследование немонотонных mesh differences.
+Следует различать физический energy audit, discrete residual convergence
+и приближение continuous-time trajectory. GitHub/CI/git mutations не было.
+
+Продолжение fixed-mesh проверки: fresh 39.0625 ns run завершён,
+1024754 native steps. Последние три сетки 156.25/78.125/39.0625 ns прошли
+исходный Cauchy/reduction criterion и physics audits. Максимальные
+нормированные различия последней пары: network 0.03554, machine/observer
+0.66918, thermal 7.13e-6. Это extension qualification текущего production
+solver, не независимый continuous-time bound.
+
+`benchmarks.switching_hinge_tail` проверяет sealed manifests, общий
+package fingerprint, неизменность всей study кроме точного деления шага
+пополам, смежность двух предыдущих сеток и исходные limits. Receipt:
+`reports/switching-hinge-extension-2026-11-12.json`;
+новая траектория: `reports/switching-hinge-fine39-2026-11-12/`.
+Adaptive 0.2 проходит и этот fresh fine reference; 0.1/0.05 не проходят
+(machine/observer normalized error около 4.43), несмотря на completed и
+нулевое число solver failures. Это ограничение оставлено открытым.
+
+## R06.17 — нулевой ток двигателя: bounded adaptive profile прошёл
+
+Реализованы:
+
+- motor_current_zero только для открытых управляемых каналов; root alignment
+  coarse/fine с явным current tolerance и временным согласованием.
+- canonical vector-zero event, когда у изолированной звезды совместно
+  исчезают токи последних проводящих фаз. Signed roundoff больше не создаёт
+  разные идентичности одного события для coarse/fine.
+- Сохранение accepted native states/energy **без flux projection/reset**.
+  Метаданные содержат фазы, время, current residual и flux_projection=false.
+  Добавлен motor_boundaries counter. Обычный min_step_s не запрещает более
+  короткий остаток до локализованного события.
+- Два data-only regression states: одиночное событие и gate-block coincidence.
+  Старое signed-only распознавание воспроизводит прежний отказ и rollback;
+  исправленное принимает те же native physical arrays/ledgers.
+- Source-only budget qualification: immutable caps/hashes/producer, три
+  half-budget studies, event residual/work accounting, physics/reference
+  audits, adjacent differences и reduction_factor0.85. Public fixed-step
+  qualification намеренно не смешивается с adaptive workflow.
+- Frozen R06.16 driver сохранён как собственный SHA256-pinned baseline в
+  benchmarks; он не является независимым oracle и не импортируется runtime.
+
+Доказательства:
+
+- 564 selected tests passed, 26 новых относительно R06.16.
+- Fresh final matrix: четыре 40-ms studies × budgets0.2/0.1/0.05 = **12/12**.
+  Single-core saturation/Gc, double-cage, four-core sag/block/recovery,
+  warm-four winding R(T). Все прежние global caps и audits прошли.
+- Все четыре studies прошли также строгую бюджетную self-consistency
+  qualification: decreasing adjacent physical differences при factor0.85,
+  выбранный budget0.05. Это не asymptotic order proof или absolute bound.
+- Double-cage machine/observer error к fine archive снизился примерно
+  с normalized4.43 до0.32; исходные flux caps не повышались.
+- Четыре independent mixed event pieces на двух состояниях: сравнение flux,
+  source current, network voltage, speed и motor AB voltage; free common-mode
+  gauge исключён. Reference использует ту же midpoint/DG схему.
+- Ablation заменяет только adaptive driver. Frozen baseline точно совпадает
+  с историческим R06.16 raw result и проваливает caps; current driver проходит.
+- Четыре legacy full trajectories совпали с R06.14 в точности.
+- Installed wheel из /tmp: оба regression states, полный double-cage0.1 run,
+  verify и ZIP roundtrip. Полный результат включая numerical events совпал
+  с source run **в точности**. Reference imports запрещены; OS/host и
+  system-site-packages общие — независимый host не заявляется.
+
+До совпадающего-event исправления первая полная matrix имела 11/12 passed;
+этот отрицательный результат сохранён отдельно. Final matrix не подменяет
+его и имеет другой producer fingerprint.
+
+Артефакты:
+`reports/switching-motor-zero-final-refinement-2026-11-12/`,
+`reports/switching-motor-zero-budget-qualified-2026-11-12/`,
+`reports/switching-motor-zero-independent-stages-2026-11-12.json`,
+`reports/switching-motor-zero-pinned-ablation-2026-11-12/`,
+`reports/switching-motor-zero-final-tests-2026-11-12.xml`,
+`reports/switching-motor-zero-final-legacy-2026-11-12.json`,
+`reports/switching-motor-zero-installed-replay-2026-11-12.json`.
+Source fingerprint:
+`0da006ecde9bb4172dd80e422e09102bfaee128b8fad04c59288ec05caf1aa24`.
+
+Остаются: независимая full continuous-time/external simulator сверка,
+switching-energy/thermal trips/material R(T) в едином профиле, charge-dynamic
+EMT и измеренный рост размеров сетей. Успех данного authored профиля не
+означает точность произвольной study и не доказывает превосходство над всеми
+моделерами. GitHub/CI/git mutations не выполнялись.
+
+Дополнительная граница применимости: integration_event_log — metadata
+локализованных solver roots, не исчерпывающий реестр всех semiconductor
+mode changes. В warm-four0.2 есть одна дополнительная motor-zero label около
+33.485728 ms по сравнению с0.1; её state residual находится в tolerance,
+physical actions/caps и decreasing differences passed. При изменении budget
+полная идентичность этих numerical labels не заявлена и не является
+критерием certificate. Это важно для подготовки SFT/GRPO labels.
+
+Локальная sealed поставка R06.17:
+`reports/switching-motor-zero-delivery-2026-11-12/` — raw runs, qualification,
+negative pre-coincidence matrix, frozen-driver intervention, reference inputs,
+installed wheel/receipts, выбранные sources/fixtures и результаты проверок.
+
+## R06.18 — full continuous external-machine drive verification
+
+Закрыт пробел между независимыми midpoint stage checks R06.17 и полной
+непрерывной траекторией. Новый reference не импортирует production topology,
+solver, ports, controls или event engine. До импорта native machine wheel
+и все Python sources проверяются; preloaded production module вызывает
+ошибку, затем meta-path blocker запрещает production imports.
+
+Физический reference:
+
+- Original motulator0.23.1 single-cage saturated Gamma RHS, constant positive
+  Gc и winding Rs/Rr(T); без правки native source или RHS.
+- Independently expressed RL source modes/guards, diode bridge, DC/earth
+  capacitors, channels/body diodes, free motor common-mode gauge, FOC,
+  current-model observer, PWM/dead time и RC thermal storage.
+- Continuous DOP8531e-12/1e-14 и Radau3e-11/3e-13, max_step25us.
+  Согласие <=1% каждого прежнего physical cap, energy/KCL/constitutive audits.
+- Single-cage positive-Gc scope необходим для instantaneous algebraic port.
+  Multicage external plant, zero-Gc constrained dynamics, switching losses,
+  semiconductor R(T), active brake и thermal trips в этот профиль не входят.
+
+Результаты:
+
+- Четыре полных40-ms cases: linear core start, saturated core start,
+  saturated sag/block/recovery, warm single winding R(T).
+- 8 primary trajectories (budgets0.2 и0.05), 8 continuous references
+  (два метода на case): **все passed**, без исключения failed cases.
+- Максимальный normalized primary error0.2722962; reference-to-reference
+ 6.62501e-5. Это comparison budget, не mathematically rigorous global bound.
+- Первоначально recovery получил failed из-за двух gates_enabled labels,
+  а не physical caps. Reference использовал canonical24/28ms, runtime
+  repeated-addition clock находился наulp раньше. Эти failed raw artifacts
+  сохранены отдельно и не переписаны.
+- Report() теперь выдаёт canonical sample tags и right-hand gate eligibility.
+  Electrical states/current и held control snapshot остаются pre-switch.
+  В интеграционный clock, equations или Newton изменения не внесены.
+- AST comparator и pinned previous wheel проверяют только объявленную
+  report-only замену. Все остальные runtime Python bytes идентичны.
+- Все8 before/after physical channel arrays, energy ledgers, control values
+  и work counters совпали **в точности**. Изменены clocks и4 boundary gate
+  labels (24/28ms ×2 recovery budgets).
+- 676 selected tests passed:566 production +110 native-reference/compatibility,
+  совместный запуск с pinned native package, без failures/errors/skip.
+  27 safe gate states ×3 flux states проверяют KCL и passive power;
+  linear/saturated/warm tests проверяют полную storage derivative identity.
+- Ready cases: `cases/continuous-drive/`, с qualified primary budget0.05.
+
+Continuous reference curves после report-only fix переиспользованы строго
+по identical study/reference source/wheel/solver controls; worker production
+imports запрещены, поэтому runtime reporting code не влияет на них.
+Primary8 после fix рассчитаны заново. Collector повторно проверяет native
+source maps, physical caps, audits, reference disagreement и whole before/
+after data. Это не разрешение повторно использовать primary из другого
+producer и не маскирование source changes.
+
+Артефакты:
+`reports/continuous-drive-qualified-final-2026-11-12/`,
+`reports/continuous-drive-all-tests-2026-11-12.xml`,
+`reports/continuous-drive-production-tests-2026-11-12.xml`,
+`reports/continuous-drive-tests-2026-11-12.xml`.
+Source fingerprint:
+`154bd1b976f0d42fb96fb9ce7c608691afdbb03db57f48ecf24ae7e3598e6385`.
+
+Reference version/wheel и исходные physical caps закреплены до финальных
+прогонов. Параметры авторские, не паспорт/measurement конкретной установки.
+Это external motor component + independent full circuit adapter, не весь
+внешний simulator. Никаких CPU superiority/OEM/all-network accuracy claims.
+Следующий профиль — semiconductor R(T), switching energy и thermal trips;
+затем multicage continuous reference и большие связанные сети.
+GitHub/CI/git mutations не выполнялись.
+
+Поставка/installed-wheel итог R06.18:
+`reports/continuous-drive-portable-2026-11-12/` содержит новый wheel,
+full recovery0.05 CLI run, continuous-reference comparison, точный source
+replay и ZIP roundtrip. Imports benchmarks/tests/motulator в runtime
+запрещены. Тот же OS/host и system-site-packages, не independent-host CI.
+Локальная sealed поставка:
+`reports/continuous-drive-delivery-2026-11-12/`.

@@ -1,0 +1,94 @@
+schema: power-grid-env.agent-designer-roadmap/v1
+updated_on: '2026-11-13'
+status: in_progress
+economics: excluded
+github_and_ci: forbidden_by_owner
+role: Multimodal industrial power-supply and motor-drive design engineer
+scope: Preliminary simulation-verified design; no automatic normative approval
+current_status: plans/CURRENT_STATUS.md
+rules:
+  - Physical component availability is not qualification of its combinations
+  - Owner defines requirements, scenarios, catalog and hidden acceptance cases
+  - Candidate cannot change requirements, passports or acceptance thresholds
+  - Solver failure is not feasibility; incomplete studies cannot pass
+  - Independent references and held-out families precede superiority claims
+  - Multicage identification must respect cage permutation and equivalent parallel-branch reductions; terminal traces do not guarantee a unique parameter vector
+  - Successful initialization (solved=true) is not a completed study; budget-aborted traces must never become feasible-design or positive training labels
+blocks:
+  - id: PHY-19
+    status: done_in_declared_profile
+    scope: Coupled switching energy, semiconductor R(T), thermal trips and brake
+    progress: Seven bounded single-cage positive-Gc studies passed 14 primary and 14 continuous trajectories; passive-port hinge bug fixed; independent verifier, negative evidence tests and installed-wheel replay passed
+    evidence: reports/electrothermal-drive-corrected-2026-11-12/summary.json
+    limitations: Authored 4ms event and 12ms recovery profiles; no charge dynamics, OEM accuracy, arbitrary parameters or multicage extrapolation; thermal trip blocks inverter gates rather than opening upstream feeder
+    acceptance: Independent continuous reference with energy balance, trip timing and step/budget refinement; existing caps fixed before runs
+    dependencies: [R06.18]
+  - id: PHY-20
+    status: done_in_declared_profile
+    scope: Continuous multicage saturated machine reference, winding heating and iron loss
+    progress: All six profiles passed 12 primary and 12 continuous trajectories; 339 new tests plus 192 prior reference checks passed; native single-cage reduction, exact limits, analytical impedance, full evidence verifier and installed-wheel replay completed
+    evidence: reports/multicage-continuous-first-matrix-2026-11-12/summary.json
+    limitations: Independent equations rather than an external multicage simulator; positive-Gc 2-4 cage authored 4ms/12ms profiles, shared rotor thermal lump, no unique parameter-identification or OEM-accuracy claim
+    acceptance: Independent equations or external implementation, limiting single-cage cases, full trajectories and documented parameter provenance
+    dependencies: [PHY-19]
+  - id: PHY-21
+    status: done_in_declared_profile
+    scope: Larger coupled phase/DAE networks, protections, islands and repeated recovery
+    progress: All 12 cases passed 47 primary and 21 independent reference runs, including repeats and equipment-order reversal; 130 selected tests passed; phase command capacity extended to 512 with unchanged numerical equations and retained output/work budgets
+    evidence: reports/network-dynamic-qualified-2026-11-12/summary.json
+    resource_matrix: reports/network-dynamic-resource-matrix-2026-11-12.json
+    limitations: Separate tracks, not their arbitrary combinations; 2000 buses/128 motors/32 generators is a 0.6s window; 45s islands use three buses and disconnected motors; 96-branch phase track is independent RLC under stiff sources
+    remaining_extensions: [long_large_motor_runup, induction_start_while_islanded, arbitrary_combined_regulators_protections_and_topologies, general_meshed_unbalanced_dynamic_scale]
+    acceptance: Measured size/time/peak-memory matrix, physical balances, event reproducibility and failure diagnostics
+    dependencies: [PHY-20]
+  - id: DES-01
+    status: done_in_declared_profile
+    scope: Immutable design brief and catalog feeder selection across mandatory motor studies
+    implemented: [strict_task_and_proposal_contracts, isolated_three_grid_runs, shaft_I2t_thermal_audit, stable_all_case_verdict, owner_anchored_verifier, CLI, disjoint_topology_train_dev_test, train_only_decision_SFT_export, qualified_choice_and_catalog_infeasibility_rewards]
+    evidence: reports/designer-corpus-qualified-2026-11-12/corpus.json
+    limitations: Six deterministic synthetic single-motor tasks, two catalog impedances, three scenarios; not a cable product catalog, trained agent, VLM/tool-use curriculum or independent full-network physics oracle
+    remaining_extensions: [larger_nontrivial_design_corpus, compact_multimodal_observations, tool_use_rollouts, independent_private_agent_evaluation]
+    acceptance: Feasible and infeasible real studies, no requirement editing, immutable criteria and all mandatory scenarios checked
+  - id: DES-02
+    status: in_progress
+    progress: Offline field-level catalog provenance and deterministic passport derivation; Nexans cable and historical Trihal family extracts with explicit owner assumptions; four catalog variants (36 grid runs), four independent OpenDSS fault solutions, 178 selected tests and nine installed-wheel replays pass
+    evidence: reports/equipment-catalog-delivery-2026-11-13/delivery.json
+    limitations: Mixed manufacturer/reference/owner data, unverified transformer withstand and cable AC/X assumptions, single-circuit air profile at 50 Hz; no normative approval, OEM authentication, archived source bytes or independent dynamic reference
+    remaining_extensions: [verified_transformer_withstand_and_cable_AC_parameters, broader_installation_tables_and_compatibility, broader_external_sizing_cases, multi_feeder_and_transformer_topologies, fault_and_protection_coordination]
+    scope: Traceable equipment catalog and electrical sizing
+    acceptance: Cable ampacity/derating and voltage drop, transformer loading and fault duty each independently checked; explicit installation inputs and unsupported scope
+    dependencies: [DES-01]
+  - id: DES-03
+    status: open
+    scope: Network construction and redesign actions
+    acceptance: Valid connectivity, sources and voltage levels; catalog-only edits; transformer/feeder/section selection; deterministic replay
+    dependencies: [DES-02]
+  - id: DES-04
+    status: in_progress
+    progress: Full start/sag/restart and fault profiles at all16 corners plus nominal for SI/VI/revised-EI on Radau and DAE (1836 qualified runs, 1224 new); original EI backup TMS .08 fails a reproduced corner, explicit .06 revision retains all requirements; 918 solver pairs/duty checks, 20 new tests and nine pinned-wheel replays pass
+    evidence: reports/three-family-envelope-delivery-2026-11-13/delivery.json
+    qualified_extensions: [full_three_inverse_families_all16_corners_Radau_DAE, original_EI_rejection_and_requirement_preserving_backup_TMS_revision, measured_fixed_RMS_fault_duty, bounded_composite_store_integrity, passive_continuous_cold_hot_current_bounds, frozen_motor_EMF_phasor_fault_attribution, per_port_sampled_I2t_Radau_DAE_three_grids]
+    limitations: One authored 75kVA/400V two-node motor profile; original EI TMS .08 not robust, qualified EI uses .06; finite corners only, no continuous uncertainty, temperature feedback, OEM ratings or independent differential trajectories; three ANDES regressions unavailable
+    remaining_extensions: [interior_and_continuous_uncertainty_analysis, cold_hot_dynamic_machine_fault_envelope, general_machine_fault_duty, mixed_curve_stage_coordination, instantaneous_and_reset_reclose_models, earth_faults_and_peak_duty, broader_topologies, motor_only_loaded_initialization, external_ANDES_regressions]
+    scope: Start/restart, faults, protection coordination and reserve design
+    acceptance: Same candidate passes all required normal/disturbed modes; device duties and selectivity explicitly checked without inherited approval
+    dependencies: [PHY-21, DES-03]
+  - id: VIS-01
+    status: open
+    scope: Real single-line diagrams, passports and oscillograms as public VLM observations
+    acceptance: Image-grounding ablations; no privileged labels; engineering report linked to model revision and physical traces
+    dependencies: [DES-01]
+  - id: LEARN-01
+    status: open
+    scope: Qwen3.5-4B multimodal SFT and physics-scored GRPO
+    acceptance: Qualified multimodal loader and training step, structured tool episodes, measured improvement over base model and numerical/heuristic baselines with equal budgets
+    dependencies: [VIS-01, DES-04]
+  - id: EVAL-01
+    status: open
+    scope: Independent designer evaluation
+    acceptance: Hold out network topologies, motor families and disturbance combinations; publish success/violations/tool cost and negative results locally
+    dependencies: [LEARN-01]
+execution_order:
+  - PHY-19 then PHY-20 then PHY-21
+  - In parallel DES-01 then DES-02 then DES-03 then DES-04
+  - VIS-01 may proceed on qualified current profiles; LEARN-01 after its dependencies

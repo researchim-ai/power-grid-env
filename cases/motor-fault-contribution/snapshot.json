@@ -1,0 +1,41 @@
+{
+  "id": "interior-fault",
+  "source": {
+    "reference": "owner://motor-fault-demo/v1",
+    "conditions": "Authored frozen single-cage EMF, not independently initialized or OEM-measured"
+  },
+  "nominal_ll_v": 400,
+  "source_emf_v": {
+    "real": 230.94010767585033,
+    "imag": 0
+  },
+  "source_r_ohm": 0.01024,
+  "source_x_ohm": 0.036978,
+  "line_r_ohm": 0.0258399015,
+  "line_x_ohm": 0.008,
+  "fault_position_pu": 0.5,
+  "fault_r_ohm": 0.001,
+  "fault_x_ohm": 0,
+  "downstream_load_p_w": 10000,
+  "downstream_load_q_var": 4000,
+  "motors": [
+    {
+      "id": "m1",
+      "source": {
+        "reference": "owner://motor-fault-demo/v1",
+        "conditions": "Authored frozen single-cage EMF, not independently initialized or OEM-measured"
+      },
+      "rated_va": 75000,
+      "rated_ll_v": 400,
+      "stator_r_pu": 0.02,
+      "stator_x_pu": 0.1,
+      "rotor_x_pu": 0.1,
+      "magnetizing_x_pu": 3,
+      "emf_pu": {
+        "real": 0.95,
+        "imag": -0.05
+      },
+      "connected": true
+    }
+  ]
+}

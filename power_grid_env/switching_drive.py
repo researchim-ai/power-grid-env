@@ -17,6 +17,7 @@ from power_grid_env.rotor_flux_control import RotorFluxControl,RotorFluxControll
 from power_grid_env.pwm_bridge import T,AB,pwm_plan,gates_at,thermal_step
 from power_grid_env.study_artifacts import encoded,seal
 from power_grid_env.evidence import package_fingerprint
+from power_grid_env.switching_adaptive import AdaptiveMidpointControl
 
 
 class PowerThermal(Strict):
@@ -47,6 +48,9 @@ class SwitchingDriveStudy(Strict):
     thermal: PowerThermal
     duration_s: float = Field(gt=0,le=2)
     max_step_s: float = Field(ge=1e-9)
+    step_budget: int = Field(default=300_000,ge=1000,le=2_000_000)
+    adaptive: AdaptiveMidpointControl | None = None
+    circuit_solver: Literal['auto','legacy','motor_scaled'] = 'auto'
     sample_s: float = Field(ge=1e-9)
     pwm_frequency_hz: float = Field(gt=0,le=100_000)
     dead_time_s: float = Field(ge=1e-9)
@@ -87,12 +91,17 @@ class SwitchingDriveStudy(Strict):
         for key in ['observer_motor','motor_initial_fluxes_ab_vs','motor_initial_temperature_c','motor_temperature_trip_c']:
             if getattr(self,key) is None:result.pop(key,None)
         if self.observer_mode=='nominal_single_cage':result.pop('observer_mode',None)
+        if self.step_budget==300_000:result.pop('step_budget',None)
+        if self.adaptive is None:result.pop('adaptive',None)
+        if self.circuit_solver=='auto':result.pop('circuit_solver',None)
         return result
 
     @model_validator(mode='after')
     def profile(self):
         if self.schema_version!='power-grid-env.switching-drive/v1':raise ValueError('unsupported switching-drive schema')
         m=self.motor
+        if self.adaptive is not None and self.adaptive.min_step_s>self.max_step_s:raise ValueError('adaptive min_step_s exceeds max_step_s')
+        if self.adaptive is not None and self.duration_s<=1e-12:raise ValueError('adaptive duration below timing resolution')
         if m.locked_rotor:raise ValueError('switching profile requires a free shaft')
         if m.thermal is None:
             if self.motor_initial_temperature_c is not None or self.motor_temperature_trip_c is not None:raise ValueError('winding initial/trip temperatures require motor.thermal')
@@ -113,7 +122,8 @@ class SwitchingDriveStudy(Strict):
         period=1/self.pwm_frequency_hz
         if 1+self.switching_temperature_per_k*(min(self.thermal.ambient_c,self.thermal.initial_c[1])-25.)<=0:raise ValueError('switching loss temperature factor must remain positive over the thermal range')
         if any(self.max_step_s*g/c>=2 for c,g in zip(self.thermal.capacity_j_per_k,self.thermal.conductance_w_per_k)):raise ValueError('thermal RC midpoint requires a smaller max_step_s for positive temperature relaxation')
-        if self.dead_time_s>=period/10 or self.max_step_s>period/8 or self.duration_s/self.max_step_s>200_000 or self.duration_s*self.pwm_frequency_hz>20_000 or self.duration_s/self.sample_s>50_000:raise ValueError('bounded resolved PWM step/sample/carrier/dead-time profile required')
+        if self.duration_s/self.max_step_s>2*self.step_budget/3:raise ValueError('planned switching steps exceed reserved step_budget; refine duration or explicitly raise step_budget')
+        if self.dead_time_s>=period/10 or self.max_step_s>period/8 or self.duration_s*self.pwm_frequency_hz>20_000 or self.duration_s/self.sample_s>50_000:raise ValueError('bounded resolved PWM step/sample/carrier/dead-time profile required')
         if not self.disable_dc_v<self.enable_dc_v or not self.brake_start_v<self.brake_full_v:raise ValueError('ordered DC hysteresis and brake thresholds required')
         if not self.grid_envelope or self.grid_envelope[0][0]!=0 or any(t<0 or t>self.duration_s or v<0 for t,v in self.grid_envelope) or any(a[0]>=b[0] for a,b in zip(self.grid_envelope,self.grid_envelope[1:])):raise ValueError('ordered nonnegative grid envelope required')
         if any(not 0<=a<b<=self.duration_s for a,b in self.gate_block_windows):raise ValueError('bounded gate-block windows required')
@@ -159,6 +169,9 @@ class SwitchingDrive:
         self.linear_direct_solves=0;self.linear_least_squares_solves=0;self.linear_direct_fallbacks=0
         self.reluctance=self.magnetics.linear_reluctance
         self.initial_energy=self.stored()
+        if p.adaptive is not None:
+            from power_grid_env.switching_adaptive import initialize
+            initialize(self)
 
     def trip_active(self):return bool(any(self.latched) or any(self.motor_latched))
 
@@ -241,16 +254,27 @@ class SwitchingDrive:
         incoming=context['incoming'];impedance=context['impedance'];source_mid=context['source_mid']
         dc=context['dc'];duty=context['duty'];rpre=context['rpre'];channel_r=context['channel_r']
         branches=context['branches'];resistance=context['resistance'];drop=context['drop']
-        symmetric=(matrix+matrix.T)/2
+        scaled_solver=p.circuit_solver=='motor_scaled' or (p.circuit_solver=='auto' and p.adaptive is not None)
+        potential_matrix=None
+        roundoff_scale=8*np.finfo(float).eps*np.max(abs(matrix))
         def residual(v):
-            diode=np.maximum(0.,(branches@v-drop)/resistance)
-            return matrix@v-rhs+branches.T@diode,diode
-        voltage=self.voltage.copy()
+            delta=branches@v-drop;diode=np.maximum(0.,delta/resistance)
+            forward=np.maximum(delta,0.)
+            return matrix@v-rhs+branches.T@diode,diode,forward
+        def merit(v,evaluation):
+            raw=abs(evaluation[0])
+            legacy_tolerance=max(1e-8,roundoff_scale*max(1.,max(abs(v))))
+            if not scaled_solver:return float(max(raw))/legacy_tolerance
+            # Capacitive rail rows and weak motor-pole rows have different
+            # roundoff scales. Do not let C/h hide an unresolved motor pole.
+            motor_scale=1e-12+8*np.finfo(float).eps*(abs(matrix[5:])@np.maximum(abs(v),1.)+abs(rhs[5:])+abs(branches.T[5:])@abs(evaluation[1]))
+            return float(max(max(raw[:5])/legacy_tolerance,max(raw[5:]/motor_scale)))
+        voltage=self.voltage.copy();evaluated=residual(voltage)
         for iteration in range(45):
             self.newton_calls+=1
-            residual_v,diode=residual(voltage);norm=float(np.max(abs(residual_v)))
-            if norm<max(1e-8,8*np.finfo(float).eps*np.max(abs(matrix))*max(1.,max(abs(voltage)))):break
-            active=(branches@voltage)>drop
+            residual_v,diode,base_forward=evaluated;norm=float(np.max(abs(residual_v)))
+            if (merit(voltage,evaluated)<1. if scaled_solver else norm<max(1e-8,roundoff_scale*max(1.,max(abs(voltage))))):break
+            active=base_forward>0.
             jac=matrix+(branches[active].T/resistance[active])@branches[active]
             # With all motor gates/diodes off the isolated-star common mode is
             # physically undetermined. Least squares selects a gauge only;
@@ -258,17 +282,33 @@ class SwitchingDrive:
             anchored=np.any(gates,axis=1)|active[6:9]|active[9:12]
             correction=self._network_correction(jac,residual_v,bool(np.all(anchored)))
             fraction=1.
-            base_forward=np.maximum(branches@voltage-drop,0.)
-            smooth_gradient=symmetric@voltage-rhs
-            gradient=smooth_gradient+branches.T@(base_forward/resistance)
+            if scaled_solver:
+                # Weak floating-pole Newton directions can span kilovolts
+                # while the next diode boundary is micovolts away. Start
+                # just beyond that hinge instead of exhausting 30 halvings.
+                direction=branches@correction
+                moving=direction!=0.
+                crossings=-((branches@voltage-drop)[moving])/direction[moving]
+                positive=crossings[(crossings>0.)&(crossings<1.)]
+                if positive.size:fraction=min(1.,float(min(positive))*(1.+1e-6)+np.finfo(float).eps)
+            smooth_gradient=None;gradient=None
             for _ in range(30):
                 change=fraction*correction;trial=voltage+change
-                forward=np.maximum(branches@trial-drop,0.)
-                # Difference form avoids subtraction of the large capacitor
-                # potential at a weakly conducting commutation boundary.
+                trial_evaluated=residual(trial)
+                # The residual merit is the first arm of the existing OR
+                # acceptance. A successful Newton correction needs no
+                # potential evaluation. Reuse this exact trial evaluation
+                # at the next iteration of the same unchanged network.
+                if (merit(trial,trial_evaluated)<merit(voltage,evaluated) if scaled_solver else max(abs(trial_evaluated[0]))<norm):
+                    voltage=trial;evaluated=trial_evaluated;break
+                if smooth_gradient is None:
+                    if potential_matrix is None:potential_matrix=(matrix+matrix.T)/2
+                    smooth_gradient=potential_matrix@voltage-rhs
+                    gradient=smooth_gradient+branches.T@(base_forward/resistance)
+                forward=trial_evaluated[2]
                 potential_change=smooth_gradient@change+.5*change@matrix@change+.5*sum((forward-base_forward)*(forward+base_forward)/resistance)
-                if max(abs(residual(trial)[0]))<norm or potential_change<min(-1e-14,1e-4*gradient@change):
-                    voltage=trial;break
+                if potential_change<min(-1e-14,1e-4*gradient@change):
+                    voltage=trial;evaluated=trial_evaluated;break
                 fraction*=.5
             else:raise RuntimeError(f'switching circuit Newton line search failed at t={t}, h={h}, residual={norm}')
         else:raise RuntimeError('switching circuit Newton failed to converge')
@@ -281,7 +321,7 @@ class SwitchingDrive:
         bridge_heat=float(sum(diode_power[:6])+rpre*(i_mid@i_mid))
         inverter_heat=float(sum(diode_power[6:])+channel_power)
         brake_heat=float(duty*(dc@voltage)**2/p.brake_resistance_ohm)
-        physical_residual=residual(voltage)[0];physical_residual[5:]+=T@(currents[:2]-(motor_offset+motor_gain@(AB@voltage[5:])))
+        physical_residual=residual_v.copy();physical_residual[5:]+=T@(currents[:2]-(motor_offset+motor_gain@(AB@voltage[5:])))
         norm=float(max(abs(physical_residual)))
         load=p.load_torque_nm+p.motor.fan_nm_per_rad_s2*wmid*abs(wmid)+p.motor.viscous_nm_per_rad_s*wmid
         return dict(voltage=voltage,line_mid=i_mid,flux_mid=phi_mid,flux_increment_mid=increment,currents_mid=currents,torque_nm=float(torque),load_nm=float(load),
@@ -318,6 +358,7 @@ class SwitchingDrive:
         return False
 
     def advance(self,t,h,gates):
+        if self.steps>=self.p.step_budget:raise RuntimeError('switching-step budget exceeded before state advance')
         p=self.p;q=self.candidate(t,h,gates)
         if self._thermal_crossing(q):
             # Locate the first threshold before accepting a step, then retry
@@ -346,7 +387,6 @@ class SwitchingDrive:
             newly_motor=(~self.motor_latched)&(self.winding_temperature>=np.array(p.motor_temperature_trip_c)-1e-8)
             for k in np.flatnonzero(newly_motor):self.events.append(dict(time_s=t+h,kind='thermal_trip',component=['motor_stator','motor_rotor'][k],temperature_c=float(self.winding_temperature[k])))
             self.motor_latched|=newly_motor
-        if self.steps>300_000:raise RuntimeError('switching-step budget exceeded')
         return h,q
 
     def switch(self,t,gates):
@@ -370,17 +410,28 @@ class SwitchingDrive:
         self.latched|=newly
         return int(sum(changed.ravel()))
 
-    def step(self,t,h,gates):
+    def _midpoint_step(self,t,h,gates):
         self._old_rails=self.voltage[3:5].copy()
         return self.advance(t,h,gates)
+
+    def step(self,t,h,gates):
+        if self.p.adaptive is None:return self._midpoint_step(t,h,gates)
+        from power_grid_env.switching_adaptive import adaptive_step
+        return adaptive_step(self,t,h,gates)
 
 
 def run_switching_drive(study):
     p=SwitchingDriveStudy.model_validate(study);m=SwitchingDrive(p);initial_motor_flags=[bool(x) for x in m.motor_latched];period=1/p.pwm_frequency_hz
     times=[];channels={};energy=[];last_control={};last_q={};edge_count=0;next_sample=0.;t=0.;peak_current=0.;overlap_steps=0;body_work=0.;clock_tolerance=5e-13
     def record():
+        # Output clock is the declared sample grid, not its repeated-addition
+        # approximation. Keep the integration clock/state untouched. Gate
+        # permission is evaluated at that reported time (right-hand policy);
+        # electrical state/current retains the pre-switch snapshot.
+        scheduled=round(t/p.sample_s)*p.sample_s
+        reported=p.duration_s if abs(t-p.duration_s)<clock_tolerance else scheduled if abs(t-scheduled)<clock_tolerance else t
         currents=m.currents();vdc=m.voltage[3]-m.voltage[4]
-        row=dict(dc_voltage_v=float(vdc),speed_rad_s=float(m.speed),motor_current_alpha_a=float(currents[0]),motor_current_beta_a=float(currents[1]),motor_current_peak_a=float(np.linalg.norm(currents[:2])),source_current_a=float(m.line[0]),source_current_b=float(m.line[1]),source_current_c=float(m.line[2]),rectifier_temperature_c=float(m.temperature[0]),inverter_temperature_c=float(m.temperature[1]),brake_temperature_c=float(m.temperature[2]),thermal_trip=bool(m.trip_active()),gates_enabled=bool(m.enabled and not m.trip_active() and not any(a<=t<b for a,b in p.gate_block_windows)),precharge_bypassed=bool(m.bypassed),**last_control)
+        row=dict(dc_voltage_v=float(vdc),speed_rad_s=float(m.speed),motor_current_alpha_a=float(currents[0]),motor_current_beta_a=float(currents[1]),motor_current_peak_a=float(np.linalg.norm(currents[:2])),source_current_a=float(m.line[0]),source_current_b=float(m.line[1]),source_current_c=float(m.line[2]),rectifier_temperature_c=float(m.temperature[0]),inverter_temperature_c=float(m.temperature[1]),brake_temperature_c=float(m.temperature[2]),thermal_trip=bool(m.trip_active()),gates_enabled=bool(m.enabled and not m.trip_active() and not any(a<=reported<b for a,b in p.gate_block_windows)),precharge_bypassed=bool(m.bypassed),**last_control)
         if p.motor.thermal:
             rs,rr=m.magnetics.resistances(m.winding_temperature)
             row.update(motor_stator_temperature_c=float(m.winding_temperature[0]),motor_rotor_temperature_c=float(m.winding_temperature[1]),motor_stator_resistance_ohm=float(rs),motor_stator_thermal_trip=bool(m.motor_latched[0]),motor_rotor_thermal_trip=bool(m.motor_latched[1]))
@@ -392,7 +443,7 @@ def run_switching_drive(study):
             last_voltage=AB@last_q['voltage'][5:]
             row.update(last_midpoint_inverter_voltage_alpha_v=float(last_voltage[0]),last_midpoint_inverter_voltage_beta_v=float(last_voltage[1]),last_midpoint_torque_nm=last_q['torque_nm'],last_midpoint_rectifier_conducting=last_q['rectifier_conducting'],last_midpoint_body_diode_power_w=last_q['body_diode_power_w'],last_midpoint_motor_core_loss_w=last_q['motor_core_loss_w'],last_midpoint_motor_constitutive_residual_v=last_q['motor_constitutive_residual_v'])
         for key,value in row.items():channels.setdefault(key,[]).append(float(value))
-        times.append(float(t));stored=m.stored();energy.append(dict(stored_j=stored,source_j=float(m.work),external_heat_j=float(m.external_loss),mechanical_j=float(m.mechanical_work),residual_j=float(m.work-m.external_loss-m.mechanical_work-(stored-m.initial_energy))))
+        times.append(float(reported));stored=m.stored();energy.append(dict(stored_j=stored,source_j=float(m.work),external_heat_j=float(m.external_loss),mechanical_j=float(m.mechanical_work),residual_j=float(m.work-m.external_loss-m.mechanical_work-(stored-m.initial_energy))))
     record()
     periods=math.ceil(p.duration_s/period)
     for n in range(periods):
@@ -422,8 +473,13 @@ def run_switching_drive(study):
                 if next_sample<=t+clock_tolerance:next_sample+=p.sample_s
                 step=min(step,next_sample-t)
                 h,q=m.step(t,step,gates);t+=h;last_q=q
-                current_integral+=h*complex(*q['currents_mid'][:2]);speed_integral+=h*q['speed_mid'];elapsed+=h
-                peak_current=max(peak_current,float(np.linalg.norm(m.currents()[:2])));overlap_steps+=int(q['rectifier_conducting']>2);body_work+=h*q['body_diode_power_w']
+                if p.adaptive is None:
+                    current_integral+=h*complex(*q['currents_mid'][:2]);speed_integral+=h*q['speed_mid']
+                    peak_current=max(peak_current,float(np.linalg.norm(m.currents()[:2])));overlap_steps+=int(q['rectifier_conducting']>2);body_work+=h*q['body_diode_power_w']
+                else:
+                    current_integral+=q['observer_current_integral_as'];speed_integral+=q['observer_speed_integral_rad']
+                    peak_current=max(peak_current,q['accepted_peak_current_a']);overlap_steps+=q['interval_overlap_steps'];body_work+=q['interval_body_diode_heat_j']
+                elapsed+=h
                 if abs(t-next_sample)<clock_tolerance or t>=p.duration_s-clock_tolerance:record()
             # Coincident carrier/sample boundaries can differ by floating-point
             # roundoff. Snap only sub-picosecond gaps, never a physical pulse.
@@ -438,6 +494,8 @@ def run_switching_drive(study):
     normalizer=max(1.,abs(m.work),abs(m.external_loss),abs(m.mechanical_work),m.initial_energy)
     return dict(completed=True,time_s=times,channels=channels,energy=energy,event_log=m.events,
         metrics=dict(final_energy_relative_error=abs(energy[-1]['residual_j'])/normalizer,kcl_max_a=m.kcl_max,motor_constitutive_residual_v=m.magnetic_residual_max,motor_core_heat_j=float(m.core_heat),motor_stator_heat_j=float(m.stator_heat),motor_rotor_heat_j=float(m.rotor_heat),motor_winding_ambient_heat_j=float(m.winding_ambient_heat),peak_substep_motor_core_loss_w=float(m.core_peak),peak_endpoint_motor_current_a=peak_current,inductive_overlap_steps=overlap_steps,body_diode_heat_j=float(body_work),switching_heat_j=float(m.switch_heat),gate_edges=edge_count,steps=m.steps,newton_iterations=m.newton_calls,linear_direct_solves=m.linear_direct_solves,linear_least_squares_solves=m.linear_least_squares_solves,linear_direct_fallbacks=m.linear_direct_fallbacks),
+        **(dict(integration=dict(method='adaptive_midpoint_step_doubling',error_budget_fraction=p.adaptive.error_budget_fraction,trials=m.adaptive_trials,rejections=m.adaptive_rejections,solver_failures=m.adaptive_solver_failures,accepted_pairs=m.adaptive_accepted_pairs,event_steps=m.adaptive_event_steps,min_accepted_step_s=m.adaptive_min_accepted_step_s,max_accepted_step_s=m.adaptive_max_accepted_step_s,peak_local_estimate=m.adaptive_peak_estimate,probe_evaluations=m.adaptive_probe_evaluations,root_probes=m.adaptive_root_probes,source_boundaries=m.adaptive_source_boundaries,motor_boundaries=m.adaptive_motor_boundaries,source_event_energy_correction_j=m.adaptive_source_event_energy_j,absolute_error_certified=False)) if p.adaptive is not None else {}),
+        **(dict(integration_event_log=m.adaptive_mesh_events) if p.adaptive is not None else {}),
         observer_mode=p.observer_mode,
         model_scope='1-4 cage saturated Gamma machine with eddy-current core loss; explicit nominal single-cage or saturated multicage current-model sensored FOC observer; event-resolved PWM MOSFET/body diodes; source RL diode commutation; explicit rail-earth C; three electronics thermal states and optional two winding RC/R(T) states; no diode charge dynamics, avalanche or EMI qualification',
         initial_winding_thermal_trips=initial_motor_flags,initial_thermal_trips=[bool(x) for x in np.array(p.thermal.initial_c)>=np.array(p.thermal.trip_c)],

@@ -1811,3 +1811,397 @@ GitHub/CI/индексация/commit/push не выполнялись.
 остался защёлкнутым при охлаждении ниже threshold, floating-star использовал
 SVD, а precharge/four-cage прогоны действительно использовали direct solves.
 Всего 64 протокольные траектории и 64 replay, не 64 уникальные схемы.
+
+
+## R06.12 — независимая расширенная замкнутая траектория
+
+`benchmarks.extended_closed_loop_reference` независимо решает сеть, все
+потокосцепления, вал и температуры обмоток в смешанных неизвестных через
+SciPy root. Production Norton elimination, motor RHS, FOC, PWM и winding RC
+реализации не импортируются. Номинальный current-model observer/PWM отдельно
+выражены в benchmark reference R06.9; observer получает измеренный ток и
+скорость, а не истинные потокосцепления/температуры расширенной машины.
+Обе реализации используют одну математическую midpoint/discrete-gradient
+схему: это проверка реализации уравнений, не независимый непрерывный эталон.
+
+Зарегистрированы четыре 40-ms исследования: насыщенная одноклеточная машина
+с Gc; двухклеточная; насыщенная четырёхклеточная с Gc, провалом напряжения и
+блокировкой/восстановлением gates; нагретая четырёхклеточная с двухузловым
+тепловым балансом и Rs/Rr(T). Статические JSON доступны в
+`cases/closed-loop-extended-independent/`. Параметры добавочных клеток,
+насыщения и тепловых RC — авторские, не идентифицированные паспорта OEM.
+
+Сверяются все клетки, наблюдаемый ток, source currents, DC, вал, observer,
+температуры и gates. Накопленная энергия потерь стали, статора и ротора
+проверяется отдельно: core heat входит в stator heat, поэтому их нельзя
+суммировать ещё раз. Для обмоток энергия хранится в RC, наружу уходит только
+ambient heat. Endpoint Gc-ток заново находится из отдельной трёхузловой
+пассивной сети при текущих gates; предыдущий ток через переключение не
+переносится. Проверены все 27 допустимых gate-состояний, включая floating star.
+
+Между реализациями на одинаковом шаге установлены caps: DC 0.02 V, shaft
+0.002 rad/s, motor current 0.005 A, source current 0.01 A, flux 1e-5 Vs,
+температура 0.001 °C, интегральные motor heat 1e-5 J, gates/events точно.
+Каждая траектория дополнительно проверяет свой energy/KCL/magnetic residual;
+малое расхождение между двумя нарушающими баланс решениями не засчитывается.
+
+`extended_closed_loop_refinement` добавляет третий шаг 5 us к 20/10 us;
+сравнивает уменьшение нормированной разницы отдельно для сети,
+machine/observer и тепловых состояний. Это не доказательство порядка
+сходимости. `extended_temporal_budget` сохраняет каждую попытку на
+2.5/1.25/0.625 us и требует одновременно уменьшающуюся разницу и попадание
+изменений всех физических каналов в те же единичные caps у обеих реализаций.
+Это Cauchy/self-consistency критерий, не абсолютная оценка ошибки относительно
+непрерывного решения. Шаг нельзя переносить на произвольное оборудование.
+
+Артефакты защищены SHA-256 manifest. При numerical replay конечные floats
+имеют абсолютный допуск 5e-10 без относительного ослабления, время — 5e-13 s;
+структура, типы дискретных данных, integer counters, события и pass/fail
+совпадают точно. Учтён JSON round trip NumPy float64. Первичный физический
+acceptance этот replay-допуск не использует. Побитовая воспроизводимость
+SciPy root не утверждается; целостность сохранённых файлов проверяется точно.
+
+Открыты независимые полные switching-energy jumps/thermal-trip localization,
+variable semiconductor R(T), multicage observer, общая DAE-сеть, внешний
+continuous-time oracle и физическая калибровка. Этот блок не устанавливает
+превосходство над другими симуляторами и не меняет прежние speedup claims.
+
+
+В дополнительной декомпозиции `double_cage` немонотонность machine/thermal
+разностей сохранилась при замороженных командах **и** duty/edge расписании
+ШИМ (число gate edges одинаково). Следовательно, объяснение «только ошибка
+observer/FOC» не подтверждено. Это не доказывает конкретную причину: дальше
+нужно отдельно исследовать сетевые коммутации, жёсткие внутренние интервалы
+и временную схему при фиксированном gate schedule. Исходный closed-loop
+negative result сохраняется; diagnostic не используется для его замены.
+
+
+Финальный R06.12 receipt: 466 selected tests (81 новых), без skip;
+24 траектории и 24 numerical replay, 4 installed-wheel/ZIP проверки на том же
+host. Общий temporal-budget passed=false, дополнительно выполнено
+24 траекторий; отрицательные результаты сохранены. Перечень по
+сценариям и дальнейшая очередь — `plans/CURRENT_STATUS.md`, точные hashes —
+`reports/extended-closed-delivery-2026-11-11/delivery.json`. Полный release suite,
+внешняя ОС и absolute-error qualification не заявлены.
+
+Дополнительный frozen-command/PWM diagnostic: 21 production-траектория. Voltage-only tape сохраняет DC-зависимый PWM; voltage+PWM tape фиксирует duty/edge clock, но оставляет реальную сеть, диоды, вал, температуры и enable/block logic. Это диагностическая декомпозиция, не независимый oracle и не замена непрошедшего temporal pass.
+
+
+## R06.13 — пользовательская проверка временной самосогласованности
+
+`power_grid_env.switching_convergence` переносит Cauchy-проверку из benchmark
+в публичный API и CLI. `switching-drive qualify` последовательно делит
+`max_step_s` пополам. Нужно три последовательных аудированных траектории,
+попадание разностей двух последних в физические caps и уменьшение
+нормированных разностей в network, machine/observer и thermal группах.
+Последовательность не обязана быть монотонной с первого грубого шага: все
+ранние непрошедшие попытки сохраняются и не подменяются успешным результатом.
+
+Default caps сохранены: DC 0.02 V, motor current 0.005 A, source current
+0.01 A, flux 1e-5 Vs, shaft 0.002 rad/s, temperature 0.001 °C. Отдельно
+проверяются все 1–4 клетки и winding/electronics temperatures, собственные
+energy/KCL/magnetic audits каждой траектории, физические discrete actions
+и event kind/component/cause/timestamps (1e-8 s). Voltage-limiter metadata
+проверяются при включённых gates; неактивные limiter roundoff snapshots
+не считаются изменением физического действия. `last_midpoint_*` не являются
+общей временной сеткой и в Cauchy channel test не участвуют. Интегральный heat
+не получает абсолютного error certificate от этого workflow; он остаётся
+частью собственного energy audit и отдельной независимой R06.12 сверки.
+
+Входные limits строго положительные/конечные и сохраняются в protocol JSON.
+Пользовательские limits — отдельный явно записанный профиль, не результат
+при default caps. Reduction factor по умолчанию 0.85, floor 1e-8 от unit cap
+для roundoff-only групп; доказательство асимптотического порядка не заявлено.
+`qualified=true` означает только описанную temporal self-consistency:
+`absolute_error_certified=false`, `independent_reference=false` сохраняются
+даже при успешном результате. Это не industrial/OEM certification.
+
+Новый явный `step_budget` ограничен 1000..2000000 accepted steps. Default
+300000 и прежний planned guard 200000 сохранены (план резервирует треть
+бюджета для PWM/sample/event границ). Нестандартный бюджет присутствует в
+каноническом study; default поле опускается, поэтому прежние JSON не меняются.
+Фактическое исчерпание теперь отвергается до следующего physical advance,
+без дополнительного изменения потокосцеплений, токов, температур или latch.
+Плановая оценка не гарантирует завершения: фактический guard действует всегда.
+
+Границы ресурсов, solver failure, неполные/нефинитные каналы, неверный clock,
+отсутствующие клетки и провал physics audit не дают ложного qualified.
+История уровней и причины отказа входят в sealed artifact. CLI возвращает
+0 для qualified и 2 для unqualified/rejected; `completed=true` само по себе
+не означает, что критерии пройдены. `verify`/ZIP подтверждают целостность
+артефакта, не заменяют numerical replay.
+
+Дополнительные пробные source/motor zero-current brackets не устранили
+немонотонность и не включены в runtime. Уравнения, Norton port, midpoint,
+регулятор и модель потерь остались прежними. 8 default-budget траекторий
+R06.12 и R06.13 совпали по всем сохранённым numerical values в точности.
+Сходимость при очень мелком шаге не устанавливает единственную причину
+предыдущей немонотонности. Следующая численная задача — уменьшить стоимость
+прошедших profiles с проверяемым error control, не ослабляя caps.
+
+
+Финальная R06.13 проверка: 537 selected tests (71 новый), failures/errors/
+skips=0. 21 workflow + 9 deep + 16 independent-comparison protocol runs;
+для 21+16 выполнен numerical replay. Deep numerical replay не выполнялся.
+После исправления JSON-сериализации NumPy audit bool финальный scorer
+переоценил 21+9 сохранённых траекторий; это не новые numerical runs.
+`benchmarks.switching_qualification_reassessment` требует исходный wheel с
+совпадающим recorded code hash и byte-identical numerical Python modules;
+различаться может только qualification scorer. Сохраняются waveform и
+assessment producers, source manifest и флаг numerical_replay=false.
+
+Default-budget double-cage по-прежнему отрицателен; его отдельный повышенный
+budget=2000000/max-levels=9 профиль прошёл на 39.0625 ns, 1024754 accepted
+steps в последней 40-ms траектории. Уменьшение разностей не устанавливает
+абсолютную continuous-time accuracy или единственную причину немонотонности.
+Стоимость профиля остаётся открытой инженерной задачей. Матрица, hashes,
+ограничения и дальнейшие критерии находятся в CURRENT_STATUS и delivery JSON.
+
+
+## R06.14 — повторное использование Newton evaluations и hot-path allocations
+
+Профилирование bounded double-cage случая показало повторную работу в
+`_electrical_affine`, magnetic port и NumPy index-concatenation. Изменения:
+
+- Уже вычисленные residual/diode/forward значения принятого Newton trial
+  используются в следующей итерации той же неизменной электрической системы.
+  Кэш не переносится между шагами, magnetic/shaft/temperature итерациями,
+  rollback или переключениями.
+- Сохраняется исходное OR-правило line search: сначала проверяется уменьшение
+  residual; при его отсутствии вычисляется прежняя potential merit. Symmetric
+  matrix и gradient строятся только когда нужны. Условия/пороги не ослаблены.
+- Постоянная для этого linearized trial часть roundoff threshold вычисляется
+  один раз; зависимость threshold от текущего напряжения сохранена.
+- Для beta=0 radial gradient вычисляется той же линейной формулой без
+  ненужных radius/power/outer операций. Насыщенная ветка сохраняется.
+- `np.r_` в горячих magnetic paths заменён эквивалентным concatenate;
+  повторное `matrix @ old + offset` заменено локальным результатом одного
+  вычисления. Rs/Rr(T), Gc, все клетки, torque и heat equations сохраняются.
+
+`benchmarks.switching_hotpath_reference` содержит frozen R06.13 constructor,
+network solve и magnetic methods до изменений. Это собственная прежняя
+реализация, а не независимый physical oracle. `switching_hotpath_acceptance`
+проводит paired before/after: четыре 40-ms случая на 10 us и отдельный
+40-ms double-cage на 39.0625 ns; по три fresh workers на реализацию/случай,
+чередующийся порядок. Общие imports/BLAS warm-up вне clocks, constructor и
+полное формирование результатов внутри, JSON serialization вне clocks.
+BLAS/OMP/MKL=1; Linux ru_maxrss, CPU/wall/min/median/max сохраняются.
+CPU affinity/frequency и сторонняя нагрузка OS не изолируются.
+
+Same-step сравнение охватывает physical channels, circular frame angle,
+дискретные действия, events, energy integrals и собственные physics audits
+обоих провайдеров. Last-interval snapshots описаны отдельно; они не являются
+общей физической временной сеткой. Exact-value совпадение и повторяемость
+результатов фиксируются отдельно, не подменяют физические caps.
+Четыре 10-us workload не объявляются temporally qualified этим timing test.
+
+Шаг и число accepted steps не уменьшаются. Ускорение относится к исполнению
+прежних уравнений, не к adaptive integration и не к сравнению со сторонним
+симулятором. Контрольный deep профиль по-прежнему требует около миллиона
+шагов; независимый continuous-time accuracy bound не заявлен.
+
+
+Финальный R06.14 protocol: 30 paired full trajectories, old/new exact values
+во всех парах и exact repeated values у обоих implementations. Median ratios
+на пяти workloads — 1.1416..1.2221; deep 267.8255 → 219.1555 s при прежних
+1024754 steps. 760 selected tests (223 новых), без failures/errors/skip.
+Fresh three-mesh CLI qualification сохранила 39.0625 ns и точные original
+fine values; 16 independent-comparison trajectories прошли и повторены.
+Полный 30-run benchmark `--verify` отдельно не выполнялся. Source/current
+producers, timings, manifests, raw values, profiler counts, wheel и границы
+собраны в `reports/switching-hotpath-delivery-2026-11-11/`.
+
+### R06.15: адаптивный switching — отдельный протокол
+
+Уменьшение `max_step_s` при активном адаптивном оценщике может не изменить
+фактическую сетку. Поэтому fixed-mesh qualification запрещает `adaptive`.
+Новый `benchmarks.switching_adaptive_acceptance` уменьшает
+`error_budget_fraction`: 0.2 → 0.1 → 0.05. До запуска закрепляются физические
+допуски, SHA256 архивных траекторий и fingerprint текущего пакета. Каждый
+полный результат, отказ и соседняя разность сохраняются; успешность требует
+всех физических audits и сравнений с архивом и соседним бюджетом. Протокол
+не утверждает монотонность, порядок сходимости или абсолютную точность.
+
+Оценщик принимает два native midpoint полушага без Richardson correction.
+Пробные состояния изолированы; стоимость грубых, отвергнутых и root-search
+проб входит в счётчики. Нулевая поверхность тока источника требует restart:
+коррекция ограничена declared current tolerance и отдельным энергетическим
+лимитом. Она записывается отдельно, не прибавляется к физическим потерям;
+баланс энергии результата продолжает проверяться без сокрытия этой поправки.
+Число принятых шагов само по себе не доказывает выигрыш CPU. Для performance
+сравнения нужны повторные изолированные запуски на одном host.
+
+Первое ужесточение бюджета выявило честный отказ double-cage: 0.2 проходит,
+0.1/0.05 достигают min_step_s. Это делает общий итог false, даже если другие
+семейства проходят. Диагностический повтор 0.1 на t≈0.0289197603 s показывает
+разность flux 1.99e-8 Vs между грубым и двумя полушагами при h=1e-10 s;
+источниковый current delta ≈1.78e-15 A, событие source-zero не обнаружено.
+Следующая работа — исследовать алгебраические потенциалы/переключения и
+обусловленность midpoint на этой поверхности, а не повышать допуски задним
+числом. Эти наблюдения сами по себе не доказывают причину отказа.
+
+### R06.16: точечная сверка Newton на переключении body diode
+
+Зафиксирован исходный state в `tests/fixtures/switching_adaptive_hinge.json`:
+авторские параметры, t≈28.9197603 ms, h=1e-10 s. У слабого motor pole
+после выключения диода Newton-direction достигает ≈9 kV, тогда как следующая
+диодная граница находится в нескольких microvolts. Legacy roundoff threshold
+всей матрицы допускает unresolved motor row; простое ужесточение всех строк
+вызывает line-search failure. Пробный all-row вариант отклонён.
+
+В `motor_scaled` external/rail rows сохраняют прежний roundoff-aware порог,
+а motor rows получают отдельную componentwise шкалу. Начальный Newton trial
+ограничивается ближайшей положительной диодной границей с малым пересечением;
+обычные residual/potential merit и backtracking остаются обязательными.
+Это не изменение физических допусков temporal-протокола и не добавление
+сопротивления, ёмкости или искусственного демпфирования.
+
+Проверка frozen legacy воспроизводит flux difference >1e-8 Vs. Новый coarse/
+two-half estimator на этом же state ≈1.33e-5 (ранее 19.9). Четыре стадии
+h=0.05/0.1/0.2/1 ns сверены с независимыми mixed equations: flux atol1e-10 Vs,
+потенциалы motor poles atol1e-3 V. Это точечная независимая проверка, не
+независимая полная adaptive-траектория. Параметры не являются натурными.
+
+Fresh full 0.2 matrix: четыре модели проходят прежние physical-unit caps и
+physics audits. Fresh double 0.1/0.05 завершаются без solver failure, но
+machine/observer caps относительно исторического fine result превышены.
+Не следует переименовывать это в passed: solver robustness и глобальная
+точность являются разными критериями. Между tighter adaptive budgets есть
+близкое совпадение, но оно не заменяет независимый эталон. Fixed-mesh refinement
+с новым solver также сохраняет все отрицательные оценки.
+
+Fresh 39.0625 ns run даёт qualification extension к ранее сохранённым
+156.25/78.125 ns meshes. Latest-pair normalized errors: network0.03554,
+machine/observer0.66918, thermal7.13e-6; reduction/audits passed.
+`benchmarks.switching_hinge_tail` воспроизводит оценку без пересчёта:
+требует одинаковый fingerprint и всю study кроме halved max_step_s,
+проверяет input manifests и использует исходные limits. Это production
+Cauchy self-consistency; полный adaptive 0.1/0.05 по-прежнему не passed.
+
+### R06.17 — нулевой ток двигателя и совпадающие события
+
+Отдельное событие motor_current_zero контролируется только на фазах с обоими
+выключенными управляемыми каналами. Грубый шаг и полушаги локализуют событие
+до согласования времени и идентичности; принимаются native states, без
+проекции/обнуления потокосцеплений. Остаток тока записывается в event log,
+`flux_projection=false`; энергия не списывается в искусственные потери.
+`motor_event_current_a` задаёт current tolerance (стандартно 1e-7 A, оценщик
+может использовать меньшую величину с учётом бюджета). `min_step_s`
+ограничивает обычные trial steps; локализованный остаток до события может
+быть короче. Это не обход ошибки и не изменение global physical caps.
+
+При исчезновении всего вектора тока изолированной звезды последние
+проводящие ветви выключаются совместно. Signed roundoff сам по себе может
+дать разные номера фаз для coarse/fine. Распознавание canonical vector-zero
+использует тот же current tolerance и одинаковый набор исходно проводящих
+свободных фаз; физическое состояние не изменяется. Отдельный regression
+fixture воспроизводит прежний отказ signed-only распознавания.
+
+`switching_motor_zero.json` и `switching_motor_coincident.json` в
+`tests/fixtures/` содержат два авторских состояния. Независимые mixed
+уравнения проверяют четыре принятых native pieces. Free motor common-mode
+является gauge: проверяются AB voltage, а не произвольный общий потенциал.
+Flux cap1e-10 Vs, network/AB voltage1e-3 V, source current1e-7 A,
+reference equation residual2e-6. У reference та же midpoint/DG схема;
+это не independent continuous-time trajectory и не натурные измерения.
+
+`benchmarks.switching_motor_zero_stages` воспроизводит stage-проверку;
+`benchmarks.switching_motor_zero_ablation` выполняет intervention: только
+adaptive driver заменяется закреплённым собственным R06.16 исходником
+`benchmarks/switching_adaptive_r0616.py`. SHA256 старого driver проверяется
+до исполнения; это собственный frozen baseline, не внешний oracle.
+Текущий и старый driver используют одинаковые электрические уравнения,
+параметры, scheduler, audits и caps. Historical-result check необязателен;
+при наличии архива требуется точное совпадение, с исключением нового
+нулевого telemetry counter motor_boundaries. Reference SHA256 закреплён
+protocol-файлом current run. Полная матрица R06.17 сохраняет ранние отказы,
+а не подменяет их результатами после исправления coincidence.
+
+Итог R06.17: fresh final matrix **12/12 passed**; отдельный
+`benchmarks.switching_adaptive_budget_qualification` подтвердил decreasing
+adjacent differences по прежнему reduction_factor0.85 для всех network,
+machine/observer и thermal групп. Он требует три half-budget уровня с
+неизменной study, закреплённые reference hashes, неизменные default caps,
+producer identity и sealed input. Проверяются также numerical event residuals,
+отсутствие flux projection, resource/event counters и source correction sum.
+Выбранный qualified budget0.05 относится к этим четырём studies; это не
+универсальная рекомендация и не absolute error certificate.
+
+Frozen-driver ablation: baseline точно совпал с архивным R06.16 failed
+результатом; только замена adaptive driver меняет failed → passed при тех же
+электрических уравнениях и caps. До coincidence fix первая полная matrix
+сохранила 11/12 passed с одним честным solver rejection; затем выполнена
+новая полная matrix на другом fingerprint. Эти серии не смешиваются.
+
+Numerical root labels не являются полным перечнем физических diode mode
+transitions: integration_event_log содержит события, потребовавшие явной
+локализации solver mesh. Если более мелкая сетка уже пришла в допустимую
+окрестность нуля, дополнительная root label может отсутствовать. В warm-four
+budget0.2 содержит такую motor label около33.485728 ms, отсутствующую при0.1;
+все physical caps/actions и reduction остаются passed. Это наблюдение
+сохранено отдельно; certificate не утверждает идентичность numerical mesh
+labels при изменении бюджета. Для SFT/GRPO нельзя трактовать отсутствие
+такой label как доказательство отсутствия физического переключения.
+
+### R06.18 — full continuous reference с внешним motor RHS
+
+Четыре зарегистрированных 40-ms studies: linear-core start, saturated-core
+start, saturated sag/gate block/recovery и warm single-cage RC/R(T) start.
+Параметры авторские; measured/OEM accuracy не заявлена. Профиль требует
+single cage, положительный Gc, nominal observer, нулевые switching energies,
+постоянные semiconductor resistances и отсутствие active brake/thermal trips.
+
+Внешний RHS: оригинальный `motulator.drive.model.InductionMachine` 0.23.1,
+wheel SHA256 `dc184858cead49aa31c2e9f4bfbb149b6489850aad2360f1005b012fa3218000`.
+До импорта проверяются version, все installed Python bytes и source inventory
+против wheel. В отдельном процессе запрещён любой power_grid_env import;
+заранее загруженный production module также вызывает отказ.
+
+Сеть, source hybrid guards, passive bridge active sets, FOC, observer,
+PWM/dead time и thermal storage записаны отдельно. Не используются runtime
+stamps, Norton port, midpoint/discrete-gradient или production event engine.
+Внешняя машина не модифицируется; Rs/Rr получают температуру как параметры.
+Gc feedthrough позволяет решить instantaneous bridge KCL, включая gate block;
+free common mode выбирается как gauge без дополнительного resistor/capacitor.
+Это НЕ весь converter simulator пакета motulator.
+
+Эталоны:
+
+- DOP853: rtol1e-12, atol1e-14, max_step25us;
+- Radau: rtol3e-11, atol3e-13, max_step25us.
+
+Их disagreement должен быть <=0.01 каждого неизменённого physical cap;
+оба проходят energy/KCL/constitutive audits. Primary budgets0.2 и0.05
+сравниваются с обоими полными reference trajectories. 4×2 primary и4×2
+reference =16 используемых trajectories, не16 схем. Performance ranking
+не выполняется; case workers могли исполняться параллельно.
+
+Все8 primary прошли. Максимальный normalized primary error0.2722962,
+максимальный reference disagreement6.62501e-5 (0.006625% physical cap).
+Энергетические балансы учитывают DC/earth capacitance, source inductance,
+magnetic/shaft/thermal storage, core/copper/semiconductor heat и ambient/load.
+Source zero reset в continuous reference ограничен root solve и записан
+отдельно как tiny energy correction; искусственный motor flux reset отсутствует.
+
+Независимый reference нашёл sample-clock дефект: repeated-addition время
+оказывалось наulp раньше24/28ms, из-за чего gates_enabled сообщал старую
+сторону окна. Исправление меняет только report(): canonical sample time и
+permission на нём. Электрический state/current — pre-switch snapshot;
+permission — right-hand eligibility. Строгий AST/wheel comparator допускает
+только эти две report locals и две time substitutions; любой RHS, control,
+Newton, current или clock-scale mutation отвергается. Все остальные runtime
+Python files совпадают с previous wheel побайтно.
+
+Full before/after comparison: все8 физических output matrices, ledgers,
+controls и work counters совпадают в точности. Четыре gate labels изменены
+на24/28ms в двух recovery budgets. Это исправление данных, не ослабление
+сравнения: flags по-прежнему требуют точного совпадения. Initial failed
+recovery artifacts сохранены; sealed historical data не переписывались.
+
+Continuous reference cache допускается только при точном совпадении study,
+независимого reference source, solver controls и native wheel. Primary данные
+после reporting fix заново вычислены; collector повторно проверяет все native
+source hashes. Отсутствие production imports делает reference независимым от
+report-only изменения runtime package. Это явно отмечено в cache protocol.
+676 выбранных тестов:566 production regressions и110 reference/compatibility
+checks; в фактическом внешнем test environment пропусков нет.
