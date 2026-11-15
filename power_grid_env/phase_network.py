@@ -208,6 +208,8 @@ class Drive(Strict):
 
 
 class MotorPort(Strict):
+    initial_temperature_c: tuple[float, float] | None = None
+    initial_temperature_provenance: str | None = None
     initial_fluxes_ab_vs: list[tuple[float,float]] | None=Field(default=None,min_length=2,max_length=5)
     initial_currents_ab_a: list[tuple[float,float]] | None=Field(default=None,min_length=2,max_length=5)
     id: str
@@ -217,12 +219,20 @@ class MotorPort(Strict):
     @model_serializer(mode='wrap')
     def canonical_initial_state(self,handler):
         data=handler(self)
+        if self.initial_temperature_c is None:data.pop('initial_temperature_c',None)
+        if self.initial_temperature_provenance is None:data.pop('initial_temperature_provenance',None)
         if self.initial_currents_ab_a is None:data.pop('initial_currents_ab_a',None)
         if self.initial_fluxes_ab_vs is None:data.pop('initial_fluxes_ab_vs',None)
         return data
 
     @model_validator(mode='after')
     def valid(self):
+        if self.initial_temperature_c is not None:
+            h=self.passport.thermal
+            if h is None:raise ValueError('initial winding temperatures require a thermal passport')
+            if not self.initial_temperature_provenance or not self.initial_temperature_provenance.strip():raise ValueError('initial winding temperatures require provenance')
+            if any(t < -273.15 or t >= h.maximum_c or 1+h.alpha_per_c*(t-h.reference_c) <= 0 for t in self.initial_temperature_c):raise ValueError('initial winding temperature outside passport validity')
+        elif self.initial_temperature_provenance is not None:raise ValueError('temperature provenance without initial temperatures')
         if self.initial_currents_ab_a is not None and len(self.initial_currents_ab_a)!=1+len(self.passport.cages):raise ValueError('initial current inventory must match stator and every rotor cage')
         if len(set(self.nodes))!=3 or '0' in self.nodes:raise ValueError('motor port requires distinct phase nodes')
         if self.initial_fluxes_ab_vs is not None and len(self.initial_fluxes_ab_vs)!=1+len(self.passport.cages):raise ValueError('initial flux inventory must match stator and every rotor cage')

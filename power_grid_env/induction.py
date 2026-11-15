@@ -11,6 +11,7 @@ import math
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator, model_serializer
 from power_grid_env.motor_thermal import MotorThermalProtection
+from power_grid_env.rms_winding import RMSWindingThermal
 from power_grid_env.motor_contactor import MotorContactorControl
 
 
@@ -44,6 +45,13 @@ class MotorOperatingPoint(BaseModel):
     minimum_speed_pu: float = Field(default=.8, gt=0, lt=1)
     tolerance: float = Field(default=1e-8, gt=0, le=1e-6)
     thermal_state: Literal['passport', 'equilibrium'] = 'passport'
+    winding_state: Literal['passport','equilibrium'] = 'passport'
+
+    @model_serializer(mode='wrap')
+    def canonical_winding_state(self,handler):
+        value=handler(self)
+        if self.winding_state=='passport':value.pop('winding_state',None)
+        return value
 
 
 class InductionMotor(BaseModel):
@@ -65,8 +73,15 @@ class InductionMotor(BaseModel):
     fan_torque_pu: float | None = Field(default=None, ge=0)
     mechanical_load: MotorMechanicalLoad | None = None
     connected: bool = True
+    winding_thermal: RMSWindingThermal | None = None
     thermal: MotorThermalProtection | None = None
     contactor: MotorContactorControl | None = None
+
+    @model_serializer(mode='wrap')
+    def canonical_winding(self,handler):
+        value=handler(self)
+        if self.winding_thermal is None:value.pop('winding_thermal',None)
+        return value
 
     @model_validator(mode='after')
     def single_mechanical_passport(self):

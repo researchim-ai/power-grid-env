@@ -10,6 +10,7 @@ import numpy as np
 
 class PhaseCoreMotor:
     def __init__(self,parameters):
+        self.initial_temperature=parameters.initial_temperature_c
         self.p=parameters.passport;self.initial_flux=parameters.initial_fluxes_ab_vs
         self.n=1+len(self.p.cages);self.at=2*self.n;self.size=self.at+1+(2 if self.p.thermal else 0)
         self.leakage=np.array([c.leakage_h for c in self.p.cages]);self.rr0=np.array([c.resistance_ohm for c in self.p.cages])
@@ -17,7 +18,7 @@ class PhaseCoreMotor:
     def initial(self):
         x=np.zeros(self.size);x[self.at]=self.p.initial_speed_rad_s
         if self.initial_flux is not None:x[:self.at]=np.array(self.initial_flux).ravel()
-        if self.p.thermal:x[self.at+1:]=self.p.thermal.ambient_c
+        if self.p.thermal:x[self.at+1:]=self.initial_temperature if self.initial_temperature is not None else self.p.thermal.ambient_c
         return x
 
     def internal(self,x):
@@ -50,4 +51,9 @@ class PhaseCoreMotor:
         flux_rate=np.r_[q['stator_flux_derivative'],q['rotor_flux_derivative']];dx=np.r_[np.column_stack([flux_rate.real,flux_rate.imag]).ravel(),dw,thermal if p.thermal else []]
         info=dict(motor_power_w=float(1.5*(voltage*np.conj(q['current'])).real),motor_speed_rad_s=float(w),torque_nm=q['torque_nm'],current_alpha_a=float(q['current'].real),current_beta_a=float(q['current'].imag),rotor_copper_w=q['rotor_copper_w'],stator_copper_w=q['stator_copper_w'],core_loss_w=q['core_loss_w'],stator_flux_alpha_vs=float(q['psi'].real),stator_flux_beta_vs=float(q['psi'].imag),stored_j=float(stored),loss_w=float(ambient if p.thermal else copper+q['core_loss_w']),mechanical_power_w=float(load*w))
         if p.thermal:info.update(stator_temperature_c=float(x[self.at+1]),rotor_temperature_c=float(x[self.at+2]))
+        if p.thermal:
+            info.update(stator_resistance_ohm=float(p.stator_r_ohm*(1+h.alpha_per_c*(ts-h.reference_c))),
+                stator_net_heat_w=float(thermal[0]*h.stator_capacity_j_per_k),rotor_net_heat_w=float(thermal[1]*h.rotor_capacity_j_per_k),
+                ambient_heat_w=float(ambient),cross_heat_w=float(cross))
+            for i,r in enumerate(self.internal(x)[5]):info['rotor'+str(i+1)+'_resistance_ohm']=float(r)
         return dx,info

@@ -65,7 +65,8 @@ def callback(model,base):
     def actions(time,state,u,ctx,voltage_directions=None):
         if voltage_directions is None:
             from power_grid_env.dae import injection_product
-            dv=model.lu.solve(injection_product(model,state,u))
+            from power_grid_env.rms_winding import operator
+            dv=operator(model,state)[1].solve(injection_product(model,state,u))
         else:dv=np.asarray(voltage_directions)
         physical_rows=padded_actions(time,state,u,ctx,voltage_directions=dv)
         physical_rows[offset:]=tangent(bank,time,state,u,ctx[0],dv)

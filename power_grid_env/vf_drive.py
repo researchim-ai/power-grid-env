@@ -13,7 +13,7 @@ from power_grid_env.phase_core_motor import PhaseCoreMotor
 class VfDrive:
     def __init__(self,parameters):
         self.p=parameters;self.n=1+len(parameters.motor.cages)
-        port=SimpleNamespace(passport=parameters.motor,initial_currents_ab_a=None,initial_fluxes_ab_vs=parameters.motor_initial_fluxes_ab_vs)
+        port=SimpleNamespace(initial_temperature_c=None,passport=parameters.motor,initial_currents_ab_a=None,initial_fluxes_ab_vs=parameters.motor_initial_fluxes_ab_vs)
         self.motor_model=PhaseCoreMotor(port) if parameters.motor.core_loss_s else PhaseMotor(port)
         self.machine=None if parameters.motor.core_loss_s else self.motor_model.machine
         self.motor_at=9 if parameters.current_control is not None else 7;self.speed_at=self.motor_at+2*self.n;self.size=self.speed_at+1+(2 if parameters.motor.thermal else 0)
@@ -100,6 +100,7 @@ class VfDrive:
 class PhaseMotor:
     """Direct isolated-star alpha-beta machine port; zero-sequence current blocked."""
     def __init__(self,parameters):
+        self.initial_temperature=parameters.initial_temperature_c
         self.p=parameters.passport;self.initial_currents=parameters.initial_currents_ab_a;self.initial_flux=parameters.initial_fluxes_ab_vs;self.machine=GammaWinding(self.p);self.n=1+len(self.p.cages);self.at=2*self.n
         self.size=self.at+1+(2 if self.p.thermal else 0)
 
@@ -110,7 +111,7 @@ class PhaseMotor:
             flux=np.array([complex(*z) for z in self.initial_flux]);psi=flux[0];ir=(flux[1:]-psi)/self.machine.leakage
             stator=psi*(1+(self.p.saturation_beta_per_vs*abs(psi))**self.p.saturation_exponent)/self.p.unsaturated_h-sum(ir)
             currents=np.r_[stator,ir];x[:self.at]=np.column_stack([currents.real,currents.imag]).ravel()
-        if self.p.thermal:x[self.at+1:]=self.p.thermal.ambient_c
+        if self.p.thermal:x[self.at+1:]=self.initial_temperature if self.initial_temperature is not None else self.p.thermal.ambient_c
         return x
 
     def current(self,x):return complex(x[0],x[1])
@@ -131,4 +132,11 @@ class PhaseMotor:
                   current_alpha_a=float(currents[0].real),current_beta_a=float(currents[0].imag),rotor_copper_w=q['rotor_copper_w'],stator_copper_w=q['stator_copper_w'],core_loss_w=0.,stator_flux_alpha_vs=float(q['psi'].real),stator_flux_beta_vs=float(q['psi'].imag),
                   stored_j=float(stored),loss_w=ambient if self.p.thermal else copper,
                   mechanical_power_w=float(self.p.fan_nm_per_rad_s2*abs(w)**3+self.p.viscous_nm_per_rad_s*w*w))
+        if self.p.thermal:
+            factors=1+h.alpha_per_c*(temperature-h.reference_c)
+            info.update(stator_temperature_c=float(temperature[0]),rotor_temperature_c=float(temperature[1]),
+                stator_resistance_ohm=float(self.p.stator_r_ohm*factors[0]),
+                stator_net_heat_w=float(thermal[0]*h.stator_capacity_j_per_k),rotor_net_heat_w=float(thermal[1]*h.rotor_capacity_j_per_k),
+                ambient_heat_w=float(ambient),cross_heat_w=float(h.cross_w_per_k*(temperature[0]-temperature[1])))
+            for i,cage in enumerate(self.p.cages):info['rotor'+str(i+1)+'_resistance_ohm']=float(cage.resistance_ohm*factors[1])
         return dx,info

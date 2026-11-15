@@ -1,6 +1,558 @@
 # Текущий статус и очередь развития
 
-Обновлено: **13 ноября 2026 года**.
+Обновлено: **15 ноября 2026 года**.
+
+## R06.42 / DES-04 — совместное P/V/load/heat равновесие с GENCLS
+
+Закрыт следующий ограниченный профиль: `winding_state: equilibrium` теперь
+совместим с `winding_generator_profile: GENCLS_fixed_field`. Совместно ищутся
+motor speed/Ts/Tr и complex generator EMF; network voltages и steady cage states
+исключаются аналитически. После root генератор получает постоянные field/PM.
+**Тепловые состояния здесь принадлежат двигателю, нагрева генератора пока нет.**
+
+- Analytic reduced Jacobian учитывает temperature-dependent motor admittance,
+  обе rotor cages, generator injection, terminal P/V constraints и heat balance.
+  Приёмка проверяет original physical ODE/KCL, heat residual в ваттах, Q limits,
+  relay replica limits и full physical spectrum. В authored two-cage case10 states,
+  включая Ts/Tr и generator rotor; α≈−0.00933358/s. Это local fixed-topology
+  stability, не hybrid/global stability и не доказательство уникальности root.
+- **8 authored cases /32 completed native runs /16 independent trajectories /
+  64 comparisons**, обе engines/output grids; mutual0/.02 и два temperature seeds.
+  Independent SI P/V/load/heat root, stator/two-rotor KCL и swing equations.
+  Offline consumer повторил16 trajectories/8 native refusals, сверил все10
+  eigenvalues для32 runs и отсутствие дрейфа в16 hold runs. Refinement power
+  difference≤3.00e-6W/var при абсолютном comparison gate0.003W/var.
+- **8 initial refusals**: cooling singularity, temperature ceiling с huge heat
+  capacities, generator Q limit и нестационарная initial relay policy, по2 engines.
+  Температуры seeds не навязываются stationary state; изменение теплоёмкостей
+  сохраняет root и изменяет thermal spectrum. Native helpers запрещены в
+  independent-root test. Отдельно проверены5s hold и mixed single/double motor group.
+- **863 unique targeted tests /874 executions,0 failures/errors/skips**;
+  4 optional ANDES cases deselected. Это целевая регрессия, не весь репозиторий.
+  Same-host Python-I installed replay:25 checks. Старый refusal joint equilibrium
+  намеренно заменён новым положительным профилем; прочие выбранные legacy traces
+  воспроизведены. Публикация/GitHub/CI не используются.
+- Примеры и команды: `cases/mixed-equilibrium/README.md`.
+  Evidence: `reports/mixed-equilibrium-qualified-2026-11-15`,
+  `reports/mixed-equilibrium-accepted-final-2026-11-15`,
+  `reports/mixed-equilibrium-installed-replay-2026-11-15`.
+  Поставка: `reports/mixed-equilibrium-delivery-2026-11-15/delivery.json`.
+
+**Далее:** отдельные проверенные профили AVR/governor и generator thermal coupling;
+затем совместная автоматика/смена топологии с R(T) и независимые новые схемы.
+GENROU/AVR/PSS, generator heat, islands/reclose и industrial/OEM qualification
+не закрыты. Benchmark остаётся authored radial balanced network с одним GENCLS,
+одним двухклеточным motor и inactive OC pickups; дополнительные smoke tests
+не расширяют независимую квалификацию на произвольные масштабы и топологии.
+
+## R06.41 / DES-04 — GENCLS + RMS R(T), фиксированное возбуждение
+
+Добавлен opt-in `winding_generator_profile: GENCLS_fixed_field` для совместной
+работы двигателей с R(T) и классических синхронных машин без регуляторов.
+Сетевой directional injection теперь складывает motor `b_x-Y_xV` и generator
+rotor injection; аналитические motor/GENCLS actions используют общий voltage
+response. Проверены J·v, inconsistent-V residual и complex Schur DAE blocks.
+
+- Квалифицирован ограниченный authored профиль: один downstream GENCLS100kVA,
+  P20kW/V0.96pu, двухклеточный двигатель75kVA; mutual0/.02, Ts/Tr20/20 и90/70C,
+  hold и finite balanced fault0.1–0.2s. **8 случаев /32 native runs /16 независимых
+  траекторий /64 comparisons**, Radau/DAE и две output grids.
+- Независимые SI winding/KCL, generator swing и собственный P/V/load root.
+  Offline consumer пересчитал16 trajectories и64 comparisons; уточнение
+  мощности отличается максимум на3.49e-6W/var при absolute gate0.003W/var.
+  Тест запрещает вызов native initialization/generator/winding tangent helpers
+  из эталона; frozen-temperature electromechanical spectrum также сопоставлен.
+- Loaded initialization согласует electrical/motor/rotor states при заданных
+  температурах. Thermal rates в metadata явно ненулевые: это **не совместное
+  тепловое равновесие**. После PV initialization возбуждение постоянно, AVR нет.
+- Same-host Python-I installed wheel replay:14 checks, включая4 новых позитивных,
+  2 refusals и8 прежних. Исторические evidence остаются привязаны к прежним wheels.
+- Примеры: `cases/mixed-winding/{hold,fault}.json`; воспроизведение описано рядом.
+  Evidence: `reports/mixed-winding-{qualified,accepted,installed-replay}-2026-11-15`.
+  Локальная поставка: `reports/mixed-winding-delivery-2026-11-15/delivery.json`.
+
+**Следующая физика:** совместное mixed PV/heat stationary initialization;
+затем отдельные профили возбуждения/регуляторов и generator thermal coupling.
+GENROU/AVR/PSS/governors, генераторный нагрев, islands/reclose и более широкие
+топологии этим этапом не квалифицированы. OC pickups в новых сценариях подняты:
+защиты не участвуют, поэтому их координация не объявляется проверенной.
+Параметры генератора assumed/authored, не OEM. Полное закрытие DES-04 и
+превосходство над другими симуляторами не заявляются. GitHub/CI не используются.
+
+## R06.40 / DES-04 — two-cage RMS R(T),cage losses и joint stationary state
+
+Расширен существующий double-cage RMS: теперь обе клетки участвуют в R(T),
+потерях, thermal dynamics,analytic DAE actions и stationary elimination.
+Сохраняются coordinates E=u1+u2 иu1, rotor mutual leakage. Общая Tr и alpha
+масштабируют разные reference R1/R2; это не separate cage temperatures/hotspots.
+
+- Нативные A(T)/B(T), rotor currents и per-cage copper losses; total rotor heat
+  равен сумме двух потерь. Пер-клеточные loss channels теперь используют R(T),
+  а не reference R. Объединение diagnostics исключает duplicate channel samples.
+- Full stationary3n search использует2×2 rotor response и analytic derivatives
+  по speed/Tr,включая auxiliary u1 rows. Watt-based heat gate сохранён; полный
+  physical spectrum содержит8 states с I² replica и7 без неё. Direct DAE,
+  inconsistent-V residual,J·v,complex Schur и mixed single+two-cage group проверены.
+- **33 authored radial scenarios /120 completed native runs /66 independent
+  trajectories**:cold,fixed-hot,full equilibrium;mutual0/.02;hold,primary,
+  CB-failure,CT-loss,no-UV,3 cage-label permutations;Radau/DAE/output grids.
+  Ещё **12 initial refusals** по6 причинам/двум engines.
+- Отдельные physical SI equations двух rotor fluxes и5-row winding/KCL,
+  собственный T-circuit/heat root и independent hybrid clocks/actuators.
+  Запрет native cage/init/tangent helpers проверен тестом. Offline gate повторил
+  все66 references и12 native refusals,пересчитал240 comparisons,8-state spectra,
+  loss identities/hold/label invariance;helper hooks сохранили single-cage refs.
+- Перестановка клеток сохраняет terminal/thermal traces иevents;individual
+  EMF/current/resistance/loss меняются местами. Identical cells точно переходят
+  в single cage с Rr/2,Xr/2 при mutual0;fault+heat limit проверен.
+- Max spectrum disagreement≈2.15e-7/s,stationary hold drift≈9.72e-16,cage-loss
+  sum error≈1.46e-11W,stationary power error≈5.75e-10W. Permutation powers
+  согласованы в cap3mW. Это implementation agreement,не OEM accuracy.
+- **841 targeted tests passed**,0 failures/errors/skips;4 optional ANDES
+  checks явно deselected. Не полный repository suite.16 новых two-cage tests
+  плюс transfer regression проверяют также explicit omission acknowledgement:
+  supported single-cage RMS→Gamma больше не silently drops winding_thermal.
+  Two-cage→single Gamma по-прежнему отвергается.
+- Workflow postconditions:84 protected runs отключают мотор через UV,
+  12 holds сохраняют connection,24 no-UV controls сохраняют connected motor.
+  Это numerical/postcondition coverage,не inherited engineering approval.
+- **8 installed checks**:4 новых completed,2 initial refusals,2 legacy RMS/phase.
+  CLI owner study выполнен. Host/dependencies общие;Python-I/import guard не
+  OS sandbox/another-host qualification. Old corpora retain old wheels/fingerprints.
+
+Runtime fingerprint:
+`f252e6a892a2138d7b60f05e2ca7d1213fd175ec339bc02dc6b6130664cfec63`.
+Wheel SHA256:
+`2b9b3714c4aa2ab5d59eb21c10c051b84e80b75880dc7b2228b6d0a49b3b2c44`.
+Source boundary относительно R06.39:6 changed runtime files
+(induction,induction_network,coupled_rms,rms_winding,rms_winding_equilibrium,
+motor_transfer),0 added/missing runtime files.
+
+Evidence: `reports/two-cage-winding-final-qualified-2026-11-15`,
+`reports/two-cage-winding-accepted-2026-11-15`,
+`reports/two-cage-winding-installed-replay-2026-11-15`,
+`reports/two-cage-winding-delivery-2026-11-15/delivery.json`.
+Команды/5 runnable examples: `cases/two-cage-winding/README.md`.
+Первый intermediate corpus до усиленного label-mapping gate сохранён отдельно;
+final receipt использует final gate и runtime. GitHub/CI/publication не использовались.
+
+Открыто: **mixed synchronous generators с R(T)** (пока явно rejected),3+ cages
+в RMS,separate cage thermal nodes/material coefficients,temperature-trip/
+selectivity,wide topology/uncertainty qualification и OEM parameter identification.
+Фазный full-winding multicage coverage не переносится автоматически в RMS.
+DES-04 остаётся in_progress;не заявляем arbitrary-scale/all-equipment superiority.
+
+## R06.39 / DES-04 — полное stationary electrical/mechanical/winding equilibrium
+
+Новый opt-in `operating_point.winding_state: equilibrium` совместно находит
+speed/EMF/network/Ts/Tr, а при наличии I² replica — её equilibrium level.
+Начальные temperatures становятся search seeds. Default `passport` и прежний
+canonical JSON сохранены. Общий initializer подключён к coupled/induction paths.
+
+- Bounded reduced3n system, analytic reduced Jacobian,4 speed seeds; exact
+  synchronous no-load boundary и passive cooling matrix gate. Профиль1–32
+  connected thermal single-cage motors без генераторов. Размеры1/2/4 проверены
+  тестами, не заявляем qualification всех32 или широкой топологии.
+- **Heat balance решается в мощности**, а не только в dT/dt: отдельный watt
+  gate `max(1e-7W,1e-10·Srated)` на каждом узле. Проверена invariance stationary
+  point при увеличении capacities в1e9 раз. Это закрывает ложное equilibrium
+  из-за tiny thermal derivatives при огромном C.
+- Original physical ODE/KCL/static-dynamic voltage checked. Native analytic
+  spectrum теперь включает E/speed/Ts/Tr/I² replica; это fixed-topology
+  physical stability, не hybrid/global stability защит/контакторов.
+- **20 physical scenarios /40 seed configurations /144 completed native runs**:
+  4 cable-temperature/source-voltage endpoints,primary/CB-failure/CT-loss/no-UV,
+  5s holds,2 seeds,Radau/DAE. Faults —2 output grids,holds —1.
+  Ещё **12 initial rejections**,6 причин×2 engines:cooling singularity,
+  temperature ceiling,excess load,replica passport mismatch,disconnected/missing
+  thermal model. Неуспех local search не объявляется global nonexistence.
+- **80 independent trajectories /288 comparisons**:separate SI T-circuit+heat
+  root,numerical Jacobian,all-flux winding/KCL/thermal/clock DOP853. Запрет
+  native helpers проверен тестом. Offline verifier повторил все80 references
+  и12 native refusals;пересчитал root/spectrum/seed/hold/numerical gates,
+  stationary active-power balance и copper-heat removal из trace measurements.
+- Max root disagreement≈2.27e-9(native units),physical spectrum≈4.48e-8/s,
+  5s hold drift≈1.42e-10,power-balance error≈7.03e-8W. Это agreement моделей,
+  не измеренная OEM accuracy/temperature precision.
+- **791 targeted tests passed**,0 errors/failures/skips.4 optional ANDES
+  checks явно deselected;не полный repository suite.22 equilibrium tests
+  включают analytic reduced-Jacobian finite differences,1/2/4 motors,
+  no-load boundary,no replica,linear heat-network limit,validity/refusals,
+  independent root/dynamics и heat-capacity independence.
+- **8 installed checks**:4 новых completed,2 expected initial refusals,
+  2 legacy RMS/phase. Common arrays/axes/events совпадают с replay baseline;
+  old corpora не переквалифицированы целиком. CLI owner study тоже выполнен.
+  Host/dependencies общие;Python-I/import guard не OS sandbox/another-host proof.
+
+Final runtime fingerprint:
+`030241c27246bfb18ff1e8f28d42c83118dc709b3eaed5a52ea0f4cbed166bb3`.
+Final wheel SHA256:
+`cb8ce943ec9f5be76b71f5dea5815bafaf1a9f6300de51fba3ab61ea0b1660c2`.
+Source boundary относительно R06.38:4 changed runtime files
+(induction,coupled_initialization,motor_operating_point,induction_network),
+1 new rms_winding_equilibrium.py,0 missing. Previous wheels/fingerprints retained.
+
+Final evidence: `reports/rms-equilibrium-power-qualified-2026-11-15`,
+`reports/rms-equilibrium-power-accepted-2026-11-15`,
+`reports/rms-equilibrium-power-installed-replay-2026-11-15`,
+`reports/rms-equilibrium-delivery-2026-11-15/delivery.json`.
+Команды/5 runnable cases: `cases/rms-equilibrium/README.md`.
+Промежуточные корпуса до final power-normalized heat gate сохранены отдельно,
+с собственными runtime identities;final receipt использует только final series.
+GitHub/CI/publication не использовались.
+
+Далее: double/multicage и mixed-generator electrothermal stationary profiles,
+separate cage thermal nodes,temperature-trip/selectivity,широкие topology/
+uncertainty matrices и внешняя идентификация RC/material parameters.
+DES-04 остаётся in_progress;нет OEM/global/hybrid qualification.
+
+## R06.38 / DES-04 — opt-in R(T) в RMS/DAE и аналитическая сетевая связь
+
+Добавлен `InductionMotor.winding_thermal`: физические Ts/Tr и R(T) для
+single-cage RMS, отдельно от прежней I² thermal replica. Начальные температуры/
+RC/alpha требуют provenance и проверки validity. Default fixed-R/canonical JSON
+сохранены. Профиль ограничен motor-only/all-single-cage/direct_solve;
+генераторы и mixed double-cage явно отвергаются.
+
+- Динамическая Norton stamp `Y(x)` участвует в каждом voltage solve и RHS.
+  В augmented DAE/Schur учтён `C=b_x−Y_x·V`, включая inconsistent algebraic V;
+  аналитические rotor-R/heat derivatives, локальные sparse blocks/GMRES и
+  temperature rollback проверены. Новые heat/temperature/resistance channels.
+- Loaded initialization согласует электрическую/механическую сеть при
+  **fixed initial winding temperatures**. Initial thermal derivatives явно
+  опубликованы и могут быть ненулевыми. DAE consistency не подменяет thermal
+  equilibrium; spectral certificate относится к frozen-T connected subset.
+- **32 authored physical scenarios /128 native runs /64 independent trajectories**:
+  cold/loaded,Ts/Tr20/20 и90/70,primary/CB-failure/CT-loss/no-UV,
+  feedback/frozen-initial-R controls,Radau/DAE,2 output meshes. Самостоятельные
+  SI winding/KCL/thermal/clock/actuator DOP853 references с refinement.
+  Offline verifier повторил все64 reference integrations и все256 comparisons.
+- Начальные физические состояния/сопротивления control совпадают; дальнейший
+  feedback меняет current magnitude на max≈0.000765–0.001321pu в этих случаях.
+  Max event difference≈6.38e-14s,temperature≈7.25e-10°C,heat-power≈2.72e-5W.
+  Это agreement двух реализаций, не точность относительно OEM.
+- Validity exit не клиппируется: failed solve с точной model-validity причиной,
+  без completed trajectory. Это не температурная защита/локализованный trip.
+- **769 unique targeted checks с итогом pass**:747 non-RMS regression cases
+  и22 final RMS tests. Broad XML сохранил2 неверных status-envelope assertions;
+  контракт теста исправлен под existing numerical-failure envelope с проверкой
+  exact model-validity cause, затем весь22-case класс прошёл повторно.
+  Production runtime между этими двумя final runs не менялся. Raw XML не
+  редактируется/не скрывается; delivery receipt сверяет node IDs и supersession.
+  4 optional ANDES checks явно deselected. Не полный repository suite.
+- **8 installed new-wheel replays**:4 новых +2 прежних phase +2 прежних RMS.
+  Оси/события/common numeric arrays совпали побитово; проверены также1e-12
+  abs+relative caps. Host/dependencies общие; Python-I/import guard не OS sandbox.
+  CLI с сохранённым owner study выполнен. Старые корпуса не переквалифицированы
+  целиком: прежние wheel/fingerprints сохранены.
+
+Final runtime fingerprint:
+`5894df506412766e90d5a13cf7c5381f7f6ec8f2959f6be1ae8c15d0184b09fa`.
+Final wheel SHA256:
+`b74b35cf6b09dfebfbe0a715229d523c4ebc5c0fd5e47c04146f107c7baab1eb`.
+Source boundary относительно R06.37:10 changed runtime .py +1 new
+`rms_winding.py`,0 missing; no phase-equation changes.
+
+Evidence: `reports/rms-winding-final-qualified-2026-11-15`,
+`reports/rms-winding-final-accepted-2026-11-15`,
+`reports/rms-winding-final-installed-replay-2026-11-15`,
+`reports/rms-winding-delivery-2026-11-15/delivery.json`.
+Команды/9 runnable examples: `cases/rms-winding/README.md`.
+Промежуточные корпуса относятся к промежуточным fingerprints; final receipt
+использует только final inputs. GitHub/CI/publication не использовались.
+
+Далее: full stationary electrothermal equilibrium, double/multicage thermal
+nodes и mixed generators; temperature-trip/selectivity, широкие topology/
+uncertainty matrices и внешняя идентификация thermal parameters. Не утверждаем
+full EMT energy из RMS, OEM qualification или универсальное превосходство.
+DES-04 остаётся in_progress.
+
+## R06.37 / DES-04 — горячие обмотки и electrothermal fault feedback
+
+Фазная full-winding модель уже содержала R(T). Добавлены раздельные начальные
+температуры статора/ротора с обязательным provenance и проверкой validity,
+сохранением прежней ambient initialization/canonical JSON при отсутствии полей.
+Опубликованы Rs/Rr каждой клетки и net/ambient/cross heat channels, включая
+zero-core-loss port. Изменены ровно3 runtime files:phase_network.py,
+phase_core_motor.py,vf_drive.py; RMS/DAE motor equations на этом этапе не менялись.
+
+- **24 authored physical scenarios /96 native runs /48 independent trajectories**:
+  single/three-cage saturated core-loss motor, cold start/hot rotating state,
+  LL/3ph/repeated LL faults, R(T)/reference20-alpha0 control. Radau/DOP853,
+  200/100µs max step; independent all-flux SI RLC/KCL DOP853 с50/25µs refinement.
+- Для hot alpha0 с R20 статический температурный эффект смешивается с дальнейшей
+  обратной связью. Поэтому отдельно **6 frozen-initial-R controls /24 native /
+  12 independent trajectories**:начальные физические состояния/Rs/Rr совпадают,
+  сохраняются thermal ODE, затем R фиксирован. Изолированная dynamic feedback
+  меняет ток≈0.328–0.921A в выбранных случаях, не универсально для оборудования.
+- Итого **120 native runs /60 independent trajectories /240 comparisons**.
+  Проверены температуры/R(T)/heat-flow identities, электрические/механические
+  каналы, event sides, energy/KCL. Offline gate повторил все60 independent
+  интегрирований, перепроверил owner bindings и численные критерии.
+  Main-corpus max temperature difference≈4.29e-10°C; relative energy residual
+  native≈4.31e-11, reference≈3.28e-14; max KCL≈4.45e-14A. Это agreement одной
+  модели, не фактическая accuracy относительно OEM или непрерывный peak bound.
+- **630 targeted tests passed**:613 regression +15 phase/protection adapters
+  +2 frozen-control physical identity tests.0 errors/failures/skips;
+  4 optional ANDES cases явно deselected. Не весь repository suite.
+- **8 installed new-wheel replays**:4 новых,2 legacy phase,2 legacy RMS.
+  Оси/события совпадают, common channels проверены с roundoff1e-12 abs+relative.
+  Два phase baseline заново рассчитаны прежним pinned wheel. Source-boundary
+  proof подтверждает ровно3 изменённых .py,0 добавленных/удалённых runtime .py.
+  CLI с сохранённым owner JSON тоже выполнен. Host/dependencies общие;
+  import guard/Python-I не OS sandbox/another-host qualification.
+
+Новый runtime fingerprint:
+`848e36083c4da3dabaae55dab6484b01817cc3771a6b801ac424d02d6d50af34`.
+Новый wheel SHA256:
+`62500d8cd7fd5ae7efe80ad5515b99c950b616ac10f0000a79c3a2e59c7ef434`.
+Все предыдущие sealed результаты сохраняют прежнюю runtime identity и wheel;
+выборочные legacy replays не переквалифицируют старые большие корпуса целиком.
+
+Evidence: `reports/electrothermal-fault-qualified-2026-11-15`,
+`reports/electrothermal-frozen-fault-qualified-2026-11-15`,
+`reports/electrothermal-fault-accepted-2026-11-15`,
+`reports/electrothermal-fault-delivery-2026-11-15/delivery.json`.
+Команды и runnable cases: `cases/electrothermal-fault/README.md`.
+Диагностический первый matrix с numpy-bool serialization failure сохранён;
+он не считается принятой квалификацией. GitHub/CI/publication не использовались.
+
+Открыто: **RMS motor R(T)** с state-dependent stamps/Jacobians, согласованная
+loaded electrothermal initialization, широкие топологии/отдельные cage thermal
+nodes, параметрическая идентификация RC по внешним данным, thermal trip/
+selectivity при этой фазной физике. Authoring60ms/transient hot state и2Ω faults
+не подменяют реальный паспорт/steady operating point/bolted КЗ. DES-04 открыт.
+
+## R06.36 / DES-04 — независимый гибридный эталон защит
+
+Закрыта независимая дифференциальная сверка **ограниченного loaded radial
+single-cage OC/UV/thermal профиля**. Эталон использует собственный T-root,
+SI winding/KCL и DOP853; сам интегрирует OC progress, ищет pickup/dropout/trip,
+исполняет delayed breaker opening/failure/backup, CT loss/restoration,
+local UV timer и thermal latch. Native RHS/init/relay/contactor helpers
+не вызываются; это проверено запретом их вызовов в тесте.
+
+- **32 endpoint-сценария ×2 точности =64 independent trajectories**,
+  сопоставленных с64 ранее сохранёнными Radau/DAE traces.4 условия сети,
+  2 тепловые политики,primary/CB failure/CT loss,matched primary no-UV.
+  Собственное refinement сравнивает события и каналы без native решения.
+- **14 extension trajectories /28 новых native runs**:definite/SI/VI/EI
+  ×primary/CB failure/CT loss; CT restoration/reset/repeated fault;thermal trip.
+  Это отдельные выбранные случаи, не полная матрица допусков всех curves.
+- Итого **78 independent trajectories /92 distinct native comparisons**
+  (156 с повторными сравнениями refinement). Проверяются события, их порядок
+  и outcomes, clocks/validity/actuators и motor/fault electrical channels.
+  Совпавшие pre/post samples привязываются к соответствующим independently
+  found roots; regular samples остаются на абсолютной шкале. Через скачки
+  не интерполируем; event timing gate проверяется отдельно с cap200ns.
+- Max observed event difference≈5.89e-13s, fault-current difference≈2.38e-7A.
+  Это agreement двух реализаций одной модели, не фактическая OEM точность.
+- **502 tests passed**,0 errors/failures/skips;4 optional ANDES-dependent
+  cases явно deselected. Не весь repository suite. Сохранён diagnostic XML
+  с ошибкой имени класса в isolation test и промежуточный extension probe;
+  финальный цикл учитывает истёкший failure check без защитного действия.
+- Runtime fingerprint и wheel R06.35 **не изменены**. Нового installed replay
+  или другого host этот этап не заявляет. Нет GitHub/CI/publication.
+
+Доказательства:
+`reports/loaded-protection-winding-final-2026-11-15`,
+`reports/loaded-protection-winding-extensions-final-2026-11-15`,
+`reports/loaded-protection-winding-regression-tests-2026-11-15.xml`,
+`reports/loaded-protection-winding-delivery-2026-11-15/delivery.json`.
+Локальный receipt связывает manifests/producers/runtime, сохраняет исходники,
+XML и неизменившийся wheel. Hashes — integrity, не аутентичность.
+Команды и границы: `cases/motor-only-loaded/README.md`, раздел R06.36.
+
+Далее: winding R(T)/electrothermal fault feedback и независимые эталоны для
+более широких topologies/машин/ATS/reclose. DES-04 остаётся in_progress:
+continuous uncertainty, несимметрия/DC/peak/EMT и OEM qualification не закрыты.
+
+## R06.35 / DES-04 — согласованная нагруженная motor-only инициализация
+
+Численное ядро `coupled_rms` теперь принимает `machines: []` с явным
+`operating_point`. Совместно решаются скорости/ЭДС машин и сеть без фиктивного
+генератора; проверяются исходный RHS, KCL, static/dynamic voltage consistency
+и local connected-machine spectrum. Новый mode `motor_only_loaded_equilibrium`.
+Cold initialization по умолчанию сохранена. Изменены только два runtime
+модуля: `coupled_initialization.py`, `coupled_rms.py`.
+
+- Электрическое/механическое равновесие отделено от thermal policy:
+  `equilibrium` задаётIpu², `passport` сохраняет initial level и явно показывает
+  ненулевую тепловую производную. Initial thermal limit/нет подключённых
+  машин/неподходящий speed branch получают диагностику до интегрирования.
+- `initial_active_automation_relays` и network-automation stationarity публикуются
+  отдельно. Certificate относится к connected E/speed/cage states; clocks,
+  контактные guards, future events иglobal/hybrid stability им не подменяются.
+- **512 native launches**:504 интегрированные траектории +8 init rejections.
+  **456 positive /56 negative**:288 single-cage normal/programmed-fault,
+  24 symmetric2/4-machine single/double-cage hold;144 loaded protected
+  primary/CB-failure/CT-loss;48 matched no-UV failures.4 temperature/voltage
+  endpoints,2 heat policies, оба решателя/3 output meshes,252 solver pairs.
+- **48 независимых loaded winding trajectories /96 native comparisons**,
+  включая16 programmed-fault trajectories на motor/source bus. T-circuit root
+  через bracketing/Brent,4 SI winding/KCL equations, DOP853; не берёт native
+  EMF/init/derivatives. Initial eigenvalues тоже сверены; max error≈3.02e-8/s.
+  Max EMF≈1.02e-9pu иfault-current error≈5.35e-8A — agreement двух реализаций,
+  не фактическая точность относительно OEM. Active-protection ODE не проверена
+  этим эталоном: там guards отвергают активные OC/UV/thermal действия.
+- Защищённые loaded cases сохраняют150ms/0.1A/20ms criteria: worst full
+  extinction≈127.953ms; motor-fed current after grid isolation до145.02A.
+  Conditional SI algebra/clocks/actuators повторно проверены, I²t по192
+  protected/control traces и64 fine-pairs. Это nominal relay settings;
+  R06.34 cold-runup corner matrix на loaded policy автоматически не переносится.
+- **466 целевых тестов** без ошибок/пропусков;4 ANDES-dependent cases исключены
+  как unavailable, не записаны вpassed. Финальный XML:
+  `reports/motor-only-loaded-final-tests-2026-11-15.xml`; первый diagnostic XML
+  с отсутствующим extra и исправленной ошибкой fixture сохранён отдельно.
+- **7 new-wheel replays** вне checkout:5 positive, no-UV negative иinit
+  rejection. Шесть имеющих траектории случаев воспроизвелись побитово;
+  init rejection воспроизвёл status/reason. **6 old-wheel cold/gen bridge
+  traces** имеют exact axes/events иchannel agreement приabs/rtol1e-12,
+  observed max absolute delta≈1.8e-15. Первоначальный bitwise-probe сохранён.
+  Same host/shared dependencies/import guard, не независимый host/OS sandbox.
+
+Профиль и runnable JSON: [cases/motor-only-loaded](../cases/motor-only-loaded/README.md).
+Общий gate: `reports/motor-only-loaded-final-accepted-2026-11-15/summary.json`.
+Поставка: `reports/motor-only-loaded-delivery-2026-11-15/delivery.json` с новым
+wheel, старым pinned wheel дляbridge,48 independent reference packets,
+7 installed packets и6 bridge outputs; основной512-run corpus привязан к
+sibling indexes. **Runtime fingerprint новый**; R06.34 доказательства остаются
+на старом wheel, wholesale requalification под новый fingerprint не заявляется.
+
+DES-04 **in_progress**. Loaded initialization закрыта в указанном1/2/4-machine
+профиле (включая double-cage, отдельные тесты nonlinear load, inactive members
+иzero-load boundary). Остались большие неоднородные группы/топологии,
+независимая динамика активных OC/UV/thermal protections, winding R(T)/feedback,
+несимметрия/peak/DC/EMT иOEM подтверждение. Normative approval, training reward,
+полный repository suite иGitHub/CI не заявляются; git mutations не выполнялись.
+
+## R06.34 / DES-04 — полная конечная voltage/temperature матрица и независимая нормальная динамика
+
+Ревизия **primary TMS.009 / backup TMS.0155** прошла полное заявленное
+произведение20/90°C ×0.95/1.05U ×nominal+16 relay corners ×6 normal/fault modes
+×Radau/DAE ×3 output meshes: **2448** новых native studies. Все прежние
+критерии пуска/повторных провалов/выбега, защит и sampled-погасания КЗ сохранены.
+Сопротивление кабеля выводится из owner-bound паспортного каталога; Rт и
+параметры обмоток мотора фиксированы. Это не electrothermal feedback.
+
+- Центр+8 воспроизводимых6D Latin-strata точек (четыре relay coordinates,
+  conductor T иsource U), все6 режимов/оба решателя/3 сетки: ещё **324** native.
+- Всего **2772** новых положительных native runs, **1386** solver pairs,
+  **1386** аварийных траекторий для по-портового I²t, **462** fine-pair проверок.
+  Все результаты повторно пересчитаны owner-bound verifier без скрытой
+  интеграции/ремонта отсутствующих исследований.
+- Худшее grid isolation/full fault extinction145.857ms при150ms deadline;
+  минимальный measured margin4.143ms. После grid isolation motor-fed ток
+  достигает164.25A — критерии источника и полного погасания не объединяются.
+  Max fine-pair relative I²t change≈7.13e-5 при cap.002.
+- **Новый независимый дифференциальный normal-mode эталон**: три примитивных
+  SI winding/KCL equations, rotor flux/speed/thermal ODE, DOP853, cold state.
+  **15** самостоятельных траекторий (3 normal modes ×4 endpoint conditions
+  ицентр), **30** сравнений с native finest Radau/DAE. Не использует native
+  EMF traces для продвижения, production derivatives/stamps/constants/init.
+  Max errors: speed1.63e-9pu, EMF5.87e-8pu, current2.26e-7pu, voltage7.18e-9pu,
+  thermal replica4.58e-10. Это эквивалентность формулировок, не OEM точность.
+- **311 целевых тестов**, включая34 новых, без ошибок/пропусков:
+  `reports/running-cartesian-final-tests-2026-11-15.xml`.
+- **6 native replays** unchanged pinned wheel вне checkout:5 positives и
+  1 сохранённый R06.33 negative, physical arrays/events совпали точно.
+  Same host/shared dependencies/Python-I/import guard, не независимый host.
+
+Общий gate: `reports/running-cartesian-accepted-2026-11-15/summary.json`.
+Поставка: `reports/running-cartesian-delivery-2026-11-15/delivery.json`;
+включены6 installed-native packets ивсе15 independent winding trajectories,
+2772 native traces привязаны хешами sibling stores. **Runtime не менялся**.
+Профиль/команды: [cases/running-fault-cartesian](../cases/running-fault-cartesian/README.md).
+Добавлены soft wall budget, число studies до запуска, reuse sealed work,
+сохранение incomplete native traces как отрицательных результатов.
+
+DES-04 **in_progress**: конечное Cartesian coverage закрыто для этого профиля,
+но endpoints+8 probes не доказывают continuous uncertainty extrema. Независимая
+динамика **аварий/защит** ещё открыта: там conditional SI oracle, replay clocks
+иshared-physics Radau/DAE. Следующая физическая очередь — согласованная loaded
+motor-only initialization (пока cold guard), независимые fault/protection ODE,
+другие машины/топологии, winding-temperature feedback иearth/peak/DC.
+Normative/OEM approval, полный repository suite, независимый host иtraining
+reward не заявляются. GitHub/CI иgit mutations не выполнялись.
+
+## R06.33 / DES-04 — все16 допусковых углов и выявленные границы селективности
+
+Квалифицирована отдельная VI-ревизия **primary TMS.009 / backup TMS.0155**.
+**612** новых расчётов: nominal+16 pickup/TMS corners ×6 normal/fault cases
+×Radau/DAE ×3 output meshes. Полностью повторно проверены owner recipes,
+критерии, clocks, условная SI algebra,306 solver pairs и I²t по306 аварийным
+траекториям (102 fine-pair проверки). Нормальные критерии не ослаблялись.
+
+- Ещё **48** положительных boundary samples: два выбранных угла1100/0011,
+  primary/measurement-loss,20/90°C,0.95/1.05U,оба решателя/3 output meshes.
+  Самое позднее отключение145.857ms при deadline150ms. Это не все16 углов
+  при каждой температуре/напряжении и не continuous robustness proof.
+- Прежняя .01/.015 теряет селективность при1.05U; промежуточная .01/.0155
+  проходит собственную горячую612-run matrix, но не cold20°C/1.05U.
+  **6** парных отрицательных контролей последней сохранены; новая ревизия
+  отличается от неё только primary TMS и label, от R06.32 — двумя TMS и label.
+- Исследовательская программа: **1332 native runs**, включая промежуточные
+  варианты и отказы; это не1332 положительных исследования финальной модели.
+- Исправлены два дефекта отдельного SI oracle: ЭДС источника теперь берётся
+  в физических вольтах, а точно изолированная невозбуждённая нулевая строка
+  не требует фиктивного шунта. Все108 boundary traces переаудированы без
+  перезаписи/новой интеграции; физические6 отказов промежуточного варианта
+  остались отказами. Старые неуспешные oracle отчёты и код сохранены.
+- **277 целевых тестов**, включая13 новых, без ошибок/пропусков;
+  `reports/running-corner-final-tests-2026-11-15.xml`.
+- **6 native replays** прежнего pinned wheel вне checkout:5 positive/1
+  negative, массивы/события совпали точно. Тот же host/shared dependencies,
+  Python-I/import guard; не независимый host/OS sandbox.
+
+Профиль/команды: [cases/running-fault-corners](../cases/running-fault-corners/README.md).
+Финальный gate: `reports/running-corner-accepted-2026-11-15/summary.json`.
+Поставка: `reports/running-corner-delivery-2026-11-15/delivery.json`.
+**Runtime не менялся**, reused wheel R06.32 и package fingerprint сохранены;
+новые benchmark/case/status файлы не переквалифицируют другие physics profiles.
+
+DES-04 остаётся **in_progress**. Конечный corner-профиль .009/.0155 закрыт;
+остаются полное voltage/temperature Cartesian coverage, interior/adversarial
+uncertainty, другие машины/топологии, earth/peak/DC, тепловая обратная связь
+и независимый динамический эталон. Normative/OEM approval и training reward
+не выдаются. GitHub/CI и git add/commit/push не выполнялись.
+
+## R06.32 / DES-04 — работающие двигатели, защиты и погасание КЗ
+
+Добавлен `running_fault_protection`: owner-bounded критерий реального sampled
+погасания полного тока КЗ, отдельно от отключения линии/источника. Проверяются
+работающий подключённый двигатель перед КЗ, deadline150мс, RMS≤0.1A с
+наблюдением≥20мс до внешнего удаления, состояния/токи аппаратов, pre/post
+открытия, задержки запросов, ожидаемые реле и независимый replay часов.
+
+- **60 новых native runs**:36 аварийных (18 UV-positive/18 no-UV negative),
+  6 отрицательных исходной backup-TMS и18 нормальных с сохранёнными
+  критериями пуска/повторных провалов/выбега и повторного пуска.
+- **27 Radau/DAE пар**, SI algebra oracle на всех60 траекториях, обусловленный
+  сохранёнными ЭДС; отдельный динамический эталон этим не заменяется.
+- Без UV двигатель продолжает питать КЗ после отключения линии:≈109.5A
+  сразу после grid isolation. UV-контактор0.3pu/90ms (без auto-restart)
+  даёт полное погасание в90ms при primary grid opening65.585ms.
+- Исходная VI backup TMS.07 не выполняет новый150ms deadline при потере CT;
+  шесть явных контролей сохраняют progress≈.7303135<1. Отдельная ревизия
+  **TMS.015**, и только она+label, проходит nominal: failure115.585ms,
+  independent backup117.991ms. Критерии UV/no-UV пар строго одинаковые.
+- I²t по36 аварийным траекториям:12 fine-pairs проходят0.2%, max≈7.12e-5.
+- **264 целевых теста**, включая58 новых, без ошибок/пропусков;
+  `reports/running-fault-complete-tests-2026-11-13.xml`.
+
+Поставка `reports/running-fault-delivery-2026-11-13/delivery.json` включает
+wheel, исходники протокола,264-test XML и6 заново интегрированных installed
+случаев (3 положительных/3 отрицательных). Вне checkout, Python -I, запрет
+reference imports; физические arrays/events совпали точно. Host и библиотеки
+общие, OS sandbox и независимая машина не заявляются. Все6 пакетов сохранены.
+
+Профиль и команды: [cases/running-fault-protection](../cases/running-fault-protection/README.md).
+Общий gate: `reports/running-fault-acceptance-final-2026-11-13/summary.json`;
+owner-физика/критерии и часы пересчитаны, signed/OEM acceptance не заявляется.
+DES-04 **in_progress**: новая TMS имеет nominal-квалификацию,16 corners
+предыдущих уставок на неё не переносятся; остаются uncertainty, другие машины,
+топологии, earth/peak/DC, тепловая обратная связь и независимая динамика.
+Новый runtime fingerprint не переписывает исторические доказательства.
 
 ## R06.31 / DES-04 — подпитка КЗ двигателями и физические токи портов
 

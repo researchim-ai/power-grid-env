@@ -12,7 +12,11 @@ MAX_EVALUATIONS = 2000
 
 def initialize_motor_state(model):
     settings = model.settings
+    if settings.operating_point is not None and settings.operating_point.winding_state=='equilibrium':
+        from power_grid_env.rms_winding_equilibrium import initialize_electrothermal
+        return initialize_electrothermal(model)
     state = np.r_[np.zeros(model.electrical_size), [m.thermal.initial_level for m in settings.motors if m.thermal],np.zeros(model.motor_state_end-model.electrical_size-len(model.thermal_indices))]
+    if model.windings is not None:model.windings.initialize(state)
     requested = settings.operating_point
     if requested is None:
         return state, {'mode': 'cold_start', 'thermal_state': 'passport'}

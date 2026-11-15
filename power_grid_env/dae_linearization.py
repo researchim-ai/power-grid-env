@@ -1,12 +1,13 @@
 """Sparse local differential blocks and exact nonassembled network Schur action.
 
 Stores f_x at fixed V (device-local sparse blocks), f_V (two columns per
-local port), b_x (sparse Norton injection) and the current network LU. The dense
+local port), (b_x - Y_x V) (sparse effective Norton action) and the current network LU. The dense
 reduced matrix f_x + f_V Y^-1 b_x is never formed. No numerical thresholding.
 """
 import numpy as np
 from scipy.sparse import coo_matrix
 from power_grid_env.dae import injection_product,mode_token
+from power_grid_env.rms_winding import operator
 
 
 def device_groups(model,dimension):
@@ -14,6 +15,8 @@ def device_groups(model,dimension):
     for i in range(len(model.settings.motors)):
         group=[3*i,3*i+1,3*i+2]
         if i in model.thermal_indices:group.append(model.thermal_indices[i])
+        if getattr(model,'windings',None) is not None and i in model.windings.addresses:
+            a=model.windings.addresses[i];group.extend(range(a.start,a.stop))
         if i in model.cages.addresses:
             a=model.cages.addresses[i];group.extend(range(a.start,a.stop))
         groups.append((group,int(model.motor_buses[i])))
@@ -39,7 +42,7 @@ class DAEBlocks:
     def __init__(self,model,callback,time,state,maximum,check,tick):
         automation_callback=callback if hasattr(callback,'automation_physical_callback') else None
         if automation_callback is not None:callback=callback.automation_physical_callback
-        self.n=len(state);self.mode=mode_token(model);self.lu=model.lu;self.maximum=maximum
+        self.n=len(state);self.mode=mode_token(model);self.lu=operator(model,state)[1];self.maximum=maximum
         self.owners=np.empty(self.n,dtype=int);groups=device_groups(model,self.n);ctx=callback.jacobian_context(time,state)
         nodes=len(model.bus_names);ar=[];ac=[];av=[];cr=[];cc=[];cv=[]
         for indices,bus in groups:
@@ -56,13 +59,13 @@ class DAEBlocks:
         self.B=callback.dae_actions(time,state,np.zeros((self.n,2)),ctx,voltage_directions=np.tile([1.+0j,1j],(nodes,1)));tick()
         if self.B.shape!=(self.n,2) or not np.isfinite(self.B).all():raise ValueError('invalid local voltage differential block')
         buses=np.unique(self.owners);cached=getattr(model,'_dae_port_diagonal',None)
-        if cached is None or cached[0] is not model.lu or not np.array_equal(cached[1],buses):
-            diagonal=np.zeros(len(buses),complex);dead=set(getattr(model.lu,'dead',[]))
+        if cached is None or cached[0] is not self.lu or not np.array_equal(cached[1],buses):
+            diagonal=np.zeros(len(buses),complex);dead=set(getattr(self.lu,'dead',[]))
             for first in range(0,len(buses),8):
                 check();positions=[j for j in range(first,min(len(buses),first+8)) if buses[j] not in dead]
                 selected=buses[positions];rhs=np.zeros((nodes,len(selected)),complex);rhs[selected,np.arange(len(selected))]=1.
                 if len(selected):diagonal[positions]=self.lu.solve(rhs)[selected,np.arange(len(selected))]
-            cached=(model.lu,buses,diagonal);model._dae_port_diagonal=cached
+            cached=(self.lu,buses,diagonal);model._dae_port_diagonal=cached
         diag=dict(zip(cached[1],cached[2]));self.blocks=[]
         for indices,bus in groups:
             for first in range(0,len(indices),maximum):

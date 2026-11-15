@@ -1,5 +1,25 @@
 # power-grid-env
 
+Two-cage RMS R(T):individual cage currents/losses,common rotor heating and
+joint stationary equilibrium —
+[R06.40:120 runs and66 independent trajectories](cases/two-cage-winding/README.md).
+
+Joint RMS electrical/mechanical/thermal equilibrium: speed,current and winding
+temperatures solved together,with heat-balance checks in watts —
+[R06.39 scope and reproduction](cases/rms-equilibrium/README.md).
+
+RMS/DAE electrothermal feedback: state-dependent R(T) network stamps and
+analytic Newton actions,128 runs and64 independent trajectories —
+[R06.38 scope and reproduction](cases/rms-winding/README.md).
+
+Hot winding states and dynamic R(T) fault feedback: separate stator/rotor
+temperatures,120 phase-domain runs and60 independent trajectories —
+[R06.37 scope and reproduction](cases/electrothermal-fault/README.md).
+
+Independent hybrid OC/UV/thermal validation:78 SI winding trajectories,
+breaker failure, CT restoration and Radau/DAE comparisons —
+[R06.36 coverage and reproduction](cases/motor-only-loaded/README.md#r0636--независимая-гибридная-динамика-защит).
+
 Registered AC/pandapower, RMS/ANDES and full-winding/motulator comparisons
 with explicit coverage and no unsupported speed claims: [R01.1 protocol](docs/COMPARISON_PROTOCOL_RU.md).
 
@@ -714,3 +734,15 @@ installation does not run or require this optional benchmark.
 Cold/hot fault-current screening now provides continuous bounds for a passive radial feeder and conservative relay/duty checks, with independent nodal comparisons. Scope and commands: [cold/hot envelope](cases/fault-temperature-envelope/README.md).
 
 Motor-fed faults: phase-preserving source/motor attribution, separate feeder/source currents and dynamic per-port RMS I²t checks. [Scope and examples](cases/motor-fault-contribution/README.md).
+
+Running-motor protection now distinguishes grid isolation from total fault-current extinction, with preserved negative controls and unchanged normal-mode criteria. [Profile and replay](cases/running-fault-protection/README.md).
+
+Running-motor protection now has all16 relay-tolerance corners and preserved counterexamples. The separate0.009/0.0155 revision passes612 matrix runs and48 selected voltage/temperature boundary cases. [Scope and reproduction](cases/running-fault-corners/README.md).
+
+Full finite cable-temperature/source-voltage/relay-tolerance coverage now passes2448 studies plus324 interior probes. An independent SI winding/DOP853 implementation validates15 normal trajectories against both native solvers. [Scope and reproduction](cases/running-fault-cartesian/README.md).
+
+Motor-only coupled networks now support consistent loaded initialization without dummy generators, including single/double cages, motor groups, explicit thermal policies and diagnostics. Independent SI winding references cover loaded normal and programmed-fault dynamics. [Examples and qualification](cases/motor-only-loaded/README.md).
+
+Coupled **GENCLS + two-cage R(T) motor**: [examples and reproducible checks](cases/mixed-winding/README.md). Fixed excitation, consistent P/V initialization at passport temperatures, Radau and DAE; AVR and joint thermal equilibrium are outside this profile.
+
+Joint **P/V/load/heat equilibrium for GENCLS + R(T) motor**: [examples and checks](cases/mixed-equilibrium/README.md). Winding temperatures follow heat balance; the full physical spectrum is checked. Generator heating and AVR remain outside this profile.

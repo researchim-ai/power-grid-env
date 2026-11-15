@@ -1,6 +1,6 @@
 """Specialized index-1 network DAE: projected Radau IIA with Schur/GMRES.
 
-The fixed-topology algebraic block Y is eliminated exactly at every stage.
+The fixed-topology algebraic block Y(x) is eliminated exactly at every stage.
 The dynamic Schur complement is applied analytically, never assembled. SciPy's
 pinned Radau implementation retains its collocation, error control, dense output
 and event interface; only its linear algebra is replaced. No general mass-matrix
@@ -14,6 +14,7 @@ from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import LinearOperator,gmres
 from scipy.linalg import lu_factor,lu_solve,LinAlgWarning
 from power_grid_env.dae import NetworkDAE,mode_token
+from power_grid_env.rms_winding import operator as network_operator
 from power_grid_env.runtime_limits import RuntimeLimitExceeded
 
 
@@ -152,7 +153,7 @@ class NetworkRadau(Radau):
                 self.stats['peak_segment_retained_scalars']=max(self.stats['peak_segment_retained_scalars'],self.mesh_scalars)
                 if self.mesh_scalars>self.options.maximum_segment_retained_scalars:raise RuntimeLimitExceeded('dae_segment_retained_scalars',self.options.maximum_segment_retained_scalars,self.mesh_scalars)
                 physical_state=self.coordinates.decode(self.t,self.y)
-                v=self.system.project(physical_state);kcl=float(np.max(abs(self.model.matrix@v-self.model.network_injection(physical_state))))
+                v=self.system.project(physical_state);kcl=float(np.max(abs(network_operator(self.model,physical_state)[0]@v-self.model.network_injection(physical_state))))
                 self.stats['maximum_consistency_kcl_pu']=max(self.stats['maximum_consistency_kcl_pu'],kcl)
                 if kcl>1e-8:return False,'DAE algebraic residual exceeded tolerance'
                 self.model._dae_restart=dict(mode=mode_token(self.model),time=self.t,state=physical_state.copy(),coordinates=self.coordinates,h_abs=self.h_abs,h_abs_old=self.h_abs_old,error_norm_old=self.error_norm_old,last_dense=self.sol)

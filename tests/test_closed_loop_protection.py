@@ -115,11 +115,12 @@ def test_cancelled_never_passes(plan,tmp_path):
     assert not r['completed'] and not r['passes_declared_profile'] and r['reward'] is None
 
 
-def test_motor_only_rejects_loaded_initialization(plan):
+def test_motor_only_accepts_explicit_loaded_initialization(plan):
     from power_grid_env.coupled_rms import CoupledSettings
     _,pack,_,_=compile_closed_loop(plan);data=pack.cases[0].study.coupled.model_dump(mode='json')
     data['operating_point']={}
-    with pytest.raises(ValueError,match='cold initialization'):CoupledSettings.model_validate(data)
+    settings=CoupledSettings.model_validate(data)
+    assert settings.machines==[] and settings.operating_point.method=='high_speed_equilibrium'
 
 
 def test_missing_generator_passport_still_rejected():

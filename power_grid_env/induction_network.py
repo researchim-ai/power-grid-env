@@ -34,7 +34,9 @@ def validate_induction(network, settings, *, validate_rules=True):
         errors.append(f'motor network exceeds {settings.runtime_limits.maximum_network_buses}-bus implementation budget')
     control_samples = 2*settings.maximum_contactor_transitions if any(m.contactor for m in settings.motors) else 0
     samples = control_samples + math.ceil(settings.duration_s / settings.step_s) + 2 * (len({e.time_s for e in settings.events}) + sum(m.thermal is not None for m in settings.motors)) + 2
-    motor_channels=sum(16+8*(m.model=='double_cage')+2*bool(m.thermal)+6*bool(m.contactor) for m in settings.motors)
+    if any(m.winding_thermal for m in settings.motors):
+        if settings.jacobian_network!='direct_solve':errors.append('RMS winding feedback requires direct_solve')
+    motor_channels=sum(8*bool(m.winding_thermal)+2*bool(m.winding_thermal and m.model=='double_cage')+16+8*(m.model=='double_cage')+2*bool(m.thermal)+6*bool(m.contactor) for m in settings.motors)
     if samples * (2 * len(topology.buses) + motor_channels + 6) > 2_000_000:
         errors.append('motor trace exceeds two-million-scalar budget')
     if any(set(n.phases) != set('ABC') for n in network.connectivity_nodes):
@@ -116,7 +118,7 @@ def validate_induction(network, settings, *, validate_rules=True):
             states[event.equipment_id] = closed
     return {'ok': not errors, 'errors': errors, 'model': 'single_or_double_cage_algebraic_stator_balanced',
             'limitations': ['algebraic stator; no EMT/inrush waveform', 'constant_z background only',
-                            'fan/viscous/quadratic/smooth friction; no hard stiction or gravity load', 'two parallel cages optional; no saturation/frequency-dependent rotor parameters/VFD or winding/rotor temperature qualification',
+                            'fan/viscous/quadratic/smooth friction; no hard stiction or gravity load', ('opt-in single/two-cage R(T) and stator/common-rotor heat nodes; no OEM temperature qualification, iron loss or stator EMT' if any(m.winding_thermal for m in settings.motors) else 'two parallel cages optional; no saturation/frequency-dependent rotor parameters/VFD or winding/rotor temperature qualification'),
                             'no synchronous generators or islanding', 'no field validation']}
 
 
@@ -167,7 +169,11 @@ class InductionNetwork:
             i for i, m in enumerate(settings.motors) if m.thermal is not None)}
         from power_grid_env.motor_cages import MotorCageBank
         self.cages=MotorCageBank(settings.motors,network.frequency_hz,self.electrical_size+len(self.thermal_indices))
-        self.motor_state_end=self.cages.end
+        self.windings=None
+        if any(m.winding_thermal is not None for m in settings.motors):
+            from power_grid_env.rms_winding import RMSWindingBank
+            self.windings=RMSWindingBank(self,self.cages.end)
+        self.motor_state_end=self.windings.end if self.windings is not None else self.cages.end
         self.thermal_latched = np.zeros(len(settings.motors), dtype=bool)
         self.factorize()
 
@@ -184,7 +190,8 @@ class InductionNetwork:
         values = np.asarray(state)[:self.electrical_size].reshape(-1, 3)
         e = values[:, 0]+1j*values[:, 1]
         rhs = self.network_injection(state)
-        voltage = self.lu.solve(rhs)
+        from power_grid_env.rms_winding import operator
+        voltage = operator(self,state)[1].solve(rhs)
         return self.electrical_at_voltage(state,voltage,injection=rhs)
 
     def network_injection(self,state):
@@ -193,14 +200,16 @@ class InductionNetwork:
         rhs=np.zeros(len(self.bus_names),dtype=complex)
         rhs[self.source_bus]=self.source_y*self.source_e*self.source_scale
         np.add.at(rhs,self.motor_buses,self.motor_y*e)
-        return rhs
+        return self.windings.injection(state,rhs) if self.windings is not None else rhs
 
     def electrical_at_voltage(self,state,voltage,*,injection=None):
         values=np.asarray(state)[:self.electrical_size].reshape(-1,3)
         e=values[:,0]+1j*values[:,1]
-        current=np.where(self.connected,(voltage[self.motor_buses]-e)/self.zmotor,0j)
+        z=self.windings.parameters(state)[0] if self.windings is not None else self.zmotor
+        current=np.where(self.connected,(voltage[self.motor_buses]-e)/z,0j)
         torque=(e*np.conj(current)).real
-        return voltage,current,torque,float(np.max(abs(self.matrix@voltage-(self.network_injection(state) if injection is None else injection))))
+        from power_grid_env.rms_winding import operator
+        return voltage,current,torque,float(np.max(abs(operator(self,state)[0]@voltage-(self.network_injection(state) if injection is None else injection))))
 
     def differential_at_voltage(self,time,state,voltage):
         _,current,torque,_=self.electrical_at_voltage(state,voltage)
@@ -211,6 +220,7 @@ class InductionNetwork:
         return self.motor_derivatives(state, current, torque)
 
     def motor_derivatives(self, state, current, torque):
+        if self.windings is not None:return self.windings.derivatives(state,current,torque)
         values = state[:self.electrical_size].reshape(-1, 3)
         e = values[:, 0]+1j*values[:, 1]
         speed = values[:, 2]
@@ -249,6 +259,7 @@ class InductionNetwork:
         return np.zeros(len(self.bus_names),dtype=complex)
 
     def integration_jacobian(self):
+        if self.windings is not None:return self.windings.callback()
         from power_grid_env.jacobian_columns import attach
         def evaluate(time,state):return self.jacobian(time,state)
         def evaluate_columns(time,state,cols,ctx):
@@ -260,6 +271,7 @@ class InductionNetwork:
         return attach(evaluate,self,evaluate_columns,actions)
 
     def jacobian(self,time,state):
+        if self.windings is not None:return self.windings.callback()(time,state)
         from power_grid_env.motor_jacobian import jacobian
         return jacobian(self,state)
 
@@ -338,15 +350,22 @@ def reclose_diagnostic(model, channels, motor_id):
 
 def integrate_induction_model(model, scope, state, operating_point, *, study='motor_start', observer=None):
     from power_grid_env.runtime_limits import IntegrationBudget,RuntimeLimitExceeded
+    from power_grid_env.rms_winding import RMSWindingValidityError
     budget=IntegrationBudget(model.settings.runtime_limits)
     try:
         result=_integrate_induction_model(model,scope,state,operating_point,study=study,budget=budget,observer=observer)
         budget.check_time()
+    except RMSWindingValidityError as exc:
+        result=dict(solved=True,completed=False,status='model_validity_exceeded',reason='winding_temperature',
+                    motor_id=exc.motor_id,trial_temperature_c=exc.temperatures,maximum_c=exc.maximum_c,
+                    diagnostic='Invalid integration trial; no clipping/extrapolation. This is not a localized temperature-trip time.',scope=scope)
     except RuntimeLimitExceeded as exc:
         result=dict(solved=True,completed=False,status='runtime_limit_exceeded',reason=exc.resource,
                     resource_limit=dict(resource=exc.resource,limit=exc.limit,attempted=exc.attempted),scope=scope)
     if observer is not None:result['sensitivity']=observer.report(result.get('completed',False))
     result['runtime_budget']=budget.report()
+    if model.windings is not None:
+        result['winding_thermal_model']=dict(passports={m.id:m.winding_thermal.model_dump(mode='json') for m in model.settings.motors if m.winding_thermal},scope='Single/two cage,algebraic stator,common rotor temperature,no iron loss.R(T) changes network stamps and rotor rates.Physical temperatures separate from I2 relay replica;no total EMT energy or OEM thermal certificate.',initial_temperature_policy=('simultaneous_stationary_winding_temperatures; passport temperatures are search seeds' if model.settings.operating_point is not None and model.settings.operating_point.winding_state=='equilibrium' else 'passport_or_ambient; electrical loaded equilibrium at fixed initial temperatures is not a thermal equilibrium'))
     if hasattr(model,'_dae_statistics'):result['dae_diagnostics']=dict(model._dae_statistics)
     return result
 
@@ -368,6 +387,7 @@ def _integrate_induction_model(model, scope, state, operating_point, *, study, b
         for key in ('thermal_level', 'thermal_latched'):
             channels[f'{settings.motors[i].id}.{key}'] = []
     channels.update(model.additional_channels())
+    if model.windings is not None:channels.update(model.windings.channels())
     channels.update(model.cages.channels(settings.motors))
     channels.update(contactors.channels())
     times, sides, kcl = [], [], []
@@ -398,7 +418,9 @@ def _integrate_induction_model(model, scope, state, operating_point, *, study, b
         for i, bus in enumerate(model.bus_names):
             channels[f'{bus}.v'].append(float(abs(voltage[i])))
             channels[f'{bus}.a'].append(float(np.angle(voltage[i])))
-        for key,value in model.cages.signals(full_state,settings.motors,current).items():channels[key].append(value)
+        motor_extra=model.cages.signals(full_state,settings.motors,current)
+        if model.windings is not None:motor_extra.update(model.windings.signals(full_state,current))
+        for key,value in motor_extra.items():channels[key].append(value)
         for key,value in contactors.signals(voltage,time).items():channels[key].append(value)
         additional, additional_injection = model.additional_signals(full_state, voltage)
         for key, value in additional.items():

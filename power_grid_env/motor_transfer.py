@@ -89,6 +89,7 @@ def transfer_passport(document):
         lg=ls+lm;k=lg/lm
         leakage=k*k*(lm+lr)-lg;rr=k*k*m.rotor_r_pu*z
         if m.thermal:lost.append('thermal_replica')
+        if m.winding_thermal:lost.append('winding_thermal')
         if m.contactor:lost.append('contactor')
         if not m.connected:lost.append('disconnected_state')
         provenance={key:plan.parameter_provenance for key in ('electrical','magnetics','mechanical')}

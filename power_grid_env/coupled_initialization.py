@@ -1,4 +1,4 @@
-"""Simultaneous PV-generator/network and optional loaded-motor equilibrium search."""
+"""Simultaneous network, optional PV-generator and loaded-motor equilibrium search."""
 from __future__ import annotations
 import numpy as np
 from scipy.optimize import least_squares
@@ -9,6 +9,12 @@ MAX_EVALUATIONS=4000
 
 def initialize_coupled(model,*,require_stable=True):
     settings=model.settings;requested=settings.operating_point
+    if requested is not None and requested.winding_state=='equilibrium':
+        if model.generators:
+            from power_grid_env.mixed_winding_equilibrium import initialize_mixed_electrothermal
+            return initialize_mixed_electrothermal(model,require_stable=require_stable)
+        from power_grid_env.rms_winding_equilibrium import initialize_electrothermal
+        return initialize_electrothermal(model,require_stable=require_stable)
     steady=requested is not None
     active=np.flatnonzero(model.connected) if steady else np.array([],dtype=int)
     n=len(active);ng=len(model.generators)
@@ -17,6 +23,8 @@ def initialize_coupled(model,*,require_stable=True):
     state=model.initial_state()
     if ng==0 and not steady:
         return state,dict(mode='motor_only_cold_start',thermal_state='passport',generator_constraints=0)
+    if ng==0 and steady and n==0:
+        return None,dict(reason='no_connected_motor_for_operating_point')
     ptarget=np.array([g.p_w/m.rated_va for g,m in zip(model.generators,model.gen_passports)])
     vtarget=np.array([g.v_set_pu for g in model.generators])
     regulating={i:p for i,g in enumerate(model.generators) for p in settings.oel2c_limiters if p.generator_id==g.id and p.initialization=='current_regulating_equilibrium'}
@@ -129,11 +137,34 @@ def initialize_coupled(model,*,require_stable=True):
                 modes=np.linalg.eigvals(jac);alpha=float(max(modes.real))
                 if not np.isfinite(modes).all() or (require_stable and alpha>=-1e-7):
                     rejected.append('unstable_or_near_axis_coupled_equilibrium');continue
+            motor_only_audit={}
+            if model.windings is not None and ng:
+                motor_only_audit.update(winding_temperature_initialization='fixed_passport_temperatures;thermal rates need not vanish',
+                    winding_initial_derivative_c_per_s={settings.motors[i].id:[float(v) for v in derivative[a]] for i,a in model.windings.addresses.items()},
+                    winding_stability_scope='motor electrical/cage and GENCLS rotor subset at frozen initial winding temperatures;not stationary thermal or hybrid stability')
+            if ng==0:
+                dynamic_voltage=model.electrical(state)[0]
+                kcl=float(np.max(np.abs(model.matrix@dynamic_voltage-model.network_injection(state))))
+                voltage_mismatch=float(np.max(np.abs(dynamic_voltage-voltage)))
+                if kcl>tolerance or voltage_mismatch>tolerance:
+                    rejected.append('motor_only_network_consistency');continue
+                if model.windings is not None:
+                    motor_only_audit.update(winding_temperature_initialization='fixed_passport_temperatures; thermal rates need not vanish',
+                        winding_initial_derivative_c_per_s={settings.motors[i].id:[float(v) for v in derivative[a]] for i,a in model.windings.addresses.items()},
+                        winding_stability_scope='connected electrical/mechanical subset at frozen initial winding temperatures; not full electrothermal equilibrium or stability')
+                motor_only_audit.update(dict(
+                    network_kcl_residual_pu=kcl,static_dynamic_voltage_mismatch_pu=voltage_mismatch,
+                    motor_initial={m.id:dict(speed_pu=float(speeds[i]),connected=bool(model.connected[i]),
+                        current_pu=float(abs(current[i])),bus_voltage_pu=float(abs(voltage[model.motor_buses[i]]))) for i,m in enumerate(settings.motors)},
+                    connected_motor_eigenvalues_per_s=[[float(z.real),float(z.imag)] for z in modes],
+                    connected_motor_state_names=stability_names,
+                    generator_constraints=0,
+                    equilibrium_scope='connected motor electrical/mechanical states and network; thermal state policy explicit; hybrid timers/contactors are not stability-certified'))
             selected_oel={p.generator_id:k.initialization_audit for a,p,k in model.oel2c.entries.values() if p.initialization=='selected_equilibrium'}
             return state.copy(),{'ESST1A_initialization':model.esst1a.initialization_audit,
                 'oel2c_selected_equilibrium':selected_oel,
                 'full_OEL_stability_qualified':False if selected_oel else None,
-                'mode':('coupled_loaded_current_regulating_equilibrium' if regulating else 'coupled_loaded_equilibrium') if steady else 'PV_generator_with_cold_motors',
+                'mode':'motor_only_loaded_equilibrium' if ng==0 else ('coupled_loaded_current_regulating_equilibrium' if regulating else 'coupled_loaded_equilibrium') if steady else 'PV_generator_with_cold_motors',
                 'initial_voltage_constraints':{g.id:dict(kind='field_current_target_replaces_PV_voltage_target' if i in regulating else 'PV_voltage_target',requested_PV_voltage_pu=g.v_set_pu,solved_voltage_pu=float(abs(voltage[model.gen_buses[i]]))) for i,g in enumerate(model.generators)},
                 'conditional_regulating_eigenvalues_per_s':[[float(z.real),float(z.imag)] for z in modes] if regulating else None,
                 'conditional_regulating_state_names':stability_names if regulating else None,
@@ -150,7 +181,7 @@ def initialize_coupled(model,*,require_stable=True):
                 'generator_stator_thermal_residual_per_s':{p.generator_id:float(derivative[a]) for a,p in model.generator_thermal.entries.values()},
                 'oel2c_clock_history_s':{p.generator_id:{key:k.context[key] for key in ('enable_start','reset_start')} for a,p,k in model.oel2c.entries.values()},
                 'oel2c_initialization':('inactive_equilibrium; all eight limiter derivatives checked; reset clocks explicitly aged' if all(p.initialization=='inactive_equilibrium' for p in settings.oel2c_limiters) else 'explicit_stationary_equilibria; all eight limiter derivatives checked; active AVR reference policy recorded' if all(p.initialization!='dynawo_startup' for p in settings.oel2c_limiters) else 'dynawo_startup; internal limiter states may be nonstationary') if settings.oel2c_limiters else None,
-                'branch_note':'bounded local initialization; no uniqueness/global or hybrid protection stability proof'}
+                'branch_note':'bounded local initialization; no uniqueness/global or hybrid protection stability proof',**motor_only_audit}
     except (ValueError,RuntimeError,ArithmeticError,np.linalg.LinAlgError) as exc:
         return None,{'reason':'coupled_initialization_search_failed','error':str(exc),'evaluations':evaluations}
     return None,{'reason':'no_qualified_coupled_operating_point','evaluations':evaluations,

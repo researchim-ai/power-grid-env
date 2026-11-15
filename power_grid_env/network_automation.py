@@ -202,7 +202,8 @@ def voltage_derivatives(model,time,state):
     """Analytic Norton injection derivative at fixed discrete topology."""
     from power_grid_env.dae import injection_product
     f=model.physical_rhs(time,state)
-    return model.lu.solve(injection_product(model,state,f[:,None])[:,0]),f
+    from power_grid_env.rms_winding import operator
+    return operator(model,state)[1].solve(injection_product(model,state,f[:,None])[:,0]),f
 
 
 def generator_emf_derivative(model,state,f):
