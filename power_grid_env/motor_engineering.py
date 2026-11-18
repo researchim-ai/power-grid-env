@@ -64,7 +64,7 @@ def product_integrals(t,a,b):
     return np.diff(t)*(2*a[:-1]*b[:-1]+a[:-1]*b[1:]+a[1:]*b[:-1]+2*a[1:]*b[1:])/6
 
 
-def audit_motor(case,report,limits=None):
+def audit_motor(case,report,limits=None,*,expected_producer=None):
     case=IndustrialDOLCase.model_validate(case);limits=MotorAuditLimits.model_validate(limits or {})
     settings=case.study.coupled if case.study.study=='coupled_rms' else case.study.induction
     if case.study.study not in {'motor_start','coupled_rms'} or settings is None or any(m.model!='single_cage' for m in settings.motors):
@@ -72,7 +72,7 @@ def audit_motor(case,report,limits=None):
     verdict=assessment(case,report)
     rows={}
     for motor in settings.motors:
-        t,_=validate_motor_result(case.study,report,motor.id)
+        t,_=validate_motor_result(case.study,report,motor.id,expected_code_sha256=expected_producer)
         sides=report['sample_side'];dt=np.diff(t)
         if sides[0]!='initial' or any(s not in {'initial','regular','pre_event','post_event'} for s in sides):raise ValueError('invalid sample side')
         for i,s in enumerate(sides):
@@ -230,9 +230,16 @@ def run_engineering(document,out,*,cancelled=None):
     write('summary.json',summary);seal(out);return summary
 
 
-def verify_engineering(root):
+def verify_engineering(root,*,expected_producer=None):
+    """Default: current code only. Explicit trusted pin: re-audit historical data.
+
+    The caller owns the source revision/manifest anchors. Pinning a revision
+    does not authenticate its origin or relax any physical/numerical gate.
+    """
     root=Path(root);identity=verify(root);plan=MotorEngineeringPlan.model_validate(read_json(root/'input.json'));summary=read_json(root/'summary.json')
-    if summary.get('producer_sha256')!=package_fingerprint() or not summary.get('completed'):raise ValueError('complete current-producer engineering study required')
+    if expected_producer is not None and (not isinstance(expected_producer,str) or len(expected_producer)!=64 or any(c not in '0123456789abcdef' for c in expected_producer)):raise ValueError('explicit source revision must be a SHA256')
+    producer=package_fingerprint() if expected_producer is None else expected_producer
+    if summary.get('producer_sha256')!=producer or not summary.get('completed'):raise ValueError('complete expected-producer engineering study required')
     if len(summary['cases'])!=len(plan.cases):raise ValueError('engineering case coverage differs')
     for case,row in zip(plan.cases,summary['cases'],strict=True):
         audits=[]
@@ -241,15 +248,17 @@ def verify_engineering(root):
             settings.step_s/=2**level
             path=root/case.id/f'grid-{level}'
             if read_json(path/'study.json')!=refined.study.model_dump(mode='json'):raise ValueError('refined study differs from plan')
-            audit=audit_motor(refined,read_json(path/'result.json'),plan.limits)
+            audit=audit_motor(refined,read_json(path/'result.json'),plan.limits,expected_producer=expected_producer)
             if audit!=read_json(path/'audit.json'):raise ValueError('physical audit differs from trace')
             audits.append(audit)
         expected=grid_consensus(audits,plan.limits)
         expected=dict(id=case.id,status='completed',expectation_met=bool(expected['numerically_qualified'] and expected['fine_within_limits']==(case.expectation=='within_limits')),**expected)
         if row!=expected:raise ValueError('engineering verdict differs from audit')
     if summary['validation_passed']!=all(r['expectation_met'] for r in summary['cases']) or summary['engineering_acceptable']!=all(r['engineering_acceptable'] for r in summary['cases']):raise ValueError('summary verdict differs')
-    expected_summary=dict(schema='power-grid-env.motor-engineering-result/v1',id=plan.id,producer_sha256=package_fingerprint(),completed=True,
+    expected_summary=dict(schema='power-grid-env.motor-engineering-result/v1',id=plan.id,producer_sha256=producer,completed=True,
                  validation_passed=all(r['expectation_met'] for r in summary['cases']),engineering_acceptable=all(r['engineering_acceptable'] for r in summary['cases']),
                  cases=summary['cases'],independent_physics_oracle=False,field_validated=False,scope='bounded sampled RMS engineering study')
     if summary!=expected_summary:raise ValueError('summary scope or qualification metadata differs')
-    return dict(verified=True,manifest_sha256=identity,cases=len(plan.cases))
+    result=dict(verified=True,manifest_sha256=identity,cases=len(plan.cases))
+    if expected_producer is not None:result.update(source_code_sha256=producer,auditor_code_sha256=package_fingerprint(),explicit_revision_pin=True)
+    return result

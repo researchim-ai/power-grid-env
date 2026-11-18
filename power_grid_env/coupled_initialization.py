@@ -10,6 +10,9 @@ MAX_EVALUATIONS=4000
 def initialize_coupled(model,*,require_stable=True):
     settings=model.settings;requested=settings.operating_point
     if requested is not None and requested.winding_state=='equilibrium':
+        if model.generators and settings.winding_generator_profile=='GENCLS_TGOV1_SEXS_STATOR_RT':
+            from power_grid_env.stator_equilibrium import initialize_stator_electrothermal
+            return initialize_stator_electrothermal(model,require_stable=require_stable)
         if model.generators:
             from power_grid_env.mixed_winding_equilibrium import initialize_mixed_electrothermal
             return initialize_mixed_electrothermal(model,require_stable=require_stable)
@@ -99,6 +102,11 @@ def initialize_coupled(model,*,require_stable=True):
             if steady and requested.thermal_state=='equilibrium':
                 for i,address in model.thermal_indices.items():state[address]=abs(current[i])**2
             terminal_voltage=voltage[model.gen_buses] if np.all(model.gen_connected) else np.where(model.gen_connected,voltage[model.gen_buses],internal)
+            if settings.winding_generator_profile in {'GENCLS_TGOV1_SEXS_ENERGY','GENCLS_TGOV1_SEXS_STATOR_RT'}:
+                heat_error=model.generator_heat.initialize(state,ig,terminal_voltage)
+                if heat_error:return None,heat_error
+                from power_grid_env.generator_energy import initialize_power
+                initialize_power(model,state,ig,terminal_voltage)
             controller_error=model.controllers.initialize(state,terminal_voltage,model.gen_voltage,model.gen_mechanical,tolerance)
             if controller_error:return None,controller_error
             takeover_error=model.takeover_oel.initialize(state,ig,model.gen_voltage)
@@ -118,6 +126,8 @@ def initialize_coupled(model,*,require_stable=True):
             oel2c_error=model.oel2c.initialize(state,ig)
             if oel2c_error:return None,oel2c_error
             oel2c_reference_audit=model.oel2c.coordinate_initial_avr_reference(state)
+            heat_error=model.generator_heat.initialize(state,ig,model.generator_terminal_voltage(state,voltage))
+            if heat_error:return None,heat_error
             derivative=model.rhs(0.,state)
             checked=np.r_[np.r_[np.arange(model.electrical_size),*[np.arange(a.start,a.stop) for a in model.cages.addresses.values()]],np.arange(model.gen_offset,model.controllers.end)] if steady else np.arange(model.gen_offset,model.controllers.end)
             if steady:checked=np.r_[checked,np.arange(model.underexcitation_limiters.offset,model.underexcitation_limiters.end)]
@@ -165,7 +175,7 @@ def initialize_coupled(model,*,require_stable=True):
                 'oel2c_selected_equilibrium':selected_oel,
                 'full_OEL_stability_qualified':False if selected_oel else None,
                 'mode':'motor_only_loaded_equilibrium' if ng==0 else ('coupled_loaded_current_regulating_equilibrium' if regulating else 'coupled_loaded_equilibrium') if steady else 'PV_generator_with_cold_motors',
-                'initial_voltage_constraints':{g.id:dict(kind='field_current_target_replaces_PV_voltage_target' if i in regulating else 'PV_voltage_target',requested_PV_voltage_pu=g.v_set_pu,solved_voltage_pu=float(abs(voltage[model.gen_buses[i]]))) for i,g in enumerate(model.generators)},
+                'initial_voltage_constraints':{g.id:(dict(kind='standby_internal_voltage_target',requested_internal_voltage_pu=g.v_set_pu,solved_voltage_pu=float(abs(internal[i])),solved_bus_voltage_pu=float(abs(voltage[model.gen_buses[i]]))) if not model.gen_connected[i] else dict(kind='field_current_target_replaces_PV_voltage_target' if i in regulating else 'PV_voltage_target',requested_PV_voltage_pu=g.v_set_pu,solved_voltage_pu=float(abs(voltage[model.gen_buses[i]])))) for i,g in enumerate(model.generators)},
                 'conditional_regulating_eigenvalues_per_s':[[float(z.real),float(z.imag)] for z in modes] if regulating else None,
                 'conditional_regulating_state_names':stability_names if regulating else None,
                 'stationary_stability_scope':'machine_controller_subset_only_selected_OEL_stability_not_qualified' if selected_oel else 'conditional_hot_branch_including_regulating_OEL_states' if regulating else 'connected_machine_controller_subset',

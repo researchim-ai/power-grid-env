@@ -72,7 +72,7 @@ def _read_csv(path, expected_sha):
     return values
 
 
-def validate_motor_result(spec, report, motor_id, voltage_measurement_location='grid_side'):
+def validate_motor_result(spec, report, motor_id, voltage_measurement_location='grid_side', *, expected_code_sha256=None):
     """Validate identity, horizon and channels; return time and SI I/U/speed."""
     settings = spec.coupled if spec.study == 'coupled_rms' else spec.induction
     if spec.study not in {'motor_start', 'coupled_rms'} or spec.backend != 'scipy' or settings is None:
@@ -81,7 +81,9 @@ def validate_motor_result(spec, report, motor_id, voltage_measurement_location='
         raise ValueError('completed motor simulation required')
     if report.get('study_id') != spec.id or report.get('network_sha256') != canonical_hash(spec.network) or report.get('settings') != settings.model_dump(mode='json'):
         raise ValueError('simulation identity/settings mismatch')
-    if report.get('code_sha256') != package_fingerprint():
+    if expected_code_sha256 is not None and (not isinstance(expected_code_sha256,str) or len(expected_code_sha256)!=64 or any(c not in '0123456789abcdef' for c in expected_code_sha256)):
+        raise ValueError('explicit source revision must be a SHA256')
+    if report.get('code_sha256') != (package_fingerprint() if expected_code_sha256 is None else expected_code_sha256):
         raise ValueError('stale simulation code')
     motor = next((m for m in settings.motors if m.id == motor_id), None)
     if motor is None:

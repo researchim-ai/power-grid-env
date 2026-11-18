@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {taskFamilies,toolExamples,parseArguments} from '../agent-lab-model.js';
+test('all17 task families have explicit scoped readiness,only3 current episode families',()=>{assert.equal(taskFamilies.length,17);assert.equal(new Set(taskFamilies.map(t=>t.id)).size,17);assert.deepEqual(taskFamilies.filter(t=>t.status==='bounded').map(t=>t.id).sort(),['assemble','diagnose','repair']);});
+test('tool arguments require an object and bounded size',()=>{assert.deepEqual(parseArguments('{}'),{});assert.throws(()=>parseArguments('[]'));assert.throws(()=>parseArguments('null'));assert.throws(()=>parseArguments('"value"'));assert.throws(()=>parseArguments(' '.repeat(8193)));});
+test('examples expose no reward,owner criteria or private session override',()=>{for(const v of Object.values(toolExamples))assert.equal(Object.keys(v).some(k=>['reward','state','private_state','requirements'].includes(k)),false);});

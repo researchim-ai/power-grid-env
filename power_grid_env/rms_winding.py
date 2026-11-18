@@ -42,7 +42,7 @@ class RMSWindingBank:
         if model.settings.jacobian_network!='direct_solve':raise ValueError('RMS winding feedback requires direct_solve cage profile')
         if model.network.generators or getattr(model.settings,'machines',[]):
             from power_grid_env.mixed_winding import supported
-            if not supported(model.settings):raise ValueError('RMS winding generators require GENCLS_fixed_field profile')
+            if not supported(model.settings):raise ValueError('RMS winding generators require supported explicit GENCLS winding profile')
         self.model=model;self.addresses={};self.end=start;self.cache=None
         self.cage_reference={i:(v[1].copy(),v[2].copy()) for i,v in model.cages.coefficients.items()}
         for i,m in enumerate(model.settings.motors):
@@ -105,11 +105,15 @@ class RMSWindingBank:
 
     def operator(self,state):
         model=self.model
-        key=(model.lu,tuple(float(v) for a in self.addresses.values() for v in state[a]))
+        from power_grid_env.generator_stator import temperature_key,admittance
+        extra=temperature_key(model,state) if hasattr(model,'generators') else ()
+        key=(model.lu,tuple(float(v) for a in self.addresses.values() for v in state[a]),extra,tuple(model.connected),tuple(getattr(model,'gen_connected',())))
         if self.cache is not None and self.cache[0]==key:return self.cache[1:]
         delta=self.admittance(state)-model.motor_y
         matrix=model.matrix.tolil(copy=True)
         for bus,value in zip(model.motor_buses,delta):matrix[bus,bus]+=value
+        if hasattr(model,'generators'):
+            for bus,dy in zip(model.gen_buses,admittance(model,state)-model.active_gen_y):matrix[bus,bus]+=dy
         matrix=csc_matrix(matrix);factor=splu(matrix)
         self.cache=(key,matrix,factor)
         return matrix,factor

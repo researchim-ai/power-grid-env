@@ -461,6 +461,12 @@ def _integrate_induction_model(model, scope, state, operating_point, *, study, b
             guards.extend(control_guards)
             extra_ids,extra_guards=model.additional_guards(state);guards.extend(extra_guards)
             target = model.next_deadline(contactors.next_deadline(right))
+            # A computed actuator/transfer deadline can precede an authored
+            # command by one rounding unit. Treat that as the same scheduled
+            # boundary, so commands retain their declared priority over due
+            # queue service in both integration engines.
+            scheduled_epsilon=64*np.finfo(float).eps*max(1.,abs(target),abs(right))
+            if abs(target-right)<=scheduled_epsilon:target=float(right)
             computational_target=None
             segment_width=settings.dae_options.segment_duration_s*min(1.,256/max(1,len(state)))
             boundary=cursor+segment_width

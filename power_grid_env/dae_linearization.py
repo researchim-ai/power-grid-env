@@ -27,7 +27,7 @@ def device_groups(model,dimension):
                 a=addresses[i];group.extend(range(a.start,a.stop))
         for addresses in [model.controllers.gov,model.controllers.avr]:
             if i in addresses:group.extend(addresses[i])
-        for name,count in [('generator_thermal',1),('field_thermal',1),('excitation_limiters',2),('underexcitation_limiters',2),('oel2c',8),('esst1a',5),('takeover_oel',2)]:
+        for name,count in [('generator_heat',1),('generator_thermal',1),('field_thermal',1),('excitation_limiters',2),('underexcitation_limiters',2),('oel2c',8),('esst1a',5),('takeover_oel',2)]:
             entries=getattr(getattr(model,name,None),'entries',{})
             if i in entries:
                 a=entries[i][0];group.extend(range(a,a+count))

@@ -1,0 +1,13 @@
+{
+  "corpus": "reports/design-multimodal-qualified-current-2026-11-16",
+  "corpus_manifest": "79f4eae6580c6318060c16f74c0c9c272b18d5fcf20953665db62f887f74b31b",
+  "source": "reports/network-construction-qualified-release-2026-11-16",
+  "source_manifest": "de46d32886679a7cb3a22648fce1a3989c1ea551053e95d14dba2d1e867de3e9",
+  "accepted": "reports/network-construction-accepted-release-2026-11-16",
+  "accepted_manifest": "f8d6e5fd65d24c22c98172e9da51556589bb02a45800bf62be105d257b4548c3",
+  "cutoffs_s": [
+    0.0,
+    0.2,
+    0.399
+  ]
+}

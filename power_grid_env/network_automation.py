@@ -7,7 +7,7 @@ No instantaneous-current, arc, communication-security or OEM-equivalence claim.
 import heapq,math
 from typing import Literal
 import numpy as np
-from pydantic import BaseModel,ConfigDict,Field,model_validator
+from pydantic import BaseModel,ConfigDict,Field,model_validator,model_serializer
 from power_grid_env.protection import iec_operate_time
 from power_grid_env.coupled_lines import line_graph
 
@@ -99,6 +99,13 @@ class SupplyVoltage(BaseModel):
     id: str
 
 
+class AutomaticReturn(BaseModel):
+    model_config=ConfigDict(extra='forbid',allow_inf_nan=False)
+    restore_delay_s: float=Field(default=1.,gt=0,le=600)
+    dead_time_s: float=Field(default=.05,gt=0,le=60)
+    dropout_pu: float=Field(default=.85,gt=0,lt=1.5)
+
+
 class TransferScheme(BaseModel):
     model_config=ConfigDict(extra='forbid',allow_inf_nan=False)
     id: str=Field(min_length=1)
@@ -110,10 +117,23 @@ class TransferScheme(BaseModel):
     pickup_pu: float=Field(default=.9,gt=0,le=1.5)
     detection_delay_s: float=Field(default=.1,gt=0,le=60)
     dead_time_s: float=Field(default=.05,gt=0,le=60)
+    return_policy: AutomaticReturn | None=None
+    initial_primary_measurement_available: bool=True
+    initial_reserve_measurement_available: bool=True
+
+    @model_serializer(mode='wrap')
+    def serialize(self,handler):
+        data=handler(self)
+        if self.return_policy is None:data.pop('return_policy',None)
+        for side in ('primary','reserve'):
+            key='initial_'+side+'_measurement_available'
+            if getattr(self,key):data.pop(key,None)
+        return data
 
     @model_validator(mode='after')
     def hysteresis(self):
         if self.pickup_pu<=self.dropout_pu or self.primary_breaker_id==self.reserve_breaker_id:raise ValueError('transfer requires hysteresis and distinct breakers')
+        if self.return_policy is not None and self.return_policy.dropout_pu>=self.pickup_pu:raise ValueError('return dropout must be below recovery pickup')
         return self
 
 
@@ -144,10 +164,14 @@ class NetworkAutomation(BaseModel):
         for b in breakers:visit(b)
         if any(r.breaker_id not in breakers for r in self.relays):raise ValueError('relay requires a known breaker')
         if any(t.primary_breaker_id not in breakers or t.reserve_breaker_id not in breakers for t in self.transfers):raise ValueError('transfer requires known breakers')
+        for t in self.transfers:
+            if t.return_policy is not None and any(q.id!=t.id and {t.primary_breaker_id,t.reserve_breaker_id}&{q.primary_breaker_id,q.reserve_breaker_id} for q in self.transfers):
+                raise ValueError('automatic return requires exclusive transfer-breaker ownership')
         return self
 
 
-AUTOMATION_EVENTS={'generator_close','source_open','source_close','breaker_open','breaker_close','relay_reset','ats_reset','relay_measurement_lost','relay_measurement_restored'}
+TRANSFER_MEASUREMENT_EVENTS={f'transfer_{side}_measurement_{action}' for side in ('primary','reserve') for action in ('lost','restored')}
+AUTOMATION_EVENTS={'generator_close','source_open','source_close','breaker_open','breaker_close','relay_reset','ats_reset','relay_measurement_lost','relay_measurement_restored','return_reset','return_cancel','generator_thermal_reset'}|TRANSFER_MEASUREMENT_EVENTS
 
 
 def validate_automation(network,topology,settings):
@@ -174,12 +198,17 @@ def validate_automation(network,topology,settings):
                 errors.append('transfer supply voltage must match its controlled supply port; use an explicit node for local PT sensing')
     lookup={(b.target_kind,b.target_id):b.id for b in p.breakers};breakers={b.id for b in p.breakers};seen=set()
     for e in settings.events:
+        if e.kind=='generator_thermal_reset':
+            if not any(q.generator_id==e.equipment_id and q.reset_level is not None for q in settings.generator_thermal):errors.append('thermal reset requires a known stator-I2 passport with explicit reset_level')
+            if ('generator',e.equipment_id) not in lookup:errors.append('thermal reset requires a configured generator actuator')
         if e.kind in {'source_open','source_close','generator_close','line_close'}:
             kind=e.kind.split('_')[0]
             if (kind,e.equipment_id) not in lookup:errors.append('new source/generator command requires a configured actuator')
         if e.kind in {'breaker_open','breaker_close'} and e.equipment_id not in breakers:errors.append('unknown breaker command')
         if e.kind in {'relay_reset','relay_measurement_lost','relay_measurement_restored'} and e.equipment_id not in {r.id for r in p.relays}:errors.append('unknown relay reset')
+        if e.kind in {'return_reset','return_cancel'} and not any(t.id==e.equipment_id and t.return_policy is not None for t in p.transfers):errors.append('return command requires an enabled return policy')
         if e.kind=='ats_reset' and e.equipment_id not in {t.id for t in p.transfers}:errors.append('unknown transfer reset')
+        if e.kind in TRANSFER_MEASUREMENT_EVENTS and e.equipment_id not in {t.id for t in p.transfers}:errors.append('unknown transfer measurement target')
         key=None
         if e.kind in {'breaker_open','breaker_close'}:key=e.equipment_id
         elif e.kind.endswith(('_open','_close')):
@@ -226,8 +255,13 @@ class NetworkAutomationBank:
         self.relays=sorted(self.p.relays,key=lambda x:x.id);self.transfers=sorted(self.p.transfers,key=lambda x:x.id)
         self.offset=offset;self.end=offset+len(self.relays)+len(self.transfers);self.active=[False]*len(self.relays);self.tripped=[False]*len(self.relays)
         self.ats_active=[False]*len(self.transfers);self.ats_latched=[False]*len(self.transfers);self.initialized=False;self.in_service=False;self.available={p.id:p.measurement_available for p in self.relays}
+        self.transfer_available={p.id:dict(primary=p.initial_primary_measurement_available,reserve=p.initial_reserve_measurement_available) for p in self.transfers}
+        self.measured_transfers={e.equipment_id for e in model.settings.events if e.kind in TRANSFER_MEASUREMENT_EVENTS}
+        self.measured_transfers.update(p.id for p in self.transfers if not p.initial_primary_measurement_available or not p.initial_reserve_measurement_available)
         self.queue=[];self.keys=set();self.failure_announced=set();self.opened_at={};self.manual_inhibit=set();self.shots={id_:0 for id_ in self.breakers}
         self.open_attempts={id_:0 for id_ in self.breakers};self.close_attempts={id_:0 for id_ in self.breakers}
+        from power_grid_env import automatic_return
+        automatic_return.configure(self)
         self.targets={(b.target_kind,b.target_id):b.id for b in self.breakers.values()}
         self.gen_index={g.id:i for i,g in enumerate(model.generators)};self.bus_index={b:i for i,b in enumerate(model.bus_names)}
         for b in self.breakers.values():
@@ -293,9 +327,16 @@ class NetworkAutomationBank:
                 self.active[i]=not on;event_log.append(dict(time_s=float(time),kind='network_relay_pickup' if not on else 'network_relay_dropout',equipment_id=p.id))
         for i,p in enumerate(self.transfers):
             if self.ats_latched[i]:continue
+            if not self.transfer_available[p.id]['primary']:
+                if self.ats_active[i]:
+                    self.ats_active[i]=False;event_log.append(dict(time_s=float(time),kind='transfer_detection_suspended',equipment_id=p.id,reason='primary_measurement_unavailable'))
+                continue
             value=self.supply(p.primary_voltage,state,voltage);threshold=p.pickup_pu if self.ats_active[i] else p.dropout_pu
             if (not self.ats_active[i] and value<threshold-1e-12) or (self.ats_active[i] and value>threshold+1e-12):
                 self.ats_active[i]=not self.ats_active[i];event_log.append(dict(time_s=float(time),kind='transfer_voltage_lost' if self.ats_active[i] else 'transfer_voltage_restored',equipment_id=p.id))
+
+        from power_grid_env import automatic_return
+        automatic_return.refresh(self,time,state,event_log)
 
     def derivatives(self,time,state,voltage):
         result=np.zeros(self.end-self.offset)
@@ -304,10 +345,16 @@ class NetworkAutomationBank:
             if self.tripped[i]:continue
             if self.active[i]:
                 value,valid=self.measurement(p,state,voltage)
-                if valid:result[i]=1/p.time_multiplier_s if p.kind=='undervoltage' else 1/iec_operate_time(value,p.pickup,p.curve,p.time_multiplier_s)
+                # The pickup/dropout guards own definite-time activation. Testing
+                # current against pickup again introduces a discontinuous RHS at
+                # the localized root (roundoff can put it just below pickup),
+                # and incorrectly freezes the clock inside the hysteresis band.
+                if valid:result[i]=1/p.time_multiplier_s if p.kind=='undervoltage' or p.curve=='definite' else 1/iec_operate_time(value,p.pickup,p.curve,p.time_multiplier_s)
             else:result[i]=-state[self.offset+i]/p.reset_s
         for i,p in enumerate(self.transfers):
-            if not self.ats_latched[i]:result[len(self.relays)+i]=1/p.detection_delay_s if self.ats_active[i] else -state[self.offset+len(self.relays)+i]/p.detection_delay_s
+            if not self.ats_latched[i]:result[len(self.relays)+i]=1/p.detection_delay_s if self.ats_active[i] and self.transfer_available[p.id]['primary'] else -state[self.offset+len(self.relays)+i]/p.detection_delay_s
+        from power_grid_env import automatic_return
+        automatic_return.derivatives(self,state,result)
         return result
 
     def guards(self,state):
@@ -322,22 +369,34 @@ class NetworkAutomationBank:
                 add(('network_trip',i),trip,1)
         for i,p in enumerate(self.transfers):
             if self.ats_latched[i]:continue
+            if not self.transfer_available[p.id]['primary']:continue
             threshold=p.pickup_pu if self.ats_active[i] else p.dropout_pu
             def voltage(time,x,i=i,p=p,threshold=threshold):return threshold-self.supply(p.primary_voltage,x,self.model.electrical(x)[0])
             add(('transfer_pickup',i),voltage,-1 if self.ats_active[i] else 1)
             if self.ats_active[i]:
                 def due(time,x,i=i):return x[self.offset+len(self.relays)+i]-1.
                 add(('transfer_trip',i),due,1)
+        from power_grid_env import automatic_return
+        automatic_return.guards(self,ids,guards)
         return ids,guards
 
     def enqueue(self,time,kind,id_,cause):
         key=(float(time),kind,id_)
         if key in self.keys:return
-        self.keys.add(key);priority={'open':0,'failure':1,'transfer':2,'close':3}[kind];heapq.heappush(self.queue,(float(time),priority,kind,id_,cause))
+        self.keys.add(key);priority={'open':0,'failure':1,'transfer':2,'return_connect':2,'close':3}[kind];heapq.heappush(self.queue,(float(time),priority,kind,id_,cause))
 
     def request(self,id_,closed,time,cause,event_log):
         b=self.breakers[id_];delay=b.closing_delay_s if closed else b.opening_delay_s
         if cause=='manual' and not closed:self.manual_inhibit.add(id_)
+        if cause=='manual':
+            # An authored/manual operation owns a coincident slot already
+            # requested by automatic return. Cancelling the policy must not
+            # erase the operator's independent operation through queue dedup.
+            kind='close' if closed else 'open';deadline=float(time+delay)
+            promoted=[q for q in self.queue if q[0]==deadline and q[2]==kind and q[3]==id_ and q[4].startswith('automatic_return:')]
+            if promoted:
+                self.queue=[q for q in self.queue if q not in promoted];heapq.heapify(self.queue)
+                self.keys.discard((deadline,kind,id_))
         self.enqueue(time+delay,'close' if closed else 'open',id_,cause)
         event_log.append(dict(time_s=float(time),kind='breaker_close_requested' if closed else 'breaker_open_requested',equipment_id=id_,cause=cause,due_s=float(time+delay)))
 
@@ -356,6 +415,9 @@ class NetworkAutomationBank:
                 event_log.append(dict(time_s=float(time),kind='transfer_started',equipment_id=p.id));self.request(p.primary_breaker_id,False,time,'transfer:'+p.id,event_log)
                 self.enqueue(time+self.breakers[p.primary_breaker_id].opening_delay_s+p.dead_time_s,'transfer',p.id,'transfer:'+p.id)
 
+        from power_grid_env import automatic_return
+        automatic_return.apply(self,roots,time,state,event_log)
+
     def next_deadline(self,limit):return min(float(limit),self.queue[0][0]) if self.queue else float(limit)
     def due(self,time):return bool(self.queue and self.queue[0][0]<=time+64*np.finfo(float).eps*max(1.,abs(time)))
 
@@ -363,6 +425,10 @@ class NetworkAutomationBank:
         for other in self.interlocks[b.id]:
             if self.position(self.breakers[other]):return dict(allowed=False,reason='interlocked_breaker_closed',interlock_id=other)
         if time-self.opened_at.get(b.id,-math.inf)<b.minimum_open_s-1e-12:return dict(allowed=False,reason='minimum_open_time')
+        for p in self.transfers:
+            if b.id in (p.primary_breaker_id,p.reserve_breaker_id):
+                for side in ('primary','reserve'):
+                    if not self.transfer_available[p.id][side]:return dict(allowed=False,reason=side+'_measurement_unavailable')
         m=self.model;voltage=m.electrical(state)[0];dv,f=voltage_derivatives(m,time,state);fn=m.network.frequency_hz
         def frequency(v,change):return float(fn+(change/v).imag/(2*math.pi)) if abs(v)>=b.synchronism.minimum_live_voltage_pu else None
         if b.target_kind=='source':left=m.source_e*m.source_scale;right=voltage[m.source_bus];lf=fn;rf=frequency(right,dv[m.source_bus])
@@ -384,9 +450,13 @@ class NetworkAutomationBank:
                 operations+=1
                 if operations>256:raise ValueError('network automation cascade budget exceeded')
                 deadline,_,kind,id_,cause=heapq.heappop(self.queue);self.keys.discard((deadline,kind,id_))
+                from power_grid_env import automatic_return
+                if automatic_return.service(self,time,state,event_log,kind,id_,cause):continue
                 if kind=='transfer':
                     p=next(p for p in self.transfers if p.id==id_)
                     if self.position(self.breakers[p.primary_breaker_id]):event_log.append(dict(time_s=float(time),kind='transfer_blocked',equipment_id=id_,reason='primary_not_open'));continue
+                    invalid=next((side for side in ('primary','reserve') if not self.transfer_available[p.id][side]),None)
+                    if invalid is not None:event_log.append(dict(time_s=float(time),kind='transfer_blocked',equipment_id=id_,reason=invalid+'_measurement_unavailable'));continue
                     voltage=self.model.electrical(state)[0]
                     if self.supply(p.reserve_voltage,state,voltage)<p.pickup_pu:event_log.append(dict(time_s=float(time),kind='transfer_blocked',equipment_id=id_,reason='reserve_unavailable'));continue
                     self.request(p.reserve_breaker_id,True,time,cause,event_log);continue
@@ -396,6 +466,7 @@ class NetworkAutomationBank:
                         self.failure_announced.add(id_);event_log.append(dict(time_s=float(time),kind='breaker_failure_confirmed',equipment_id=id_))
                         for backup in sorted(b.backup_breaker_ids):self.request(backup,False,time,'breaker_failure:'+id_,event_log)
                     continue
+                if not automatic_return.gate(self,time,state,event_log,kind,b,cause):continue
                 closed=kind=='close'
                 if closed and cause!='manual' and id_ in self.manual_inhibit:
                     event_log.append(dict(time_s=float(time),kind='breaker_close',equipment_id=id_,outcome='blocked',reason='manual_inhibit',cause=cause));continue
@@ -405,12 +476,14 @@ class NetworkAutomationBank:
                 if closed:
                     self.close_attempts[id_]+=1;check=self.check_close(b,time,state)
                     if not check['allowed']:
-                        event_log.append(dict(time_s=float(time),kind='breaker_close',equipment_id=id_,outcome='blocked',synchronism=check,cause=cause));continue
+                        event_log.append(dict(time_s=float(time),kind='breaker_close',equipment_id=id_,outcome='blocked',synchronism=check,cause=cause))
+                        automatic_return.close_failed(self,time,state,event_log,cause,'close_'+check['reason']);continue
                 else:self.open_attempts[id_]+=1
                 failed=b.fail_close if closed else b.fail_open
                 if failed:
                     event_log.append(dict(time_s=float(time),kind='breaker_'+kind,equipment_id=id_,outcome='failed_to_operate',cause=cause))
                     if not closed:self.enqueue(time+b.breaker_failure_delay_s,'failure',id_,cause)
+                    else:automatic_return.close_failed(self,time,state,event_log,cause,'primary_close_failed')
                     continue
                 previous=self.position(b);self.set_position(b,closed)
                 try:self.model.factorize()
@@ -425,12 +498,21 @@ class NetworkAutomationBank:
                     self.failure_announced.discard(id_)
                     for i,p in enumerate(self.relays):
                         if p.breaker_id==id_:self.tripped[i]=False;self.active[i]=False;state[self.offset+i]=0.
+                automatic_return.applied(self,time,state,event_log,b,closed,cause)
                 self.model.after_discrete_commands(time,state,event_log)
             self.refresh(time,state,event_log)
         finally:self.in_service=False
 
     def command(self,event,time,state,event_log):
         kind=event.kind;id_=event.equipment_id
+        if kind=='generator_thermal_reset':return self.model.generator_thermal.reset(id_,state)
+        from power_grid_env import automatic_return
+        result=automatic_return.command(self,event,time,state,event_log)
+        if result is not None:return result
+        if kind in TRANSFER_MEASUREMENT_EVENTS:
+            side='primary' if kind.startswith('transfer_primary_') else 'reserve';valid=kind.endswith('_restored')
+            self.transfer_available[id_][side]=valid
+            return dict(outcome='applied',measurement_available=valid,measurement_side=side)
         if kind in {'breaker_open','breaker_close'}:
             self.request(id_,kind=='breaker_close',time,'manual',event_log);return dict(outcome='queued')
         if kind in {'line_open','line_close','generator_open','generator_close','source_open','source_close'}:
@@ -449,6 +531,9 @@ class NetworkAutomationBank:
         for p in self.relays:names.extend(p.id+'.'+k for k in ['progress','active','latched','measurement','measurement_valid'])
         for id_ in self.breakers:names.extend(id_+'.'+k for k in ['closed','open_attempts','close_attempts','reclose_shots','manual_inhibit'])
         for p in self.transfers:names.extend(p.id+'.'+k for k in ['progress','active','latched'])
+        for id_ in sorted(self.measured_transfers):names.extend(id_+'.'+k for k in ['primary_measurement_valid','reserve_measurement_valid','primary_voltage_pu','reserve_voltage_pu'])
+        from power_grid_env import automatic_return
+        names.extend(automatic_return.channels(self))
         names.extend([self.model.network.sources[0].id+'.connected','network.zero_reference_components'])
         return names
 
@@ -461,6 +546,12 @@ class NetworkAutomationBank:
             for key,x in [('closed',self.position(p)),('open_attempts',self.open_attempts[id_]),('close_attempts',self.close_attempts[id_]),('reclose_shots',self.shots[id_]),('manual_inhibit',id_ in self.manual_inhibit)]:out[id_+'.'+key]=float(x)
         for i,p in enumerate(self.transfers):
             for key,x in [('progress',state[self.offset+len(self.relays)+i]),('active',self.ats_active[i]),('latched',self.ats_latched[i])]:out[p.id+'.'+key]=float(x)
+            if p.id in self.measured_transfers:
+                for side,port in [('primary',p.primary_voltage),('reserve',p.reserve_voltage)]:
+                    valid=self.transfer_available[p.id][side];out[p.id+'.'+side+'_measurement_valid']=float(valid)
+                    out[p.id+'.'+side+'_voltage_pu']=self.supply(port,state,voltage) if valid else 0.
+        from power_grid_env import automatic_return
+        out.update(automatic_return.signals(self,state))
         out[self.model.network.sources[0].id+'.connected']=float(self.model.source_connected);out['network.zero_reference_components']=float(len(self.model.zero_reference_buses))
         return out
 

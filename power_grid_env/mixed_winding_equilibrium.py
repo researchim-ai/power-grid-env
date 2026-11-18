@@ -18,6 +18,8 @@ from power_grid_env.rms_winding import operator
 def initialize_mixed_electrothermal(model, *, require_stable=True):
     s=model.settings;p=s.operating_point;bank=model.windings
     motors=s.motors;n=len(motors);ng=len(model.generators)
+    if any(h.initialization!='equilibrium' for h in s.generator_thermal):
+        return None,dict(reason='joint_equilibrium_requires_generator_I2_replica_equilibrium')
     from power_grid_env.mixed_winding import supported
     if not supported(s) or not 1<=ng<=8 or not np.all(model.gen_connected):
         return None,dict(reason='mixed_heat_requires_connected_fixed_field_GENCLS')
@@ -135,8 +137,18 @@ def initialize_mixed_electrothermal(model, *, require_stable=True):
             if bad:return None,dict(reason='generator_initial_q_limit',generators=bad)
             if np.any(abs(internal)<1e-8):return None,dict(reason='zero_generator_internal_voltage')
             model.gen_voltage=abs(internal);model.gen_mechanical=(internal*np.conj(ig)).real
+            failure=model.generator_thermal.initialize(x,ig)
+            if failure:return None,failure
+            failure=model.generator_heat.initialize(x,ig,voltage[model.gen_buses],stationary=True)
+            if failure:return None,failure
+            from power_grid_env.generator_energy import initialize_power
+            initialize_power(model,x,ig,voltage[model.gen_buses])
+            failure=model.controllers.initialize(x,voltage[model.gen_buses],model.gen_voltage,model.gen_mechanical,p.tolerance)
+            if failure:return None,failure
+            heat_signals=model.generator_heat.signals(x,ig,voltage[model.gen_buses])
+            if any(abs(heat_signals[p.generator_id+'.heat.net_heat_w'])>max(1e-7,1e-10*model.gen_passports[i].rated_va) for i,(address,p) in model.generator_heat.entries.items()):return None,dict(reason='generator_stationary_heat_power_residual_w')
             actual=model.physical_rhs(0.,x) if hasattr(model,'physical_rhs') else model.rhs(0.,x)
-            dynamic=float(max(abs(actual[:model.rotor_end])))
+            dynamic=float(max(abs(actual[:model.generator_heat.end])))
             heat_errors={m.id:[float(actual[bank.addresses[i].start]*m.winding_thermal.stator_capacity_j_per_k),float(actual[bank.addresses[i].start+1]*m.winding_thermal.rotor_capacity_j_per_k)] for i,m in enumerate(motors)}
             if any(max(abs(v) for v in heat_errors[m.id])>max(1e-7,1e-10*m.rated_va) for m in motors):
                 rejected.append(dict(reason='stationary_heat_power_residual_w',errors=heat_errors));continue
@@ -146,16 +158,16 @@ def initialize_mixed_electrothermal(model, *, require_stable=True):
                 rejected.append(dict(reason='original_ODE_or_KCL_residual',maximum=dynamic));continue
             if any(x[address]>=motors[i].thermal.trip_level for i,address in model.thermal_indices.items()):
                 return None,dict(reason='initial_thermal_relay_limit')
-            dimension=model.rotor_end
+            dimension=model.generator_heat.end
             spectrum=model.physical_integration_jacobian().jacobian_actions(0.,x,np.eye(dimension),model.electrical(x))
             eigenvalues=np.linalg.eigvals(spectrum);alpha=float(max(eigenvalues.real))
             if not np.isfinite(eigenvalues).all() or require_stable and alpha>=-1e-9:
                 rejected.append(dict(reason='unstable_or_near_axis_electrothermal_equilibrium',spectral_abscissa_per_s=alpha));continue
             return x.copy(),dict(mode='mixed_GENCLS_electrothermal_equilibrium',winding_state='equilibrium',thermal_state=p.thermal_state,
-                evaluations=calls,analytic_reduced_jacobian=True,stationary_heat_balance_error_w=heat_errors,maximum_stationary_heat_error_w=max(abs(v) for values in heat_errors.values() for v in values),checked_dynamic_residual_per_s=dynamic,network_kcl_residual_pu=kcl,
+                evaluations=calls,analytic_reduced_jacobian=True,generator_heat_initial=heat_signals,stationary_heat_balance_error_w=heat_errors,maximum_stationary_heat_error_w=max(abs(v) for values in heat_errors.values() for v in values),checked_dynamic_residual_per_s=dynamic,network_kcl_residual_pu=kcl,
                 static_dynamic_voltage_mismatch_pu=voltage_error,full_physical_spectral_abscissa_per_s=alpha,
                 physical_eigenvalues_per_s=[[float(e.real),float(e.imag)] for e in eigenvalues],
-                stationary_stability_scope='connected motor EMF/cages/speed/winding temperatures/I2 replica and fixed-field GENCLS rotor states at fixed topology; no hybrid relay/contactor stability certificate',
+                stationary_stability_scope='connected motor EMF/cages/speed/winding temperatures/I2 replica and GENCLS rotor and declared TGOV1/SEXS states at fixed topology; no hybrid relay/contactor stability certificate',
                 generator_constraints=2*ng,generator_initial={g.id:dict(internal_voltage_pu=float(abs(internal[i])),delta_rad=float(np.angle(internal[i])),mechanical_power_pu=float(model.gen_mechanical[i]),p_w=float(power[i].real),q_var=float(power[i].imag),model='GENCLS') for i,g in enumerate(model.generators)},motor_initial={m.id:dict(speed_pu=float(x[3*i+2]),current_pu=float(abs(current[i])),
                     stator_temperature_c=float(x[bank.addresses[i].start]),rotor_temperature_c=float(x[bank.addresses[i].start+1])) for i,m in enumerate(motors)},
                 initial_temperature_policy='passport temperatures are bounded search seeds, not imposed stationary values',

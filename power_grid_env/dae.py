@@ -17,14 +17,15 @@ def mode_token(model):
     control_arrays=tuple((name,tuple(sorted(getattr(controls,name).items())) if isinstance(getattr(controls,name),dict) else np.asarray(getattr(controls,name)).tobytes()) for name in ['pref','vref'] if hasattr(controls,name))
     boundary=tuple(sorted(getattr(getattr(model,'controller_boundaries',None),'active',{}).items()))
     field=np.asarray(getattr(getattr(model,'field_thermal',None),'field_enabled',[])).tobytes()
+    thermal_latches=tuple(tuple(sorted(getattr(getattr(model,bank,None),'latched',{}).items())) for bank in ('generator_thermal','field_thermal'))
     uel=tuple(sorted(getattr(getattr(model,'underexcitation_limiters',None),'regions',{}).items()))
     oel=tuple((i,tuple(sorted(k.context.items()))) for i,(_,_,k) in getattr(getattr(model,'oel2c',None),'entries',{}).items())
     automation=getattr(model,'automation',None)
     automation_mode=None if automation is None else (
         bool(automation.initialized),bool(model.source_connected),tuple(sorted(model.lines.closed.items())),
         tuple(automation.active),tuple(automation.tripped),tuple(automation.ats_active),tuple(automation.ats_latched),
-        tuple(sorted(automation.available.items())),tuple(sorted(automation.manual_inhibit)),tuple(sorted(automation.queue)))
-    return model.lu,float(model.source_scale),arrays,control_arrays,boundary,field,uel,oel,automation_mode
+        tuple(sorted(automation.available.items())),tuple((id_,tuple(sorted(flags.items()))) for id_,flags in sorted(automation.transfer_available.items())),tuple(sorted(automation.manual_inhibit)),tuple((k,automation.return_mode[k],automation.return_active[k],automation.return_generation[k]) for k in sorted(automation.return_mode)),tuple(sorted(automation.queue)))
+    return model.lu,float(model.source_scale),arrays,control_arrays,boundary,field,uel,oel,automation_mode,thermal_latches
 
 
 @dataclass(frozen=True)
@@ -79,6 +80,8 @@ def injection_product(model,state,directions,*,voltage=None):
         indices=np.arange(len(model.settings.motors))*3
         np.add.at(result,model.motor_buses,model.motor_y[:,None]*(u[indices]+1j*u[indices+1]))
     if not hasattr(model,'generators'):return result
+    from power_grid_env.generator_stator import admittance,impedance,impedance_product
+    gy=admittance(model,state);dz=impedance_product(model,u);gz=impedance(model,state)
     eg=model.generator_internal(state)
     for i,m in enumerate(model.gen_passports):
         delta=model.gen_offset+2*i;de=1j*eg[i]*u[delta]
@@ -90,7 +93,10 @@ def injection_product(model,state,directions,*,voltage=None):
         elif i in model.controllers.avr:
             _,field=model.controllers.avr[i];p=m.exciter
             de=de+clip_slope(state[field],p.EMIN,p.EMAX)*u[field]*np.exp(1j*state[delta])
-        result[model.gen_buses[i]]+=model.active_gen_y[i]*de
+        result[model.gen_buses[i]]+=gy[i]*de
+        if np.any(dz[i]):
+            vg=model.electrical(state)[0] if voltage is None else voltage
+            result[model.gen_buses[i]]-=gy[i]/gz[i]*dz[i]*(eg[i]-vg[model.gen_buses[i]])
     return result
 
 

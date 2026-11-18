@@ -1,0 +1,10 @@
+{
+ "corpus":"reports/qwen35-early-train-final-2026-11-17/corpus",
+ "corpus_manifest":"ec9747d77d6d2094b898f57e418a91ce249213fc61047c913bc67c6c67320398",
+ "source":"reports/three-motor-train-2026-11-17",
+ "source_manifest":"313011c1b01545687d1aee6e953c2784d6163ecda722c7172fb775265a936c55",
+ "accepted":"reports/three-motor-accepted-2026-11-17",
+ "accepted_manifest":"9a94819dc23957225171f6599e8c60fa4c76e4e597b48573c5323a7949c3ff37",
+ "si":"reports/three-motor-si-reference-2026-11-17",
+ "si_manifest":"0a13a47c1b098a32cc58f5ac550a22a39af8190ccba0c039863e5d3d5d6abe14"
+}

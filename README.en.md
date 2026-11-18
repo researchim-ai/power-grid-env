@@ -1,5 +1,13 @@
 # power-grid-env
 
+**AC PF:** PQ/I/ZIP loads, static PQ/PV generators, reactive limits and reverse flows in the [engineering web workspace](web/README.md).
+
+**Engineering web workspace:** manual RMS grids with transformers, passive PF/finite-Z three-phase faults, static switch states and deenergized sections. [Startup and profile scope](web/README.md).
+
+**Manual network editor:** buses, lines and motor parameters → validation → local SciPy simulation → Grid Studio. Bounded balanced radial motor-start profile. [Startup and scope](web/README.md).
+
+**Grid Studio:** interactive single-line diagrams, power flows, equipment inspection and waveforms from12 recorded physical studies. [Local startup and scope](web/README.md).
+
 Two-cage RMS R(T):individual cage currents/losses,common rotor heating and
 joint stationary equilibrium —
 [R06.40:120 runs and66 independent trajectories](cases/two-cage-winding/README.md).
@@ -746,3 +754,120 @@ Motor-only coupled networks now support consistent loaded initialization without
 Coupled **GENCLS + two-cage R(T) motor**: [examples and reproducible checks](cases/mixed-winding/README.md). Fixed excitation, consistent P/V initialization at passport temperatures, Radau and DAE; AVR and joint thermal equilibrium are outside this profile.
 
 Joint **P/V/load/heat equilibrium for GENCLS + R(T) motor**: [examples and checks](cases/mixed-equilibrium/README.md). Winding temperatures follow heat balance; the full physical spectrum is checked. Generator heating and AVR remain outside this profile.
+
+**TGOV1/SEXS with motor winding heat**: [examples and independent checks](cases/controlled-winding/README.md). Three controller combinations and both initial-temperature policies are supported; qualification covers controller interiors.
+
+Hybrid **TGOV1/SEXS limits with motor R(T)**: [examples and independent reference](cases/limiter-winding/README.md). Upper/lower entry, holding, immediate and delayed release are checked for the declared pulse studies.
+
+**Generator stator I² protection replica with motor R(T)**: [profile and examples](cases/generator-replica/README.md). Equilibrium/specified initialization and tripping are supported; this is not a generator temperature model.
+
+**Generator I² trip and post-opening dynamics**: [independent checks and examples](cases/generator-trip/README.md). Covers trip timing, removal of the generator network stamp, controller feedback and motor response.
+
+**Generator temperature in C**: [thermal observer and examples](cases/generator-heat/README.md). Includes copper heat, simplified core heat, capacity and ambient removal; these losses are not yet fed back into GENCLS electrical/shaft power.
+
+**Closed generator energy budget**: [lumped-loss profile](cases/generator-energy/README.md). Shaft power covers grid output, heat and kinetic-energy changes, with independent integral checks. A separate stator-resistance voltage drop is not modeled.
+
+**Generator electrical stator R(T)**: [profile and independent checks](cases/generator-stator/README.md). Temperature changes the Norton stamp and voltage drop; electrical copper loss matches winding heat without a duplicate shaft debit.
+
+**Combined stator R(T), heat and I² generator trip**: [examples and independent reference](cases/stator-trip/README.md). Checks branch removal, motor response, persistent core heat and the post-opening energy budget.
+
+**Stator R(T), heat and TGOV1/SEXS limits together**: [examples and independent checks](cases/stator-limiter/README.md). Covers two-sided entry/hold/release, command ordering and integral energy balance.
+
+**Unified stator R(T), limiter and I²-trip scenarios**: [examples and independent checks](cases/hybrid-stator/README.md). Covers trips during saturation, immediate/delayed SEXS release and energy balance; connection-mode invalidation of the network cache was fixed.
+
+**Network OC and delayed breaker in the combined thermal profile**: [three protection race outcomes](cases/network-stator/README.md). Independently checks delayed opening, failed operation and a stale command after I² protection. Fixes a definite-time clock discontinuity at pickup; 32 Radau/DAE runs are compared with 16 independent trajectories.
+
+**Generator-fed islands and checked reconnection**: [source/line opening and synchronism](cases/topology-stator/README.md). 40 Radau/DAE runs are compared with 20 independent trajectories, including staged dead-receiver restoration and blocked closing. Also fixes the temperature-dependent generator-current derivative used by inverse-time relay products.
+
+**Active protection with islands and automatic reclose**: [four OC curves, UV, breaker backup and retrip](cases/protected-topology/README.md). 72 Radau/DAE runs and 36 independent trajectories check relay reset/rearming, one-shot limits and distinct closing-block causes. Fixes inverse-time evaluation immediately above pickup.
+
+**Measurement loss and standby-generator transfer**: [CT/PT continuity and break-before-make ATS](cases/measurement-transfer/README.md). 88 Radau/DAE runs are compared with 44 independent trajectories, covering reset memory, restoration, transfer blocking and short-dip cancellation. Standby initialization explicitly uses passport temperatures.
+
+**Measurements during ATS and guarded return**: [supply-PT validity, retry and return lifecycle](cases/transfer-lifecycle/README.md). Adds explicit supply-measurement availability and rechecks it at delayed closing. Independently checks reserve CT, scheduled manual return and persistent operator inhibition after reset. Fixes ordering of rounded actuator deadlines and authored commands across Radau/DAE.
+
+**Automatic return after ATS**: [nine scenarios and reproducible commands](cases/automatic-return/README.md).
+Opt-in uninterrupted hysteretic recovery dwell, delayed execution rechecks,
+break-before-make, owned pending-return cancellation/reset and forward ATS
+fallback after another primary failure. 88 Radau/DAE runs, 44 independent
+trajectories and 176 comparisons; 384 targeted tests and 108 same-host installed
+checks. Coincident manual operations survive policy cancellation. A bounded
+authored warm-standby profile, not manufacturer qualification.
+
+**Initial PT faults and generator thermal reconnection lockout**: [eight scenarios](cases/standby-interlocks/README.md).
+Passport-defined initial observation availability preserves the physical network.
+Independent checks cover I2 cooling with retained manual/ATS reconnection lockout:
+80 Radau/DAE runs, 40 SI trajectories, 160 comparisons. Hot restoration retains
+its expected voltage-window rejection. Qualification is limited to the authored
+radial system and prescribed temperature sets.
+
+**Explicit thermal reset and agent diagnostic episodes**: [eight scenarios and exports](cases/thermal-recovery/README.md).
+Stator-I2 acknowledgement requires an open generator and a declared cooldown
+threshold; heat memory, minimum open time and operator inhibition persist.
+80 Radau/DAE runs, 40 independent trajectories, 160 comparisons; 520 targeted
+tests and 96 installed checks. Eighteen train-only scripted tool episodes and
+strict diagnostic scoring replay bitwise from the wheel. Model training,
+visual observations and independent evaluation remain open.
+
+**Agent-proposed network construction and public single-line views**: [examples and CLI](cases/network-construction/README.md).
+Catalog-only route, cable and transformer choices emit an actual radial LV
+network. Shared feeders aggregate downstream demand; every mandatory motor
+study runs on three grids. 45 new dynamic runs, 17 OpenDSS fault solutions,
+157 non-skipped targeted tests and 54 installed replays. Proposed SVG/JSON views
+contain no verdicts or future events. Qualified profile: 3/4 nodes, 2/3 motors,
+400 V, 4 s; broader construction and VLM training remain open.
+
+**Multimodal observations and Qwen3.5 inputs**: [corpus, exports and API](cases/design-multimodal/README.md).
+Sixty observations combine a single-line diagram, equipment passport and
+past-only voltage/current/speed plots. Three topology families form 36/12/12
+train/dev/test splits. Twelve portable exports support image/text/combined/
+schematic modes; SFT is restricted to train. The native Qwen processor passed
+69 examples, including 39 assistant-only loss masks and 30 held-out prompts.
+A strict batched diagnostic reward callback is available. All 246 targeted tests
+passed without skips; corpus and exports replay bitwise from an installed wheel.
+At R06.62, weights, training, agent accuracy and closed-loop GRPO were still unqualified.
+
+**Current learning target: Qwen3.5-0.8B**: [qualified CPU profile and commands](cases/design-multimodal/QWEN35_08B.md).
+Local weights, config, tokenizer, processor and shard index are hash-pinned.
+Two qualification steps and a separate SFT pass over all 36 train-image
+observations completed. Only 100,352 final-decoder adapter parameters train;
+vision and backbone weights remain frozen. The saved safetensors checkpoint
+restores native logits bitwise. All 285 targeted tests passed (39 new), with
+52 tests repeated in the native environment. This is a bounded CPU adapter
+profile; full-model tuning and engineering-agent quality remain unqualified.
+
+**0.8B adapter assessment and the next curriculum**: [protocol, results and commands](cases/design-multimodal/QWEN35_08B_EVAL.md).
+On unchanged dev inputs, the adapter scores 12/48 versus base 0/48: image 2/12,
+text and combined 5/12 each, schematic 0/12. All replies are now schema-valid,
+but indication and insufficiency errors persist. A public numeric parser scores
+12/12 on text/combined; the LLM has not reached engineering reliability.
+Separate schema exports prepare 144 train views and 48 dev prompts; all 192
+native packs pass and the installed rebuild is bitwise identical. All 340
+targeted tests passed. At R06.64 no schema-curriculum model had been trained; test stayed closed.
+
+**R06.65 — mixed SFT and safe training continuation**:
+[recipe and complete outcome](cases/design-multimodal/QWEN35_MIXED.md).
+Qwen3.5-0.8B completes144 train views/36 updates with token-weighted accumulation;
+adapter, AdamW and RNG checkpoints use no pickle. Native installed continuation
+is bitwise exact;four predetermined generation replays match. All400 unique
+targeted tests pass,135 also in the native stack. Same-schema dev accuracy is
+9/48 versus base0/48, but46 replies are nearly constant and an uninformed class
+prior scores15/48: **semantic quality is not established**, schematic0/12.
+This prompt protocol differs from the earlier12/48 raw experiment.
+A separate **untrained**252-view train extension adds real early disconnected
+states;300 native packs pass in each runtime and the full installed data rebuild
+is byte-identical. Original dev/test frames and public dev inputs stay exact;
+test evaluation and closed-loop physics GRPO remain future work.
+
+**R06.66 — new three-motor physics and training data**:
+[scope, independent reference and reproduction](cases/design-multimodal/THREE_MOTOR.md).
+Three motors on two load sites pass36 new native studies;12 independent SI
+trajectories cover all three grids. Each rotating motor is opened/reclosed;
+six new OpenDSS passive fault checks and36 matched-BLAS installed replays pass.
+Corpus v2 preserves actual per-frame physics revisions. **636 SFT views** with
+two/three motors and48 unchanged dev prompts are prepared,not trained;684 native
+packs per runtime and the complete installed rebuild pass. All425 targeted
+tests pass,160 also in the native stack. Seen-train probes score3/12 and show
+wrong refusal despite low aggregate loss. Semantic loss and a bounded training
+pilot come next;test stays closed and engineering-agent quality is unqualified.
+
+Agent Lab provides bounded construction, diagnosis and repair episodes with a real PF checker: 21 cases across three topology-disjoint splits. Seven training cases are exposed locally. Teacher success is not learned-agent performance; exports are not gold SFT. See [local setup and limitations](web/README.md).

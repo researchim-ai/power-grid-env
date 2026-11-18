@@ -241,6 +241,15 @@ def main(argv: list[str] | None = None) -> int:
     cmd=sub.add_parser('verify-equipment-design',help='recompute coupled equipment evidence and owner anchors')
     cmd.add_argument('directory');cmd.add_argument('--input');cmd.add_argument('--proposal')
 
+    cmd=sub.add_parser('network-design',help='construct owner-constrained radial network and run mandatory three-grid studies')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--proposal',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('verify-network-design',help='recompile and verify constructed network with owner anchors')
+    cmd.add_argument('directory');cmd.add_argument('--input');cmd.add_argument('--proposal')
+    cmd=sub.add_parser('compile-network-design',help='review proposed topology, catalog derivation and static checks before running')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--proposal',required=True);cmd.add_argument('--out',required=True)
+    cmd=sub.add_parser('network-design-view',help='export a public proposed single-line SVG and observation without verdicts or future events')
+    cmd.add_argument('--input',required=True);cmd.add_argument('--proposal',required=True);cmd.add_argument('--out',required=True)
+
     cmd=sub.add_parser('electrical-sizing',help='bounded owner-catalog cable and transformer checks')
     cmd.add_argument('--input',required=True);cmd.add_argument('--proposal',required=True);cmd.add_argument('--out',required=True)
     cmd=sub.add_parser('verify-electrical-sizing',help='recompute sizing and optional owner anchors')
@@ -488,6 +497,26 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(r,ensure_ascii=False));return 0 if r['equipment']['meets_declared_requirements'] else 2
         except (ValueError,OSError,RuntimeError,ArithmeticError) as exc:
             print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+    if args.command in {'network-design','verify-network-design','compile-network-design','network-design-view'}:
+        from power_grid_env.network_design import compile_network,run_network_design,verify_network_design
+        from power_grid_env.study_artifacts import read_json,encoded
+        try:
+            if args.command=='network-design-view':
+                from power_grid_env.network_design_view import export_view
+                r=export_view(read_json(args.input),read_json(args.proposal),args.out)
+                print(json.dumps(r,ensure_ascii=False));return 0
+            if args.command=='verify-network-design':
+                r=verify_network_design(args.directory,expected_task=read_json(args.input) if args.input else None,expected_proposal=read_json(args.proposal) if args.proposal else None)
+            elif args.command=='network-design':r=run_network_design(read_json(args.input),read_json(args.proposal),args.out)
+            else:
+                task,proposal,plan,c=compile_network(read_json(args.input),read_json(args.proposal))
+                r=dict(compilation=c,plan=plan.model_dump(mode='json'))
+                with Path(args.out).open('xb') as file:file.write(encoded(r))
+                print(json.dumps(dict(compiled=True,static_pass=c['static']['passes_declared_checks']),ensure_ascii=False));return 0
+            print(json.dumps(r,ensure_ascii=False));return 0 if r['meets_declared_requirements'] else 2
+        except (ValueError,OSError,RuntimeError,ArithmeticError) as exc:
+            print(json.dumps(dict(passed=False,error=str(exc)),ensure_ascii=False));return 2
+
     if args.command in {'equipment-design','verify-equipment-design'}:
         from power_grid_env.equipment_design import run_equipment,verify_equipment
         from power_grid_env.study_artifacts import read_json

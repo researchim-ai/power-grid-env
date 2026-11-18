@@ -26,13 +26,14 @@ from power_grid_env.generator_underexcitation import UnderexcitationLimiter,Mini
 from power_grid_env.excitation_takeover import TakeoverOELPassport,TakeoverOELBank
 from power_grid_env.exciter_esst1a import ESST1APassport,ESST1ABank,PORTS as ESST_PORTS
 from power_grid_env.generator_oel2c import OEL2CPassport,OEL2CBank,CHANNELS as OEL2C_CHANNELS
+from power_grid_env.generator_heat import GeneratorHeat,GeneratorHeatBank
 from power_grid_env.generator_thermal import GeneratorThermalProtection,GeneratorThermalBank
 from power_grid_env.model import validate_network_rules
 from power_grid_env.topology import compile_topology
 
 
 class CoupledEvent(InductionEvent):
-    kind: Literal['source_voltage','motor_open','motor_close','load_torque_scale','generator_mechanical_step','governor_step','voltage_reference_step','line_open','line_close','generator_open','generator_close','source_open','source_close','breaker_open','breaker_close','relay_reset','ats_reset','relay_measurement_lost','relay_measurement_restored']
+    kind: Literal['source_voltage','motor_open','motor_close','load_torque_scale','generator_mechanical_step','governor_step','voltage_reference_step','line_open','line_close','generator_open','generator_close','source_open','source_close','breaker_open','breaker_close','relay_reset','ats_reset','relay_measurement_lost','relay_measurement_restored','transfer_primary_measurement_lost','transfer_primary_measurement_restored','transfer_reserve_measurement_lost','transfer_reserve_measurement_restored','return_reset','return_cancel','generator_thermal_reset']
 
     @model_validator(mode='after')
     def value_kind(self):
@@ -69,7 +70,7 @@ class ESST1APortEvent(BaseModel):
 
 
 class CoupledSettings(InductionSettings):
-    winding_generator_profile: Literal['GENCLS_fixed_field'] | None=None
+    winding_generator_profile: Literal['GENCLS_fixed_field','GENCLS_TGOV1_SEXS','GENCLS_TGOV1_SEXS_I2','GENCLS_TGOV1_SEXS_HEAT','GENCLS_TGOV1_SEXS_ENERGY','GENCLS_TGOV1_SEXS_STATOR_RT'] | None=None
     network_automation: NetworkAutomation | None=None
     monitored_lines: list[str] | None=Field(default=None,max_length=20000)
     takeover_oels: list[TakeoverOELPassport] = Field(default_factory=list,max_length=32)
@@ -78,6 +79,7 @@ class CoupledSettings(InductionSettings):
     oel2c_limiters: list[OEL2CPassport] = Field(default_factory=list,max_length=32)
     underexcitation_limiters: list[UnderexcitationLimiter] = Field(default_factory=list,max_length=32)
     overexcitation_limiters: list[OverexcitationLimiter] = Field(default_factory=list,max_length=32)
+    generator_heat: list[GeneratorHeat] = Field(default_factory=list,max_length=32)
     generator_thermal: list[GeneratorThermalProtection] = Field(default_factory=list,max_length=32)
     faults: list[CoupledFault] = Field(default_factory=list,max_length=100)
     machines: list[ClassicalMachine | RoundRotorMachine] = Field(min_length=0,max_length=32)
@@ -87,6 +89,7 @@ class CoupledSettings(InductionSettings):
     def canonical_coupled_settings(self,handler):
         data=super().canonical_solver_settings(handler)
         if self.winding_generator_profile is None:data.pop('winding_generator_profile',None)
+        if not self.generator_heat:data.pop('generator_heat',None)
         if self.monitored_lines is None:data.pop('monitored_lines',None)
         if self.network_automation is None:data.pop('network_automation',None)
         return data
@@ -95,7 +98,7 @@ class CoupledSettings(InductionSettings):
     def supported_machines(self):
         limit=8 if self.capacity_profile=='standard' else 32
         if len(self.machines)>limit:raise ValueError('generator capacity exceeds selected profile')
-        for items in [self.takeover_oels,self.esst1a_exciters,self.generator_field_thermal,self.oel2c_limiters,self.underexcitation_limiters,self.overexcitation_limiters,self.generator_thermal]:
+        for items in [self.takeover_oels,self.esst1a_exciters,self.generator_field_thermal,self.oel2c_limiters,self.underexcitation_limiters,self.overexcitation_limiters,self.generator_thermal,self.generator_heat]:
             if len(items)>limit:raise ValueError('controller/protection capacity exceeds selected profile')
         if any(m.model not in {'GENCLS','GENROU'} or (m.stabilizer is not None and ((m.exciter is None and m.stabilizer_connection!='external_ESST1A') or m.stabilizer.MODE!=1)) or (m.exciter is not None and m.exciter.EMIN<0) for m in self.machines):
             raise ValueError('coupled profile accepts GENCLS/GENROU with optional TGOV1/SEXS/IEEEST MODE=1 and nonnegative field limit')
@@ -117,13 +120,13 @@ def validate_coupled(network,settings):
     projection=network.model_copy(deep=True)
     removed={g.terminal_id for g in projection.generators}
     projection.generators=[];projection.terminals=[t for t in projection.terminals if t.id not in removed]
-    motor_settings=InductionSettings.model_validate({k:v for k,v in settings.model_dump(mode='json').items() if k not in {'winding_generator_profile','network_automation','monitored_lines','machines','faults','generator_thermal','overexcitation_limiters','generator_field_thermal','underexcitation_limiters','oel2c_limiters','esst1a_exciters','takeover_oels'}} | {
+    motor_settings=InductionSettings.model_validate({k:v for k,v in settings.model_dump(mode='json').items() if k not in {'generator_heat','winding_generator_profile','network_automation','monitored_lines','machines','faults','generator_thermal','overexcitation_limiters','generator_field_thermal','underexcitation_limiters','oel2c_limiters','esst1a_exciters','takeover_oels'}} | {
         'events':[e.model_dump(mode='json') for e in settings.events if e.kind not in {'generator_mechanical_step','governor_step','voltage_reference_step','generator_open','esst1a_port_set',*AUTOMATION_EVENTS,*LINE_EVENTS}]})
     scope=validate_induction(projection,motor_settings,validate_rules=False)
     errors.extend(scope['errors'])
     if any(m.winding_thermal for m in settings.motors) and (network.generators or settings.machines):
         from power_grid_env.mixed_winding import supported
-        if not supported(settings):errors.append('RMS winding generators require explicit GENCLS_fixed_field profile without controllers/generator thermal states')
+        if not supported(settings):errors.append('RMS winding generators require explicit supported GENCLS winding profile without PSS/generator thermal states')
     if any(m.model not in {'GENCLS','GENROU'} or (m.stabilizer is not None and ((m.exciter is None and m.stabilizer_connection!='external_ESST1A') or m.stabilizer.MODE!=1)) or (m.exciter is not None and m.exciter.EMIN<0) for m in settings.machines):
         errors.append('only GENCLS/GENROU with optional TGOV1/SEXS/IEEEST MODE=1 and nonnegative field limit')
     for machine in settings.machines:
@@ -202,6 +205,12 @@ def validate_coupled(network,settings):
         if p.generator_id not in generators:errors.append('unknown generator thermal target')
         if p.initialization=='specified' and p.initial_level>=p.trip_level:errors.append('initial generator thermal level must be below trip')
     if len(set(thermal_ids))!=len(thermal_ids) or len(thermal_ids)>generator_limit:errors.append('unique generator thermal passports required')
+    if settings.generator_heat:
+        if settings.winding_generator_profile not in {'GENCLS_TGOV1_SEXS_HEAT','GENCLS_TGOV1_SEXS_ENERGY','GENCLS_TGOV1_SEXS_STATOR_RT'} or not any(m.winding_thermal for m in settings.motors):errors.append('generator heat observer requires explicit mixed winding HEAT profile')
+        ids=[p.generator_id for p in settings.generator_heat]
+        if len(ids)!=len(set(ids)) or any(id not in generators for id in ids):errors.append('unique existing generator heat targets required')
+    if settings.winding_generator_profile in {'GENCLS_TGOV1_SEXS_ENERGY','GENCLS_TGOV1_SEXS_STATOR_RT'} and {p.generator_id for p in settings.generator_heat}!={g.id for g in network.generators}:errors.append('energy profile requires one heat node per generator')
+    if settings.winding_generator_profile=='GENCLS_TGOV1_SEXS_STATOR_RT' and settings.operating_point is not None and settings.operating_point.winding_state=='passport' and any(p.initialization!='specified' for p in settings.generator_heat):errors.append('stator R(T) passport mode requires specified generator temperatures;use joint heat equilibrium otherwise')
     buses=[]
     for gen in network.generators:
         if gen.terminal_id not in topology.terminal_bus:
@@ -264,7 +273,7 @@ def validate_coupled(network,settings):
     thermal_crossings=sum(m.thermal is not None for m in settings.motors)+len(settings.generator_thermal)+len(settings.generator_field_thermal)
     samples=(2*settings.maximum_contactor_transitions if any(m.contactor for m in settings.motors) else 0)+math.ceil(settings.duration_s/settings.step_s)+2*(len(scheduled_times)+thermal_crossings)+2
     motor_channels=sum(8*bool(m.winding_thermal)+2*bool(m.winding_thermal and m.model=='double_cage')+16+8*(m.model=='double_cage')+2*bool(m.thermal)+6*bool(m.contactor) for m in settings.motors)
-    if samples*(2*len(topology.buses)+motor_channels+42*len(settings.machines)+2*len(settings.generator_thermal)+(len(OEL2C_CHANNELS)+2)*len(settings.oel2c_limiters)+40*len(settings.esst1a_exciters)+8*len(settings.underexcitation_limiters)+6*len(settings.overexcitation_limiters)+4*len(settings.generator_field_thermal)+4*len(settings.faults)+9*(len(network.lines) if settings.monitored_lines is None else len(settings.monitored_lines))+6)>2_000_000:
+    if samples*(2*len(topology.buses)+motor_channels+(20 if settings.winding_generator_profile=='GENCLS_TGOV1_SEXS_STATOR_RT' else 15 if settings.winding_generator_profile=='GENCLS_TGOV1_SEXS_ENERGY' else 5)*len(settings.generator_heat)+42*len(settings.machines)+2*len(settings.generator_thermal)+(len(OEL2C_CHANNELS)+2)*len(settings.oel2c_limiters)+40*len(settings.esst1a_exciters)+8*len(settings.underexcitation_limiters)+6*len(settings.overexcitation_limiters)+4*len(settings.generator_field_thermal)+4*len(settings.faults)+9*(len(network.lines) if settings.monitored_lines is None else len(settings.monitored_lines))+6)>2_000_000:
         errors.append('coupled trace exceeds two-million-scalar budget')
     return {'ok':not errors,'errors':errors,'model':'coupled_synchronous_generators_single_or_double_cage_motors',
             'limitations':['positive sequence and algebraic stators','GENCLS/GENROU with fixed field, SEXS, or declared five-state ESST1A; IEEEST MODE=1 with SEXS or explicitly connected ESST1A',
@@ -283,6 +292,8 @@ class CoupledNetwork(InductionNetwork):
         self.gen_passports=[passports[g.id] for g in self.generators]
         self.gen_buses=np.array([lookup[self.topology.terminal_bus[g.terminal_id]] for g in self.generators],dtype=int)
         self.gen_z=np.array([complex(m.armature_r_pu,m.x_d_subtransient_pu) if m.model=='GENROU' else 1j*m.x_d_prime_pu for m in self.gen_passports])
+        from power_grid_env.generator_stator import seed as seed_stator
+        seed_stator(self)
         self.gen_factors=np.array([m.rated_va/network.s_base_va for m in self.gen_passports])
         self.gen_y=self.gen_factors/self.gen_z
         self.gen_connected=np.ones(len(self.generators),dtype=bool)
@@ -299,14 +310,15 @@ class CoupledNetwork(InductionNetwork):
         self.oel2c=OEL2CBank(self,self.underexcitation_limiters.end)
         self.esst1a=ESST1ABank(self,self.oel2c.end)
         self.takeover_oel=TakeoverOELBank(self,self.esst1a.end)
+        self.generator_heat=GeneratorHeatBank(self,self.takeover_oel.end)
         self.controller_boundaries=ControllerBoundaries(self)
         self.fault_passports={f.id:f for f in settings.faults}
         self.fault_buses={f.id:lookup[self.topology.node_to_bus[f.node_id]] for f in settings.faults}
         self.active_faults=set()
         self.fault_y=np.zeros(len(self.bus_names),dtype=complex)
         self.lines=CoupledLines(network,self.topology,self.base_y,self.bus_names,allow_islands=bool(settings.network_automation and settings.network_automation.allow_islands))
-        if settings.network_automation is not None:self.automation=NetworkAutomationBank(self,self.takeover_oel.end)
-        self.dynamic_end=self.automation.end if self.automation is not None else self.takeover_oel.end
+        if settings.network_automation is not None:self.automation=NetworkAutomationBank(self,self.generator_heat.end)
+        self.dynamic_end=self.automation.end if self.automation is not None else self.generator_heat.end
         self.generator_ready=True
         self.factorize()
 
@@ -361,7 +373,8 @@ class CoupledNetwork(InductionNetwork):
 
     def generator_currents(self,state,voltage):
         internal=self.generator_internal(state)
-        return np.where(self.gen_connected,(internal-voltage[self.gen_buses])/self.gen_z,0j)
+        from power_grid_env.generator_stator import impedance
+        return np.where(self.gen_connected,(internal-voltage[self.gen_buses])/impedance(self,state),0j)
 
     def generator_terminal_voltage(self,state,voltage):
         return np.where(self.gen_connected,voltage[self.gen_buses],self.generator_internal(state))
@@ -372,7 +385,8 @@ class CoupledNetwork(InductionNetwork):
         rhs=np.zeros(len(self.bus_names),dtype=complex)
         rhs[self.source_bus]=self.source_y*self.source_e*self.source_scale
         np.add.at(rhs,self.motor_buses,self.motor_y*internal)
-        np.add.at(rhs,self.gen_buses,self.active_gen_y*self.generator_internal(state))
+        from power_grid_env.generator_stator import admittance
+        np.add.at(rhs,self.gen_buses,admittance(self,state)*self.generator_internal(state))
         return self.windings.injection(state,rhs) if self.windings is not None else rhs
 
     def electrical(self,state):
@@ -402,12 +416,14 @@ class CoupledNetwork(InductionNetwork):
         derivative=np.array([[2*math.pi*self.network.frequency_hz*(rotor[i,1]-1),
             (mechanical[i]-electrical[i]-m.damping_pu*(rotor[i,1]-1))/(2*m.inertia_s)]
             for i,m in enumerate(self.gen_passports)])
+        from power_grid_env.generator_energy import rotor_rates
+        rotor_rates(self,state,generator_current,self.generator_terminal_voltage(state,voltage),mechanical,electrical,derivative)
         result=self.controller_boundaries.derivative(np.r_[motor,derivative.ravel(),
             self.round_rotors.derivatives(state,rotor,generator_current,self.field_voltage(state,voltage,generator_current)),
             self.controllers.derivatives(state,rotor[:,1],self.generator_terminal_voltage(state,voltage),self.excitation_bias(state),continuous_guards=self.settings.event_policy=='coincident_roots_v1'),
             self.generator_thermal.derivatives(state,generator_current),
             self.excitation_limiters.derivatives(state,generator_current),
-            self.field_thermal.derivatives(state,generator_current),self.underexcitation_limiters.derivatives(state,voltage,generator_current),self.oel2c.derivatives(state,generator_current),self.esst1a.derivatives(state,voltage,generator_current),self.takeover_oel.derivatives(state,generator_current)])
+            self.field_thermal.derivatives(state,generator_current),self.underexcitation_limiters.derivatives(state,voltage,generator_current),self.oel2c.derivatives(state,generator_current),self.esst1a.derivatives(state,voltage,generator_current),self.takeover_oel.derivatives(state,generator_current),self.generator_heat.derivatives(state,generator_current,self.generator_terminal_voltage(state,voltage))])
         if self.automation is not None:
             extra=self.automation.derivatives(time,state,voltage) if include_automation else np.zeros(self.automation.end-self.automation.offset)
             return np.r_[result,extra]
@@ -430,7 +446,8 @@ class CoupledNetwork(InductionNetwork):
     def initial_state(self):
         state=np.r_[np.zeros(self.electrical_size),[m.thermal.initial_level for m in self.settings.motors if m.thermal],np.zeros(self.motor_state_end-self.electrical_size-len(self.thermal_indices)),
                      np.tile([0.,1.],len(self.generators)),np.zeros(getattr(self,'dynamic_end',self.takeover_oel.end)-self.rotor_end)]
-        return self.windings.initialize(state) if self.windings is not None else state
+        if self.windings is not None:self.windings.initialize(state)
+        return self.generator_heat.seed(state)
 
     def scheduled_events(self):
         transitions=[FaultTransition(t,kind,f.id) for f in self.settings.faults
@@ -444,7 +461,10 @@ class CoupledNetwork(InductionNetwork):
     def additional_channels(self):
         channels = {g.id+'.'+key:[] for g in self.generators for key in ('delta','omega','rotor_frequency_hz','p_w','q_var','current_pu',
             'bus_voltage_pu','electrical_power_pu','mechanical_power_pu','connected','terminal_voltage_pu','terminal_angle_rad')}
-        channels.update({key:[] for key in self.controllers.channel_names()+self.round_rotors.channel_names()+self.generator_thermal.channel_names()+self.excitation_limiters.channel_names()+self.field_thermal.channel_names()+self.underexcitation_limiters.channel_names()+self.oel2c.channel_names()+self.esst1a.channel_names()+self.takeover_oel.channel_names()})
+        from power_grid_env.generator_energy import channel_names as energy_channels
+        from power_grid_env.generator_stator import channels as stator_channels
+        channels.update({key:[] for key in energy_channels(self)+stator_channels(self)})
+        channels.update({key:[] for key in self.controllers.channel_names()+self.round_rotors.channel_names()+self.generator_thermal.channel_names()+self.excitation_limiters.channel_names()+self.field_thermal.channel_names()+self.underexcitation_limiters.channel_names()+self.oel2c.channel_names()+self.esst1a.channel_names()+self.takeover_oel.channel_names()+self.generator_heat.channel_names()})
         channels.update({key:[] for key in self.lines.channels(self.settings.monitored_lines)})
         channels.update({f.id+'.'+key:[] for f in self.settings.faults for key in ['active','current_a','p_w','q_var']})
         if self.automation is not None:channels.update({key:[] for key in self.automation.channels()})
@@ -463,6 +483,11 @@ class CoupledNetwork(InductionNetwork):
         signals.update(self.takeover_oel.signals(state,current))
         signals.update(self.lines.signals(voltage,self.settings.monitored_lines))
         signals.update(self.generator_thermal.signals(state))
+        signals.update(self.generator_heat.signals(state,current,terminal))
+        from power_grid_env.generator_energy import signals as energy_signals
+        signals.update(energy_signals(self,state,current,voltage,mechanical))
+        from power_grid_env.generator_stator import signals as stator_signals
+        signals.update(stator_signals(self,state,voltage,current))
         signals.update(self.excitation_limiters.signals(state,current))
         signals.update(self.field_thermal.signals(state,current))
         signals.update(self.underexcitation_limiters.signals(state))
@@ -619,6 +644,7 @@ class CoupledNetwork(InductionNetwork):
                 'controller_boundary_model':'continuous entry/release guards shared across coupled profiles',
                 'overexcitation_model':'GENROU Xad*Ifd divided by explicit rated reaction; filtered magnitude and bounded droop AVR error subtraction; engineering model, not IEEE/OEM OEL',
                 'overexcitation_passports':[p.model_dump(mode='json') for p in self.settings.overexcitation_limiters],
+                'generator_heat_model':{'kind':'dimensioned_one_node_coupled_heat' if self.settings.winding_generator_profile in {'GENCLS_TGOV1_SEXS_ENERGY','GENCLS_TGOV1_SEXS_STATOR_RT'} else 'dimensioned_one_node_thermal_observer','electrical_or_shaft_loss_feedback':self.settings.winding_generator_profile in {'GENCLS_TGOV1_SEXS_ENERGY','GENCLS_TGOV1_SEXS_STATOR_RT'},'electrical_resistance_stamp':self.settings.winding_generator_profile=='GENCLS_TGOV1_SEXS_STATOR_RT','rotor_power_model':'constant shaft power with H*S*omega^2' if self.settings.winding_generator_profile in {'GENCLS_TGOV1_SEXS_ENERGY','GENCLS_TGOV1_SEXS_STATOR_RT'} else 'legacy GENCLS','temperature_resistance_feedback':'electrical stator and heat law' if self.settings.winding_generator_profile=='GENCLS_TGOV1_SEXS_STATOR_RT' else 'heat law only','passports':[p.model_dump(mode='json') for p in self.settings.generator_heat]},
                 'generator_thermal_model':'own-rated-RMS-current squared first-order replica; latched electrical opening; no temperature or OEM relay equivalence',
                 'generator_thermal_passports':[p.model_dump(mode='json') for p in self.settings.generator_thermal],
                 'initialization':('PV-initialized synchronous generators; ' if self.generators else 'motor-only network; ')+('loaded motor equilibrium' if self.settings.operating_point else 'cold motor flux and speed'),

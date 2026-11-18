@@ -1,0 +1,9 @@
+{
+  "seed": 42,
+  "rank": 4,
+  "alpha": 8.0,
+  "learning_rate": 0.0002,
+  "gradient_clip": 1.0,
+  "indices": [0, 1],
+  "threads": 4
+}

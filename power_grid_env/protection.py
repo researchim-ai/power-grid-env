@@ -28,8 +28,11 @@ def iec_operate_time(current_a: float, pickup_a: float, curve: str, time_multipl
         raise ValueError(
             f"кривая {curve} не входит в реализованный набор IEC 60255-151 таблица A.1"
         ) from exc
-    ratio = current_a / pickup_a
-    return time_multiplier * k_factor / (ratio**alpha - 1.0)
+    # Keep a positive excess at the pickup root. For the standard-inverse
+    # exponent (0.02), ratio**alpha can round to exactly 1 even with I>pickup.
+    # Subtracting 1 then spuriously divides by zero during root-localized runs.
+    log_ratio = math.log1p((current_a - pickup_a) / pickup_a)
+    return time_multiplier * k_factor / math.expm1(alpha * log_ratio)
 
 
 def directional_allows(voltage: complex, current: complex, forward: bool = True) -> bool:

@@ -1,11 +1,25 @@
 schema: power-grid-env.agent-designer-roadmap/v1
-updated_on: '2026-11-13'
+updated_on: '2026-11-18'
 status: in_progress
 economics: excluded
 github_and_ci: forbidden_by_owner
 role: Multimodal industrial power-supply and motor-drive design engineer
 scope: Preliminary simulation-verified design; no automatic normative approval
 current_status: plans/CURRENT_STATUS.md
+learning_target:
+  model: Qwen/Qwen3.5-0.8B
+  selected_by_owner: true
+  metadata: requirements/qwen35-08b-local-target.json
+  metadata_sha256: e763c82b7f4f1d5acea273b43674e45bcdb949fc91d000cb7537ea54b5fa0262
+  recipe: cases/design-multimodal/QWEN35_08B.md
+  evaluation_recipe: cases/design-multimodal/QWEN35_08B_EVAL.md
+  mixed_recipe: cases/design-multimodal/QWEN35_MIXED.md
+  mixed_profile: cases/design-multimodal/qwen35-08b-mixed-profile.json
+  two_step_plan: cases/design-multimodal/qwen35-08b-adapter-plan.json
+  epoch_plan: cases/design-multimodal/qwen35-08b-train-epoch.json
+  base_generation_plan: cases/design-multimodal/qwen35-08b-generation-plan.json
+  profile: CPU_float32_final_decoder_seven_projection_rank4_adapters_frozen_vision_and_backbone
+  previous_target: Qwen3.5-4B_processor_qualification_retained_as_historical_evidence
 rules:
   - Physical component availability is not qualification of its combinations
   - Owner defines requirements, scenarios, catalog and hidden acceptance cases
@@ -51,44 +65,369 @@ blocks:
     acceptance: Feasible and infeasible real studies, no requirement editing, immutable criteria and all mandatory scenarios checked
   - id: DES-02
     status: in_progress
-    progress: Offline field-level catalog provenance and deterministic passport derivation; Nexans cable and historical Trihal family extracts with explicit owner assumptions; four catalog variants (36 grid runs), four independent OpenDSS fault solutions, 178 selected tests and nine installed-wheel replays pass
-    evidence: reports/equipment-catalog-delivery-2026-11-13/delivery.json
+    progress: R06.61 shares field-level passport derivation with owner-constrained radial construction;independent nodal screening and17 OpenDSS node-fault solutions check multi-feeder path impedances;45 new mandatory grid runs and108 rebuilt legacy corpus grids pass their declared verdicts;catalog installation/OEM limitations remain
+    evidence: reports/network-construction-delivery-2026-11-16/delivery.json
     limitations: Mixed manufacturer/reference/owner data, unverified transformer withstand and cable AC/X assumptions, single-circuit air profile at 50 Hz; no normative approval, OEM authentication, archived source bytes or independent dynamic reference
     remaining_extensions: [verified_transformer_withstand_and_cable_AC_parameters, broader_installation_tables_and_compatibility, broader_external_sizing_cases, multi_feeder_and_transformer_topologies, fault_and_protection_coordination]
     scope: Traceable equipment catalog and electrical sizing
     acceptance: Cable ampacity/derating and voltage drop, transformer loading and fault duty each independently checked; explicit installation inputs and unsupported scope
     dependencies: [DES-01]
   - id: DES-03
-    status: open
+    status: in_progress
+    progress: R06.66 adds two new P3 three-motor two-load-site projects with6 scenarios each;36 three-grid runs,6 passive OpenDSS faults and12 independent SI dynamic trajectories covering all36 grids and8 motor channels;star accepted_chain rejected;all6 per-motor running open_close cases qualified and36 installed replays bitwise with matched BLAS environment
+    evidence: reports/three-motor-delivery-2026-11-17/delivery.json
+    qualified_profile: One400V50Hz secondary-referred transformer,passive radial3_4nodes2_3single-cage motors4s;new3motors_on2loadsites with prescribed running open_close and passive thermal replica independently SI checked;no general meshed_unbalanced_dynamic oracle
+    remaining_extensions: [multiple_transformers_and_voltage_levels, section_and_reserve_construction, approved_load_site_addition_removal, protection_and_fault_coordination, broader_catalog_and_dynamic_families]
     scope: Network construction and redesign actions
     acceptance: Valid connectivity, sources and voltage levels; catalog-only edits; transformer/feeder/section selection; deterministic replay
     dependencies: [DES-02]
   - id: DES-04
     status: in_progress
-    progress: R06.42 adds joint fixed-field GENCLS P/V plus motor speed and two-node winding heat equilibrium;32 native runs16 independent trajectories64 comparisons8 refusals and25 installed checks pass;863 targeted tests pass;generator controls and generator heating remain open
-    evidence: reports/mixed-equilibrium-delivery-2026-11-15/delivery.json
-    qualified_extensions: [full_three_inverse_families_all16_corners_Radau_DAE, original_EI_rejection_and_requirement_preserving_backup_TMS_revision, measured_fixed_RMS_fault_duty, bounded_composite_store_integrity, passive_continuous_cold_hot_current_bounds, frozen_motor_EMF_phasor_fault_attribution, per_port_sampled_I2t_Radau_DAE_three_grids, nominal_running_motor_VI_UV_fault_extinction_and_normal_modes, running_VI_009_0155_all16_corners, selected_voltage_temperature_boundaries_with_matched_rejections, full_declared_temperature_voltage_relay_endpoint_product, seeded_interior_probes, independent_normal_winding_DOP853_trajectories, consistent_loaded_motor_only_initialization, independent_loaded_T_roots_and_programmed_fault_trajectories, nominal_loaded_protection_endpoint_profile, independent_loaded_OC_UV_failure_CT_loss_endpoint_trajectories, selected_four_curve_reset_restore_thermal_hybrid_trajectories, full_winding_hot_initial_states_and_electrothermal_fault_feedback, frozen_initial_R_dynamic_feedback_controls, RMS_single_cage_R_T_state_dependent_Norton_and_analytic_DAE, independent_RMS_electrothermal_protection_trajectories, joint_RMS_electrothermal_equilibrium_and_physical_spectrum, watts_scaled_heat_balance_and_capacity_independence, RMS_two_cage_R_T_and_common_rotor_heat, independent_two_SI_rotor_flux_trajectories, cage_permutation_and_identical_parallel_limit, bounded_fixed_field_GENCLS_two_cage_R_T_coupling, independent_SI_PV_motor_swing_root_and_trajectories, joint_GENCLS_PV_motor_heat_equilibrium_and_full_physical_spectrum]
-    limitations: Loaded profile1/2/4 symmetric single-double-cage motors and nominal protected endpoint studies; two heat policies explicit; independent differential reference covers loaded single-cage normal/programmed faults plus bounded OC/UV/failure/CT-loss endpoint profile and selected four-curve/reset/thermal extensions; full-winding hot R(T) qualified only for authored radial phase cases;RMS fixed-initial-T and joint stationary thermal modes limited to connected motor-only single/two-cage with common rotor temperature;full physical spectrum is fixed-topology only;fixed-field mixed GENCLS qualified only on authored radial passport-temperature and joint motor heat cases;no controlled-generator or generator heating/3-plus-cage thermal or separate cage temperatures or full hybrid/global stability, loaded tolerance envelope or OEM qualification; four optional ANDES cases unavailable
-    remaining_extensions: [broader_independent_hybrid_topologies_ATS_reclose_and_machine_families, continuous_uncertainty_and_adversarial_extrema, controlled_generator_and_generator_heat_profiles, three_plus_cage_thermal_profiles, separate_cage_thermal_nodes_and_material_coefficients, temperature_trip_and_RMS_thermal_selectivity, general_machine_fault_duty, mixed_curve_stage_coordination, instantaneous_and_reset_reclose_models, earth_faults_and_peak_duty, broader_topologies, external_ANDES_regressions]
+    progress: R06.60 adds explicit stator-I2 reset with retained heat_memory/operator inhibition, thermal opening timestamp/minimum-open enforcement and DAE latch identity;80 native40 independent trajectories160 comparisons96 installed checks520 targeted tests;prepares18 train-only diagnostic tool episodes with strict anchored scoring and bitwise installed export replay
+    evidence: reports/thermal-recovery-delivery-2026-11-16/delivery.json
+    qualified_extensions: [full_three_inverse_families_all16_corners_Radau_DAE, original_EI_rejection_and_requirement_preserving_backup_TMS_revision, measured_fixed_RMS_fault_duty, bounded_composite_store_integrity, passive_continuous_cold_hot_current_bounds, frozen_motor_EMF_phasor_fault_attribution, per_port_sampled_I2t_Radau_DAE_three_grids, nominal_running_motor_VI_UV_fault_extinction_and_normal_modes, running_VI_009_0155_all16_corners, selected_voltage_temperature_boundaries_with_matched_rejections, full_declared_temperature_voltage_relay_endpoint_product, seeded_interior_probes, independent_normal_winding_DOP853_trajectories, consistent_loaded_motor_only_initialization, independent_loaded_T_roots_and_programmed_fault_trajectories, nominal_loaded_protection_endpoint_profile, independent_loaded_OC_UV_failure_CT_loss_endpoint_trajectories, selected_four_curve_reset_restore_thermal_hybrid_trajectories, full_winding_hot_initial_states_and_electrothermal_fault_feedback, frozen_initial_R_dynamic_feedback_controls, RMS_single_cage_R_T_state_dependent_Norton_and_analytic_DAE, independent_RMS_electrothermal_protection_trajectories, joint_RMS_electrothermal_equilibrium_and_physical_spectrum, watts_scaled_heat_balance_and_capacity_independence, RMS_two_cage_R_T_and_common_rotor_heat, independent_two_SI_rotor_flux_trajectories, cage_permutation_and_identical_parallel_limit, bounded_fixed_field_GENCLS_two_cage_R_T_coupling, independent_SI_PV_motor_swing_root_and_trajectories, joint_GENCLS_PV_motor_heat_equilibrium_and_full_physical_spectrum, GENCLS_TGOV1_SEXS_motor_winding_coupling_interior_trajectories, bounded_two_sided_TGOV1_SEXS_entry_hold_release_independent_hybrid_reference, generator_stator_I2_replica_mixed_winding_initialization_and_pretrip_trajectories, independent_generator_I2_trip_and_post_opening_motor_controller_trajectories, dimensioned_one_node_generator_heat_observer_and_independent_SI_heat_balance, lumped_loss_GENCLS_shaft_kinetic_thermal_energy_integral_closure, electrical_generator_stator_R_T_joint_PV_heat_and_power_partition, combined_stator_R_T_heat_I2_trip_and_post_opening_energy_qualification, stator_R_T_heat_energy_TGOV1_SEXS_two_sided_limiter_qualification, unified_stator_heat_limiter_I2_trip_cascade_and_connection_cache_invalidation, combined_generator_port_definite_OC_delayed_breaker_I2_race_and_failure_confirmation, source_line_controlled_R_T_islands_and_checked_dead_live_reconnection, generator_inverse_OC_actual_impedance_temperature_and_partial_voltage_tangents, active_four_curve_generator_OC_UV_R_T_island_backup_one_shot_reclose_retrip_and_blocking, cancellation_safe_inverse_pickup_evaluation, CT_PT_availability_reset_memory_and_reclose_continuity, passport_temperature_warm_standby_source_generator_ATS_and_blocking, ATS_supply_PT_validity_detection_and_inflight_closing_recheck, reserve_CT_failure_during_ATS_and_operator_guarded_return, rounded_transfer_deadline_command_priority_and_standby_audit_labels, opt_in_automatic_return_uninterrupted_recovery_dwell_and_delayed_rechecks, primary_loss_after_reserve_open_forward_ATS_fallback, namespaced_pending_return_cancel_reset_and_coincident_manual_ownership, initial_supply_PT_masks_and_physical_initial_state_invariance, warm_standby_I2_latch_cooling_and_manual_ATS_reconnection_blocking, explicit_stator_I2_reset_retained_heat_and_retrip, thermal_open_time_minimum_open_and_DAE_latch_identity]
+    limitations: Loaded profile1/2/4 symmetric single-double-cage motors and nominal protected endpoint studies; two heat policies explicit; independent differential reference covers loaded single-cage normal/programmed faults plus bounded OC/UV/failure/CT-loss endpoint profile and selected four-curve/reset/thermal extensions; full-winding hot R(T) qualified only for authored radial phase cases;RMS fixed-initial-T and joint stationary thermal modes limited to connected motor-only single/two-cage with common rotor temperature;full physical spectrum is fixed-topology only;fixed-field mixed GENCLS qualified only on authored radial passport-temperature and joint motor heat cases;TGOV1/SEXS qualified only for authored interior and two-sided pulse radial cases;one-node generator temperature observer qualified on authored radial cases only;lumped shaft-loss energy coupling qualified on authored radial cases only;electrical stator R(T) qualified only on authored radial hold/fault cases;combined stator/I2 permanent generator opening qualified on authored radial cases only;stator R(T) limiter pulses qualified separately from generator-trip corpus;unified limiter and I2-trip cascades qualified only on authored pulse cases;generator-port definite OC and delayed-actuator/I2 races qualified only on authored combined radial cases;controlled source-line islands and manual synchrochecked reconnection qualified with inactive protection on authored radial cases;active four-curve OC and node UV with feeder-source topology and one-shot reclose qualified only on authored radial cases;CT_PT continuity with protection-reclose and separate passport-temperature warm-standby ATS qualified only on authored cases;supply-PT and reserve-CT failures during ATS plus scheduled manual return qualified on authored passport-temperature cases;opt-in automatic return and cancellation qualified only on bounded warm-standby authored cases;initial supply-PT masks and stator-I2 blocked reconnection qualified on authored warm-standby cases;explicit stator-I2 reset qualified only on authored warm-standby cases;no automatic_or_field_thermal_reset,primary_close_failure_fallback,multi-shot or3-plus-cage thermal or separate cage temperatures or full hybrid/global stability, loaded tolerance envelope or OEM qualification; four optional ANDES cases unavailable
+    remaining_extensions: [broader_independent_hybrid_topologies_ATS_reclose_and_machine_families, continuous_uncertainty_and_adversarial_extrema, public_stator_heat_parameter_anchors, primary_close_failure_fallback, broader_machine_family_reset_and_multi_shot_coordination, standby_joint_heat_initialization, generator_reconnection_thermal_latch_and_multi_shot_coordination, multiple_live_islands_and_adversarial_reconnection, fault_topology_coupled_controller_limits, three_plus_cage_thermal_profiles, separate_cage_thermal_nodes_and_material_coefficients, temperature_trip_and_RMS_thermal_selectivity, general_machine_fault_duty, mixed_curve_stage_coordination, instantaneous_and_reset_reclose_models, earth_faults_and_peak_duty, broader_topologies, external_ANDES_regressions]
     scope: Start/restart, faults, protection coordination and reserve design
     acceptance: Same candidate passes all required normal/disturbed modes; device duties and selectivity explicitly checked without inherited approval
     dependencies: [PHY-21, DES-03]
   - id: VIS-01
-    status: open
+    status: in_progress
+    ac_workspace: R06.72 AC_PF_PQ_I_ZIP_loads_and_static_PQ_PV_generators;explicit_windows_no_native_fallback;load_law_and_command_residual_checks;reverse_flow_Q_limit_and_dead_island;v5_migration;57JS62Python19HTTP;no_core_or_weight_update
+    passive_workspace: R06.71 native_OpenDSS_PF_finiteZ_3ph_fault;explicit_static_switch_line_lowering;mesh_and_dead_island_view;no_motor_equivalent_or_dynamic_trip;v4_migration;53JS47Python15HTTP;native_export_replay;no_core_or_weight_update
+    multivoltage_workspace: R06.70 explicit_LV_MV_profiles;per_node_voltage;two_winding_fixed_tap_transformers;four_vector_groups;both_side_currents_power_losses;native_StudySpec_export_separate_from_past_only_observation;v3_migration;43JS31Python9HTTP;no_core_solver_or_weight_update
+    engineering_workspace: R06.69 equipment catalog16families with explicit compatibility;object tree;64commands;constant_Z_two_cage_I2_trip;V2_migratesV1;37JS22Python7HTTP;all_equipment_UI_profiles_and_closed_loop_GRPO_remain_open
+    editor_stage: R06.68 manual radial grid editor with local SciPy API;autosave_history_JSON;16bus16motor10s bounded single_grid run;31 JS14 Python7 HTTP checks;no general equipment_meshed_grid_engineering_qualification
+    viewer_stage: R06.67 local Grid Studio;12 recorded studies;physical branch flows;exact event sides;prefix-only observation export;19 JS and3 Python tests;live solver_editor_meshed_GIS_large_graph_rendering remain open
+    progress: R06.66 prepares636 train_views from159 correlated prefixes21 traces,including96 new3-motor prefixes and per-ID rotating disconnections in old train P3 family;v2 corpus preserves actual physics revisions;48 public dev prompts and old heldout frames_pixels_targets unchanged;684 native packs per runtime and full installed rebuild exact;new data not trained
+    evidence: reports/three-motor-delivery-2026-11-17/delivery.json
+    limitations: Small authored400V3_4node2_3motor4s families with shared passports;train now covers2_3motor counts but heldout topology and equipment generalization remain limited;no new trained VLM quality,image counterfactual grounding or engineering qualification
+    remaining_extensions: [image_grounding_ablations, multimodal_tool_rollouts, independent_visual_evaluation, broader_equipment_and_topology_families]
     scope: Real single-line diagrams, passports and oscillograms as public VLM observations
     acceptance: Image-grounding ablations; no privileged labels; engineering report linked to model revision and physical traces
     dependencies: [DES-01]
   - id: LEARN-01
-    status: open
-    scope: Qwen3.5-4B multimodal SFT and physics-scored GRPO
+    status: in_progress
+    progress: R06.66 diagnoses seen-train failure3_of12 across fixed below_mixed_running IDs4modes;4 prefix_and_two_token_cache controls pass but semantic refusal flagNLL1.201 versus format0.026;prior mixed9_of48 semantic gate still fails;636-view corpus prepared_not_trained;425 regressions25new plus160 native-stack subset;no weight update
+    evidence: reports/three-motor-delivery-2026-11-17/delivery.json
+    limitations: Prior CPU final-decoder adapter remains nearly constant with0_of12 heldout refusal and0_of3 seen refusal;prefix/cache checks only4 cases_first2tokens;new636-view data not trained;no semantic_weighted_objective,full train generation accuracy,test evaluation,GPU or full-model tuning,engineering tool policy or closed-loop physics GRPO
+    remaining_extensions: [semantic_field_loss_and_weighted_resume_semantics, bounded_seen_case_overfit_and_generation_pilot, class_refusal_sampling_and_counterfactual_grounding, independently_pinned_636view_training_against_constant_numeric_controls, separately_pinned_constrained_decoding_baseline, frozen_test_evaluation, engineering_tool_rollouts, closed_loop_physics_scored_GRPO]
+    scope: Qwen3.5-0.8B multimodal SFT and physics-scored GRPO
     acceptance: Qualified multimodal loader and training step, structured tool episodes, measured improvement over base model and numerical/heuristic baselines with equal budgets
     dependencies: [VIS-01, DES-04]
   - id: EVAL-01
     status: open
+    preparation: R06.66 expands physics-qualified train data while preserving old heldout inputs;seen-train controls also fail so motor_count_OOD alone is insufficient;prior dev semantic gate failed9_of48 versus constant15_of48;new independent SI trajectories validate simulator profile,not designer-agent competence
     scope: Independent designer evaluation
     acceptance: Hold out network topologies, motor families and disturbance combinations; publish success/violations/tool cost and negative results locally
     dependencies: [LEARN-01]
 execution_order:
   - PHY-19 then PHY-20 then PHY-21
   - In parallel DES-01 then DES-02 then DES-03 then DES-04
-  - VIS-01 may proceed on qualified current profiles; LEARN-01 after its dependencies
+  - Extend bounded DES-03 construction and DES-02 catalog together; broaden VIS-01 families and evaluate image grounding; targeted DES-04 gaps continue
+  - LEARN-01 first semantic_weighting_and_seen_case_generation_pilot with normalization_resume tests,then separately frozen636view training and dev controls;test stays closed;engineering tool actions_GRPO follow reliable reading_refusal;DES-02 and broader DES-03_04 gaps continue
+
+engineering_episode_curriculum:
+  profile: bounded_passive_pf_v1
+  evidence: reports/engineering-agent-final-2026-11-17/summary.json
+  training_performed: false
+  gold_sft_eligible: false
+  next_gate: isolated_model_tool_loop_and_context_qualification
+  families:
+    - id: assemble
+      title: "Сборка сети по ТЗ"
+      status: bounded
+      scope: "Разрешённые маршруты,каталог,фиксированные нагрузки и проверка PF."
+      acceptance: physical_checker_and_heldout_family_evaluation
+    - id: drawing
+      title: "Восстановление по изображению"
+      status: planned
+      scope: "OCR,разбор соединений,паспортов и неоднозначных обозначений."
+      acceptance: physical_checker_and_heldout_family_evaluation
+    - id: review
+      title: "Проверка проекта"
+      status: partial
+      scope: "Есть проверки редактора;общий агентский контракт ревью ещё открыт."
+      acceptance: physical_checker_and_heldout_family_evaluation
+    - id: study
+      title: "Подготовка исследования"
+      status: planned
+      scope: "Выбор профиля,сценариев,критериев и полноты расчёта."
+      acceptance: physical_checker_and_heldout_family_evaluation
+    - id: observe
+      title: "Чтение схем и осциллограмм"
+      status: dataset
+      scope: "Есть ограниченный SFT-корпус;это не пройденный критерий обученного агента."
+      acceptance: physical_checker_and_heldout_family_evaluation
+    - id: diagnose
+      title: "Диагностика проблемы"
+      status: bounded
+      scope: "Три внесённых типа проблемы в малой пассивной PF-сети."
+      acceptance: physical_checker_and_heldout_family_evaluation
+    - id: measure
+      title: "Выбор следующего измерения"
+      status: planned
+      scope: "Частичные наблюдения,неоднозначные гипотезы и бюджет измерений."
+      acceptance: physical_checker_and_heldout_family_evaluation
+    - id: repair
+      title: "Исправление проекта"
+      status: bounded
+      scope: "Каталог/маршруты,неизменяемые требования и свежий PF после правки."
+      acceptance: physical_checker_and_heldout_family_evaluation
+    - id: sizing
+      title: "Подбор оборудования"
+      status: partial
+      scope: "Есть ограниченные Python design-пакеты;общий эпизод ещё не объединён."
+      acceptance: physical_checker_and_heldout_family_evaluation
+    - id: restart
+      title: "Пуск и самозапуск"
+      status: partial
+      scope: "Есть физика и проверенные профили;нужен общий tool-policy эпизод."
+      acceptance: physical_checker_and_heldout_family_evaluation
+    - id: operating
+      title: "Управление рабочим режимом"
+      status: partial
+      scope: "AC PF с PQ/PV и Q-пределами;эпизод управления впереди."
+      acceptance: physical_checker_and_heldout_family_evaluation
+    - id: protection
+      title: "КЗ и защиты"
+      status: partial
+      scope: "Есть пассивный3ф fault GUI и отдельные Python-профили;не общая координация."
+      acceptance: physical_checker_and_heldout_family_evaluation
+    - id: restore
+      title: "Переключения и восстановление"
+      status: partial
+      scope: "Есть прежние отдельные restoration-инструменты;новый эпизод не объединён."
+      acceptance: physical_checker_and_heldout_family_evaluation
+    - id: robust
+      title: "Робастность и отказы"
+      status: planned
+      scope: "Семейства N−1,разброс параметров,полный набор обязательных режимов."
+      acceptance: physical_checker_and_heldout_family_evaluation
+    - id: identify
+      title: "Идентификация параметров"
+      status: partial
+      scope: "Есть Python-модели;неуникальность параметров должна учитываться в критерии."
+      acceptance: physical_checker_and_heldout_family_evaluation
+    - id: adversarial
+      title: "Поиск тяжёлых случаев"
+      status: planned
+      scope: "Численные контроли,сходимость,балансы и независимые эталоны."
+      acceptance: physical_checker_and_heldout_family_evaluation
+    - id: report
+      title: "Инженерное заключение"
+      status: planned
+      scope: "Проверяемые ссылки на расчёты и полнота выводов,а не только качество текста."
+      acceptance: physical_checker_and_heldout_family_evaluation
+
+engineering_model_tool_loop:
+  status: bounded_text_protocol_implemented
+  model: Qwen/Qwen3.5-0.8B
+  runner: benchmarks/engineering_rollout.py
+  candidate: benchmarks/engineering_qwen_policy.py
+  context_preflight: benchmarks/engineering_context.py
+  protocol: one_strict_json_action_per_turn
+  context_truncation: forbidden
+  timeout_policy: terminate_candidate_prevent_late_reply_reuse
+  operating_system_sandbox: false
+  training_performed: false
+  pending:
+    - full_budget_learned_policy_evaluation
+    - full_action_training_schedule_and_comparable_dev_evaluation
+    - isolated_untrusted_candidate_runtime
+    - visual_observation_contract_and_processor_qualification
+    - calibrated_grpo_training_and_heldout_regression
+
+engineering_action_supervision:
+  status: provisional_train_only_token_prefix_checked
+  examples: 38
+  tasks: 7
+  maximum_total_tokens: 8833
+  evidence: reports/engineering-action-supervision-2026-11-17/summary.json
+  eligible_for_gold_sft: false
+  optimizer_run: false
+
+engineering_qwen_probe:
+  status: protocol_smoke_only_not_full_task_benchmark
+  evidence: reports/engineering-qwen-dev-probe-2026-11-17/summary.json
+  split: dev
+  tasks: 7
+  turns_per_task: 2
+  valid_actions: 14
+  completed_tasks: 0
+  fine_tuning_performed: false
+  heldout_test_used: false
+
+engineering_sft_loader:
+  status: replay_and_native_mask_qualified_single_optimizer_step
+  evidence: reports/engineering-sft-pinned-qualification-2026-11-18/summary.json
+  loader: benchmarks/engineering_sft.py
+  adapter_loader: benchmarks/engineering_adapter.py
+  examples: 38
+  prompt_tokens_masked: 130138
+  assistant_tokens_supervised: 545
+  optimizer_steps: 1
+  full_engineering_training: false
+  corpus_gold_eligible: false
+  frozen_base_unchanged: true
+  adapter_roundtrip_exact: true
+  pending:
+    - resumable_train_schedule_and_optimizer_state
+    - comparable_base_adapter_dev_rollouts
+    - broaden_topology_train_distribution
+    - visual_action_observation_and_grpo_qualification
+
+engineering_resumable_training:
+  status: native_epoch_complete_guarded_pair_quality_gate_failed
+  trainer: benchmarks/engineering_train.py
+  comparator: benchmarks/engineering_compare.py
+  epoch_examples: 38
+  head_checkpoint: reports/engineering-epoch-head-2026-11-18
+  optimizer_state: safetensors_adamw_moments_steps_cpu_rng
+  schedule: deterministic_shuffled_train_only
+  native_continuous_resume_equivalence: not_measured
+  toy_adamw_continuous_resume_exact: tested
+  comparison_profile:
+    split: dev
+    task_count: 7
+    maximum_actions: 12
+    maximum_new_tokens: 64
+    context_tokens: 16384
+    generation: greedy
+  pending:
+    - matched_view_train_recovery_curriculum_before_next_sft
+    - expand_train_families_without_test_tuning
+
+engineering_native_epoch:
+  evidence: reports/engineering-epoch-complete-2026-11-18/summary.json
+  steps: 38
+  epochs: 1
+  unique_examples: 38
+  resumed_after_step: 2
+  optimizer_state_restored: true
+  frozen_base_unchanged: true
+  adapter_roundtrip_exact: true
+  paired_dev_evaluation_executed: true
+  paired_dev_profile: compact_pf_v1_repeat_guard_2
+  unrestricted_raw_paired_complete: false
+  test_used_for_tuning: false
+
+engineering_guarded_dev_gate:
+  status: failed
+  neural_engineering_release_ready: false
+  evidence: reports/engineering-paired-guarded-dev-2026-11-18/summary.json
+  manifest_sha256: 77bf659fa75aa1d6a743f9e13d5cf9451c27b908744957690ee20386bbf2e362
+  audit: reports/engineering-guarded-audit-2026-11-18/summary.json
+  profile: compact-pf-v1
+  maximum_actions: 12
+  maximum_new_tokens: 64
+  exact_public_repeat_limit: 2
+  base_successes: 0
+  adapter_successes: 0
+  denominator_per_candidate: 7
+  context_failures: 0
+  public_deterministic_control_successes: 7
+  public_control_is_neural: false
+  train_tokens_reduction_fraction: 0.28326853032934274
+  raw_paired_complete: false
+  test_neural_evaluation_run: false
+  next:
+    - public_train_recovery_trajectories_without_dev_answers
+    - broaden_owner_pinned_topology_and_parameter_train_distribution
+    - match_train_and_eval_observation_versions
+    - successful_train_workflows_then_matched_dev_comparison
+    - protocol_ablation_and_positive_rollouts_before_grpo
+
+learning_pipeline_v2:
+  status: planned_not_implemented
+  specification: plans/LEARNING_PIPELINE.md
+  target_model: Qwen/Qwen3.5-0.8B
+  current_quality_gate: failed_compact_guarded_dev_0_of_7
+  unrestricted_raw_quality: not_measured_complete
+  current_cpu_adapter_scope: final_decoder_block_rank4_smoke
+  rationale:
+    - teacher_forced_loss_is_not_closed_loop_success
+    - align_training_and_evaluation_observation_versions
+    - compare_json_and_native_tool_protocols_before_scaling
+    - learn_recovery_from_student_visited_train_states
+  stages:
+    - id: LP-01
+      status: in_progress_bounded_native_json_contract_qualified
+      objective: versioned_episode_observation_action_reward_render_run_contracts
+      gate: replay_template_prefix_masks_and_matched_protocol_view_qualified
+    - id: LP-02
+      status: planned
+      objective: tiny_closed_loop_overfit_and_language_lora_capacity_pilot
+      proposed_debug_gate: 100_percent_completion_on_8_to_16_memorization_episodes
+      generalization_claim: false
+    - id: LP-03
+      status: planned
+      objective: procedural_family_grouped_splits_before_all_derived_data
+      proposed_scale: debug_32_pilot_256_then_approximately_2000_train_scenarios
+      scale_is_optimal_or_sufficient_claim: false
+    - id: LP-04
+      status: in_progress_scripted_public_recovery_train_only
+      objective: public_expert_multiple_valid_plans_and_recovery_labels
+      gate: full_physical_replay_and_no_positive_student_error_labels
+    - id: LP-05
+      status: planned
+      objective: matched_view_assistant_only_sft_v2_and_resource_qualification
+      gate: tiny_success_then_new_train_validation_success_by_kind
+    - id: LP-06
+      status: planned
+      objective: train_only_student_state_aggregation_with_expert_corrections
+      gate: standalone_recovery_improves_without_teacher_in_evaluator
+    - id: LP-07
+      status: planned
+      objective: paired_text_image_scene_graph_then_multimodal_tool_use
+      gate: perception_counterfactuals_modality_ablations_and_native_masks
+    - id: LP-08
+      status: planned
+      objective: stateful_multiturn_grpo_with_verified_terminal_reward
+      gate: useful_train_reward_variance_correct_logprobs_and_no_reward_hacking
+    - id: LP-09
+      status: planned
+      objective: matched_base_sft_aggregation_rl_eval_then_frozen_final_id_ood_test
+      gate: independent_family_denominators_full_failure_accounting_and_no_test_tuning
+    - id: LP-10
+      status: planned
+      objective: qualified_motor_start_ac_protection_and_dynamic_curricula
+      gate: per_physics_profile_judge_observation_and_reference_qualification
+  safeguards:
+    - no_training_runs_implicit_in_this_plan
+    - no_dev_or_test_trajectory_admission_to_training
+    - no_silent_guard_protocol_or_sampling_budget_changes
+    - no_claim_of_gpu_availability_or_cross_host_resume_equivalence
+    - no_automatic_dependency_upgrade_or_github_access
+
+competitor_informed_foundation:
+  evidence_notes: plans/LEARNING_PIPELINE.md
+  primary_papers:
+    - https://arxiv.org/html/2606.18789v1
+    - https://arxiv.org/html/2509.02494v1
+    - https://arxiv.org/html/2609.00384v1
+    - https://arxiv.org/html/2605.12913v1
+    - https://arxiv.org/html/2508.03680v1
+    - https://arxiv.org/abs/2509.08755
+  external_scores_reproduced: false
+  github_code_accessed: false
+  contract: benchmarks/engineering_protocol.py
+  worker: benchmarks/engineering_protocol_policy.py
+  recovery_collector_loader: benchmarks/engineering_recovery.py
+  corpus: reports/engineering-recovery-final-train-2026-11-18
+  corpus_manifest_sha256: ed394f64cb6a921163a57568f9b9994c38996f087a88279aa4a22e8399746cf6
+  independent_train_tasks: 7
+  topology_families: 1
+  scripted_paths: 42
+  expert_replay_successes: 42
+  expert_targets: 189
+  perturbation_actions_excluded_from_targets: 35
+  actual_student_dagger: false
+  native_processor_targets_per_protocol: 189
+  protocol_qualification: reports/engineering-recovery-aligned-protocol-2026-11-18
+  train_probe: reports/engineering-native-json-aligned-probe-2026-11-18
+  train_probe_case_count: 1
+  train_probe_successes_by_protocol: {json: 0, native: 0}
+  new_optimizer_updates: 0
+  tiny_closed_loop_gate_passed: false
+  full_protocol_ablation_complete: false

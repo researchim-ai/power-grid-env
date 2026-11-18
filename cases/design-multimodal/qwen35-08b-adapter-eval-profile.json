@@ -1,0 +1,18 @@
+{
+  "target_path": "requirements/qwen35-08b-local-target.json",
+  "target_sha256": "e763c82b7f4f1d5acea273b43674e45bcdb949fc91d000cb7537ea54b5fa0262",
+  "training": "reports/qwen35-08b-train-epoch-2026-11-16",
+  "training_manifest": "1a951b2c75c001e595b79deb7858fc8bdd81b20bb7d6c167098e0985c13e0f81",
+  "expected_training_producer": "1af1c370ee6637d1d1bdb1f8e55786725c1878f9afa0d9b2987a666f67c30113",
+  "train_export": "reports/design-multimodal-exports-current-2026-11-16/train-image",
+  "train_export_manifest": "e7ed876f8015a44a83f994ceb6461708c83e037d3d3634ff2e089bac77a4b267",
+  "collection_root": "reports/design-multimodal-exports-current-2026-11-16",
+  "collection_manifest": "041263d35e10c94d2be9c211c7d5e69f4d6f4767731c2a7362cb49767b754344",
+  "corpus_root": "reports/design-multimodal-qualified-current-2026-11-16",
+  "corpus_manifest": "79f4eae6580c6318060c16f74c0c9c272b18d5fcf20953665db62f887f74b31b",
+  "base": "reports/qwen35-08b-base-dev-2026-11-16",
+  "base_manifest": "37715f5019cc75291cbd0ea1d7a7f66d7430416f6f627623a913efbf58ebdc10",
+  "expected_base_producer": "1af1c370ee6637d1d1bdb1f8e55786725c1878f9afa0d9b2987a666f67c30113",
+  "split": "dev",
+  "plan": {"maximum_new_tokens": 96, "threads": 4}
+}

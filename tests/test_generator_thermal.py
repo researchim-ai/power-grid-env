@@ -51,7 +51,7 @@ def test_native_adapter_rejects_protection_semantics_before_spawning(monkeypatch
 
 def bank_fixture(initial=(0.,0.),thresholds=(1.,1.)):
     configs=[GeneratorThermalProtection(generator_id=gid,time_constant_s=2.,trip_level=threshold,initial_level=value) for gid,threshold,value in zip(['a','b'],thresholds,initial)]
-    model=SimpleNamespace(generators=[SimpleNamespace(id='a'),SimpleNamespace(id='b')],settings=SimpleNamespace(generator_thermal=configs),gen_connected=np.array([True,True]))
+    model=SimpleNamespace(generators=[SimpleNamespace(id='a'),SimpleNamespace(id='b')],settings=SimpleNamespace(generator_thermal=configs,event_policy='legacy'),gen_connected=np.array([True,True]))
     model.electrical=lambda state:(np.array([1.,1.]),None,None,None)
     model.generator_currents=lambda state,v:np.array([2.,2.])
     return model,GeneratorThermalBank(model,0)
@@ -71,6 +71,13 @@ def test_exact_relay_ties_trip_atomically_without_resetting_any_states():
     assert np.array_equal(state,before) and not model.gen_connected.any()
     assert [e['equipment_id'] for e in log]==['a','b']
     assert bank.guards()==([],[])
+
+
+def test_coincident_policy_only_applies_explicit_root_set():
+    model,bank=bank_fixture();model.settings.event_policy='coincident_roots_v1'
+    state=np.ones(2);log=[];bank.apply({0},.5,state,log)
+    assert model.gen_connected.tolist()==[False,True]
+    assert [e['equipment_id'] for e in log]==['a']
 
 
 def test_nearby_but_distinct_relay_threshold_is_not_coalesced():

@@ -137,24 +137,10 @@ class CatalogBrief(Contract):
     mandatory_cases: list[IndustrialDOLCase] = Field(min_length=1,max_length=8)
 
 
-def compile_catalog(catalog,brief,selection):
-    catalog=EquipmentCatalog.model_validate(catalog);brief=CatalogBrief.model_validate(brief)
-    selection=Selection.model_validate(selection)
+def derive_catalog_passports(catalog):
+    """Shared data-only derivation for single-feeder and constructed networks."""
+    catalog=EquipmentCatalog.model_validate(catalog)
     docs={d.id:d for d in catalog.documents};a=catalog.assumptions
-    if any(c.study.network.frequency_hz!=50 for c in brief.mandatory_cases):
-        raise ValueError('catalog v1 is restricted to 50 Hz; no frequency extrapolation')
-    installation=brief.installation.model_dump(mode='json')
-    if installation['method']!='manufacturer_air_single_circuit':
-        raise ValueError('catalog v1 supports only manufacturer_air_single_circuit')
-    row=next((r for r in catalog.air_temperature_factors if r.ambient_c==installation['ambient_c']),None)
-    if row is None:raise ValueError('ambient temperature not tabulated; interpolation forbidden')
-    if row.factor!=a.temperature_factor:
-        raise ValueError('temperature factor must match exact catalog row and document')
-    if a.grouping_factor.value!=1 or a.other_factor.value!=1:
-        raise ValueError('grouped or additional installation corrections unsupported')
-    # Derating has one authority. Refuse rather than silently overwrite owner criteria.
-    for key in ['temperature_factor','grouping_factor','other_factor']:
-        if installation[key]!=getattr(a,key).value:raise ValueError('brief/catalog derating mismatch: '+key)
     cables=[];trans=[];derived=[]
     def provenance(entry):
         ids=sorted({getattr(entry,key).document_id for key in UNITS if hasattr(entry,key)})
@@ -175,9 +161,6 @@ def compile_catalog(catalog,brief,selection):
         derived.append(dict(id=t.id,quantity='resistance_percent',value=resistance,
             equation='100*load_loss_W/(rating_kVA*1000)',passport_fields=['load_loss_w','rating_kva','loss_temperature_c'],
             caveat='effective series resistance including load/stray loss, at published loss temperature; not DC winding resistance'))
-    sizing=SizingTask(id=brief.id,voltage_v=brief.voltage_v,demand_kva=brief.demand_kva,lagging_power_factor=brief.lagging_power_factor,max_drop_percent=brief.max_drop_percent,installation=installation,cables=cables,transformers=trans)
-    task=EquipmentDesignTask(id=brief.id,sizing=sizing,line_id=brief.line_id,mandatory_cases=brief.mandatory_cases)
-    compile_equipment(task,selection)
     lineage=[]
     for entry in [*catalog.cables,*catalog.transformers,a]:
         for field in UNITS:
@@ -187,6 +170,34 @@ def compile_catalog(catalog,brief,selection):
             lineage.append(dict(equipment_id=getattr(entry,'id','model-assumptions'),field=field,
                                 fact=fact.model_dump(mode='json'),evidence_kind=doc.kind,
                                 reference=doc.reference,locator=doc.locator,conditions=doc.conditions))
+    return dict(cables=cables,transformers=trans,derived=derived,lineage=lineage,
+                catalog_sha256=digest(encoded(catalog.model_dump(mode='json'))))
+
+
+def compile_catalog(catalog,brief,selection):
+    catalog=EquipmentCatalog.model_validate(catalog);brief=CatalogBrief.model_validate(brief)
+    selection=Selection.model_validate(selection)
+    docs={d.id:d for d in catalog.documents};a=catalog.assumptions
+    if any(c.study.network.frequency_hz!=50 for c in brief.mandatory_cases):
+        raise ValueError('catalog v1 is restricted to 50 Hz; no frequency extrapolation')
+    installation=brief.installation.model_dump(mode='json')
+    if installation['method']!='manufacturer_air_single_circuit':
+        raise ValueError('catalog v1 supports only manufacturer_air_single_circuit')
+    row=next((r for r in catalog.air_temperature_factors if r.ambient_c==installation['ambient_c']),None)
+    if row is None:raise ValueError('ambient temperature not tabulated; interpolation forbidden')
+    if row.factor!=a.temperature_factor:
+        raise ValueError('temperature factor must match exact catalog row and document')
+    if a.grouping_factor.value!=1 or a.other_factor.value!=1:
+        raise ValueError('grouped or additional installation corrections unsupported')
+    # Derating has one authority. Refuse rather than silently overwrite owner criteria.
+    for key in ['temperature_factor','grouping_factor','other_factor']:
+        if installation[key]!=getattr(a,key).value:raise ValueError('brief/catalog derating mismatch: '+key)
+    passports=derive_catalog_passports(catalog)
+    cables,trans,derived=passports['cables'],passports['transformers'],passports['derived']
+    sizing=SizingTask(id=brief.id,voltage_v=brief.voltage_v,demand_kva=brief.demand_kva,lagging_power_factor=brief.lagging_power_factor,max_drop_percent=brief.max_drop_percent,installation=installation,cables=cables,transformers=trans)
+    task=EquipmentDesignTask(id=brief.id,sizing=sizing,line_id=brief.line_id,mandatory_cases=brief.mandatory_cases)
+    compile_equipment(task,selection)
+    lineage=passports['lineage']
     evidence=dict(schema='power-grid-env.catalog-compilation/v1',catalog_sha256=digest(encoded(catalog.model_dump(mode='json'))),
         brief_sha256=digest(encoded(brief.model_dump(mode='json'))),selection=selection.model_dump(mode='json'),
         compiled_task_sha256=digest(encoded(task.model_dump(mode='json'))),derived=derived,lineage=lineage,

@@ -6,7 +6,7 @@ heating, an OEM capability curve, or an excitation/current clipping algorithm.
 from __future__ import annotations
 import math
 import numpy as np
-from pydantic import BaseModel,ConfigDict,Field
+from pydantic import BaseModel,ConfigDict,Field,model_validator,model_serializer
 from typing import Literal
 
 
@@ -18,6 +18,19 @@ class GeneratorThermalProtection(BaseModel):
     trip_level: float=Field(gt=0)
     initial_level: float=Field(default=0.,ge=0)
     initialization: Literal['specified','equilibrium']='specified'
+    reset_level: float | None=Field(default=None,ge=0)
+
+    @model_validator(mode='after')
+    def reset_hysteresis(self):
+        if self.reset_level is not None and self.reset_level>=self.trip_level:
+            raise ValueError('thermal reset level must be strictly below trip level')
+        return self
+
+    @model_serializer(mode='wrap')
+    def serialize(self,handler):
+        data=handler(self)
+        if self.reset_level is None:data.pop('reset_level',None)
+        return data
 
 
 class GeneratorThermalBank:
@@ -58,7 +71,25 @@ class GeneratorThermalBank:
         for i in sorted(selected):
             if self.latched[i] or not self.model.gen_connected[i]:continue
             a,p=self.entries[i];self.latched[i]=True;self.model.gen_connected[i]=False
+            automation=getattr(self.model,'automation',None)
+            if automation is not None:
+                breaker=automation.targets.get(('generator',p.generator_id))
+                if breaker is not None:automation.opened_at[breaker]=float(time)
             event_log.append(dict(time_s=float(time),kind='generator_thermal_trip',equipment_id=p.generator_id,level=float(state[a]),threshold=p.trip_level,outcome='latched_electrical_open'))
+
+    def reset(self,generator_id,state):
+        i=next((i for i,(_,p) in self.entries.items() if p.generator_id==generator_id),None)
+        if i is None:raise ValueError('unknown generator thermal reset target')
+        a,p=self.entries[i]
+        result=dict(level=float(state[a]),threshold=p.reset_level)
+        if p.reset_level is None:return result|dict(outcome='blocked',reason='thermal_reset_disabled')
+        if self.model.gen_connected[i]:return result|dict(outcome='blocked',reason='generator_connected')
+        if not math.isfinite(state[a]) or state[a]>p.reset_level:return result|dict(outcome='blocked',reason='thermal_level_above_reset')
+        if not self.latched[i]:return result|dict(outcome='already_in_requested_state')
+        self.latched[i]=False
+        # Acknowledgement never erases stored heat, closes a breaker or clears
+        # operator inhibition. The reconnected machine can trip again.
+        return result|dict(outcome='applied')
 
     def channel_names(self):return [p.generator_id+'.'+k for _,p in self.entries.values() for k in ('stator_thermal_level','stator_thermal_latched')]
 

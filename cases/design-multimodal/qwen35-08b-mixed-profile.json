@@ -1,0 +1,13 @@
+{
+  "target_path": "requirements/qwen35-08b-local-target.json",
+  "target_sha256": "e763c82b7f4f1d5acea273b43674e45bcdb949fc91d000cb7537ea54b5fa0262",
+  "collection_root": "reports/qwen35-08b-response-curriculum-2026-11-16",
+  "collection_manifest": "93c1d7f98edc08853a9e62c03ea566bc49f9d9e01c83fe7170d05bc37b9e229a",
+  "corpus_root": "reports/design-multimodal-qualified-current-2026-11-16",
+  "corpus_manifest": "79f4eae6580c6318060c16f74c0c9c272b18d5fcf20953665db62f887f74b31b",
+  "training_plan": {
+    "seed": 42, "rank": 4, "alpha": 8.0, "learning_rate": 0.0002,
+    "gradient_clip": 1.0, "threads": 4, "epochs": 1, "accumulation": 4
+  },
+  "generation_plan": {"maximum_new_tokens": 96, "threads": 4}
+}

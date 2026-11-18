@@ -1,6 +1,1866 @@
 # Текущий статус и очередь развития
 
-Обновлено: **15 ноября 2026 года**.
+Обновлено: **18 ноября 2026 года**.
+
+## R06.79 — первичные конкурирующие работы, protocol contract и recovery foundation
+
+В [LEARNING_PIPELINE.md](LEARNING_PIPELINE.md) добавлена сверка PowerAgentBench-SS,
+GridMind, RestoreBench, DAgger for LLM agents, Agent Lightning и AgentGym-RL.
+Методы benchmark/orchestration отделены от обучения; результаты чужих4B/8B
+моделей не переносятся на наш0.8B. GitHub-код/CI не использовались. RL без SFT
+возможен в других работах; наш warm-start — выбранный путь, не универсальный закон.
+
+Реализована основа LP-01: frozen RunContract, JSON/native Qwen rendering,
+строгий bounded native parser, роль tool и реальные call IDs, thinking/budgets/
+view/guard identity. Из exposed mask убран недопустимый policy export. Native
+parser не принимает JSON как native success. Скалярное подмножество нынешних
+ID/enum/string arguments; nested/delimiter-bearing arguments не квалифицированы.
+Полная EpisodeSpec/RenderSpec и heldout protocol selection ещё открыты.
+
+Начата LP-04: публичный RecoveryPolicy продолжает после ошибок/чужих действий,
+при расхождении повторно читает проект. Шесть scripted путей по7 TRAIN-задачам:
+42/42 expert-replays с свежим PF/submit,189 expert targets,35 perturbation-actions
+только в контексте. Это НЕ42 независимых сети и НЕ настоящий student DAgger.
+Dev/test collector отклоняет. Corpus и reusable RecoveryDataset проверяют
+полный replay/source attribution и не обучают injected mistakes положительно.
+
+Текущие sealed evidence:
+- `reports/engineering-recovery-final-train-2026-11-18/summary.json`
+- corpus manifest `ed394f64cb6a921163a57568f9b9994c38996f087a88279aa4a22e8399746cf6`
+- `reports/engineering-recovery-aligned-protocol-2026-11-18/summary.json`
+- `reports/engineering-native-json-aligned-probe-2026-11-18/summary.json`
+
+Реальный pinned processor проверил189 targets В КАЖДОМ формате, prefix/mask/
+budgets, всего378 expert batches. Никакого нового optimizer run здесь не было;
+корпус provisional, eligible_for_gold_sft:false. Старый trainer v1 не принимает
+его автоматически: нужен trainer recipe v2 и LP-02 closed-loop tiny-overfit.
+
+Однокейсовый TRAIN-probe base weights:4 действия,compact view,guard2,256 tokens
+на действие. JSON:simulate→validate→simulate→simulate; native:inspect_project
+→inspect_equipment(line1)→inspect_equipment(line2)→validate. Оба success=false.
+Это wiring/поведенческий probe, не heldout-победа native и не новый dev score.
+Старый guarded dev0/7 и отсутствие подтверждённого инженерного навыка остаются.
+
+Проверки блока:257 целевых Python-тестов,60 JS-тестов,сборка сайта и
+проверка целостности трёх текущих evidence-комплектов прошли. Core fingerprint
+сохранён; новый SFT/GRPO update не выполнялся.
+
+Далее: LP-02 tiny closed-loop gate и расширенная language-LoRA в trainer v2;
+LP-03 разнообразные topology/parameter train families; LP-06 реальные student
+prefixes вместо scripted perturbations. VLM/GRPO квалификация ещё открыта.
+
+## R06.78 — согласованный план обучения v2 (запланирован, не реализован)
+
+Полная спецификация: [LEARNING_PIPELINE.md](LEARNING_PIPELINE.md).
+Этапы LP-01–LP-10 добавлены в machine-readable `agent-designer.yaml`.
+Текущее ML quality gate остаётся failed; нового обучения в этом шаге нет.
+
+Первый приоритет: единый protocol/view/run contract, native Qwen tool ablation
+и проверка tiny closed-loop обучаемости. Нынешний raw-trained last-block rank4
+CPU epoch не является квалифицированным промышленным SFT-рецептом; завершённый
+paired score относится только к compact/guarded-профилю. Эти факторы нужно
+разделить, а не объявлять одну причину0/7.
+
+Далее: grouped procedural splits до prefixes/images, public recovery teacher,
+SFT v2 с корректным masking и более широкой language-LoRA, train-only student
+state aggregation, multimodal perception/tool-use, затем stateful GRPO и
+замороженный final ID/OOD test. Объёмы и гиперпараметры в плане — начальные
+предложения для пилотов; критерии приёмки и ограничения указаны по этапам.
+Семь прежних dev остаются regression smoke, не широкой оценкой генерализации.
+
+План опирается на локальные исходники/evidence и первичные документы Qwen,
+TRL SFT/GRPO и DAgger. TRL main docs не заменяют проверку pinned runtime;
+GitHub/CI, автообновления и отправка данных внешним LLM не включены.
+
+## R06.77 — измеренная guarded dev-оценка: workflow gate НЕ пройден
+
+Реально выполнено парное сравнение Qwen3.5-0.8B base и rank4 epoch-adapter:
+семь одинаковых dev-задач (сборка1, диагностика3, исправление3), максимум12
+действий,64 новых токена,16 384 контекста,greedy. Отдельный профиль
+`compact-pf-v1`, loop guard2: одинаковые распознанные действия с точно одинаковым
+публичным payload на той же revision завершают эпизод отдельной причиной.
+Это НЕ оценка неограниченной 12-ходовой способности моделей.
+
+Результат: base0/7, adapter0/7, improved0, regressed0. У каждого кандидата
+14 действий simulate,0 правок,0 submit,7 остановок repeated_public_observation.
+Структурный формат действий допустим, context failures0. Одна эпоха из38 шагов
+не улучшила измеренный workflow в этом профиле. ML quality gate закрыт;
+инженерная самостоятельность и готовность к промышленному применению не заявлены.
+
+Текущие sealed evidence:
+- `reports/engineering-paired-guarded-dev-2026-11-18/summary.json`
+- paired manifest `77bf659fa75aa1d6a743f9e13d5cf9451c27b908744957690ee20386bbf2e362`
+- `reports/engineering-guarded-audit-2026-11-18/summary.json`
+
+Первоначальный raw-прогон остановлен из-за стоимости повторных запросов;
+`reports/engineering-paired-dev-2026-11-18/interruption.json` честно фиксирует
+неполное покрытие. Он запечатан как partial evidence, не полный paired score;
+невычисленные случаи не объявляются ошибками модели. Один завершённый raw
+случай сборки содержит12 simulate и неуспех (около8 минут на CPU).
+
+Добавлен отдельный детерминированный публичный инженер: получает только ТЗ,
+каталог, проект и результаты разрешённых инструментов, не читает скрытый bug.
+В таком же compact/guarded dev-профиле он прошёл7/7 с реальным PF и submit:
+`reports/engineering-public-control-final-dev-2026-11-18/summary.json`.
+Это контроль разрешимости текущих задач, не нейросеть и не независимая
+валидация физики. Проверки owner-политики на всех21 задачах — regression
+среды; нейросетевой test-прогон не выполнялся.
+
+Версионный compact view сохраняет точные значения критериев, P/Q/I/потерь,
+паспорта, warnings и None для обесточенных терминалов. Опущены layout,
+дубли U/V, фазные углы, opaque islands и load-law residuals; профиль не годится
+для произвольной защиты/phasor-аналитики. Совпадающие полные PF-результаты
+получают ссылки/hash, различные наблюдения сохраняются. На38 train-префиксах
+native tokenizer измерил130 138→93 274 токена (-28.3%), максимум8822→5753.
+`reports/engineering-view-preflight-2026-11-18/summary.json`.
+Это измерение размера контекста, не изолированная оценка runtime speedup.
+
+Аудит проверяет manifest/child anchors, split, paired IDs, budgets, rewards,
+считает отсутствие submit/правок, повторы и ошибки. Он не меняет score и
+не делает dev/test данными SFT. Физический grader остаётся прежним.
+198 целевых Python-тестов и60 JS-тестов прошли; core fingerprint не изменился.
+
+Следующий блок (в таком порядке):
+1. Публичные train recovery-траектории после первого simulate/ошибки инструмента,
+   несколько корректных порядков действий и task-kind coverage. Согласовать
+   training view с версионным evaluation view;38 expert-prefixes недостаточны
+   как доказательство способности действовать из собственных состояний.
+2. Procedural train-семейства/паспортные параметры с новым owner manifest и
+   каноническим исключением dev/test-топологий. Не копировать dev IDs/ответы.
+3. Проверить grounding и завершение train-workflows перед новым SFT-прогоном;
+   повторить заранее закреплённый dev-профиль без скрытого изменения guard.
+4. Отдельно исследовать raw/native-tool протокол как ablation. Нельзя объяснять
+   текущий ноль одной причиной без такой проверки. Unrestricted raw paired
+   остаётся незавершённым, а не заменяется guarded-цифрами.
+5. GRPO допускается после появления успешных train-rollouts/полезной вариации
+   награды; guard и process score не заменяют финальную физическую приёмку.
+
+## R06.76 — детерминированный action-SFT epoch, AdamW resume и paired runner
+
+Добавлен `benchmarks.engineering_train`: полный перемешанный train schedule,
+masked loss, rank4 adapters, конечные градиенты и контроль неизменности базы.
+Промежуточный chunk сохраняет adapter, AdamW moments/step и CPU RNG через
+safetensors, без pickle. Возобновление требует owner manifest, совпадения
+кода/модели/корпуса/плана, курсора и истории порядка примеров.
+
+Первый native chunk из двух шагов выполнен и запечатан:
+`reports/engineering-epoch-head-2026-11-18/summary.json`.
+Полный native epoch завершён продолжением этого checkpoint: 38/38 шагов,
+каждый из 38 train-примеров использован ровно один раз. Базовые веса не
+изменились, adapter roundtrip дал точное совпадение logits.
+`reports/engineering-epoch-complete-2026-11-18/summary.json`.
+Это одна эпоха на семи authored train-задачах, не доказательство инженерной
+генерализации.
+На тестовой модели непрерывный и разделённый pipeline совпали точно по весам,
+optimizer tensors, RNG и истории loss. Это не измерение эквивалентности двух
+полных native Qwen-прогонов на разных host/версиях библиотек.
+
+`benchmarks.engineering_compare` готовит парные base/adapter dev-прогоны:
+семь одинаковых случаев, default 12 действий / 64 новых токена / 16 384 контекста,
+greedy generation. Двенадцать действий оставляют место для inspect/validate
+поверх минимальной сборки. По каждой задаче фиксируются успех/неуспех,
+improved/regressed и stop reason. Непройденные случаи не исключаются.
+Готовый epoch-adapter загружен в реальный worker и выполнил один dev-prefix
+вызов: допустимое действие simulate. Это smoke загрузки/генерации, не результат
+полного эпизода. `reports/engineering-epoch-inference-2026-11-18/summary.json`.
+Полный native paired-прогон на новом адаптере пока не выполнен: улучшение
+инженерных решений не заявляется. Test не использовался.
+
+После сбоя candidate-процесса новый эпизод перезапускает его, не перенося поздний
+ответ. Переполнение контекста отдельно учитывается как context failure.
+Незаконченный epoch-checkpoint допускается для resume, но не как законченный
+адаптер paired-сравнения. Корпус по-прежнему provisional, без VLM/GRPO qualification.
+
+Проверки нового блока: 165 целевых Python-тестов, включая полный split/resume
+pipeline на тестовой модели и парный comparator с одинаковыми бюджетами.
+60 JS-тестов, сборка сайта и проверка целостности native-артефактов также прошли.
+Следующая проверка качества — реальный paired dev-прогон, затем расширение
+train-топологий и параметров; test должен оставаться закрытым при настройке.
+
+## R06.75 — replay-checked SFT loader, маска loss и LoRA qualification
+
+`benchmarks.engineering_sft.ActionDataset` принимает закреплённый manifest,
+проверяет модель, ревизию среды, полный train-инвентарь и формат каждого примера.
+Действия повторно исполняются owner-средой: история и результаты расчёта должны
+совпасть с реальным публичным replay. Dev/test, подменённые результаты,
+неполные траектории и произвольные маски отклоняются.
+
+Для каждого батча заново выполняется native processor: точный prefix,
+числа токенов, attention и область assistant-completion проверяются до forward.
+Вход получает labels=-100, ответ — настоящие token IDs. Batch-size=1,
+без padding/усечения/неявного объединения примеров. Causal selected-logits
+loss сравнен с полной shifted CE и проверен по градиентам на prompt-позициях.
+
+Реальный Qwen3.5-0.8B проверил все 38 записей: 130 138 masked prompt-токенов,
+545 supervised токенов. Выполнен один шаг LoRA rank4 на примере 0:
+train loss 0.193981 → 0.169758, ненулевые конечные градиенты, базовые веса
+не изменились. Сохранённый адаптер восстановлен с точным совпадением logits.
+Это проверка работоспособности тракта, не обучение инженерному решению задач.
+
+Текущее свидетельство с закреплёнными core/loader/моделью/корпусом/планом:
+`reports/engineering-sft-pinned-qualification-2026-11-18/summary.json`.
+Ранний `engineering-sft-qualification-2026-11-18` сохранён как предыдущий probe;
+его не следует использовать вместо текущего pinned evidence.
+
+Worker принимает owner-pinned `--adapter` + `--adapter-manifest-sha256`,
+проверяет receipt, модули, формы и конечность весов перед генерацией.
+Адаптер не меняет исходный checkpoint. Корпус остаётся provisional,
+`eligible_for_gold_sft:false`; один train-step не доказывает dev-улучшение.
+Реальная генерация после загрузки адаптера проверена отдельно:
+`reports/engineering-adapter-inference-2026-11-18/summary.json`.
+На одном train-префиксе получено допустимое действие simulate; это smoke,
+не решение эпизода и не свидетельство улучшения. 155 целевых Python-тестов,
+60 JS-тестов, сборка сайта и проверка manifest прошли.
+
+Далее: полноценный train schedule, восстановление optimizer/порядка примеров,
+сопоставимые base/adapter dev-прогоны с достаточным числом действий, расширение
+train-топологий и только затем замороженный test. VLM/GRPO ещё открыты.
+
+## R06.74 — локальный Qwen tool-loop и train action-supervision
+
+Добавлен owner-run цикл `benchmarks.engineering_rollout`: кандидат получает
+только публичные сообщения, возвращает одно строгое JSON-действие. Закрытый
+проект, проверяющий и награда не передаются модели. Это разделение данных и
+процессов, не OS sandbox. Локальный Qwen worker проверяет закреплённые файлы
+модели и работает без сетевой загрузки или изменения весов.
+
+Ошибки формата расходуют бюджет, исключения/тайм-ауты не исключают задачу
+из знаменателя. После тайм-аута candidate-процесс прекращается: поздний ответ
+нельзя принять за ответ на следующий запрос. Контекст не обрезается скрыто;
+переполнение является явным неуспехом. Отчёты имеют раздельные split, бюджеты,
+пины исходников и manifest. Привилегированный teacher не является candidate.
+
+Реальный processor Qwen3.5-0.8B проверил 38 train-префиксов семи задач:
+максимальный вход 8 836 токенов (`reports/engineering-context-local-2026-11-17`).
+Экспортированы 38 предварительных train action-supervision записей: нативно
+проверены точное токенное продолжение assistant, непустые метки и полный
+контекст; максимум 8 833 токена с компактными JSON-ответами.
+`reports/engineering-action-supervision-2026-11-17/summary.json`.
+Эти результаты относятся к teacher-траекториям, не произвольным 32-ходовым
+историям. `eligible_for_gold_sft:false`, оптимизатор не запускался.
+
+Измеренный Qwen base dev-probe: 7/7 случаев, 2 действия на случай,
+14/14 структурно допустимых действий, 0 завершённых задач. Это smoke-проверка
+контракта, не полный benchmark: двух действий недостаточно для сборки проекта.
+Веса не дообучались, test не запускался. Запечатанный результат:
+`reports/engineering-qwen-dev-probe-2026-11-17/summary.json`.
+После прогона транспорт дополнительно защищён deadline на запись в stdin
+нечитающего процесса; изменённый транспорт проверяется отдельными тестами,
+не выдаётся за новую измеренную модельную оценку.
+
+Проверки блока: 134 целевых Python-теста, 60 JS-тестов, сборка сайта и
+проверка целостности четырёх комплектов свидетельств прошли.
+
+Следующие ворота: loader и фактическая проверка loss mask, полный learned-policy
+прогон с закреплённым бюджетом, затем SFT и повторная dev-оценка. Test нельзя
+использовать для настройки. Визуальные tool-наблюдения и GRPO ещё не
+квалифицированы; browser Agent Lab пока не запускает Qwen автоматически.
+
+## R06.73 — инженерные tool-use эпизоды и Agent Lab
+
+Реализованы 21 ограниченное задание: сборка, диагностика и исправление
+пассивной PF-сети. Три различные топологии разделены на train/dev/test
+(по 7 задач); публичный HTTP API выдаёт только train. Неисправности:
+сопротивление кабеля, допустимый ток, отсутствующее соединение.
+
+Состояние принадлежит серверу, требования неизменяемы. JSON-схемы инструментов,
+32 вызова / 4 расчёта, маска инструментов, непрозрачные ID, терминальная
+проверка и обязательный свежий физический расчёт. Правка отменяет измерения.
+Agent Lab показывает ТЗ, журнал, публичные измерения и результат проверки;
+перезагрузка страницы восстанавливает эпизод из RAM сервера без расхода бюджета.
+
+Привилегированный детерминированный teacher прошёл 21/21 сценарий. Это проверка
+среды, не результат обученного агента. Только train-трассы экспортированы;
+`eligible_for_gold_sft:false`. Нового обучения Qwen не было. Корпус пока не
+прошёл проверку токенизации/визуальных входов для SFT или GRPO.
+
+Запечатанное свидетельство: `reports/engineering-agent-final-2026-11-17/summary.json`.
+Код эпизодов SHA256: `a082382e997eaf534527e0c22d87d3de039fd75c0e23909701c323da3999f332`.
+Промежуточные прогоны заменены этим свидетельством, не являются gold.
+Проверки: 95 целевых Python-тестов, 60 JS-тестов и agent HTTP integration прошли.
+
+17 семейств закреплены в `agent-designer.yaml`; исполнены только три ограниченных
+семейства. Следующая очередь: адаптер model/tool-loop, проверка контекста,
+изолированный heldout-прогон, затем AC/PV и RMS-задачи. Наличие компонента
+физики не означает квалификацию нового эпизода.
+
+## R06.72 / VIS-01 — AC PF,PQ/I/ZIP и статические PQ/PV генераторы
+
+Добавлен профиль ac_power_flow с отдельной совместимостью оборудования.
+V5 проекта мигрирует v1–v4,старые нагрузки получают явную модель Z и
+параметры;ничего не отбрасывается. Паспорта PQ/I/ZIP содержат отдельные
+P/Q-веса и окно закона. До8 статических генераторов PQ/PV:задания P/Q
+или P/U,пределы Q,ограничение заданий по введённым kVA. Native StudySpec
+сохраняет настоящие объекты генераторов и моделей нагрузки.
+
+OpenDSS-выход не принимается только по convergence:проверяется окно
+закона нагрузки,аналитическая P/Q(U) по каждой фазе,воспроизведение
+команд генератора и пределы Q. Для генератора окно0,9–1,1pu фиксировано
+по поддержанному native-поведению;вне окна возможный fallback отклоняется.
+PV-задание U и фактическое U показаны отдельно;нативная near-Q-limit
+диагностика отделена от фактического достижения границы. Нельзя считать
+удержанным напряжение,если Q закончилась. Изолированный PQ/PV не становится
+формирующим источником и не получает фиктивные P/Q/U.
+
+В редакторе/статическом viewer — символы,паспорта и инспекторы генераторов,
+модели нагрузок,фактические P/Q/I,проверка закона нагрузки и таблица
+оборудования. Пример150kW генерации сPQ/ZIP нагрузками даёт около28kW
+экспорта во внешнюю сеть в проверенном authored режиме. В браузере
+проверены сборка,расчёт,таблица и переключение PV сQmin/max±2kvar.
+
+Проверки:57 JS,62 Python,19 HTTP. Независимые формулы Z/I/P/ZIP(U),
+разные активные/реактивные ZIP-веса,баланс сгенерированной/потреблённой P
+и потерями,обратный поток,PV-удержание и Q-limit,потеря внешнего источника,
+запрет native fallback и несовместимых профилей. Старые RMS/PF/fault
+проверки сохранены. Производственное ядро и нейронные веса не менялись.
+
+Границы:стационарный PF;нет динамики ротора/AVR или generator fault
+contribution. Генераторы/PQ/I/ZIP в прежних RMS/пассивном КЗ не подменяются
+эквивалентами,а отклоняются. Новые ручные записи не включены в gold-корпус;
+semantic gate Qwen и closed-loop GRPO остаются открыты. Следующая очередь:
+явный вклад машин в КЗ с независимым эталоном,затем подключение coupled-RMS
+машин/регуляторов и сетевой автоматики к общему GUI.
+
+## R06.71 / VIS-01 — пассивные PF/3ф КЗ,аппараты и статический инспектор
+
+Закрыт ограниченный сквозной блок редактора:профили passive_power_flow и
+passive_3ph_fault на существующем OpenDSS backend,два редактируемых примера,
+паспорта/положения выключателей и разъединителей,фазный инспектор steady.html.
+V4 проекта мигрирует v1/v2/v3. Смена профиля не удаляет оборудование;
+моторы/временные команды в пассивных режимах явно отклоняются,нет их
+молчаливого исключения или выдуманного PQ/Z-эквивалента.
+
+PF допускает замкнутые сети и обесточенные острова. Статические аппараты
+имеют явный конечный R+jX. При проверке обнаружено ограничение существующего
+ядра:замкнутые Switch сливаются топологией даже при representation=series,
+отдельного тока/импеданса такой объект в OpenDSS не даёт. Ядро в этом блоке
+не менялось. Мост редактора явно понижает замкнутый статический аппарат в
+Line с теми же R/X/ID,разомкнутый в разрыв;паспорт/положение сохранены в
+assumptions экспортируемого native StudySpec и в проекте. Экспортированный
+снимок реально воспроизведён через штатный run_study_document с тем же током.
+Это не квалификация общей динамической модели сетевых выключателей.
+
+КЗ ограничено пассивным трёхфазным конечным Z на заданной шине,без вклада
+моторов и IEC60909 поправок/пиков/несимметрии. Повреждение на обесточенном
+участке отклоняется. Показаны фазные токи КЗ и отдельно ток через аппарат;
+сопоставление с отключающей способностью — один RMS-case,не селективность,
+не автоматический trip и не worst-case qualification. Разъединитель не
+получает breaker-approval. Обесточенность отделена от численной несходимости,
+неизвестные терминальные каналы показаны как «—»,а не фальшивый измеренный0.
+
+Проверки:53 JS,47 Python,15 HTTP. Независимые SI-формулы подтверждают
+U/угол в последовательной Z-сети,ток3ф КЗ и mesh-схему с параллельной ветвью;
+проверены I²R аппарата,открытый остров,запрет КЗ на мёртвом узле,явный отказ
+моторов/events,местные базы трансформатора и native export replay.
+Браузер:PF5/5 живых узлов;после размыкания q1 —2/5 и3 обесточенных;
+3ф КЗ на n2 сR=.001Ω —7244,91A в каждой фазе в данном authored примере.
+PF/КЗ результат содержит core SHA,bridge SHA,native-study SHA и backend version.
+OpenDSS0.9.4/dss-python0.15.7,производственное ядро b82… не менялось.
+
+Открыто:широкий PF-каталог PQ/ZIP/генераторов,несимметричные/нормативные КЗ,
+вклад машин в КЗ,координация/отказы/АВР,динамические сетевые коммутации и
+острова в RMS/DAE;далее coupled RMS генераторов/регуляторов и DER/storage.
+Эти GUI-профили не покрывают все возможности Python-компонентов. Новые
+ручные PF/КЗ не включены в gold-корпус;Qwen не обучалась,semantic gate и
+closed-loop physics-scored GRPO остаются открыты.
+
+## R06.70 / VIS-01 — реальные трансформаторы и многовольтный ручной RMS
+
+Добавлены два явных профиля редактора:НН motor-start и многовольтный RMS.
+Формат проекта v3 с миграцией v1/v2;у каждой шины своё Uном,источник и моторы
+получают соответствующую базу. Кабель не может соединять разные напряжения.
+Смена профиля сохраняет состав сети,несовместимость блокирует запуск.
+
+Ручные двухобмоточные трансформаторы:до8 на дерево16 шин,Yy0/Dyn11/Dyn1/Dd0,
+R%/X% отдельно,фиксированные ответвления0,8–1,2pu,номинальная мощность.
+Используются существующие модели/матрицы run_induction,не отдельная UI-физика.
+Компилятор явно задаёт соединения и нейтраль по группе,нулевые потери стали
+и ток намагничивания. Есть редактируемый пример10/0,4kV с2 моторами.
+
+Grid Studio сохраняет локальные базы и показывает трансформатор,токи обеих
+сторон,отдающую/приёмную P,Q,потери меди и загрузку по max(|S1|,|S2|)/Sном.
+Узлы показывают линейное U и угол. Осциллограммы привязаны к выбранному
+оборудованию:токи/P/Q сторон трансформатора,потери/загрузка,локальное U/V/угол,
+нагрузочные и исходные каналы. Агентский режим обрезает массивы и время по
+текущему префиксу. Native StudySpec экспортируется через
+отдельный локальный API:это полный проект с будущими командами,не наблюдение
+для агента. Past-only экспорт отдельно сохраняет публичные паспорта обмоток
+и прошлые измерения,без будущих событий и внутренней тепловой реплики.
+
+Проверки:43 JS,31 Python,9 HTTP. Проверены4 группы,аналитическое отношение
+токов25 для10/0,4kV,баланс P с потерями,30° сдвиг Dyn11,эффект обеих отпаек,
+обратное питание,запрет разноуровневого кабеля и несовместимого профиля,
+миграция и roundtrip MV-наблюдения. В браузере трансформатор удалён из примера
+и собран заново через две шины;задана первичная отпайка1,025 и выполнен
+четырёхсекундный расчёт,инспектор показывает7,07A HV/181,22A LV и315W потерь
+на наблюдавшемся отсчёте. Это проверка интерфейса и ограниченного преобразования
+данных,не новая независимая квалификация всех MV-схем.
+
+Границы:симметричная положительная последовательность100–35000V,один источник,
+одно дерево,фиксированные ответвления. Нет намагничивания/потерь стали/броска,
+динамического РПН,сетевых коммутаций/защит,островов,синхронных машин/DER в
+редакторе. Следующий блок:подключение совместимых видов расчёта PF/КЗ и
+сетевых аппаратов;затем coupled RMS/генераторы/регуляторы. Масштабирование,
+полный охват оборудования и closed-loop physics-scored GRPO остаются открыты.
+Новые MV-ручные прогоны не стали gold SFT. Веса Qwen и закрытые корпуса не менялись;
+semantic gate модели остаётся непройденным. Производственное ядро неизменно.
+
+## R06.69 / VIS-01 — инженерный каталог,расширенный профиль и задачи агента
+
+Добавлены16 карточек оборудования с поиском,группами и явной совместимостью
+с текущим решателем;покрыты equipment-классы Network и двигатели/тепловая защита.
+Есть дерево проекта,независимая прокрутка панелей,закреплённый запуск,
+редактор64 команд источника/контакторов/момента. Расчётный профиль реально
+расширен constant-Z нагрузками,двухклеточными двигателями и I²-защитой.
+V2 проекта с явной миграцией v1;старые записи и sealed корпуса не изменены.
+
+Проверки:37 JS,22 Python (включая прошлые3 exporter checks),7 HTTP.
+Добавлены физические проверки U² нагрузки и баланса P с потерями,
+двухклеточного разгона,точной стороны теплового отключения/выбега,
+провала/восстановления и запрета некорректных команд. API проверяет реальную
+комбинацию новых моделей и past-only экспорт без теплового oracle.
+Исправлен in-memory экспорт наблюдения без исходного manifest (не добавлять
+undefined SHA). Браузером собраны3 мотора+Z-нагрузка,включены две клетки и
+тепловая защита,выполнен провал/восстановление питания с открытием результата.
+
+**Полный охват оборудования в ручном UI ещё открыт.** Карточки трансформаторов,
+сетевых выключателей,генераторов,DER,накопителей,шунтов,заземления,измерителей,
+КЗ и гармоник показывают существующие модели и недостающий UI-профиль;
+неподдерживаемые элементы не имитируются.
+
+Следующие интерфейсные блоки:
+1. Общий паспорт проекта и адаптеры видов расчёта:multivoltage PF/КЗ/motor-start/
+   coupled RMS;переключение профиля с отчётом совместимости,без молчаливых пропусков.
+2. Реальные трансформаторы/обмотки,нагрузочные модели и сетевые аппараты;
+   затем генераторы/регуляторы и автоматика в совместимом RMS/DAE профиле.
+3. DER/storage,фазные,гармонические/EMT профили по отдельным границам применимости.
+4. Измеренное масштабирование и единый отчёт/сравнение сценариев.
+
+**Обучение агента:**636 SFT views/159 префиксов/21 трасса пока prepared;
+последний adapter9/48 dev,semantic gate открыт. UI не означает новой обученной
+способности. Курс задач:чтение схемы/показаний и обоснованный отказ → диагностика
+с выбором инструментов → изменение схемы/пусков и проверка обязательных режимов →
+closed-loop GRPO. Сначала semantic-field loss/seen-case overfit,затем более
+разнообразный независимо проверенный корпус и frozen family-disjoint dev/test.
+Только публичные паспорта и текущая история поступают модели;oracle/будущие
+события/эталонный verdict используются отдельно для проверки. Ручные одиночные
+прогоны не импортируются в gold-корпус автоматически. Нового обучения не было.
+
+## R06.68 / VIS-01 — ручной конструктор с локальным RMS-расчётом
+
+В `web/editor.html` реализован сквозной процесс: добавление/соединение шин,
+линии и двигатели, параметры SI/pu, перенос шин, удаление с Undo/Redo,
+автосохранение, JSON-проект, Python-валидация и запуск SciPy с открытием
+результата в Grid Studio. В браузере собраны4 шины/3 линии/3 двигателя,
+задан пуск M3 в0,5s, проверены диагностика изоляции и pre_event состояние.
+31 JS-проверка (12 новых),14 Python-проверок (11 новых),7 HTTP-проверок проходят.
+
+Ограничения: один эквивалентный источник, радиальная симметричная50Hz сеть
+100–1000V, до16 шин/16 одно-клеточных двигателей, вентиляторная нагрузка,
+до10s, без тепловой модели, защит и иных семейств оборудования в редакторе.
+API только локальный; одиночный расчёт не является независимой квалификацией.
+Доступные Python-компоненты за пределами этого профиля ещё не представлены
+в ручном интерфейсе. Статическая сборка требует локального сервера для расчёта.
+Старые sealed reports не изменялись, веса Qwen не менялись.
+
+## R06.67 / VIS-01 — локальный Grid Studio
+
+Добавлен `web/grid.html`: интерактивная однолинейная схема с фактическими
+P/Q, U/I, скоростями, контактами и синхронными осциллограммами. Две радиальные
+конфигурации,12 записей R06.66; данные сверены с закреплённым source manifest.
+Потоки восстановлены из комплексных напряжений и параметров линий.
+Воспроизведение различает стороны коммутации; PNG/SVG и прошлый JSON-префикс
+экспортируются. Режим агента скрывает будущие события, вердикт и тепловую реплику.
+19 JS-проверок и3 Python-проверки экспортера проходят; браузером проверены
+схема, инспектор, стороны события, агентский режим и PNG-экспорт.
+
+Границы: сохранённые малые радиальные RMS-кейсы; нет live backend, редактора,
+кольцевого/GIS-вида и измеренного large-graph rendering. Импорт JSON проверяет
+структуру, но не удостоверяет физику. Следующая очередь визуализации:
+связь с новыми расчётами → редактор и покрытие оборудования → кольцевые схемы
+и многоуровневое напряжение → измеренное масштабирование Canvas/WebGL.
+Прежний semantic gate Qwen остаётся открытым; обучение в этом блоке не выполнялось.
+
+## R06.66 / DES-03 + VIS-01 — новая физика трёх двигателей, SI-сверка и корпус v2
+
+Закрыт следующий ограниченный блок моделирования и подготовки данных.
+Модель Qwen3.5-0.8B **не переобучалась**, её прежний semantic gate остаётся
+непройденным. Новые проверки объясняют, почему нельзя просто считать
+успешным прежний низкий общий SFT loss.
+
+- **12 seen-train generation probes:**первые below/mixed/running observations
+  выбраны по train labels до inference, затем одни и те же3 IDs проверены
+  в4 modalities. Assistant messages удалены из model inputs, public blocks и
+  PNG сохранены. Image/text/combined по1/3, schematic0/3 — всего3/12.
+  Ошибка есть и на знакомых примерах; одно отличие motor count/topology
+  не объясняет измеренный collapse. Это небольшой диагностический subset,
+  не полная train accuracy и не новый dev/test результат.
+- **4 native likelihood/prefix/cache controls** в историческом installed
+  runtime обученного adapter3c4…:first-assistant-token full/prompt logits
+  и2 cached/uncached generated tokens совпали в пределах2,8e-5 против
+  заранее заданного1e-3 FP32 bound. Полная equivalence всех decoding steps
+  этим не доказана. На3 text probes format NLL0,015–0,016, semantic
+  class/flag NLL0,130–0,359. На refusal true flag NLL1,201 против format0,026;
+  общий teacher loss0,104 скрывает неверный смысловой бит. Никаких updates,
+  reward repair или test inputs в этих controls не было.
+- **Два новых train P3 проекта:**3 single-cage motors на прежних3 nodes,
+  два мотора совместно на n2. Это новое wiring с новым спросом150kVA на n2,
+  а не переименование четырёхузловых dev/test проектов. Схемы star/chain;
+  каждая включает simultaneous,staged,restart и motor_open/close отдельно
+  для m,m2,m3 в3,0/3,2с. **36 новых grid runs**:2×6×3. Все shaft/algebra/
+  I²t/thermal и three-grid consensus checks пройдены без изменения caps.
+  Star accepted,chain rejected (в том числе по upstream ampacity);
+  инженерный отрицательный verdict сохранён.
+- Все **6 running openings** произошли при скорости>=0,9pu; post-open
+  current=0 при сохранённой скорости/потокосцеплении, затем повторное
+  подключение. Независимые SI nodal equations и6 новых passive OpenDSS
+  three-phase fault solutions согласуются с компиляцией сети.
+- **Новая независимая multi-bus SI rotor-flux реализация** решает напряжения
+  узлов, stator/rotor currents, интегрирует flux/speed и passive current-squared
+  thermal replica через DOP853. Она не вызывает production stamps,constants,
+  RHS или integrator.12 continuous trajectories сверены со всеми36 grids,
+  8 channels на каждый мотор. Максимум ошибок:speed3,87e-10pu,
+  current6,12e-9pu,voltage8,99e-11pu,EMF3,08e-9pu,thermal1,86e-10;
+  P0,000514W,Q0,000442var. Дополнительно проверены steady full-T circuit,
+  exact open fan coast/flux/heat и node-order invariance. Scope — эти authored
+  balanced3-node3-motor fan cases,constant-Z loads,one source,prescribed
+  switching,nontripping thermal observers. Не general thermal/R(T),OEM,
+  saturation,unbalanced или arbitrary-grid qualification.
+- **36 installed physics replays** повторили axes/events/channels побитово
+  на том же host с исходным BLAS environment. Первая попытка принудительно
+  задала другие thread settings и была отвергнута строгим comparator;
+  caps не ослаблялись. Нет cross-BLAS или independent-host guarantee.
+  Replay разбит на6 отдельно sealed sibling batches в прежних byte budgets.
+- **Corpus/export v2:**точный ограниченный inventory физических producers
+  и реальный producer каждого frame/record. Сохранены старый5ec… и новый3c4…,
+  они не переименованы в текущий exporter b82…. V1 поддерживается и не может
+  молча разрешить mixed revisions. Missing/unknown/duplicate/unused producers
+  отвергаются; public response schema enrichment сохраняет lineage.
+  Producer metadata не передаётся в model inputs.
+- **Prepared, not trained:**96 новых3-motor prefixes добавлены к63 прежним:
+  **159 prefixes /636 SFT views**,48 прежних dev prompts. На train есть
+  63 двухмоторных и96 трёхмоторных prefixes в одной P3 family;
+  на measured view112 running,273 below-running,29 disconnected labels;
+  schematic159 refusal targets. Это21 study trace, не159 независимых сетей.
+  Все прежние rows/targets/frame/PNG bytes и public dev conversations
+  сохранены; test не экспортировался. Source/installed прошли по **684 packs**
+  (636 masks+48 prompts,max2978 tokens), весь corpus/raw/schema exports
+  пересобран installed runtime побитово. Rotating-OFF waveform просмотрен.
+- **425 targeted tests**,25 новых; **160 tests** повторены в native stack.
+  Новый wheel меняет только3 data/provenance modules; solver и neural
+  training/generation modules прежние. Native physics и neural diagnostics
+  выполнены producer3c4…, dataset/replay/new validation — b82b66bfa07e737d627caa6d12844b70be19655fc41e3896cbe64503a332a84f.
+  Исторические receipts и snapshots не переписывались.
+
+Recipe и ограничения:`cases/design-multimodal/THREE_MOTOR.md`.
+Owner physics/data pins:`three-motor-data-profile.json`;
+prepared Qwen profile:`qwen35-08b-three-motor-profile.json`.
+Поставка:`reports/three-motor-delivery-2026-11-17/delivery.json`.
+GitHub/CI и git add/commit/push не выполнялись.
+
+**Следующий большой блок:**изменить и проверить learning objective, а не
+просто повторить длинную epoch. Добавить semantic/field loss metrics и
+явно закреплённое weighting/class-refusal sampling; проверить weighted-token
+normalization, partial batch и optimizer/RNG resume. Сначала bounded
+seen-case overfit pilot с generation controls и numeric/class-prior baselines,
+затем полная mixed recipe на подготовленных636 views и новый frozen-protocol
+dev comparison. Semantic-token accuracy сама по себе не заменяет joint
+field/decision correctness. Test остаётся закрытым. Image grounding
+counterfactuals, engineering tool use/GRPO, DES-02 catalog и широкие
+DES-03/04 combinations остаются в очереди.
+
+## R06.65 / LEARN-01 — mixed SFT и resume завершены; semantic quality gate не пройден
+
+Реализован и проверен `qwen35_mixed_training`: четыре train modalities,
+dedicated-generator shuffle, assistant-token-weighted gradient accumulation,
+клипирование один раз на effective batch, bounded AdamW и update-boundary
+checkpoints. Variable-size изображения обрабатываются нативно по одному;
+prompt/image/padding tokens не участвуют в loss. Это новое обучение от исходной
+Qwen3.5-0.8B, не продолжение прежнего image-only адаптера.
+
+- **Реальная полная epoch:**144/144 train views,36/36 optimizer updates,
+  по36 views каждой модальности;seed42,rank4,alpha8,lr0.0002,accumulation4,
+  CPU FP32/four threads.100352 adapter parameters, vision/backbone frozen.
+  Все36 sealed checkpoints проверены; frozen hash до/после совпадает.
+- Adapter, named AdamW moments и CPU Torch RNG сохраняются в safetensors;
+  owner anchors, plan/versions, schedule hash, cursor, token denominators
+  и полная microbatch history — в JSON. Нет pickle/torch.load и перезаписи
+  checkpoints. Crash внутри группы требует повторить её от последнего update;
+  partial gradients не сериализуются. Resume принимает только тот же runtime,
+  target, recipe и data. Native fresh installed process продолжил update1→2:
+  adapter/AdamW/RNG tensors, файлы, history и manifest **побитово совпали**.
+  Это same-host один update, не arbitrary-host guarantee.
+- **Полные48+48 dev generations** на одинаковых новых schema prompts/PNG,
+  greedy96 tokens:base **0/48**, adapter **9/48 (18,75%)**;
+  image/text/combined по **3/12**, schematic **0/12**.
+  У адаптера48/48 generic JSON decisions и48/48 public response-contract
+  validity, без budget exhaustion; base17/48 valid и7 exhaustions.
+  Валидная форма ответа не подтверждает верность показаний или отказа.
+- **Почти постоянные ответы:**46/48 совпадают с «все двигатели работают»;
+  всего2 уникальных strings. Post-hoc controls, получающие только static IDs
+  из public schema без наблюдений:all-running **9/48**, all-below-running
+  **15/48**, all-disconnected0/48. Следовательно, текущий recipe **не прошёл
+  содержательный quality gate** и не превзошёл даже class-prior control.
+  Numeric public-message policy даёт text/combined/schematic по12/12,
+  image0/12 (OCR отсутствует). Эти controls не являются neural compute-budget
+  comparison или trained policies; rewards не менялись, failures не удалялись.
+- Диагностика различает generic JSON, static-ID response contract и реальные
+  states:правильно12/36 required motor fields в image,13/36 в text,
+  12/36 в combined. Все12 schematic answers ошибочно утверждают наличие
+  состояний. Общий joint reward остаётся исходным0/1; field matches его
+  не заменяют. С прежними raw-prompt12/48 этот run напрямую не сравнивается:
+  prompt protocol, training views и effective batches отличаются.
+- **4 predetermined installed generation replays** (первый dev record каждой
+  модальности) повторили raw text, tokens и scores, включая ошибки.
+  Reference/test imports blocked, PGE imports только из installed runtime.
+  Это subset на том же host, не full48 или independent-host replay.
+- Train-only coverage исходного recipe:36 prefix observations из9 stored
+  study traces,2 motors;39 running и33 below-running labels на measured
+  view, **нет disconnected**;36 schematic refusal targets. Dev имеет3 motors,
+  поэтому motor count и topology covary. Это установленный data gap,
+  но причина collapse не доказана без train-generation и modality controls.
+- **Отдельное подготовленное расширение, ещё не обучено:**train-only cutoffs
+  **0,0 / 0,2 / 0,399 с** из тех же ранее проверенных трасс. Добавлены27
+  prefix observations;всего63×4 = **252 SFT views**,48 прежних dev prompts.
+  Это те же9 study traces, не27 независимых физических случаев. На measured
+  view теперь9 disconnected,78 below-running,39 running;63 refusals.
+  Все моторы по-прежнему2; disconnected — m2 перед первым включением,
+  не вращающийся двигатель после размыкания. Все старые rows/targets,
+  frame/PNG bytes, все48 public dev conversations иpixels сохранены.
+  Test не экспортировался. Source и installed прошли **300 native packs**
+  каждый (252 masks+48 prompts); installed пересобрал весь corpus/raw/schema
+  exports **побитово**. Срез0,399 выбран без округления времени в0,400 на PNG.
+  Физика заново не интегрировалась, новые независимые trajectories не заявлены.
+- **400 уникальных targeted regressions,60 новых**; native-stack subset
+  **135 уникальных tests**. Проверены token normalization, short final group,
+  exact continuation, recipe/cursor/tensor tampering, complete evaluator,
+  train-only early augmentation, неизменность held-out bytes и public-only
+  class-prior controls. Повторные XML executions не удваивают число тестов.
+- Runtime fingerprint`3c4c6e217ac5979f49e3fe0eb947d6d3f2923dede281ae48a58efeea24c26e16`.
+  Wheel добавляет только1 runtime module; прежние solver/generator/trainer/
+  grader modules побитово прежние. Поставка:
+  `reports/qwen35-mixed-delivery-2026-11-17/delivery.json`.
+  Recipe:`cases/design-multimodal/QWEN35_MIXED.md`;
+  current profile:`qwen35-08b-mixed-profile.json`;
+  prepared extension:`qwen35-08b-early-profile.json` (`prepared_not_trained`).
+  GitHub/CI и git add/commit/push не выполнялись; reports/venv игнорируются.
+
+**Следующая очередь по глобальному плану:**
+
+1. До нового длинного обучения — фиксированные train-generation controls без
+   assistant labels на входе; проверки numeric reading, refusal и modality
+   ablations. Отличить failure обучения/декодирования от OOD generalization;
+   не объяснять collapse одним предположением о motor count.
+2. DES-03/VIS-01:новые **physics-qualified train cases с3 motors** в train
+   topology family (например,3 motors на прежних2 load sites), без переноса
+   dev/test проектов. Дополнить early252 вращающимся motor_open/close,
+   разными отключаемыми IDs и threshold-boundary cases. Для нового wiring
+   нужны независимые nodal/OpenDSS checks, три numerical grids, physical audits
+   и installed replay; простое редактирование labels не допускается.
+3. LEARN-01:после этих controls обучать новую отдельно закреплённую recipe,
+   сопоставлять с numeric и class-prior controls; constrained decoding —
+   отдельный protocol. Далее public tool-use и physics-scored actions/GRPO.
+   Test открыть только после freeze recipe и правил оценки.
+
+VIS-01/LEARN-01 остаются **in_progress**, EVAL-01 — **open**.
+Обучающий тракт и его воспроизводимость завершены в этом profile;
+качество инженерного агента, широкая физика и преимущество над моделерами
+этим экспериментом не подтверждены.
+
+## R06.64 / LEARN-01 + VIS-01 — полная оценка адаптера и отдельный schema curriculum
+
+Выполнен следующий gate: исторический36-step Qwen3.5-0.8B adapter теперь
+проверен на всех12 dev observations в4 модальностях. Prompts, PNG, thresholds,
+CPU float32/four threads, greedy decode и96-token budget совпадают с R06.63.
+Test и новые physics integrations не использовались.
+
+- `qwen35_adapter_evaluation`: owner manifest training artifact + explicit
+  historical producer pin; default требует current producer. До загрузки
+  сверяются model/config/shards, original train export, corpus lineage, реальные
+  training IDs/steps и finite rows. Native load дополнительно проверяет frozen
+  backbone hash, adapter modules/count и tensor keys/shapes/dtype/finite values.
+  Исторический Python не исполняется. Training producer1af… и evaluator96e…
+  записываются отдельно. Базовые параметры и adapter values после inference
+  не изменились.
+- **48/48 raw dev generations** завершены. Строгая точность:
+  image **2/12**, text **5/12**, combined **5/12**, schematic **0/12**;
+  всего **12/48 (25%)**, против **0/48** у исходной модели. JSON/schema-valid
+  ответы **48/48** против0/48; output-budget exhaustions **0** против39.
+  Это наблюдаемая разница одного небольшого authored dev profile, не test
+  generalization, не инженер-проектировщик и не superiority над моделерами.
+- Paired verifier заново вычисляет все rewards и знаменатели, проверяет полные
+  paired IDs, target/data/decode identity, prompt tokens, image counts и budgets.
+  Missing/duplicate/foreign rows, forged rewards/validity, hidden supervision,
+  изменённые prompts/protocols и выбор успешных примеров отвергаются.
+  Cached baseline имеет явные owner manifest/producer pins; его generator и
+  trainer modules побитово совпадают с прежним wheel. Unit test дополнительно
+  сверяет реальные kwargs и metadata обеих generation paths.
+- Диагностика: неверные indication classes в10 image answers,6 text и7 combined;
+  один text answer пропускает motor. Все12 schematic answers нарушают требуемую
+  abstention, перечисляя состояния без текущих показаний. Ошибки не исправлялись
+  ни parser repair, ни удалением Markdown, ни изменением reward.
+- Добавлен **public numeric arithmetic control**: политика получает только
+  messages с публичным instrument JSON, без private targets/frames/metadata.
+  text/combined **12/12** каждый; без numeric text она abstains:
+  schematic12/12, image0/12. OCR не реализован, поэтому это не visual baseline
+  и не neural compute-budget comparison. Обученный адаптер всё ещё хуже простого
+  детерминированного чтения числовых наблюдений.
+- **4 predetermined installed-wheel generation replays** — первый dev record
+  каждой модальности — повторили text/tokens/scores в точности. Reference/test
+  imports заблокированы, все PGE imports из выбранного installed runtime.
+  Это same-host subset, не full48 replay или independent host.
+- `design_response_schema`: отдельный curriculum с явной JSON Schema, static
+  motor IDs, allowed classes и conditional empty motors при недостатке данных.
+  Существующие blocks, PNG bytes и assistant answer strings не меняются;
+  measured numeric state, labels/future information в public additions не
+  попадают. Статические IDs добавлены в текст и image mode, что явно меняет
+  prompt protocol. Его результаты нельзя смешивать с raw benchmark.
+- **8 экспортов**:36 train observations×4 views = **144 SFT records**,
+  12 dev×4 = **48 unlabeled prompts**. Это варианты прежних observations,
+  не новые независимые physical cases. Test enrichment и повторное stacking
+  схем запрещены. **Новые training steps =0**: этот curriculum подготовлен,
+  но ещё не обучен. Его accuracy не измерена.
+- Все **192 native processor packs** прошли в source и installed runtime:
+  144 assistant-only masks,48 dev без labels; максимум2978 tokens. Installed
+  rebuild повторил весь curriculum **побитово**. Weight loading/forward/training
+  в этих processor checks отсутствуют.
+- **340 targeted regressions** без failures/errors/skips:336 main +4
+  непересекающихся numeric-policy tests; **55 новых**. Subset **90 tests**
+  повторён в native model stack. Новый wheel добавляет только2 runtime modules;
+  прежние solver/generator/trainer modules не менялись. Математика симулятора
+  и прежняя квалификация физики не расширены этим learning gate.
+- Recipe и команды: `cases/design-multimodal/QWEN35_08B_EVAL.md`,
+  owner profile `qwen35-08b-adapter-eval-profile.json`. Evidence:
+  `reports/qwen35-08b-adapter-{dev,paired-dev,installed-generation}-2026-11-16`,
+  `reports/qwen35-08b-public-numeric-baseline-2026-11-16`,
+  `reports/qwen35-08b-response-curriculum-2026-11-16` и source/installed processor
+  receipts. Поставка: `reports/qwen35-08b-adapter-delivery-2026-11-16/delivery.json`.
+  GitHub/CI и git add/commit/push не выполнялись; generated artifacts игнорируются.
+
+**Глобальный сдвиг:** owner-anchored adapter evaluator и raw base-versus-adapter
+comparison завершены в этом bounded diagnostic profile. VIS-01/LEARN-01 остаются
+**in_progress**, EVAL-01 — **open**: engineering workflow, independent designer
+assessment, test и closed-loop physics-scored GRPO ещё не квалифицированы.
+Измеренный выигрыш над raw base не компенсирует провал abstention и ошибки чисел.
+
+**Следующий большой блок:** reproducible mixed-modality trainer для schema
+curriculum (текущий trainer имеет64-step cap и single-example updates), explicit
+ordering/batching/accumulation, checkpoint/optimizer/RNG resume; затем **новые
+base и adapter dev runs на одном schema protocol**. Отдельный constrained-decoding
+control — без ослабления rewards. До открытия test зафиксировать recipe. Для
+более сильной generalization добавить independently qualified train physical
+cases с согласованным motor-count coverage, сохранив dev/test family boundaries;
+не переносить старые held-out проекты в train. Затем multimodal tool-use и
+physics-scored проектные действия. DES-02/03/04 продолжаются независимо.
+
+Предыдущий R06.63 ниже исторический: его adapter-evaluation gate закрыт в R06.64,
+но полного обучения schema curriculum и test results по-прежнему нет.
+
+## R06.63 / LEARN-01 — Qwen3.5-0.8B, реальное адаптерное SFT и полный base-dev baseline
+
+По выбору владельца текущая модель — **Qwen/Qwen3.5-0.8B**. Прежний 4B
+checkpoint и его processor receipts остаются историческими. Новый локальный
+checkpoint уже имелся на диске; скачивание, GitHub/CI и публикация не нужны.
+
+- Новый owner-pinned target: `requirements/qwen35-08b-local-target.json`.
+  Проверяются config, tokenizer/template, processor files, safetensors index и
+  все shards до загрузки весов. Metadata SHA:
+  `e763c82b7f4f1d5acea273b43674e45bcdb949fc91d000cb7537ea54b5fa0262`.
+  Один BF16 source shard1,746,942,600 bytes; локальная origin revision не
+  аутентифицирована. Native model loading: local-only, no remote code,
+  safetensors only. Исходные файлы модели не менялись.
+- Отдельный профиль `qwen35-training` на Transformers5.22.1/Torch2.7.0/
+  safetensors0.8.0. Нативному processor окружению недоставало simulator dependencies;
+  создан project-local venv с read-only reuse двух существующих Python3.12
+  installations. Внешние окружения не изменялись. GPU driver недоступен;
+  измеренный профиль — **CPU float32,4 threads**, с reference gated-delta kernels.
+  Это не GPU/BF16 или изолированный performance benchmark.
+- `qwen35_training`: строгий bounded plan, train-only anchored export и
+  **100 352 параметра rank4/alpha8 LoRA** на семи projections последнего
+  decoder block. Vision encoder и прочие базовые веса заморожены. Изображения
+  проходят настоящий native vision forward; backward обновляет выбранные
+  decoder adapters. Никаких synthetic/random weights или surrogate logits.
+  Loss считается по causal assistant positions, включая EOS; prompt/image/
+  padding labels маскированы. Tests сверяют loss и gradients с full shifted CE.
+- Реально выполнены **2 qualification steps** и отдельный **полный проход по
+  36 train-image observations /36 optimizer steps**. Seed42,lr0.0002,
+  gradient clip1.0, без shuffle и dev-based selection. Все losses, gradients и
+  updated tensors конечны; базовые параметры сохранили исходный hash и не
+  получили gradients. Один проход — не подтверждение качества на новых схемах.
+- Оба adapter checkpoints записаны в safetensors, уничтожены в памяти и
+  восстановлены: native logits/loss совпадают побитово. Дополнительно **4 fresh
+  Python-I replays**: source/installed для двухшагового и36-step checkpoints.
+  Tests/reference imports заблокированы, все PGE modules берутся из выбранного
+  runtime. Для каждой пары совпали **полные manifest hashes**, не только loss.
+  Это same-host воспроизведение, не независимый host.
+- **Настоящий base-dev benchmark:48 generations** — все12 dev observations
+  ×image/text/combined/schematic. Исходная модель без адаптеров, greedy decoding,
+  одинаковые96 output tokens, без labels в model input. Итог **0/12 в каждой
+  модальности,0/48 суммарно**, ни одного schema-valid decision; **39/48**
+  исчерпали token budget. Markdown fences, неверные структуры/классы и
+  незавершённые ответы остаются в знаменателе и получают0. Это отрицательный
+  baseline текущего prompt/decoder контракта; результат не изолирует visual
+  perception и не означает оценку обученного адаптера. Train имеет2 motors,
+  dev3 motors: изменение topology и motor count также совмещено.
+- Отдельный host-only prediction audit повторяет все rewards и классифицирует
+  JSON/schema/indication failures. Удаление Markdown fences проверяется только
+  диагностически, не меняет официальные scores. Частичный generation run не
+  может выдать успешный sealed evaluation. Test не участвовал в training,
+  model generation или выборе hyperparameters; прежние processor-only checks
+  test prompts не являются model evaluation.
+- **285 targeted tests** без failures/errors/skips, включая **39 новых**.
+  Отдельно **52 tests** повторены в native Qwen stack (это subset, не ещё52
+  уникальных теста). Installed 0.8B processor повторил69 packs:60 image inputs,
+  39 SFT masks и30 held-out prompts. Wheel содержит только2 новых runtime
+  modules; существующие solver/data modules побитово не изменились относительно
+  R06.62. Физические интегрирования этого выпуска не выполнялись; используются
+  ранее owner-pinned45 three-grid runs и их observations.
+- Recipe/API/commands: `cases/design-multimodal/QWEN35_08B.md` и3 JSON plans.
+  Runtime: `qwen35_training.py`, `qwen35_evaluation.py`; benchmark launcher,
+  fresh-process adapter replay, prediction audit и delivery builder.
+  Evidence: `reports/qwen35-08b-{adapter-training,train-epoch,base-dev}-2026-11-16`,
+  source/installed replay pairs, installed processor и prediction audit.
+  Поставка: `reports/qwen35-08b-delivery-2026-11-16/delivery.json`.
+  Adapter binaries, reports и local venv игнорируются git. Коммитов нет.
+
+**Глобальный сдвиг:** первая реальная model-weight forward/backward и train-only
+SFT стадия LEARN-01 выполнена в этом CPU adapter profile. LEARN-01 и VIS-01
+остаются **in_progress**, EVAL-01 — **open**. Trained-adapter dev/test accuracy,
+full-model tuning, optimizer/RNG resume, multi-example collation, долгие runs
+за пределами64-step cap, GPU qualification и closed-loop physics-scored GRPO
+ещё не выполнены. Superiority и способность быть инженером-проектировщиком
+не доказаны.
+
+**Следующий порядок:** owner-anchored adapter evaluator → полное base-versus-
+adapter сравнение на тех же12 dev×4 modalities и96-token budget → исправление
+форматного curriculum/явной response schema или отдельный constrained-decoding
+baseline без ослабления rewards → зафиксировать recipe до открытия test →
+multimodal tool-use и physics-scored действия. DES-02/03/04 продолжаются по
+прежним физическим/каталожным ограничениям; обучение не закрывает их автоматически.
+
+Предыдущие записи ниже исторические; их будущая forward/backward стадия и
+выбор4B superseded настоящим R06.63. Test и результат обученной0.8B не заявлены.
+
+## R06.62 / VIS-01 + LEARN-01 — наблюдения, мультимодальный корпус и загрузчик Qwen
+
+Добавлен воспроизводимый путь от квалифицированных расчётов к входам VLM:
+однолинейная схема, паспорт выбранного оборудования и осциллограммы только до
+момента наблюдения. Это развитие слоя данных и обучения; новые интегрирования
+или расширение квалифицированной физики в этом выпуске не заявляются.
+
+- **60 наблюдений /62 PNG**, 5 проектов ×3 сценария ×4 момента:
+  0.4/1.5/1.6/4 s. На разрывах берётся post-event сторона; экстремумы и стороны
+  событий сохраняются при прореживании графика. Статические паспорта не содержат
+  команд и состояния, будущие отсчёты и итоговые verdict/reward не экспортируются.
+  PNG показывают U/I/скорость и текущие дискретные показания; единицы и
+  происхождение параметров явно обозначены.
+- Три **точно непересекающиеся топологические семьи**, train/dev/test36/12/12.
+  Канонизация учитывает изоморфизм: трёхузловые star/chain не разнесены между
+  split. Двигатели и каталог общие; независимость equipment families не заявлена.
+  Четыре режима image/text/combined/schematic дают **12 переносимых экспортов**.
+  SFT разрешён только для train; dev/test содержат только prompts. В режиме
+  schematic без приборов правильный ответ — недостаточно наблюдений.
+- Строгая диагностическая цель — чтение отображённых connection/speed и
+  порога0.900 pu при округлении0.001 pu. `at_running_speed` не означает наличие
+  питания, исправность или допустимость проекта: выбегающий мотор тоже может
+  иметь такую скорость. Проверенные host-owned цели кешируются; пакетный callback
+  наград отвергает дубли JSON-ключей, дополнительный текст, NaN и изменение
+  схемы ответа. Это diagnostic0/1 reward, не закрытая GRPO-петля управления.
+- Исторические источники R06.61 привязаны к двум owner manifest hashes и
+  отдельному physics producer SHA. Повторно проверены **45 сохранённых grid runs**,
+  compilation, критерии и итоговые решения. Новый optional explicit revision pin
+  позволяет такой аудит; default current-only checks не ослаблены. Physics SHA
+  и exporter/auditor SHA разделены; исходные sealed artifacts не перезаписываются.
+- `VLMExportDataset` проверяет anchors, безопасные локальные PNG, модальность,
+  split и роли, затем использует **нативный Qwen3VLProcessor**. Проверяются
+  prompt/full prefix, image tokens, finite visual tensors и assistant-only loss
+  mask. Prompt/image/padding tokens маскированы; silent truncation запрещено.
+  Один пример упаковывается в batch; trainer и multi-example collator не добавлены.
+- Реальный локальный **Qwen3.5-4B processor**: **69 проверок**, включая все60
+  image observations, **39 SFT masks и30 held-out prompts**; максимум2757 tokens,
+  3 изображения. Transformers5.22.1/Torch2.7.0/Pillow10.4.0/tokenizers0.23.3.
+  Config закреплён owner SHA; файлы процессора сверены до/после. Веса не открывались,
+  forward/backward, обучение и измерение качества модели не выполнялись.
+  Новый `qwen35-processor` профиль отделён от прежнего Transformers4.x
+  `llm-training`; совместная установка этих extras не поддерживается.
+- **246 targeted tests**, включая **40 новых**, без failures/errors/skips.
+  Проверены event sides, порог/округление, future poisoning, пересоздание PNG,
+  изоморфные splits, утечки ответов, tampering и потеря image/mask/prefix.
+  Проверки экспорта: **240 positive +480 negative** на каждом runtime.
+  Same-host Python-I installed-wheel replay с заблокированными reference imports
+  повторил корпус и все12 экспортов **побитово**. Это не независимый host.
+- Примеры/API: `cases/design-multimodal/README.md`; source anchors и protocol
+  находятся рядом. Runtime: `design_frame`, `design_multimodal`,
+  `design_multimodal_render`, `vlm_batches`. Отдельные acceptance/native processor/
+  delivery scripts фиксируют воспроизведение. Evidence:
+  `reports/design-multimodal-qualified-current-2026-11-16`,
+  `reports/design-multimodal-exports-{current,installed-current}-2026-11-16`,
+  `reports/design-multimodal-native-processor-2026-11-16`.
+  Поставка: `reports/design-multimodal-delivery-2026-11-16/delivery.json`.
+  Родительские corpus/replay directories приватны: агенту выдаётся только
+  отдельный export, без targets, frame history и host receipts.
+
+**Глобальный сдвиг:** VIS-01 остаётся **in_progress**, изображения паспортов и
+осциллограмм реализованы. LEARN-01 теперь **in_progress**: есть data/processor/
+loss-mask/reward подготовка, но его критерий обучения ещё не выполнен.
+Следующий блок: реальный forward/backward на Qwen, затем base-model ablations
+image/text/combined/schematic, SFT только на train и закреплённая оценка на
+held-out. EVAL-01 остаётся open. Затем — multimodal tool rollouts и physics-scored
+проектные действия; параллельно нужны более широкие физика, каталоги и topology
+families из DES-02/03/04. Превосходство над другими моделерами не установлено.
+GitHub/CI и публикация не использовались, git add/commit/push не выполнялись.
+
+Предыдущий статус R06.61 ниже описывает границы того выпуска; его открытые
+паспортные/осциллографические наблюдения реализованы в R06.62 в указанном профиле.
+
+## R06.61 / DES-02 → DES-03 + VIS-01 — построение сети, выбор оборудования и публичная однолинейная схема
+
+Вместо изменения импеданса единственного готового фидера теперь доступно
+построение реальной radial LV сети из разрешённых owner corridors. Кандидат
+выбирает transformer ID и corridor/cable ID каждой ветви. Компилятор создаёт
+новые line/terminal objects, проверяет spanning tree всех заданных площадок,
+подключает паспортные параметры и запускает каждый обязательный сценарий.
+Фиксированные load sites, motor passports, спрос, критерии, возмущения и
+каталог кандидат изменять не может.
+
+- `NetworkDesignTask` / `NetworkProposal`: exact demand coverage каждого узла,
+  nameplate/auxiliary envelope, один источник и уровень LV, 50 Hz, разрешённые
+  трассы, установка по точной catalog row. Unknown IDs, disconnected/cyclic
+  proposals, dangling references, parameter/criteria edits, ID collisions и
+  неподдержанные dynamic scopes отвергаются до создания output. Порядок
+  выбранных ветвей нормализуется; все три динамические сетки preflighted.
+- `derive_catalog_passports` — единая data-only derivation для прежнего
+  single-feeder compiler и новой сборки: R20→R(T), AC/DC assumption,
+  loss-derived transformer R/X, field-level source lineage. Новых OEM фактов
+  не выдумывается; unverified transformer withstand, generic X и AC/DC factor
+  сохраняют своё происхождение и ограничения.
+- Статический экран агрегирует спрос по downstream tree, проверяет ampacity,
+  transformer loading, nominal fixed-current projected drop **с трансформатором**,
+  passive source-only fault вдоль полного пути, upstream cable I2t, supplied
+  interrupting/short-time limits. Это не constant-P load flow/IEC60909,
+  не motor fault contribution/inrush/peak duty и не защита/selectivity.
+- Затем **все** обязательные simultaneous start / staged start / restart
+  проходят 3-grid `MotorEngineeringPlan`. Static rejection не пропускает
+  dynamics. Incomplete/unqualified traces получают reward=null, а не
+  qualified rejection/acceptance. Отдельный verifier восстанавливает compilation,
+  owner/proposal anchors, physical audits, grid consensus и итоговый verdict.
+- **5 проектных вариантов /45 dynamic grid runs**, 4 s, 2/1/0.5 ms,
+  **3/4 nodes и2/3 motors**. Short star/chain: 3 accepted designs; long route:
+  2 rejected designs. Независимые SI nodal equations сверяют voltage/current
+  screening; **17 OpenDSS fault solutions** — каждый узел. Также проверены
+  фактически выданные source/line impedances и endpoints всех dynamic cases.
+  Отдельный consumer повторил references, audits и все 5 public views.
+- Новый `network_design_view`: deterministic single-line SVG и public JSON
+  выбранных соединений, cable IDs/lengths и motor/load sites. Нет verdict,
+  reward, event schedule или future trajectories. Labels escaped; длинные
+  строки сокращаются с полным SVG title. Все **5 схем** rasterized через
+  системные librsvg/Cairo; визуально проверены branching/chain views, устранено
+  перекрытие node labels проводами. Это первая часть VIS-01, не image-grounding
+  ablation, паспортные изображения, VLM dataset или обученная модель.
+- **157 targeted tests passed**, включая **32 новых**, без failures/errors/skips.
+  Прежний six-family feeder corpus пересобран на текущем runtime: **108 grid
+  runs**, 12 options и qualified infeasible cases. Все corpus regressions
+  выполнены с явным PGE_DESIGN_CORPUS, не пропущены. Проверены полный CLI run /
+  verify, owner tampering, canonical ordering, invalid inputs, cancelled/null
+  reward, static-negative с обязательными dynamics и public observation boundary.
+- Same-host Python-I installed replay: **54 studies** (45 новых +9 прежних),
+  битовое совпадение axes/events/common channels. Из-за объёма длительных
+  осциллограмм 9 six-record batches запечатаны отдельно как sibling artifacts;
+  composite receipt ссылается на их hashes. Лимит 256 MB на artifact не ослаблен,
+  receipt не выдаётся за автономный архив всех данных.
+- CLI: `compile-network-design`, `network-design`, `verify-network-design`,
+  `network-design-view`. Примеры: `cases/network-construction/README.md`,
+  2 owner tasks и4 proposals. Runtime: новые `network_design.py`,
+  `network_design_view.py`; изменены `equipment_catalog.py`, `cli.py`.
+  Physics/integrator kernels относительно R06.60 не менялись.
+  Evidence: `reports/network-construction-{qualified,accepted}-release-2026-11-16`,
+  `reports/network-construction-legacy-corpus-release-2026-11-16`,
+  `reports/network-construction-installed-replay-2026-11-16` и sibling batches,
+  `reports/network-construction-visual-qa-2026-11-16`.
+  Поставка: `reports/network-construction-delivery-2026-11-16/delivery.json`.
+
+**Глобальный сдвиг:** DES-03 и VIS-01 теперь **in_progress**, вместо open.
+DES-02 остаётся in_progress: дополнительные verified cable/transformer facts,
+другие installations, withstand и catalog compatibility ещё нужны.
+DES-03 далее: секции, несколько трансформаторов/уровней, управляемое расширение
+площадок и совместная защита; текущий профиль — fixed sites + tree rewiring.
+VIS-01 далее: осциллограммы/паспортные наблюдения, visual grounding и реальные
+multimodal episodes. LEARN-01/EVAL-01 не закрыты: actual Qwen SFT/GRPO,
+held-out independent assessment и преимущество над другими моделерами не
+доказаны. API bounds2–8 sites не являются доказательством точности/масштаба
+вне измеренной матрицы3/4 nodes. GitHub/CI не используются; коммитов нет.
+
+## R06.60 / DES-04 + подготовка LEARN-01 — явный thermal reset и диагностические tool episodes
+
+Реализован opt-in `GeneratorThermalProtection.reset_level` и команда
+`generator_thermal_reset` по ID генератора. Нужны явный порог ниже trip,
+настроенный actuator, физически отключённый генератор и I2 level <= reset.
+Connected/too-hot requests блокируются; повторный допустимый reset — no-op.
+Сбрасывается только stator-I2 latch: replica level, физические температуры,
+operator inhibit и отдельная field-thermal защита сохраняются. Автоматического
+сброса по охлаждению нет. Паспорта без reset_level сериализуются как раньше.
+
+- Тепловое открытие теперь фиксирует `opened_at` настроенного generator breaker:
+  последующий reset не обходит minimum open time. DAE mode token включает
+  stator/field protection latches независимо от положения выключателя.
+  Дифференциальные уравнения машин/нагрева не менялись, состояния при reset
+  непрерывны; повторное включение сохраняет весь синхроконтроль.
+- **20 авторских случаев / 80 native runs / 40 независимых SI траекторий /
+  160 сравнений**: восемь сценариев, два temperature sets, четыре перестановки.
+  Radau/DAE, 2/1 ms, horizon 0.3 s. Проверены early/connected reset blocks,
+  ручной и ATS retrip, minimum-open block, command-before-delayed-close,
+  operator inhibit и duplicate reset. Повторный trip — ожидаемое следствие
+  неустранённого нагруженного режима; reset не является устранением причины.
+- Подтверждены **144 thermal trips, 64 applied /16 blocked /8 no-op resets,
+  144 applied /48 blocked closes, 104 forward ATS starts**. Consumer заново
+  интегрировал все references и пересчитал comparison, физическую непрерывность,
+  latch/cooling memory, 1024 clock segments и 16 полных permutation pairs.
+  Max clock error **7.78e-16**; native energy **0.004152 J** при gate 0.1 J;
+  reference **3.46e-9 J** при gate 1e-4 J. Это numerical consistency.
+- **520 targeted tests passed**, без failures/errors/skips: 319 automation/
+  workflow/diagnostic, 149 физических и 52 stator/field thermal regression.
+  **54 новых теста**. Старый unit fixture явно задаёт legacy event policy;
+  отдельно проверено, что coincident policy применяет только переданный набор
+  roots. Same-host Python-I replay **96 исследований** (80 новых +16 прежних)
+  побитово сохраняет event/axis/channels. CLI manual_retrip выполнен.
+- Добавлен `power_grid_env.recovery_curriculum`: strict read-only tools для
+  текущего connected/latched/I2 indication и owner reset policy, typed decision,
+  owner-manifest-anchored 0/1 diagnostic scoring. Кандидат не может подменять
+  наблюдение/threshold через ответ. `submit_decision` не исполняет физическое
+  действие. Наблюдения извлекаются **до команды**, без будущих событий/ответа.
+- Из qualified + независимо accepted evidence собраны **18 scripted tool-use
+  episodes**, SFT JSONL и prompts JSONL без labels. Все записи одной topology
+  family остаются **train-only**, включая hot parameters. Проверены tool-message
+  replay, правильные/неправильные/malformed ответы и обязательный owner anchor.
+  Полный pipeline повторён Python-I из установленного wheel с блокировкой
+  benchmark imports; corpus и оба экспорта совпадают побитово.
+  Это подготовка диагностического curriculum: **нет model training, VLM images,
+  topology-held-out evaluation или closed-loop GRPO/design reward**.
+- Runtime относительно R06.59: `generator_thermal.py`, `network_automation.py`,
+  `coupled_rms.py`, `dae.py`; новый `recovery_curriculum.py`. Примеры и команды:
+  `cases/thermal-recovery/README.md`, восемь JSON. Evidence:
+  `reports/thermal-recovery-{qualified,accepted,installed-replay}-2026-11-16`,
+  `reports/thermal-recovery-learning{,-installed}-2026-11-16`.
+  Поставка: `reports/thermal-recovery-delivery-2026-11-16/delivery.json`.
+
+**Глобальная очередь после этого этапа:** расширять DES-02 catalog и DES-03
+construction/redesign, параллельно VIS-01 на проверенных физических профилях.
+В DES-04 остаются primary close-failure fallback, several live islands,
+public equipment/thermal anchors и joint standby heat initialization.
+Для LEARN-01 далее нужны разнообразные family-disjoint задачи, визуальные
+наблюдения, tool-use rollout с полноценным физическим verdict, actual Qwen SFT/
+GRPO и независимый EVAL-01. Малый diagnostic seed не закрывает эти этапы.
+
+DES-04 **in_progress**, LEARN-01 **open с выполненной подготовкой**. Текущий
+профиль — warm-standby radial GENCLS/two-cage R(T), заданные температуры,
+permissive numerical synchrocheck и live/dead threshold 0.5 pu, не рабочие
+настройки оборудования. Нет field-thermal reset/OEM/arbitrary root ties/
+multi-island qualification или независимого host. GitHub/CI не используются;
+коммитов нет.
+
+## R06.59 / DES-04 — начальная недоступность PT и тепловая блокировка повторного подключения
+
+Добавлены `initial_primary_measurement_available` и
+`initial_reserve_measurement_available` в паспорт transfer scheme. При false
+доступность и observed-voltage channels отражают отказ уже в initial sample,
+даже без measurement commands. Physical source/network voltage и начальные
+состояния не меняются. Значения true по умолчанию не сериализуются: старые
+паспорта, размерности и channel inventories сохраняются. Существующие команды
+restored включают измерение; reset АВР не восстанавливает отсутствующий PT.
+
+- **20 авторских случаев / 80 native runs / 40 независимых SI траекторий /
+  160 сравнений**: восемь сценариев, два prescribed temperature sets и четыре
+  перестановки; Radau/DAE на 2/1 ms, horizon 0.3 s. Покрыты initial primary /
+  reserve / both PT loss, restoration и явный retry, отсутствие восстановления,
+  ручное и ATS-повторное включение после stator-I2 trip.
+- Тепловая блокировка была реализована ранее; новый этап независимо проверяет
+  её совместную работу с warm-standby ATS. После открытия ток равен нулю,
+  I2 replica остывает по аналитическому exp(-t/tau), но latch остаётся даже
+  ниже trip. Ручные close и ATS reset не обходят блокировку. Это отдельная
+  dimensionless I2 replica, не физическая температура обмотки и не разрешение
+  включения после охлаждения. Field-thermal reconnection сюда не переносится.
+- Начальное отсутствие primary PT не фабрикует undervoltage detection;
+  отсутствие reserve PT блокирует до запроса close. Возврат PT допускает
+  новое измерение, но сохраняет напряженческие/частотные ограничения.
+  В `both_restore` passport case успешно включает резерв и возвращается;
+  hotter case блокируется по voltage difference. При retry после восстановления
+  reserve PT включение блокируется по frequency difference. Оба отказа
+  сохранены как ожидаемые результаты, параметры не подгонялись под closing.
+- Native aggregate: **24 thermal trips, 48 thermal close blocks, 112 forward
+  ATS starts, 16 PT transfer blocks, 16 completed returns**. Consumer повторяет
+  references, владельцев параметров/схем, clock integrals, physical continuity,
+  topology grid/event sides, I2 cooling, copper/heat identity, energy integrals,
+  initial spectra и 16 полных permutation pairs. Пересчитаны **864 clock
+  segments** и 80 native energy integrals: max clock error **9.99e-16**,
+  native energy **0.01495 J** при gate 0.1 J, reference **1.60e-8 J** при
+  gate 1e-4 J. Это численная согласованность. Отдельно проверены altered
+  validity/latch/level/reason и различимость initial-mask владельцев.
+- **415 targeted tests passed**: 266 automation/DAE/workflow, включая **31 новый**,
+  и 149 физических регрессий. Дополнительная проверка owner comparison
+  учитывает выбранный engine. Same-host Python-I installed replay — **96
+  проверок** (80 новых +16 prior automatic-return success/cancel-reset),
+  побитовое совпадение событий, осей и каналов. CLI thermal_retry выполнен.
+- Единственное изменение runtime относительно R06.58 — `network_automation.py`:
+  схема начальных PT flags и их применение в initialization/diagnostics.
+  Уравнения машин и тепловой защиты не менялись. Примеры:
+  `cases/standby-interlocks/README.md`, восемь JSON. Evidence:
+  `reports/standby-interlocks-qualified-final-2026-11-16`,
+  `reports/standby-interlocks-accepted-final-2026-11-16`,
+  `reports/standby-interlocks-installed-replay-2026-11-16`.
+  Поставка: `reports/standby-interlocks-delivery-2026-11-16/delivery.json`.
+
+**Далее:** явно квалифицированный cooldown/reset workflow с отдельным
+разрешением тепловой защиты; primary close-failure fallback; несколько живых
+островов; public equipment/thermal anchors; joint standby heat initialization.
+DES-04 остаётся **in_progress**. Не заявлены OEM/field accuracy, arbitrary root
+ordering, global hybrid stability, several-live-island/field-thermal return
+или независимый host. GitHub/CI не используются; коммитов нет.
+
+## R06.58 / DES-04 — автоматический возврат питания и отмена отложенных действий
+
+Добавлен opt-in `TransferScheme.return_policy`: непрерывная выдержка
+восстановленного primary supply, гистерезис, открытие резерва, dead time и
+отложенное включение primary. Контроллер работает в Radau и network DAE;
+clock входит в состояния, дискретные режимы — в DAE mode token. Старые
+профили без policy сохраняют сериализацию, размерность и каналы.
+
+- Потеря напряжения или supply PT в ходе recovery **обнуляет** выдержку.
+  Обе supply-validity и manual inhibit проверяются перед переключением и
+  заново при фактическом исполнении. Сохраняются minimum open time,
+  синхроконтроль и break-before-make. Приоритет одновременных health-loss /
+  dwell-expiry консервативен и отдельно проверен.
+- Если primary пропадает после открытия резерва или между запросом и
+  исполнением primary close, forward ATS повторно вооружается при valid PT
+  и отсутствии operator inhibit. В тестах он восстанавливает резерв, но
+  последующий возврат блокируется по углу: controller reset не разрешает
+  физически недопустимое включение. Отказ открытия резерва также блокирует
+  запрос primary close.
+- `return_cancel` удаляет pending actions своего цикла; `return_reset`
+  удаляет их и требует новую полную выдержку. Generation защищает от stale
+  actions; отмена не отменяет уже выполненное открытие, не снимает manual
+  inhibit и не стирает чужие protection/ATS actions. Проверена namespace
+  ownership (`ats` / `ats:child`) и отмена после close request. Исправлен
+  конфликт dedup очереди: совпавшая ручная команда получает собственное
+  владение и переживает отмену автоматического возврата. Cancel относится
+  к циклу: последующий успешный forward ATS снова вооружает return policy.
+- **22 авторских случая / 88 native runs / 44 независимые траектории /
+  176 сравнений**: девять сценариев, passport/hot temperatures и четыре
+  перестановки; Radau/DAE, 2/1 ms, horizon 0.3 s. Подтверждены 128 return
+  starts, 56 completions, 48 blocks, 16 fallback armings, 40 удалённых
+  actions, 16 сбросов recovery и 104 forward transfers во всех native runs.
+- Независимый SI DOP853 reference имеет собственную очередь/автоматику;
+  native return helpers не использует. Постоянная recovery clock имеет
+  независимый exact expiry, сверяемый с интегрированной clock, без подгонки
+  под native event times. Consumer повторил **1240 clock segments**,
+  88 energy integrals, initial spectra, сохранённую topology grid/event
+  sides, continuity и 16 permutation pairs. Максимальная clock error
+  **9.99e-16**, native energy **0.03124 J** при gate 0.1 J, reference
+  **3.82e-8 J** при gate 1e-4 J. Это численная согласованность.
+- **384 targeted tests passed** без failures/errors/skips: 235 automation/
+  DAE/workflow (в том числе **41 новый**) и 149 физических регрессий.
+  Same-host Python-I installed replay: **108 проверок** (88 новых +20
+  прежних); полные event/axis/channel traces совпадают побитово.
+  CLI success example выполнен. Evidence и wheel закреплены в
+  `reports/automatic-return-delivery-final-2026-11-16/delivery.json`;
+  исходные пакеты — `reports/automatic-return-{qualified,accepted,installed-replay}-final-2026-11-16`.
+- Новый runtime `automatic_return.py`; изменены `network_automation.py`,
+  `coupled_rms.py`, `dae.py`. Примеры и воспроизведение:
+  `cases/automatic-return/README.md`, девять JSON. Каналы
+  `ats.return.{progress,active,mode,generation}` документированы.
+
+**Далее:** initial measurement-fault masks; generator reconnection с thermal
+latch; самостоятельный профиль primary close-failure fallback; несколько
+живых островов; public equipment/thermal anchors и joint standby heat
+initialization. DES-04 остаётся **in_progress**. Новый профиль — одна
+двухузловая radial-схема, один warm spinning/excited GENCLS и two-cage motor,
+заданные температуры, fixed-frequency source amplitude steps. Настройки
+20 ms dwell/10 ms dead time и permissive sync windows — численные тесты,
+не эксплуатационные рекомендации. Не заявлены OEM/global hybrid stability,
+произвольные root ties или независимый host. GitHub/CI не используются;
+изменения не коммитились.
+
+## R06.57 / DES-04 — supply-PT validity, reserve CT и контролируемый обратный перевод
+
+В native ATS добавлена доступность измерений primary/reserve supply и четыре
+явные команды lost/restored по ID схемы. Invalid primary PT приостанавливает
+детектирование с непрерывным reset timing, а не означает восстановление
+физического напряжения. Обе supply-validity проверяются до запроса transfer
+close и заново при исполнении задержанного включения. Режимы включены в DAE
+mode token и аналитическую reset-row. Дополнительные measurement diagnostics
+появляются только у профилей с новыми командами; legacy channel sets сохранены.
+
+- **18 авторских сценариев / 72 native runs / 36 независимых траекторий /
+  144 сравнения**: семь сценариев, passport/hot temperatures и четыре
+  перестановки списков. Radau/DAE, 2/1 ms, horizon 0.3 s. Проверены **96 ATS
+  starts, 24 early blocks, 32 reserve closes, 64 blocked closes, 24 successful
+  grid returns, 8 reserve-CT trips и 40 supply-PT losses**.
+- Отдельно проверены: primary PT loss в detection; reserve PT loss до request
+  и между request/actuation; reset/retry после отказа; CT loss во время ATS
+  с pickup/trip только после восстановления; guarded manual return;
+  повторный цикл, заблокированный сохранённым manual inhibit. Retry сохраняет
+  синхроконтроль и в тестовом случае блокируется по углу. Reset не даёт
+  разрешения на параллель источников и не снимает операторскую изоляцию.
+- Исправлен реальный deadline-ordering defect в общем integration loop:
+  computed deadline 0.07499999999999998 s мог исполниться раньше команды
+  на 0.075 s в Radau, тогда как DAE обрабатывал команду первой. В пределах
+  64 eps вычисленный срок привязывается к заданной границе, сохраняя приоритет
+  command-before-queue. Независимый reference order теперь совпадает у обоих
+  engines. Различимые команды 0.074/0.076 s не объединяются. Python-I probe
+  старого wheel воспроизводит расхождение; новый проходит оба режима.
+- Исправлен initial audit отключённого генератора: internal-voltage target
+  маркируется `standby_internal_voltage_target`; requested internal voltage
+  и solved bus voltage показаны раздельно. Инициализационные уравнения не
+  менялись. Audit проверяется consumer во всех 72 native trajectories.
+- Consumer повторил references/comparisons, **448 clock segments**, break-
+  before-make на всей сохранённой сетке и event sides, physical continuity,
+  availability/counter/inhibit states, начальные spectral checks,
+  16 permutation pairs и 72 energy integrals. Max clock error **1.16e-14**;
+  native energy **0.01551 J** при gate 0.1 J; reference **1.62e-8 J** при gate
+  1e-4 J; synchronism frequency error <4.4e-11 Hz. Это numerical consistency.
+- **401 targeted tests passed**, без failures/errors/skips: 252 automation/
+  DAE/workflow и 149 физических регрессий, включая 39 новых. Проверены invalid
+  PT reset action, DAE mode invalidation, unknown measurement targets, old
+  profiles и исправленные scheduled/deadline order cases. Same-host Python-I
+  installed replay: **92 проверки** (72 новых + 20 прежних); event/axis/channel
+  values побитово совпадают. CLI retransfer example выполнен.
+- Runtime boundary относительно R06.56: `network_automation.py`,
+  `coupled_rms.py`, `automation_jacobian.py`, `dae.py`,
+  `coupled_initialization.py`, `induction_network.py`. Примеры:
+  `cases/transfer-lifecycle/README.md`, семь JSON. Evidence:
+  `reports/transfer-lifecycle-qualified-fixed-2026-11-16`,
+  `reports/transfer-lifecycle-{accepted,installed-replay}-2026-11-16`.
+  Поставка: `reports/transfer-lifecycle-delivery-2026-11-16/delivery.json`.
+
+**Далее:** autonomous retransfer policy, initial measurement-fault masks,
+явная отмена pending transfer actions, generator reconnection с thermal latch,
+multi-island и public equipment/thermal anchors. Возврат в этом корпусе —
+заданная агентом/manual последовательность, не автоматический контроллер
+возврата. Reset проверен после завершённого/заблокированного действия,
+не является интерфейсом отмены in-flight command. Температуры заданы,
+joint standby heat initialization не квалифицирована; sync windows тестовые.
+Нет OEM/global hybrid stability/arbitrary-root-tie qualification; installed
+проверки на том же host, не независимая аутентифицированная поставка.
+GitHub/CI не используются; изменения не коммитились.
+
+## R06.56 / DES-04 — CT/PT continuity и АВР с изначально изолированным генератором
+
+Расширен независимый эталон двух связанных с общей физикой workflows: потеря/
+восстановление CT/PT при работе защит и АПВ; отдельный source-to-generator ATS
+с первоначально разомкнутым резервным генератором. **Runtime и wheel R06.55
+не изменены**; новые уравнения/reference, сценарии и consumer проверяют уже
+существующие возможности ядра в этих сочетаниях.
+
+- **22 авторских сценария / 88 native runs / 44 независимые траектории /
+  176 сравнений**: четыре measurement cases в двух температурных политиках,
+  пять ATS cases с двумя наборами заданных температур и четыре перестановки
+  команд/оборудования. Radau/DAE, шаги 2/1 ms. CT/PT horizon 0.5 s, ATS 0.3 s.
+- Подтверждены **40 measurement losses, 32 restorations, 56 relay trips,
+  40 transfer starts, 16 early transfer blocks, 16 reserve closes и 8 reserve
+  close blocks по синхроконтролю**. При invalid measurement сохраняется
+  непрерывность clock; после dropout неполная выдержка экспоненциально
+  сбрасывается. При restore учитывается оставшаяся память. Invalid PT zero
+  не подставляется в физическую сеть и не вызывает ложного UV trip.
+- CT отсутствует также во время АПВ: close сбрасывает clock/latch, но новое
+  измерение и retrip возникают только после восстановления CT. При CT,
+  не восстановленном до конца исследования, отключения не происходит.
+- Standby reference независимо решает loaded grid-fed motor root и задаёт
+  генератору нулевой терминальный ток, internal-voltage amplitude/phase,
+  механическую мощность для покрытия core loss и физические температуры.
+  Isolated spinning/excited generator не получает ложный I²-latch; реплика
+  остывает. После source collapse проверяются detection, primary opening,
+  break-before-make, reserve voltage и synchronism. Primary failure, low reserve
+  и frequency mismatch не допускают перевод на резерв. Short dip отменяет
+  запуск АВР до actuator request.
+- Consumer повторил references/comparisons, **780 clock segments**, память
+  измерительного таймера и ATS reset, непрерывность физических состояний,
+  break-before-make, attempt/availability/latch channels, начальные спектральные
+  проверки, 16 permutation pairs и 88 интегралов энергии. Max clock error
+  **1.98e-11**, native energy **0.01478 J** при gate 0.1 J, independent
+  **2.85e-6 J** при gate 1e-4 J, frequency decision error <3.32e-9 Hz.
+- **418 targeted tests passed**, без failures/errors/skips: 247 по automation
+  workflows плюс 171 физическая регрессия, в том числе 50 новых тестов.
+  Python-I replay того же установленного wheel: **108 проверок** в четырёх
+  ограниченных пакетах (88 новых + 20 прежних protected/limiter/I² cases).
+  CLI ATS-transfer example выполнен. Эталон не использует native automation,
+  stator и initialization helpers.
+- Примеры: `cases/measurement-transfer/README.md`, девять JSON. Evidence:
+  `reports/measurement-transfer-{qualified,accepted,installed-replay}-2026-11-16`.
+  Поставка: `reports/measurement-transfer-delivery-2026-11-16/delivery.json`.
+
+**Ограничения/дальше:** ATS использует только passport temperatures: motor
+90/70 C и generator 80 C либо hot 110/90 C и 100 C. Это spinning/excited warm
+standby, не engine start. Joint heat/PV standby initialization не квалифицирована;
+начальный stability check относится к connected motor subset. Нужны CT/PT
+failures во время самого ATS, retries/retransfer, generator reconnection with
+thermal latch, несколько живых островов, более явные standby voltage-target
+labels в initial audit и публичные machine/thermal anchors. Синхроокно успешного
+ATS намеренно permissive и не является эксплуатационной уставкой. Numerical
+consistency не доказывает OEM accuracy/global hybrid stability. Installed
+проверки на том же host, не внешняя аутентифицированная поставка.
+GitHub/CI не используются; изменения не коммитились.
+
+## R06.55 / DES-04 — активные OC/UV, резервирование отказа и АПВ в общем R(T)-острове
+
+Связаны активные защиты и предыдущая topology reference: generator-port OC
+с четырьмя кривыми, downstream UV, отказ feeder breaker с отключением источника
+резервным аппаратом, одно АПВ с синхроконтролем, повторное отключение и запреты
+включения. R(T), физический нагрев, энергия, TGOV1/SEXS и диагностическая
+I²-реплика продолжают рассчитываться. Генератор остаётся подключённым к острову.
+
+- **18 авторских сценариев / 72 native runs / 36 независимых траекторий /
+  144 сравнения**: восемь сценариев, две температурные политики и две
+  перестановки very-inverse command/relay/breaker lists. Radau/DAE, шаги 2/1 ms;
+  интегрирование 2e-11/2e-12, refined reference 5e-12/5e-13. Допуски сравнения
+  сохранены; точность интегрирования выбрана под эти допуски.
+- Подтверждены **112 relay trips, 104 успешных primary openings, 8 primary
+  failures, 8 backup openings, 40 успешных АПВ и 16 blocked recloses**.
+  После успешного АПВ clock/latch сбрасываются, новое измерение повторно взводит
+  защиту и возникает retrip. Лимит одного shot исключает бесконечные включения.
+  Manual inhibit запрещает close до механической попытки; synchronism block
+  учитывает попытку. Ручное «уже открыто» не добавляет opening attempt.
+- Независимый consumer повторил все references/comparisons, **1184 clock
+  segments**, exponential reset, latched hold и reclose reset/rearm, начальные
+  спектры, непрерывность физических состояний, topology/counter/inhibit channels,
+  синхроконтроль и 72 интеграла энергии. Max clock error **4.42e-11**;
+  native energy **0.03086 J** при gate 0.1 J; independent **8.64e-6 J** при
+  gate 1e-4 J; frequency decision error <3.32e-9 Hz. Проверены 8 permutation pairs.
+- Исправлен `protection.py`: inverse denominator вычисляется через
+  `expm1(alpha*log1p((I-pickup)/pickup))`. Прежний power-minus-one терял точность
+  непосредственно над pickup, вплоть до деления на ноль у standard inverse.
+  Python-I probes двух установленных колёс сравнивают три кривые и три масштаба
+  pickup с 80-digit Decimal. Старое колесо не прошло 7 из 9 проверок, новое
+  прошло все 9. Pickup semantics/уравнения кривых сохранены. Это единственный
+  runtime-файл, изменённый относительно R06.54.
+- **553 targeted tests passed**, без failures/errors/skips: 296 по автоматике,
+  защитам и workflows плюс 257 физических регрессий; в том числе 45 новых тестов.
+  Same-host Python-I installed replay — **92 проверки**: 72 новые и 20 прежних
+  (8 source-island и 12 unified limiter/I²). Полные event/axis/channel проверки
+  выполняются существующим изолированным consumer в пакетах по 32 записи.
+  CLI failure-backup example выполнен.
+- Убрано только дублирование reference waveforms в comparison JSON: полные
+  references сохраняются отдельно, errors/caps/outcomes остаются в каждом
+  сравнении, consumer пересчитывает полный результат. Это позволило сохранить
+  все 18 сценариев в прежнем artifact budget; глобальные byte/file limits
+  не расширялись. Существующие запечатанные пакеты не перезаписывались.
+- Примеры: `cases/protected-topology/README.md`, восемь JSON. Evidence:
+  `reports/protected-topology-qualified-compact-2026-11-16`,
+  `reports/protected-topology-accepted-2026-11-16`,
+  `reports/protected-topology-installed-replay-2026-11-16`.
+  Поставка: `reports/protected-topology-delivery-2026-11-16/delivery.json`.
+
+**Далее:** АВР и CT loss/restoration в этой общей физике; generator reconnection
+с thermal latch, несколько живых островов, multi-shot coordination и публичные
+machine/thermal parameter anchors. Квалифицирована одна авторская радиальная
+схема, не arbitrary topology/root ties, unbalanced faults или OEM-параметры.
+Синхроокна и relay settings тестовые; I²-порог поднят для выделения topology
+workflow. Численные метрики не доказывают точность реального оборудования.
+Installed проверки на том же host, не внешняя аутентифицированная поставка.
+GitHub/CI не используются; изменения не коммитились.
+
+## R06.54 / DES-04 — островной режим, восстановление соединения и R(T)-производные защит
+
+Расширен независимый SI-reference: отключение источника/линии, питание двигателя
+от генератора в острове, одновременное отделение пустого upstream-участка,
+поэтапное восстановление и разрешённое/заблокированное включение. Общая модель
+сохраняет R(T), физический нагрев, энергию, TGOV1/SEXS и диагностическую I²-реплику.
+
+- **10 авторских сценариев / 40 native runs / 20 независимых траекторий /
+  80 сравнений**: четыре сценария, две политики начальной температуры и две
+  перестановки списков команд/реле/выключателей. Radau/DAE, шаги 2 и 1 ms.
+  Подтверждены **56 открытий, 48 успешных включений, 8 блокировок по частоте,
+  16 подач питания на обесточенный участок и 8 пар перестановок**.
+- Reference решает собственную комплексную SI-систему `A(x)q=b(x)` и её
+  производную `A qdot=bdot-Adot q`. Частота измеряется по фазе напряжения
+  с учётом потокосцеплений, поля и температурных сопротивлений, не подменяется
+  скоростью генератора. Пустая изолированная координата фиксируется в нуле без
+  добавочного шунта; её частота не определена. Проверяются исходы синхроконтроля
+  и все численные поля решения. Максимальное расхождение частоты <2.72e-9 Hz.
+- Consumer повторил все references/comparisons, начальные спектры, непрерывность
+  физических состояний при коммутациях, topology/current/counter/inhibit channels,
+  copper electrical=heat identity и 40 интегралов энергии. Max native energy
+  error **0.01490 J** при gate 0.1 J; independent **2.65e-6 J** при gate 1e-4 J.
+  Уточнение времени событий <5.78e-12 s. Это численные метрики, не equipment accuracy.
+- Исправлен `automation_jacobian.py`: производные inverse-time измерения
+  генератора используют фактическое `Z(T)` и член `-I dZ/Z`, включая заданное
+  промежуточное напряжение DAE. Три inverse-кривые проверены конечными разностями
+  для температурных/смешанных направлений, согласованных/несогласованных
+  алгебраических напряжений и complex Schur products. Проверено электрическое
+  отключение генератора. Только этот runtime-файл отличается от R06.53.
+- Отдельный Python-I probe старого и нового установленных колёс воспроизвёл
+  ошибку температурной производной **0.0138365 A/K → 6.31e-11 A/K**. Она не
+  объявляется точностью реального измерителя. Активные inverse-trip trajectories
+  в острове этим отдельным tangent-тестом не квалифицируются.
+- **371 targeted test passed**, без failures/errors/skips: 153 по топологии,
+  автоматике и производным плюс 218 физических регрессий. В том числе 42 новых
+  теста. Изолированный installed replay **84 проверки**: 40 новых и 44 предыдущих;
+  события и каналы побитово совпали. CLI dual-cycle example выполнен.
+- Примеры: `cases/topology-stator/README.md`, четыре JSON. Evidence:
+  `reports/topology-stator-{qualified,accepted,installed-replay}-2026-11-16`.
+  Поставка: `reports/topology-stator-delivery-2026-11-16/delivery.json`.
+
+**Следующая очередь:** совместить активные OC/UV, inverse-time trip trajectories,
+резервирование отказа, АВР и автоматическое повторное включение с новой topology
+reference; затем несколько живых островов и публичные machine/thermal anchors.
+Текущий корпус использует одну радиальную двухузловую схему и заданные
+напряжение/частоту внешнего источника. Окна синхроконтроля намеренно тестовые,
+не эксплуатационные уставки. I²-порог поднят для отделения этой квалификации от
+активных защит. Не закрыты arbitrary simultaneous roots, unbalanced faults,
+PSS/GENROU, OEM/global-hybrid qualification. Installed checks выполнены на том
+же host, не являются независимой внешней/аутентифицированной поставкой.
+GitHub/CI не используются; изменения не коммитились.
+
+## R06.53 / DES-04 — сетевое OC-реле, задержка выключателя и конкуренция с I²
+
+Связаны в одном независимом расчёте токовое реле генератора, задержанное
+отключение, отказ выключателя, I²-защита, электрическое R(T), физический нагрев,
+баланс энергии и ограничители TGOV1/SEXS. Источник и линия остаются включёнными.
+
+- Исправлен дефект `network_automation.py`: таймер активного definite-time реле
+  повторно проверял pickup внутри непрерывного режима. Округление в найденном
+  корне могло дать 149.99999999999997 A вместо 150 A и сорвать интегрирование.
+  Кроме того, таймер ошибочно замирал между pickup и dropout. Теперь доступное
+  активное реле считает выдержку до отпускания; потеря измерения останавливает
+  счёт, неактивное реле сбрасывает прогресс, защёлкнутое не считает заново.
+  Статическая функция IEC и inverse-time кривые не изменены.
+- Старое установленное колесо R06.52 воспроизвело **4 численных отказа**: Radau
+  и DAE на шагах 1 и 0.5 ms. Исправление проверено на тех же режимах. Граница
+  изменения runtime относительно R06.52 — только `network_automation.py`.
+- **8 авторских сценариев / 32 native runs / 16 независимых траекторий /
+  64 сравнения**: паспортные и равновесные температуры, штатное отключение,
+  тепловое отключение раньше команды выключателя, отказ выключателя, две
+  перестановки списков команд/реле/аппаратов. Проверены 24 I²-отключения,
+  8 подтверждений отказа, 8 штатных открытий, 16 команд «уже отключено» без
+  увеличения счётчика попыток и 8 точных пар перестановок.
+- Независимый consumer повторяет все траектории и сравнения, проверяет ток
+  pickup, обе выдержки, причину защёлкивания, непрерывность состояний,
+  аналитическое остывание I² после отключения, начальные спектры и энергию.
+  Максимальная ошибка интеграла: native **0.000563 J** при gate 0.1 J;
+  reference **2.92e-6 J** при gate 1e-4 J. Уточнение времени событий <8e-12 s.
+  Это численные проверки, не точность реального оборудования.
+- Изолированный Python-I replay установленного колеса: **44 проверки**
+  (32 новых + 12 предыдущих unified-сценариев), все события и каналы побитово
+  совпали. Checkout/reference imports запрещены. Проверка выполнена на том же
+  host; независимая внешняя поставка и аутентификация не заявляются.
+- **585 тестов прошли без failures/errors/skips**: 418 по физике, DAE и общему
+  сценарию (включая 27 новых) и 167 по автоматике, реле, производным и прежним
+  независимым защитным профилям. Это выбранные регрессии, не весь repository
+  suite; в первой группе 4 optional ANDES cases deselected. CLI-пример выполнен.
+- Примеры: `cases/network-stator/README.md`, три JSON-сценария. Evidence:
+  `reports/network-stator-qualified-fixed-2026-11-16`,
+  `reports/network-stator-accepted-2026-11-16`,
+  `reports/network-stator-installed-replay-2026-11-16`.
+  Поставка: `reports/network-stator-delivery-2026-11-16/delivery.json`.
+
+**Следующий крупный блок:** в этом же общем reference проверить открытие
+источника/линии, потерю опорного источника и восстановление соединения; затем
+добавить UV, резервирование отказа, АВР и синхронизируемое повторное включение.
+Для inverse-time измерения генератора с R(T) отдельно нужны производные
+фактического температурного импеданса. Публичные якоря параметров машин/нагрева
+остаются открыты. Текущий корпус не квалифицирует эти сочетания, произвольные
+совпадения корней, OEM-параметры или глобальную гибридную устойчивость.
+GitHub/CI не используются; изменения не коммитились.
+
+## R06.52 / DES-04 — unified limiter +I² trip cascade и connection cache fix
+
+Исправлен реальный RMS-winding operator cache defect: cache key теперь содержит
+motor/generator connection flags; generator admittance deltas применяются и для
+fixed-R generators. Immediate electrical query после opening дообычнойfactorize
+не возвращает connected matrix. Reproducer показывалmax complex-voltage error
+≈0.104pu;послеfix immediate иfresh factorization совпадают доroundoff. Проверены
+motor opening иgenerator opening вfixed-R/stator-R(T) winding profiles.
+
+- Independent unified hybrid engine связывает electrical stator R(T),physical
+  generator/motor heat,shaft/kinetic/thermal budget,TGOV1/SEXS limits иlatched
+  generator I² trip. Приopening меняется terminal measurement иповторно
+  проверяютсяfree rates held controllers. ПриSEXS TATB1 возникает immediate
+  trip→release cascade;приTATB.1 release delayed иlower field можетоставаться
+  held доhorizon. State/context histories иcausal event order сохранены.
+- **6 authored cases /24 native runs /12 independent trajectories /48 comparisons**:
+  specified/equilibrium temperatures,двеlead ratios,двеcommand permutations,
+  Radau/DAE/two output grids. Проверены24 generator trips,184 limiter events,
+  16 immediate cascades,98 held reference segments и8 permutation pairs.
+  Native trip/controller/stator helpers запрещены вreference test.
+- Consumer повторил12 references/48 comparisons,12 full и12 frozen initial
+  spectra,posttrip I² cooling,copper=heat identity и24 integral energy checks.
+  Max native energy error≈3.70e-4J при0.1J sampling gate;independent≈1.02e-6J
+  при1e-4J gate. Event refinement≤9.79e-11s,power≤1.19e-5W/var. Numerical metrics
+  неявляютсяequipment accuracy. Energy helper теперь включает2-point short
+  segments trapezoid rule,неdiscard;50us synthetic linear-power case проверен.
+- **391 targeted tests,0 failures/errors/skips**,12 новых unified/cache/gate tests.
+  4 optional ANDES cases deselected,не весьrepo suite. Same-host Python-I
+  installed replay131 checks:12 новых trajectories и119 legacy cases. CLI example
+  выполнен. Runtime boundary кR06.49:только`power_grid_env/rms_winding.py`.
+- Примеры:`cases/hybrid-stator/README.md`; immediate/delayed/specified JSON.
+  Evidence:`reports/hybrid-stator-{qualified,accepted,installed-replay}-2026-11-16`.
+  Поставка:`reports/hybrid-stator-delivery-2026-11-16/delivery.json`.
+
+**Далее:** network OC/UV protection иsource/line topology changes вобщемreference,
+затемsynchrochecked reclose/islands иpublic machine/thermal anchors. Текущийcorpus
+безnetwork OC/UV,faults,line/source switching,reclose,PSS иarbitrary root ties;
+external source connected. Parameters authored/assumed. Cache fix касается
+RMS-winding motor/generator stamps,не universal topology transaction API.
+БезGitHub/CI,безOEM/global hybrid stability certificate.
+
+## R06.51 / DES-04 — stator R(T)/heat/energy + TGOV1/SEXS limits
+
+Независимо квалифицированы upper/lower limiter entry,hold иrelease в electrical
+stator R(T) профиле с physical heat,shaft/kinetic/thermal energy иmotor R(T).
+**Runtime/wheel R06.49 не изменены**: расширен independent combined reference,
+добавлены corpus,consumer gates,examples иtargeted tests.
+
+- Independent SI stator/winding/PV/heat equations связаны с отдельным root-localized
+  limiter engine. Active valve/field rate удерживается0,остальные machine/heat
+  states продолжают динамику. Reference/held contexts сохранены по segments;
+  historical иone-sided samples не меняются от последующих commands.
+- **8 authored cases /32 native runs /16 independent trajectories /64 comparisons**:
+  TGOV1/SEXS/both ×passport/equilibrium +2 reversed command-list cases;
+  Radau/DAE/two output grids. Проверены192 native limiter events,88 held reference
+  segments и8 command permutation pairs. Event identity включает controller,
+  bound иcommand value/outcome. Native limiter/stator/energy helpers запрещены
+  вreference test.
+- Consumer повторил16 trajectories/64 comparisons,16 full и16 frozen initial
+  spectra,copper electrical=heat identity и32 integral energy balances.
+  Max native saved-grid energy error≈1.433e-4J при0.1J gate;independent dense
+  error≈1.23e-6J при1e-4J gate. Event refinement≤1.22e-11s,power≤2.25e-5W/var.
+  Это numerical refinement metrics,не equipment accuracy. Shared energy gate
+  выделен в `benchmarks/energy_integral_gate.py` иhash-bound вconsumer/delivery.
+- **186 targeted tests,0 failures/errors/skips**,13 новых combined limiter tests.
+  Проверены clipped/held rows,actual stator current/heat/energy products,
+  inconsistent-V DAE residual иcomplex Schur,история references,wrong-bound
+  rejection иточная command-order invariance. R06.49 broad348-test evidence
+  остаётся в прежней поставке и не объявляется заново выполненной.
+- Same-host Python-I installed replay119 checks:6 новых limiter trajectories
+  и113 прежних. CLI example выполнен;GitHub/CI не используются.
+- Примеры:`cases/stator-limiter/README.md`; JSON governor/exciter/both.
+  Evidence:`reports/stator-limiter-{qualified,accepted,installed-replay}-2026-11-16`.
+  Поставка:`reports/stator-limiter-delivery-2026-11-16/delivery.json`.
+
+**Далее:** общий hybrid reference для limiter +I² trip/network protection,
+затемsource/line switching,synchrochecked reclose иpublic machine/thermal anchors.
+Текущий corpus безfaults,generator trip,active OC/UV,islands/reclose илиPSS;
+external source connected. Parameters assumed/authored. Не доказывает arbitrary
+simultaneous-root handling,OEM correctness илиglobal hybrid stability.
+
+## R06.50 / DES-04 — combined stator R(T)/heat/I² trip/energy qualification
+
+Независимо квалифицировано одно permanent generator opening для совместного
+профиля electrical stator R(T),physical generator heat,energy closure,I² replica
+и motor R(T). **Runtime/wheel R06.49 не изменены**: добавлены independent combined
+hybrid reference,corpus,consumer/delivery gates,examples и targeted tests.
+
+- Independent SI stator/network branch при trip удаляет одновременно admittance
+  и injection. Copper current/heat/power исчезают; physical temperature,rotor,
+  controller и I² states непрерывны. Поле остаётся возбуждённым,поэтому core heat
+  не обнуляется. Без SEXS температура после trip сходится к Tambient+Pcore/G
+  с pole−G/C;I² replica отдельно затухает к0 с pole−1/tau.
+- **6 authored cases /24 native runs /12 independent trajectories /48 comparisons**:
+  TGOV1/SEXS/both ×passport/equilibrium,trip до/во время finite fault,
+  Radau/DAE/two output grids. Native current/thermal/network/energy helpers
+  запрещены independent-reference test. Нет active OC/UV,limiter crossings,
+  external-source loss,islands/reclose или other topology commands.
+- Offline consumer повторил12 trajectories/48 comparisons,12 full initial
+  spectra и12 frozen-temperature spectra,252 posttrip replica cooling points,
+  threshold metadata и continuity;проверил electrical copper=heat copper.
+  **24 native integral energy checks**:max error≈0.001193J при0.1J sampling gate;
+  independent dense integral≤2.75e-9J при1e-4J gate. Event refinement≤4.69e-14s.
+  Эти numerical metrics не являются точностью физического оборудования.
+- **173 unique targeted tests /189 executions,0 failures/errors/skips**,18 новых
+  combined tests. Проверены closed/open DAE actions с I² и heat state,cross
+  derivatives и отсутствие temperature-dependent ghost stamp после opening.
+  Предыдущая348-test evidence остаётся в неизменённой R06.49 поставке;здесь она
+  не объявляется повторно выполненной. Same-host Python-I replay113 checks:
+  12 новых combined trajectories и101 прежняя. CLI example выполнен.
+- Примеры:`cases/stator-trip/README.md`,before-fault/during-fault/fixed-field JSON.
+  Evidence:`reports/stator-trip-qualified-2026-11-16`,
+  `reports/stator-trip-accepted-final-2026-11-16`,
+  `reports/stator-trip-installed-replay-2026-11-16`.
+  Поставка:`reports/stator-trip-delivery-2026-11-16/delivery.json`.
+
+**Далее:** combined stator R(T)/limiter crossings/network protection,
+source/line topology changes иsynchrochecked reclose;public thermal/machine anchors.
+Текущий corpus balanced radial с одним GENCLS иtwo-cage motor,constant-Z load,
+external source connected иauthored parameters. Не закрывает arbitrary topology,
+negative-sequence/EMT/field-hotspot physics,OEM calibration или global hybrid
+stability. Без GitHub/CI,всё воспроизведение локальное.
+
+## R06.49 / DES-04 — electrical generator stator R(T) + energy partition
+
+Добавлен `GENCLS_TGOV1_SEXS_STATOR_RT`: generator Norton admittance и injection
+используют physical phase Rref*(1+alpha*(T−Tref)) с machine-base conversion.
+Сопротивление меняет voltage drop,network solution,current и внутреннюю EMF.
+Старые observer/lumped-loss profiles сохраняют свои semantics.
+
+- Dynamic operator cache учитывает generator temperature и topology; augmented
+  DAE injection product содержит Y_T*(E−V),а current tangent содержит−I*dZ/Z.
+  Core controller/machine derivatives используют actual Z; добавлены недостающие
+  temperature terms rotor/I² rows и heat gradients. Проверены J·v, inconsistent-V
+  residual,complex Schur,hot operator perturbation и electrical copper identity.
+- Joint initializer расширяет reduced unknowns generator temperatures и решает
+  motor speed/Ts/Tr,generator complex EMF/Tg вместе с P/V и heat balance.
+  Analytic reduced Jacobian проверен finite differences. Full ODE/KCL,heat watts,
+  Q limits и physical spectrum gates сохранены. Zero-loss ambient boundary
+  фиксируется точно. Passport mode требует specified generator temperature;
+  solved generator temperature требует joint equilibrium.
+- Electrical identity Pinternal−Pterminal=3R(T)|I_A|² согласована с heat input.
+  Дополнительная shaft debit содержит **только core loss**,не copper loss второй
+  раз. Constant-shaft-power H*S*omega² rotor/thermal budget сохранён; field/EMT
+  energy storage и thermal hotspots не представлены.
+- **4 authored scenarios /16 native runs /8 independent SI trajectories /
+  32 comparisons**,hold/fault,two initial policies,Radau/DAE/two output grids.
+  Independent SI winding/KCL/stator/PV/heat root и собственные loss/energy laws.
+  Consumer повторил8 references/6 native refusals,8 spectra и16 integral energy
+  checks;max native error≈3.281e-4J при0.1J gate,reference≈1.48e-9J при1e-4J gate.
+  Проверено равенство electrical copper loss и copper heat;не только total budget.
+- **348 unique targeted tests,0 failures/errors/skips**,13 новых stator tests.
+  4 optional ANDES cases deselected,не весь repo suite. Same-host Python-I
+  installed replay101 checks:4 новых positive,6 refusals и91 legacy cases.
+  CLI example выполнен. Никаких GitHub/CI действий.
+- Примеры:`cases/generator-stator/README.md`;новые channels `g.stator.*`.
+  Evidence:`reports/generator-stator-{qualified,accepted,installed-replay}-2026-11-16`.
+  Поставка:`reports/generator-stator-delivery-2026-11-16/delivery.json`.
+
+**Далее:** combined stator R(T)/heat/protection/trip/topology qualification,
+public machine/thermal parameter anchors и broader independent networks.
+Текущий corpus:один GENCLS,один two-cage motor,balanced radial network,constant-Z
+background,finite balanced faults,controller interiors и external source.
+Нет qualified stator-R(T) limiter crossings,islands/reclose,negative-sequence
+heating,saturation,rotor/field hotspots,OEM calibration или arbitrary topology
+certificate. Все новые passports assumed/authored,не измеренные OEM данные.
+
+## R06.48 / DES-04 — energy-consistent lumped-loss GENCLS
+
+Добавлен отдельный `GENCLS_TGOV1_SEXS_ENERGY`: copper/core heat нагружает вал,
+а rotor equation использует constant shaft power и Ekin=H*S*omega²,а не
+nominal-speed acceleration approximation. Требуется один heat node на generator
+и положительная speed. Старый HEAT observer сохраняет one-way semantics.
+
+**Граница модели:** electrical port всё ещё pure transient reactance GENCLS.
+Copper heat — сосредоточенная нагрузка на вал,не electrical resistance stamp;
+отдельное resistive voltage drop не моделируется. Замкнут заявленный budget
+shaft/terminal/kinetic/thermal/signed damping exchange,не field-resolved machine.
+Damping — signed external power exchange,не heat loss. Поле/shaft torsion/EMT
+energy storage этим профилем не представлены.
+
+- Initialization включает heat losses в shaft input/TGOV1 reference ровно один
+  раз. Для authored hold:20kW terminal+883.70W heat→20.8837kW shaft,omega1.
+  Energy dynamics и loss/speed-denominator derivatives входят в analytic DAE;
+  проверены off-nominal speed,inconsistent-V residual,J·v,complex Schur.
+- **4 authored scenarios /16 native runs /8 independent SI trajectories /
+  32 comparisons**,hold/fault,passport/equilibrium,Radau/DAE/two output grids.
+  Independent SI reference отдельно считает kinetic/thermal derivatives,
+  shaft/loss initialization и physical spectrum; native energy helpers запрещены
+  в reference test. Дополнительно проверены lossless stationary limit,nonpositive
+  speed refusal и отсутствие double loss debit.
+- Offline consumer повторил8 references/8 initial refusals и8 full spectra.
+  Independent dense quadrature сравнивает energy change с integral power;
+  native Simpson quadrature использует сохранённые one-sided power samples.
+  **16 native integral checks**:max error≈3.247e-4J при declared gate0.1J;
+  independent max error≈1.78e-9J при gate1e-4J. Это numerical integration metrics,
+  не физическая точность. Energy channels comparison gate0.003J,power0.003W/var.
+- **335 unique targeted tests,0 failures/errors/skips**,11 новых energy tests.
+  4 optional ANDES cases deselected,не весь repo suite. Same-host Python-I
+  installed replay91 checks:4 новых positive,8 refusals,79 legacy cases.
+  CLI example выполнен; GitHub/CI не используются.
+- Примеры:`cases/generator-energy/README.md`;channels `g.energy.*`,`g.heat.*`.
+  Evidence:`reports/generator-energy-{qualified,accepted,installed-replay}-2026-11-16`.
+  Поставка:`reports/generator-energy-delivery-2026-11-16/delivery.json`.
+
+**Далее:** electrical stator R(T) stamp с voltage drop и правильным loss partition
+(при появлении electrical copper loss убрать его повторную shaft debit);
+combined energy/heat/trip/topology qualification и public parameter anchors.
+Нет OEM calibration,field/negative-sequence heat,limiter crossings,islands/reclose
+или arbitrary topology certificate. Новые parameters assumed/authored.
+
+## R06.47 / DES-04 — dimensioned generator temperature observer
+
+Добавлен opt-in `GENCLS_TGOV1_SEXS_HEAT` и `generator_heat`: отдельное состояние
+температуры°C, C[J/K],G[W/K],phase Rref[ohm],alpha и authored provenance.
+Heat input:3R(T)|I_A|² +Pcore_ref|Vterminal_pu|²;heat output:G(T−Tambient).
+Это **one-way thermal observer**,не полная electrothermal machine:
+observed losses не вычитаются из GENCLS electrical/shaft power и electrical
+stator resistance stamp не меняется. Ограничение явно присутствует в result
+metadata и документации; I² replica остаётся отдельной защитной моделью.
+
+- Joint motor heat/PV initializer находит generator equilibrium аналитически,
+  требует stable positive heat-removal denominator, проверяет temperature range,
+  original derivatives и residual в ваттах. Specified mode допускает
+  нестационарную initial temperature. Capacity меняет pole,не equilibrium.
+- Analytic variable-Y actions включают current/terminal-voltage/temperature
+  derivatives;проверены eliminated и inconsistent-V DAE residual,J·v,complex Schur.
+  Full stationary spectrum содержит15 states. Frozen-temperature passport
+  spectrum сверяется отдельно,с исключением всех heat states.
+- **4 authored scenarios /16 native runs /8 independent SI trajectories /
+  32 comparisons**,Radau/DAE/two grids,hold/finite fault,две initial policies.
+  Offline consumer повторил8 references/8 native refusals и8 full spectra;
+  power refinement≤4.77e-7W/var. Refusals:wrong flag,wrong stationary policy,
+  nonpositive heat stability denominator и equilibrium above validity range.
+- **324 unique targeted tests /337 executions,0 failures/errors/skips**;
+  13 новых heat tests. Отдельный600s constant-input test совпал с closed-form
+  exponential и integrated heat energy. Это не600s network qualification.
+  Same-host Python-I installed replay79 checks:4 новых positive,8 refusals,
+  67 legacy cases. 4 optional ANDES cases deselected;не весь repo suite.
+- Примеры: `cases/generator-heat/README.md`. Evidence:
+  `reports/generator-heat-final-qualified-2026-11-16`,
+  `reports/generator-heat-accepted-2026-11-16`,
+  `reports/generator-heat-installed-replay-2026-11-16`.
+  Поставка:`reports/generator-heat-delivery-2026-11-16/delivery.json`.
+  Предварительная qualification с ошибочным passport/full-spectrum comparison
+  gate сохранена как failed;используется только final-qualified corpus.
+
+**Далее:** electrical/shaft loss feedback и согласованный полный machine energy
+balance;combined heat/trip/topology profiles;публичные thermal parameter anchors.
+Не закрыты multi-node stator/rotor/coolant heat,hotspots,temperature trips,
+frequency-dependent iron loss,OEM calibration и arbitrary topology. Все новые
+thermal параметры assumed/authored. Без GitHub/CI и без заявлений о превосходстве.
+
+## R06.46 / DES-04 — independent generator trip и post-opening trajectory
+
+Закрыта независимая численная проверка одного permanent generator opening
+по stator I² replica в общей модели GENCLS/TGOV1/SEXS/motor R(T). **Runtime и
+wheel R06.45 не изменены**; добавлены independent hybrid reference, corpus,
+verification/delivery gates, runnable cases и targeted tests.
+
+- Independent SI circuit после trip удаляет generator Norton admittance и
+  injection. Generator current/Pe=0; rotor/controllers продолжают динамику.
+  SEXS после открытия использует isolated machine terminal EMF,а не grid bus.
+  Flux/speed/temperature/replica states непрерывны; network voltages/currents
+  допускают algebraic jump. Replica после trip точно затухает с pole−1/tau.
+- **6 authored cases /24 native runs /12 independent trajectories /48 comparisons**:
+  TGOV1/SEXS/both ×specified/equilibrium replica,Radau/DAE/two grids.
+  Specified case открывает генератор до fault≈0.00713s; equilibrium case во время
+  finite fault≈0.10373s. R=.5 governor droop задан в owner recipe,не tuned на ходу.
+- Offline consumer повторил12 trajectories и48 comparisons,включая one-sided
+  event samples; проверены24 generator trips и252 posttrip cooling points.
+  Event refinement≤3.91e-14s, power refinement≤5.37e-7W/var. Эти величины
+  характеризуют numerical refinement,не точность физического оборудования.
+  Fixed comparison gates2e-7s и0.003W/var сохранены.
+- **147 targeted tests,0 failures/errors/skips**,16 новых trip tests. Native
+  thermal/controller/current/topology helpers запрещены independent-reference
+  test. Source remains connected;нет islands/reclose/OC/UV или limiter crossings.
+- Same-host Python-I installed replay67 checks:12 новых generator-trip runs
+  и55 прежних. CLI example выполнен. Старые295-test evidence остаются в R06.45;
+  они здесь не заявляются повторно выполненными.
+- Примеры: `cases/generator-trip/README.md`; JSON для обеих initialization policies.
+  Evidence: `reports/generator-trip-{qualified,accepted,installed-replay}-2026-11-15`.
+  Поставка: `reports/generator-trip-delivery-2026-11-15/delivery.json`.
+
+**Далее:** физическая generator heat model: dimensioned losses,capacity,heat
+removal,temperature и происхождение parameters;затем wider fault/topology-coupled
+limiter profiles. I² replica по-прежнему не температура в°C. Нельзя обобщать
+этот corpus на arbitrary topology changes,reclose,islands,OEM qualification
+или global hybrid stability. Без GitHub/CI,всё воспроизведение локальное.
+
+## R06.45 / DES-04 — generator stator I² replica в общей RMS/DAE модели
+
+Новый opt-in `GENCLS_TGOV1_SEXS_I2` разрешает существующую stator-I² protection
+replica генератора одновременно с motor winding R(T) и TGOV1/SEXS. Старые flags
+продолжают запрещать generator_thermal. Это **безразмерное защитное состояние,
+не температура генератора в°C**; generator copper/iron losses, heat transfer,
+hotspots и generator R(T) на этом этапе не реализованы.
+
+- Analytic mixed callback расширен до generator_thermal.end и использует
+  существующие exact current-squared derivatives с variable-Y voltage response.
+  Проверены J·v и inconsistent-V residual. Joint motor heat/PV initialization
+  инициализирует generator replica из actual current², проверяет её initial trip
+  threshold и все physical derivatives; specified replica policy явно отвергается
+  в stationary mode. Полный physical spectrum дляboth controllers содержит15 states.
+- **4 authored cases /16 native runs /8 independent trajectories /32 comparisons**:
+  passport/equilibrium,hold/fault,Radau/DAE/two grids. Independent SI reference
+  отдельно интегрирует I² filter и находит initial current². Corpus остаётся ниже
+  trip threshold; offline consumer повторил8 references/6 initial refusals,
+  32 comparisons и8 full physical spectra. Power refinement≤4.78e-7W/var.
+- Дополнительные native tests проверили одно latched electrical trip, generator
+  current extinction и latched flag в обеих engines. **Trip timing и post-trip
+  waveform ещё не квалифицированы независимым hybrid reference**.
+- Targeted regression:295 tests, включая11 новых replica tests. Same-host Python-I
+  installed replay55 checks:4 новых positive,6 refusals,2 trip и43 legacy cases.
+  Число тестов является целевой регрессией, не всем repo suite; ANDES cases excluded.
+- Примеры: `cases/generator-replica/README.md`; positive и native-trip JSON рядом.
+  Evidence: `reports/generator-replica-{qualified,accepted,installed-replay}-2026-11-15`.
+  Поставка: `reports/generator-replica-delivery-2026-11-15/delivery.json`.
+
+**Далее:** independent generator-trip/topology reference; физическая generator
+heat model с отдельными loss/heat parameters и происхождением; fault/topology
+coupled limit profiles. Статорная I² replica не закрывает задачу физического
+нагрева генератора и не подтверждает OEM thermal capability. Без GitHub/CI.
+
+## R06.44 / DES-04 — независимая hybrid qualification ограничителей
+
+Закрыт bounded pulse профиль entry/hold/release для TGOV1/SEXS в связке с
+двухклеточным motor R(T). **Физическое ядро и wheel R06.43 не изменены**:
+на этом этапе добавлены независимый hybrid reference, численная квалификация,
+примеры, тесты и воспроизводимая локальная поставка.
+
+- Independent DOP853 локализует entry/release roots, фиксирует active bound,
+  удерживает derivative0 и снимает ограничение по reversal свободной derivative.
+  Immediate command-induced release и delayed release без команды проверены.
+  Для combined case SEXS lower release≈0.4524s. Reference хранит отдельные
+  references/held modes в каждом segment context; historical и one-sided samples
+  не меняются от последующих команд. Native limiter/controller helpers запрещены
+  test monkeypatch; native event times не используются при интегрировании.
+- **8 authored cases /32 native runs /16 independent trajectories /64 comparisons**:
+  TGOV1/SEXS/both ×passport/equilibrium +2 reversed command-list cases;
+  Radau/DAE/two output grids. Native и reference проходят обе границы каждого
+  активного controller. Проверено **192 native limiter events**; event identity
+  включает controller,bound,command value/outcome,а не только kind/equipment.
+- Offline consumer повторил16 references/64 comparisons,88 held segments,
+  все сохранённые pre/post samples и8 command permutation pairs. Event refinement
+  difference≤6.57e-12s, power refinement≤4.85e-5W/var; fixed gates2e-7s и0.003W/var.
+  Это numerical qualification заданных pulse sequences,не arbitrary/global proof.
+- **142 targeted tests,0 failures/errors/skips**,включая13 новых limiter tests.
+  Предыдущая broad879-test evidence остаётся в неизменённой R06.43 поставке;
+  здесь она не объявляется заново выполненной. Same-host Python-I replay43 checks,
+  включая6 новых limiter trajectories и37 прежних. CLI example также выполнен.
+- Команды/примеры: `cases/limiter-winding/README.md`.
+  Evidence: `reports/limiter-winding-{qualified,accepted,installed-replay}-2026-11-15`.
+  Поставка: `reports/limiter-winding-delivery-2026-11-15/delivery.json`.
+
+**Далее:** generator thermal coupling; затем fault/topology-coupled controller
+limit profiles и совместная автоматика с R(T). Не закрыты OC/UV interactions,
+переключения/islands/reclose, arbitrary coincident roots, PSS/GENROU и OEM/global
+hybrid stability. Новые случаи без КЗ и с inactive OC; initial controller states
+строго внутри bounds. Без GitHub/CI и без заявлений о превосходстве над всеми.
+
+## R06.43 / DES-04 — TGOV1/SEXS в связке с motor R(T)
+
+Новый opt-in `winding_generator_profile: GENCLS_TGOV1_SEXS` поддерживает
+GENCLS с TGOV1,SEXS или обоими. Старый fixed-field flag продолжает отвергать
+регуляторы. PSS/GENROU/generator thermal protections по-прежнему не допускаются.
+SEXS меняет generator EMF и network injection; TGOV1 меняет mechanical input.
+Motor R(T), токи, rotor swing и controller states связаны общей сетью.
+
+- Переиспользованы существующие analytic controller/GENCLS branch derivatives
+  с реальным variable-Y voltage response; motor rows заменяются physical winding
+  actions. Проверены eliminated и inconsistent-V J·v/residual, complex Schur,
+  clip/held rows и обе temperature policies.
+- Совместная P/V/load/heat initialization теперь инициализирует controller
+  states/references, проверяет original derivatives и full physical spectrum:
+  12 states с одним controller,14 с двумя. Для passport-temperature mode спектр
+  остаётся frozen-temperature electromechanical/controller subset.
+- **12 authored radial cases /48 completed native runs /24 independent
+  trajectories /96 comparisons**: TGOV1/SEXS/both,passport/equilibrium,hold/fault,
+  Radau/DAE/two output grids. Independent SI controller/winding/KCL/swing equations
+  и собственные root solves; запрет native controller/heat-init helpers в test.
+- Offline consumer повторил24 trajectories и6 initial refusals, пересчитал96
+  comparisons,24 full physical spectra и12 stationary holds. Reference refinement
+  power difference≤4.36e-7W/var при absolute gate0.003W/var.
+- **6 initial refusals:** governor initial upper limit, exciter initial upper
+  limit и controls под fixed-field flag, по2 engines. Qualified positive traces
+  держатся минимум1e-4pu внутри controller bounds; initial boundary также запрещён.
+- **879 unique targeted tests /879 executions,0 failures/errors/skips**;
+  4 optional ANDES cases deselected; это не весь repo suite.
+- Same-host Python-I installed replay:37 checks, включая6 новых controller fault
+  runs,6 новых refusals и25 прежних. Примеры/команды:
+  `cases/controlled-winding/README.md`. Evidence:
+  `reports/controlled-winding-{qualified,accepted,installed-replay}-2026-11-15`.
+  Поставка: `reports/controlled-winding-delivery-2026-11-15/delivery.json`.
+
+**Далее:** independent hybrid limiter entry/release trajectories; generator
+thermal coupling; затем совместная автоматика/смена топологии с R(T).
+Локальные derivative tests clipped/held rows **не квалифицируют limiter events**.
+Нет нового OEM certificate, islands/reclose/PSS/GENROU или произвольной topology
+qualification. Все параметры assumed/authored; OC pickups держат relays inactive.
+GitHub/CI не используются, поставка и воспроизведение локальные.
 
 ## R06.42 / DES-04 — совместное P/V/load/heat равновесие с GENCLS
 

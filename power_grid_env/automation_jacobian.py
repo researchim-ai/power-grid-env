@@ -20,7 +20,7 @@ def voltage_buses(bank):
     return sorted(buses)
 
 
-def current_directions(bank,p,state,directions,dv):
+def current_directions(bank,p,state,directions,dv,*,voltage=None):
     m=bank.model;width=directions.shape[1]
     if p.measurement_kind=='line':
         a,b,y,shunt,ll=m.lines.parameters[p.measurement_id]
@@ -32,8 +32,14 @@ def current_directions(bank,p,state,directions,dv):
         i=bank.gen_index[p.measurement_id]
         if not m.gen_connected[i]:return np.zeros(width,complex)
         from power_grid_env.network_automation import generator_emf_derivative
+        from power_grid_env.generator_stator import impedance,impedance_product
         de=np.array([generator_emf_derivative(m,state,directions[:,j])[i] for j in range(width)])
-        return (de-dv[m.gen_buses[i]])/m.gen_z[i]*m.gen_passports[i].rated_va/(math.sqrt(3)*m.generators[i].ll_v)
+        z=impedance(m,state)[i];dz=impedance_product(m,directions)[i]
+        # Current at the caller's voltage is needed for partial DAE products,
+        # including deliberately inconsistent algebraic voltage iterates.
+        v=m.electrical(state)[0] if voltage is None else voltage
+        current=(m.generator_internal(state)[i]-v[m.gen_buses[i]])/z
+        return ((de-dv[m.gen_buses[i]])-current*dz)/z*m.gen_passports[i].rated_va/(math.sqrt(3)*m.generators[i].ll_v)
     raise ValueError('unsupported overcurrent measurement port')
 
 
@@ -46,11 +52,11 @@ def tangent(bank,time,state,directions,voltage,dv):
         if p.kind!='overcurrent' or p.curve=='definite' or not bank.available[p.id]:continue
         _,current=bank.port(p.measurement_kind,p.measurement_id,state,voltage);value=abs(current)
         if value<=p.pickup:continue
-        di=current_directions(bank,p,state,directions,dv);k,alpha=IEC_CURVES[p.curve]
+        di=current_directions(bank,p,state,directions,dv,voltage=voltage);k,alpha=IEC_CURVES[p.curve]
         slope=alpha*(value/p.pickup)**(alpha-1)/(p.time_multiplier_s*k*p.pickup)
         result[i]=slope*(np.conj(current)*di).real/value
     for i,p in enumerate(bank.transfers):
-        if not bank.ats_latched[i] and not bank.ats_active[i]:result[len(bank.relays)+i]=-directions[bank.offset+len(bank.relays)+i]/p.detection_delay_s
+        if not bank.ats_latched[i] and (not bank.ats_active[i] or not bank.transfer_available[p.id]['primary']):result[len(bank.relays)+i]=-directions[bank.offset+len(bank.relays)+i]/p.detection_delay_s
     return result
 
 

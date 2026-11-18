@@ -1,0 +1,65 @@
+"""Offline independent consumer of limiter references, owners and comparisons."""
+from pathlib import Path
+import copy
+import numpy as np
+from power_grid_env.study_artifacts import read_json,encoded,seal,verify
+from power_grid_env.evidence import package_fingerprint
+from power_grid_env.study_spec import StudySpec
+from benchmarks.generator_trip_cases import jobs
+from benchmarks.generator_trip_reference import GeneratorTripReference
+from benchmarks.generator_trip_acceptance import producers,compare,coverage,event_key
+
+
+def accept(source,out):
+    root=Path(source);anchor=verify(root);summary=read_json(root/'summary.json');declared=list(jobs());fp=package_fingerprint()
+    if not summary['passed'] or summary['code_sha256']!=fp or summary['producers']!=producers():raise ValueError('producer/runtime mismatch')
+    if [r['id'] for r in summary['rows']]!=[j['id'] for j in declared]:raise ValueError('owner inventory mismatch')
+    comparisons=replays=limiter_events=held_segments=0;maximum_event_refinement=0.;maximum_power_refinement=0.
+    for job in declared:
+        child=root/job['id'];verify(child)
+        refs=[GeneratorTripReference(job['study']).run(max_step=.002),GeneratorTripReference(job['study']).run(max_step=.001,rtol=5e-12,atol=5e-13)]
+        for name,ref in zip(['reference','refined-reference'],refs):
+            data=read_json(child/(name+'.json'))
+            if encoded(data['initialization'])!=encoded(ref.initial) or encoded(data['events'])!=encoded(ref.events):raise ValueError('reference init/events differ')
+            coverage(ref.events,job['controls'])
+            for point in data['regular_values']:
+                if encoded(point['channels'])!=encoded(ref.sample(point['time_s'])):raise ValueError('reference sample differs')
+            for point in data['one_sided_values']:
+                if encoded(point['channels'])!=encoded(ref.sample(point['time_s'],point['side'])):raise ValueError('one-sided reference differs')
+            trip=next(e['time_s'] for e in ref.events if e['kind']=='generator_thermal_trip')
+            for time in np.linspace(trip,ref.w.s.duration_s,21):
+                values=ref.sample(float(time),'post_event')
+                expected=ref.replica.trip_level*np.exp(-(time-trip)/ref.replica.time_constant_s)
+                if abs(values['g.stator_thermal_level']-expected)>1e-8 or any(values[k]!=0. for k in ['g.current_pu','g.p_w','g.q_var','g.connected']):raise ValueError('posttrip current/cooling differs')
+            pre,post=[ref.sample(trip,side) for side in ['pre_event','post_event']]
+            for k in ['m.speed_pu','m.stator_temperature_c','m.rotor_temperature_c','g.delta','g.omega','g.stator_thermal_level']:
+                if abs(pre[k]-post[k])>1e-12:raise ValueError('differential state jumped at opening')
+            replays+=1
+        if [event_key(e) for e in refs[0].events]!=[event_key(e) for e in refs[1].events]:raise ValueError('refinement event identities differ')
+        error=max(abs(a['time_s']-b['time_s']) for a,b in zip(refs[0].events,refs[1].events));maximum_event_refinement=max(maximum_event_refinement,error)
+        if error>1e-8:raise ValueError('event refinement exceeds gate')
+        for point in read_json(child/'reference.json')['regular_values']:
+            t=point['time_s']
+            if any(abs(t-e['time_s'])<2e-7 for e in refs[1].events):continue
+            a,b=[r.sample(t) for r in refs]
+            for k in a:
+                delta=abs(a[k]-b[k]);limit=1e-4 if k.endswith(('_w','_var','.measurement','.current_a')) else 1e-7
+                if delta>limit:raise ValueError('reference refinement failed:'+k)
+                if k.endswith(('_w','_var')):maximum_power_refinement=max(maximum_power_refinement,delta)
+        for method in ['radau','network_dae']:
+            for grid in [0,1]:
+                leaf=child/(method+'-'+str(grid));verify(leaf);owner=copy.deepcopy(job['study']);owner['coupled'].update(integration_method=method,step_s=.002/2**grid)
+                if read_json(leaf/'study.json')!=StudySpec.model_validate(owner).model_dump(mode='json'):raise ValueError('native owner differs')
+                report=read_json(leaf/'trace.json');checks=[compare(r,report) for r in refs]
+                if not report['completed'] or not report['additional_validation']['ok'] or not all(c['passed'] for c in checks) or encoded(checks)!=encoded(read_json(leaf/'comparison.json')):raise ValueError('comparison/gates differ')
+                coverage(report['event_log'],job['controls']);limiter_events+=sum(e['kind']=='generator_thermal_trip' for e in report['event_log']);comparisons+=2
+    if replays!=12 or comparisons!=48 or limiter_events!=24 or verify(root)!=anchor:raise ValueError('coverage/evidence changed')
+    target=Path(out);target.mkdir(parents=True,exist_ok=False)
+    result=dict(passed=True,code_sha256=fp,source_manifest_sha256=anchor,independent_reference_replays=replays,recomputed_comparisons=comparisons,
+      native_generator_trips=limiter_events,posttrip_cooling_points_checked=252,maximum_event_refinement_error_s=maximum_event_refinement,
+      maximum_power_refinement_error_w_var=maximum_power_refinement,independent_host=False)
+    (target/'summary.json').write_bytes(encoded(result));seal(target);return result
+
+if __name__=='__main__':
+    import argparse
+    p=argparse.ArgumentParser();p.add_argument('--source',required=True);p.add_argument('--out',required=True);print(accept(**vars(p.parse_args())))
