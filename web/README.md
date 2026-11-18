@@ -614,3 +614,528 @@ train-диагностическом случае через одинаковы�
 closed-loop tiny-overfit, больше train-топологий и настоящее student collection
 остаются следующими этапами. Сверка первичных статей и мотивировка решений:
 [Learning Pipeline](../plans/LEARNING_PIPELINE.md).
+
+### Procedural data quality / trainer v2 — R06.80
+
+Новый профиль: synthetic balanced400V radial constant-Z; сборка, диагностика,
+исправление. Допуск включает независимый NumPy nodal reference, наблюдаемость
+дефекта, здоровое решение, публичный expert replay и отрицательные проверки
+submit. Канонические topology families разделяются до любых параметров,
+траекторий и изображений; вся base-группа карантинируется при отказе.
+
+```bash
+python -m benchmarks.engineering_factory --out reports/data-NEW --seed 420 --variants 2
+```
+
+Текущий пакет `reports/engineering-data-release-2026-11-18`:196 задач от28 сетей,
+14 семейств. Train112/dev42/test42;784 train-пути и4292 targets. Паспорта
+синтетические, не OEM. Train loader повторяет admission и replay, проверяет
+source attribution и исключает evaluation role. Каталог/порядок/IDs/параметры
+меняются; старые topology families исключены. Ошибочные perturbations остаются
+контекстом, labels получают только следующие публичные экспертные действия.
+
+```bash
+.venv-qwen35-08b/bin/python -m benchmarks.engineering_factory_preflight \
+  --train reports/engineering-data-release-2026-11-18/train \
+  --manifest-sha256 5e0b5ef8b96904e01e143674ad42ed83e510da64e0faf8c087e50b3fb79c8485 \
+  --target requirements/qwen35-08b-local-target.json \
+  --target-sha256 e763c82b7f4f1d5acea273b43674e45bcdb949fc91d000cb7537ea54b5fa0262 \
+  --protocol qwen-native-strict-v1 --context-tokens 24576 \
+  --out reports/data-strict-preflight-NEW
+```
+
+Актуальный preflight: `reports/engineering-data-strict24k-preflight-2026-11-18`,
+manifest `272fecf22b36c9cff463693f11b2c9ad69afcd3d81eddb8cc0a1449488557cbe`.
+4292/4292 проверены processor: exact prefix, labels, context. В16k16 примеров
+не помещались; failures сохранены, ничего не обрезано. Strict native instruction
+запрещает пояснения вокруг call; parser не вырезает их ради успешной оценки.
+
+Trainer v2 CLI сохраняет legacy native-v1 default. Для текущего strict24k
+используйте явный Python API (двухшаговый debug, НЕ полный SFT-рецепт):
+
+```bash
+.venv-qwen35-08b/bin/python - <<'PY'
+from benchmarks.engineering_trainer_v2 import train
+train(
+    target_path='requirements/qwen35-08b-local-target.json',
+    target_sha='e763c82b7f4f1d5acea273b43674e45bcdb949fc91d000cb7537ea54b5fa0262',
+    corpus='reports/engineering-data-release-2026-11-18/train',
+    manifest='5e0b5ef8b96904e01e143674ad42ed83e510da64e0faf8c087e50b3fb79c8485',
+    preflight='reports/engineering-data-strict24k-preflight-2026-11-18',
+    preflight_manifest='272fecf22b36c9cff463693f11b2c9ad69afcd3d81eddb8cc0a1449488557cbe',
+    out='reports/trainer-v2-NEW', steps=2, indices=[3017, 2028],
+    protocol='qwen-native-strict-v1', context_tokens=24576,
+    lora={'rank':16, 'alpha':32, 'last_blocks':2},
+)
+PY
+```
+
+При `max_new_steps=1` сохраняется первый chunk; продолжение требует свежего
+`out`, `resume` и явного owner `resume_manifest` при неизменном recipe.
+Реальный strict debug выполнен: два шага,868864 trainable параметра, AdamW/RNG
+resume, frozen base unchanged, exact adapter roundtrip. Это text-action SFT;
+closed-loop quality gate not_run. Два разных targets не дают learning curve.
+
+```bash
+python -m benchmarks.engineering_visual_data \
+  --train reports/engineering-data-release-2026-11-18/train \
+  --manifest-sha256 5e0b5ef8b96904e01e143674ad42ed83e510da64e0faf8c087e50b3fb79c8485 \
+  --out reports/visual-NEW
+
+.venv-qwen35-08b/bin/python -m benchmarks.engineering_visual_preflight \
+  --visual reports/engineering-visual-strict-release-2026-11-18 \
+  --visual-manifest-sha256 e8435d990e38fa457c33ef174aba1d3d4853679e4e8fad61f8b9d2308b81e4c6 \
+  --train reports/engineering-data-release-2026-11-18/train \
+  --train-manifest-sha256 5e0b5ef8b96904e01e143674ad42ed83e510da64e0faf8c087e50b3fb79c8485 \
+  --target requirements/qwen35-08b-local-target.json \
+  --target-sha256 e763c82b7f4f1d5acea273b43674e45bcdb949fc91d000cb7537ea54b5fa0262 \
+  --protocol qwen-native-strict-v1 --out reports/visual-preflight-NEW
+```
+
+784 пары /128 уникальных PNG, публичные inspect_project snapshots с паспортами
+и endpoint IDs. Нет hidden answer и будущего результата; JSON сохраняет точные
+числа. Все784 прошли rerender/pixel/grid/prefix/mask qualification. VLM training,
+visual ablations и самостоятельное решение пока не проверены. Корпус provisional,
+`eligible_for_gold_sft:false`. Далее — tiny8–16 train closed-loop gate и matched
+dev; полный план и канонические evidence — [CURRENT_STATUS](../plans/CURRENT_STATUS.md).
+
+### Tiny learning gate и реальные student states — R06.81
+
+Сначала закрепляем набор ДО просмотра model scores. Селектор выбирает8–16
+clean train-эпизодов, разные base networks, сбалансированные kind/families.
+Текущий набор:8 сетей/семейств, сборка3/диагностика3/исправление2,65 targets.
+
+```bash
+python -m benchmarks.engineering_learning_gate \
+  --train reports/engineering-data-release-2026-11-18/train \
+  --manifest-sha256 5e0b5ef8b96904e01e143674ad42ed83e510da64e0faf8c087e50b3fb79c8485 \
+  --size 8 --out reports/tiny-suite-NEW
+```
+
+Текущий frozen suite `reports/engineering-tiny-suite-2026-11-18`, manifest
+`bcca8b715b7af3722de910e530f5a0ee3099dc3359a40228ca08629cb3080f29`.
+Первая эпоха — ВСЕ65 targets по одному, seed42 shuffle. Эти команды создают
+новые самостоятельные runs, а не продолжают уже запущенный текущий job:
+
+```bash
+.venv-qwen35-08b/bin/python -m benchmarks.engineering_tiny_run train \
+  --corpus reports/engineering-data-release-2026-11-18/train \
+  --manifest-sha256 5e0b5ef8b96904e01e143674ad42ed83e510da64e0faf8c087e50b3fb79c8485 \
+  --suite reports/engineering-tiny-suite-2026-11-18 \
+  --suite-manifest-sha256 bcca8b715b7af3722de910e530f5a0ee3099dc3359a40228ca08629cb3080f29 \
+  --preflight reports/engineering-data-strict24k-preflight-2026-11-18 \
+  --preflight-manifest-sha256 272fecf22b36c9cff463693f11b2c9ad69afcd3d81eddb8cc0a1449488557cbe \
+  --epochs 1 --out reports/tiny-train-NEW
+
+python -m benchmarks.engineering_tiny_run evaluate \
+  --corpus reports/engineering-data-release-2026-11-18/train \
+  --manifest-sha256 5e0b5ef8b96904e01e143674ad42ed83e510da64e0faf8c087e50b3fb79c8485 \
+  --suite reports/engineering-tiny-suite-2026-11-18 \
+  --suite-manifest-sha256 bcca8b715b7af3722de910e530f5a0ee3099dc3359a40228ca08629cb3080f29 \
+  --out reports/tiny-base-NEW
+```
+
+Для adapter evaluation добавьте `--adapter` (путь checkpoint) и явный
+`--adapter-manifest-sha256` от completed checkpoint. Для public deterministic
+control используйте `--control`; он не обучен и не открывает neural gate.
+Для heldout оценок передайте `--split dev` и evaluation package/manifest,
+без train suite. Все ошибки и задачи остаются в знаменателе.
+
+`engineering_learning_campaign --help` описывает завершение уже запущенного
+локального эксперимента: owner SHA от `recipe.json`, train/base paths,
+train/suite anchors и свежий `--out`. Он ожидает sealed outputs (до3 часов),
+проверяет точный полный schedule, выполняет standalone adapter evaluation и
+paired physical replay через `engineering_learning_compare`. Читайте
+`state.json`, затем `summary.json` или `failure.json`. Незавершённый job не
+считается успешным обучением; новые эпохи, dev/test и GRPO не запускаются сами.
+
+Текущие train/base jobs запущены на CPU. Public control8/8 и его переходы
+проверены; model8/8, новая heldout accuracy и learned recovery ещё не подтверждены.
+
+После COMPLETE audited model TRAIN evaluation можно собирать исправления:
+
+```bash
+python -m benchmarks.engineering_student_recovery \
+  --train reports/engineering-data-release-2026-11-18/train \
+  --train-manifest-sha256 5e0b5ef8b96904e01e143674ad42ed83e510da64e0faf8c087e50b3fb79c8485 \
+  --suite reports/engineering-tiny-suite-2026-11-18 \
+  --suite-manifest-sha256 bcca8b715b7af3722de910e530f5a0ee3099dc3359a40228ca08629cb3080f29 \
+  --student-evaluation reports/tiny-base-NEW \
+  --student-manifest-sha256 OWNER_COMPLETE_EVALUATION_MANIFEST_SHA256 \
+  --out reports/student-corrections-NEW
+```
+
+Реальные student prefixes повторно исполняются; публичный expert продолжает
+из посещённого состояния в оставшемся исходном budget. Student/invalid actions
+не являются positive labels. Failed continuations сохраняются в attempts;
+terminal submit не отменяется задним числом. Dev/test и public control не
+допускаются. `expert_messages` выдаёт только expert labels с реальным student
+контекстом. Экспорт candidate corrections требует отдельного native preflight
+и trainer recipe до нового обучения; это не автоматическое подключение к SFT.
+
+### Полный допуск student-correction данных — R06.82
+
+Первая65-step native tiny-эпоха завершена; checkpoint manifest
+`45a69856b4effca6dc08e33722c771849f6b0ed35709c989d0b90ff526cdae67`.
+Это не closed-loop score. Base/adapter evaluation нужно дождаться до seal;
+частичные episodes не считаются полным source corpus.
+
+`StudentCorrectionDataset` связывает owner manifests train/suite/model-evaluation/
+corrections, заново исполняет ВСЕ ветки и проверяет successful/failed inventory,
+source attribution и counters. `batch` выдаёт native next-expert labels; прошлые
+student/error/tool/expert tokens остаются masked prompt. Нельзя выбросить failure
+или повысить student action до positive target.
+
+Сквозная локальная цепочка (новый output, без обучения):
+
+```bash
+.venv-qwen35-08b/bin/python -m benchmarks.engineering_student_campaign \
+  --train reports/engineering-data-release-2026-11-18/train \
+  --train-manifest-sha256 5e0b5ef8b96904e01e143674ad42ed83e510da64e0faf8c087e50b3fb79c8485 \
+  --suite reports/engineering-tiny-suite-2026-11-18 \
+  --suite-manifest-sha256 bcca8b715b7af3722de910e530f5a0ee3099dc3359a40228ca08629cb3080f29 \
+  --student-evaluation reports/engineering-tiny-base-2026-11-18 \
+  --train-preflight reports/engineering-data-strict24k-preflight-2026-11-18 \
+  --train-preflight-manifest-sha256 272fecf22b36c9cff463693f11b2c9ad69afcd3d81eddb8cc0a1449488557cbe \
+  --target requirements/qwen35-08b-local-target.json \
+  --target-sha256 e763c82b7f4f1d5acea273b43674e45bcdb949fc91d000cb7537ea54b5fa0262 \
+  --out reports/student-admission-NEW
+```
+
+Ожидает complete sealed source (до2 часов), экспортирует все attempts и запускает
+проверку КАЖДОГО expert target через pinned native processor. Одна ошибка/overflow
+или пустой corpus закрывает допуск; truncation/drop не выполняются. Отдельно
+считает unique public message/action fingerprints и число зависимых веток.
+
+При успехе пишет `corrections/`, `preflight/`, `mixture-sources.json`,
+`mixture-plan/` и sealed summary. При отказе — `preflight_rejected`, полный список
+ошибок и отсутствие mixture plan; при сбое — sealed incomplete failure.
+Текущий job: `reports/engineering-student-admission-2026-11-18/state.json`.
+
+`engineering_learning_mix` требует полные passed preflights ОБОИХ источников,
+одинаковый target и strict24k contract. Proposed128-step recipe примерно50/50
+исходные demonstrations/corrections, затем kind/family/action и episode/action
+sampling. Все source indices/replacement записываются; `batch` повторно сверяет
+тип задачи, family и action для каждого schedule entry. Spec-файл задаёт13
+явных полей (см. `mixture-sources.json`); его SHA требуется для повторения:
+
+```bash
+python -m benchmarks.engineering_learning_mix \
+  --spec reports/student-admission-NEW/mixture-sources.json \
+  --spec-sha256 OWNER_MIXTURE_SPEC_SHA256 \
+  --steps 128 --seed 42 --out reports/student-mixture-NEW
+```
+
+Это admitted DATA/PLAN, не новый SFT optimizer run и не learned recovery.
+Смешивание50/50 ещё не доказано оптимальным. Следующий training recipe выбираем
+по standalone результатам уже готового65-step adapter; dev/test остаются
+оценочными. VLM/GRPO этим text-only блоком не квалифицируются.
+
+### Семантика labels и обязательные аргументы
+
+`engineering_target_semantics` проверяет не параллельный сериализатор, а
+декодирует фактические supervised tokens из batch и сравнивает native call
+целиком с expected action. Prefix/masks сами по себе не гарантируют, что шаблон
+сохранил параметры. Текущий full check:4292/4292,3784 argument fields и27372
+value tokens сохранены; веса при проверке не загружались.
+
+```bash
+.venv-qwen35-08b/bin/python -m benchmarks.engineering_target_semantics \
+  --train reports/engineering-data-release-2026-11-18/train \
+  --manifest-sha256 5e0b5ef8b96904e01e143674ad42ed83e510da64e0faf8c087e50b3fb79c8485 \
+  --target requirements/qwen35-08b-local-target.json \
+  --target-sha256 e763c82b7f4f1d5acea273b43674e45bcdb949fc91d000cb7537ea54b5fa0262 \
+  --out reports/target-semantics-NEW
+```
+
+`engineering_action_quality.report` принимает complete owner evaluation,
+канонические cases и RunContract, повторно исполняет все переходы и разносит:
+wire-valid, schema-valid, required slots present/nonempty, tool errors и
+physical terminal. В posthoc65-step repair probe:7 wire-valid calls,3 пустых
+required-args calls,0/5 filled slots,0 accepted edits,failed submit. Это один
+выбранный train diagnostic, не full-suite/heldout result и не «готовый агент».
+Receipts: `reports/engineering-target-semantics-2026-11-18` и
+`reports/engineering-epoch1-action-quality-2026-11-18`.
+
+Отдельный argument microgate повторяет один TRAIN target1818 восемь раз от
+fresh base и проверяет conditional next call из публичного teacher prefix.
+Это узкий memorization debug, не продолжение65-step adapter и не полный
+самостоятельный repair workflow; результат — в
+`reports/engineering-argument-microgate-2026-11-18/summary.json` или failure.
+
+
+Argument microgate завершён успешно: fresh-base8-repeat adapter точно выдал
+set_line_catalog с обоими правильными полями. Это1 conditional train call,
+не полный repair и не новый основной policy checkpoint. Подтверждена узкая
+обучаемость аргументам; standalone8-case/heldout качество остаётся открытым.
+
+### Mixed SFT v3: новая фаза и same-phase resume — R06.83
+
+Base0.8B strict TRAIN score завершён0/8; все8 cases сохранены. Из117 его
+visited prefixes:83 successful corrections,28 unsuccessful continuations,
+6 terminal/exhausted states. Все686 expert targets допущены настоящим processor,
+660 unique public context/action pairs,max prompt14995. Это8 исходных сетей.
+Qualified corpus: `reports/engineering-student-admission-2026-11-18`.
+Эти состояния принадлежат BASE model; отдельный worker
+`reports/engineering-student65-admission-2026-11-18` ждёт полного65-step rollout.
+
+`engineering_trainer_v3` принимает только owner-pinned mixture plan, повторяет
+source admission и deterministic schedule/inventory, проверяет actual label
+семантику перед update. Новая фаза от v2 сохраняет adapter weights и начинает
+новый AdamW. Same-phase resume восстанавливает adapters/AdamW/RNG/cursor
+строго при прежнем plan/initialization/recipe. Frozen base и exact roundtrip
+проверяются; partial checkpoint пригоден для resume, не для policy inference.
+
+Пример новой фазы, ограниченной первым chunk8 (свежий output):
+
+```bash
+.venv-qwen35-08b/bin/python -m benchmarks.engineering_trainer_v3 \
+  --target requirements/qwen35-08b-local-target.json \
+  --target-sha256 e763c82b7f4f1d5acea273b43674e45bcdb949fc91d000cb7537ea54b5fa0262 \
+  --plan reports/engineering-student-admission-2026-11-18/mixture-plan \
+  --plan-manifest-sha256 9521dfb6348b1122054707450476bbb3f232ab3b8874a8de5b6fafe6322b2fac \
+  --initial reports/engineering-tiny-epoch1-2026-11-18/checkpoint \
+  --initial-manifest-sha256 45a69856b4effca6dc08e33722c771849f6b0ed35709c989d0b90ff526cdae67 \
+  --max-new-steps 8 --out reports/mixed-v3-head-NEW
+```
+
+Продолжение использует те же flags target/plan/initial и добавляет
+`--resume reports/mixed-v3-head-NEW --resume-manifest-sha256 OWNER_HEAD_MANIFEST`,
+с новым `--out`. AdamW не сбрасывается при resume; completed phase нельзя
+молчаливо продолжить другим schedule. Архитектура warm-start LoRA должна совпасть.
+
+Native lifecycle pilot `reports/engineering-v3-native-pilot-2026-11-18` завершён:
+2-source2-step phase выполнена непрерывно и через head/resume; LoRA И AdamW
+побитно совпали. Warm start, frozen base, exact roundtrip и proxy loading
+подтверждены. Conditional call не совпал с выбранным expert target; это не
+full-policy/recovery qualification. Никаких GPU/BF16/cross-host/resource-побед
+эта CPU-проверка не устанавливает.
+
+`engineering_v3_policy` принимает completed v3 checkpoint и public JSON-lines;
+`engineering_v3_eval` запускает полный train suite либо явный dev/test package,
+с тем же strict24k contract. В evaluation нет teacher. Source fingerprints,
+owner weights/contract и full failure denominator проверяются.
+
+Уже запущена условная конечная128-step campaign:
+`reports/engineering-v3-mixture-phase-2026-11-18/state.json`. Она требует passed
+native pilot и data admission, сохраняет checkpoints каждые8 steps, затем
+оценивает все8 train workflows и сравнивает их с65-step adapter через physical
+replay и action/schema/required-argument counters. Полный запуск можно повторить
+отдельно, указав свежий output:
+
+```bash
+.venv-qwen35-08b/bin/python -m benchmarks.engineering_v3_campaign \
+  --pilot reports/engineering-v3-native-pilot-2026-11-18 \
+  --admission reports/engineering-student-admission-2026-11-18 \
+  --target requirements/qwen35-08b-local-target.json \
+  --target-sha256 e763c82b7f4f1d5acea273b43674e45bcdb949fc91d000cb7537ea54b5fa0262 \
+  --initial reports/engineering-tiny-epoch1-2026-11-18/checkpoint \
+  --initial-manifest-sha256 45a69856b4effca6dc08e33722c771849f6b0ed35709c989d0b90ff526cdae67 \
+  --reference-evaluation reports/engineering-tiny-campaign-2026-11-18/adapter-evaluation \
+  --chunk-size 8 --out reports/mixed-v3-campaign-NEW
+```
+
+Для восстановления whole campaign из partial v3 checkpoint передаются
+`--resume` и owner `--resume-manifest-sha256` при тех же остальных source flags.
+План128 frozen; новые65-state данные сохраняются отдельно. Это corrective SFT
+на base-visited данных от adapter65, не on-policy DAgger для65. Дополнительные
+эпохи, recipe search, GRPO, dev/test tuning и внешние API сами не запускаются.
+Считать model quality можно только по complete standalone report; lifecycle
+pilot, число steps и train loss не заменяют результат инженерных задач.
+
+## Аудит качества данных и VLM — R06.84
+
+Текущее ограничение — learned-policy качество: strict tiny TRAIN base0/8,
+adapter65 1/8, принятых правок17→0. Ни admission, ни loss, ни число PNG этого
+не исправляют автоматически. Полная новая программа — `plans/LEARNING_PIPELINE.md`
+(R06.84), результаты — `plans/CURRENT_STATUS.md`. Эти новые компоненты относятся
+к offline learning pipeline; они не добавляют веб-интерфейсу обученного агента.
+
+Добавлены `engineering_supervision_audit`, `engineering_grounding*`,
+`engineering_card_*`, `engineering_catalog_challenges`, `engineering_action_menu`:
+
+- 1852 visual readout records,5556 проверенных native image/text/none batches;
+- 2448 card targets: действие, условное заполнение аргументов, готовность;
+  4896 native text/visual batches. Короткие публичные ID и текущие измерения;
+- 32 catalog-selection задачи, PF и независимый reference, парная смена имён
+  безопасного/опасного каталога; одна разрешённая замена; teacher32/32;
+- 1152 action-choice targets с публичными schema-valid вариантами, до59 choices.
+  Неправильные инженерные решения остаются доступными и проваливают judge;
+- реальные2 image-conditioned optimizer updates, frozen base, finite gradients,
+  exact roundtrip. Это optimizer smoke, не trained engineering-agent score.
+
+DEV VLM regression на6 исходных сетях: base4/6 strict pairs, adapter65 0/6;
+при отдельном диагностическом чтении чисел внутри Markdown fence оба6/6.
+Исходный strict score не изменён. Без изображения base выдумывает rating;
+missing-source training labels теперь null. Необходимо учить и abstention,
+и контракт ответа. VLM topology/planning пока не квалифицированы.
+
+Повтор native admission без optimizer updates (свежий output):
+
+```bash
+.venv-qwen35-08b/bin/python -m benchmarks.engineering_grounding_qualify \
+  --corpus reports/engineering-visual-grounding-release-2026-11-18 \
+  --manifest-sha256 a33a8cf869c53ec7e345f02ec9059bf924eb81e728f74f6442d57499911d2bfd \
+  --target requirements/qwen35-08b-local-target.json \
+  --target-sha256 e763c82b7f4f1d5acea273b43674e45bcdb949fc91d000cb7537ea54b5fa0262 \
+  --out reports/visual-readout-admission-NEW
+
+.venv-qwen35-08b/bin/python -m benchmarks.engineering_card_qualify \
+  --corpus reports/engineering-card-curriculum-release-2026-11-18 \
+  --manifest-sha256 c437a2391fec8926083e9488d4b2e90966144e5292b06cfe92bac0bf38b87802 \
+  --target requirements/qwen35-08b-local-target.json \
+  --target-sha256 e763c82b7f4f1d5acea273b43674e45bcdb949fc91d000cb7537ea54b5fa0262 \
+  --out reports/card-label-admission-NEW
+```
+
+Canonical catalog: `reports/engineering-catalog-selection-final-2026-11-18`,
+manifest `fc5e5950c5939db1bee86de58c320dcd5ac58936b3b995aa287535f715f7308e`.
+Ранний `engineering-catalog-intervention-release-*` — сохранённый prototype
+с order-подсказкой, не текущий training source. Все новые записи производны от
+16 TRAIN-сетей/8 families; картинки/траектории не считать независимыми объектами.
+Корпуса остаются не eligible_for_gold_sft до standalone quality gates.
+Старая128-step mixture phase продолжает прежний recipe, без подмены данных.
+
+## Изолированные навыки и проверка operational budget — R06.85
+
+Проведён finite32-step fresh-base Qwen3.5-0.8B pilot на8 TRAIN exemplars:
+strict answers1/10→5/10 с2 дополнительными menu-order probes. Binding2/2,
+readiness2/2, choice0/4, perception1/2. Gate failed. Диагностическое содержание
+4/10→5/10: часть улучшения — соблюдение JSON, а не новое reasoning. Agent
+по-прежнему выбирает validate вместо ремонта и выдумывает100 без картинки.
+Operation-name probe без меню тоже0/2; auto-extra-epochs/GRPO не запускались.
+
+Точный finite recipe можно повторить с новыми output paths:
+
+```bash
+python -m benchmarks.engineering_skill_pilot plan \
+  --target-sha256 e763c82b7f4f1d5acea273b43674e45bcdb949fc91d000cb7537ea54b5fa0262 \
+  --out reports/skill-plan-NEW
+```
+
+Получить owner manifest через `power_grid_env.study_artifacts.verify` и передать
+его в runner вместе с plan (вместо OWNER_PLAN_MANIFEST):
+
+```bash
+.venv-qwen35-08b/bin/python -m benchmarks.engineering_skill_pilot run \
+  --plan reports/skill-plan-NEW --plan-manifest-sha256 OWNER_PLAN_MANIFEST \
+  --target requirements/qwen35-08b-local-target.json --out reports/skill-run-NEW
+```
+
+Это isolated diagnostic, не готовая policy для Agent Lab. `engineering_skill_audit`
+находит3978 unique visible inputs/targets среди6296 source rows и предлагает
+family/base/skill-balanced sampling с устранением повторов внутри группы.
+256-target proposal сам не запускает обучение.
+
+**Equipment constraint исправлен новой версией.** Старый catalog-intervention/v1
+пропускал remove/add ВСЕХ линий при0 catalog edits. Его historical controls
+сохранены; current profile — `catalog-replacement/v2`: публичный лимит одного
+changed route учитывает set/remove/add. Expert32/32, rebuild-all0/32, физика
+последнего остаётся успешной. Это контроль среды, не learned-model score.
+
+Новые416 v2 teaching targets содержат32 negative readiness examples с успешной
+физикой и нарушенным operational budget. Все frames/responses/terminals replayed;
+failed controller actions в positive SFT не попадают. Native text/visual admission
+выполняется `benchmarks.engineering_replacement_qualify`. Источники и результаты —
+`reports/engineering-replacement-challenge-v2-2026-11-18`,
+`reports/engineering-replacement-teaching-v2-2026-11-18`,
+`reports/engineering-replacement-native-admission-v2-2026-11-18`.
+Прежний `engineering-catalog-selection-final-*` теперь historical v1 source;
+название final не означает текущую gold qualification. Новые v2 targets требуют
+собственного sealed recipe и ещё не стали обученным инженерным агентом.
+
+## Named operations, abstention и staged backend — R06.86
+
+В отдельном fresh-base40-step Qwen3.5-0.8B пилоте strict answers4/12→10/12:
+preferred operations1/6→4/6, image/missing/blank readouts3/6→6/6. Это10 TRAIN
+exemplars и2 новых question presentations, не independent family score.
+Общий gate failed: simulate→validate и unsafe overloaded→submit остаются.
+Новая задача и weight4 для value-bearing tokens менялись вместе, причинный
+эффект одного веса не установлен. Frozen base/vision и exact roundtrip прошли.
+
+Повтор конечного эксперимента из корня проекта (свежий output):
+
+```bash
+.venv-qwen35-08b/bin/python -m benchmarks.engineering_decision_pilot run \
+  --plan reports/engineering-decision-payload-plan-admitted-2026-11-18 \
+  --plan-manifest-sha256 d47079ade9cea39bdf9b10a5b1fbb53d56bf00ce48de58ecb345795cc93feca3 \
+  --target requirements/qwen35-08b-local-target.json \
+  --out reports/decision-payload-run-NEW
+```
+
+Source plan и exact native token/payload admission уже проверены. Все masks
+оставляют prompt/image tokens=-100; weighted CE не заменяет generated-answer
+score. Первая проба плана без admitted в названии историческая, после изменения
+primitive validator её source hash отвергается. Не переиспользовать старый hash.
+
+`engineering_staged_agent` — offline двухэтапный callback API: имя операции,
+затем required arguments из public state/schema, без teacher directive/значений.
+PUBLIC control32/32 проверил полный physical v2 workflow. Пустые допустимые
+аргументы сериализует adapter; previous ok/error/operation доступны следующему
+запросу. Native learned-policy adapter и его token/context enforcement ещё не
+квалифицированы, Agent Lab автоматически на него не переключается.
+
+`engineering_staged_data` выпустил848 replay-qualified/native-admitted targets:
+192 operation,32 conditional arguments и624 measurement assessments. Failed
+controller actions не являются positive labels. `engineering_counterfactual_cases`
+добавляет128 targets на32 физических парах feasible/overloaded с одинаковыми
+stage counters/freshness/goal/feedback.64 algorithmic controls и128 независимых
+before/after checks прошли; все128 targets native-admitted. Это16 исходных
+TRAIN-сетей, а не64 новых объекта. Measurement feasibility не сертифицирует
+структуру и равенство паспортов с округлением.
+
+Оба новых корпуса ещё не использованы для optimizer updates. Следующая очередь —
+отдельный recipe на измеримые ограничения и conditional arguments, затем learned
+v2 workflow и heldout-family проверка. Receipts:
+`reports/engineering-decision-payload-pilot-2026-11-18`,
+`reports/engineering-staged-teaching-admission-2026-11-18`,
+`reports/engineering-matched-stage-physics-2026-11-18`.
+
+## Реальная staged policy, replay и capacity control — R06.87
+
+`engineering_native_staged_policy` загружает только complete owner-pinned local
+checkpoints с plan/core/source checks. Native generation реально ограничен
+8192 context /128 tokens на stage; фактические counts сохраняются. Ответы не
+исправляются, model получает только public text stage messages. Failed gate
+остаётся failed при диагностической загрузке. Это offline inference API;
+Agent Lab автоматически не получает новый обученный policy endpoint.
+
+Завершён raw128-step run:0/8 против1/8 у reference adapter65. Отдельная staged
+physics phase от adapter40 дала7/15→7/15 skill answers и0/3→0/3 full workflows;
+повторяется validate до24-call budget. Эти3 workflow — варианты ОДНОЙ train-сети.
+`engineering_staged_audit` повторно проверил все6 traces/decisions/feedback/
+responses/counters. Ни модель не выполнила simulation, поэтому numerical studies
+в этих traces0; независимый numerical checker работает на выполненных studies,
+а не приписывает модели owner calculations. Polarity/labels/failed denominator
+не подменяются успешным PUBLIC control.
+
+Read-only causal audit:3 states/8 target positions, maximum logits difference
+1.67e-5, cache-prefill/train-eval differences0, text→image→text state invariant.
+Это scope-limited проверка runtime, не all-runtime или learning qualification.
+
+Новый finite arm — только last_blocks2→8 при тех же78 updates, parent40,
+данных/seed/LR/value weight/budgets. Fresh base оборачивается ОДИН раз, старые
+A/B переносятся полностью, новые B=0. Native planning доказал битовую идентичность
+logits/CE/weighted loss на15 входах. Parent40 baseline reused verbatim из sealed
+reference; он не выдаётся за повторную depth8 генерацию. After15+3 должны
+реально выполняться, с physical replay. Future scores — только после complete
+sealed receipt; нет auto-extra-epochs/GRPO/heldout tuning.
+
+Проверенный native plan:
+`reports/engineering-depth8-capacity-plan-2026-11-18`, manifest
+`56fce5ce80bca1d7e1875a88e8d6fdb185ea468085b20d1e293e8e357dc8cff2`.
+Повтор с новым output:
+
+```bash
+.venv-qwen35-08b/bin/python -m benchmarks.engineering_capacity_campaign run \
+  --target requirements/qwen35-08b-local-target.json \
+  --plan reports/engineering-depth8-capacity-plan-2026-11-18 \
+  --plan-manifest-sha256 56fce5ce80bca1d7e1875a88e8d6fdb185ea468085b20d1e293e8e357dc8cff2 \
+  --alignment-audit reports/engineering-native-causal-audit-2026-11-18 \
+  --alignment-audit-manifest-sha256 12b22fbefcb3e168e856cdb5e06ccc9cabda88962b86bae00e655ec64e0c6950 \
+  --out reports/depth8-capacity-NEW
+```
+
+Нельзя менять recipe/source или дописывать completed checkpoint; новый опыт
+требует нового sealed плана и свежей директории. Resume этого diagnostic arm
+не реализован. Все parent targets и первичные результаты сохранены.

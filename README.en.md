@@ -871,3 +871,16 @@ wrong refusal despite low aggregate loss. Semantic loss and a bounded training
 pilot come next;test stays closed and engineering-agent quality is unqualified.
 
 Agent Lab provides bounded construction, diagnosis and repair episodes with a real PF checker: 21 cases across three topology-disjoint splits. Seven training cases are exposed locally. Teacher success is not learned-agent performance; exports are not gold SFT. See [local setup and limitations](web/README.md).
+
+**Current learning status — R06.87,18 November2026**:
+[results and queue](plans/CURRENT_STATUS.md), [learning pipeline](plans/LEARNING_PIPELINE.md).
+Qwen3.5-0.8B and native image/text batches are checked, but autonomous engineering
+quality remains unqualified: the raw128-step TRAIN run completes0/8 workflows;
+the staged last2 physics phase completes0/3 variants of one base network.
+These are different interfaces and their scores are not directly comparable.
+The native staged API selects an operation and then arguments without a teacher
+argument directive; a separate verifier replays raw decisions and physical terminals.
+Low loss is not task completion. A controlled depth2→depth8 arm keeps the data,
+78 updates and parent weights fixed; its initial logits/loss match bit-for-bit
+on15 fixed inputs. No quality gain is claimed before completed generated-answer
+and workflow results. These engineering ML runs stay local; no GitHub/CI is used.

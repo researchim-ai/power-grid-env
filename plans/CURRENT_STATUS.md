@@ -2,6 +2,489 @@
 
 Обновлено: **18 ноября 2026 года**.
 
+## R06.86 — named operations, VLM abstention и физические контрастные пары
+
+**Новый finite40-step pilot завершён: strict4/12→10/12; общий gate12/12
+НЕ пройден.**10 TRAIN exemplars +2 новых question presentations из TRAIN
+распределения, не family-heldout score. Preferred operations1/6→4/6,
+perception/insufficiency3/6→6/6. Train subset3/10→8/10, новые вопросы1/2→2/2.
+Сохранилось чтение factual/counterfactual216.12/253.12; выбранные missing/blank
+контроли теперь дают null, включая поля from_node/to_node нового вопроса.
+Это узкая проверка, не универсальная VLM/abstention квалификация.
+
+Рецепт fresh base, rank16/two text blocks, frozen vision/base, AdamW1e-4,
+40 updates. JSON-value tokens получают weight4 против1 у остальных assistant
+токенов; prefix/image masked. Exact token-offset roundtrip и causal alignment
+проверены до updates. Введены отдельные syntax/payload CE и payload accuracy.
+Vision encoder18 forwards, finite gradients, frozen base и exact adapter
+roundtrip прошли. Новая цель и weighted objective менялись вместе: преимущество
+именно веса4 не установлено, с прежним menu5/10 score напрямую не сравнивать.
+
+Остались simulate→validate и set_line_catalog→submit при перегрузке. Physical
+judge не пропускает unsafe submit. Preferred-action exact score не перечисляет
+все допустимые планы. После failed gate нет auto-extra-epochs/GRPO. Предыдущий
+128-step job выполняется отдельно с прежними fingerprints и recipe. Все128
+updates завершены; standalone8-case evaluation запущен, полного score ещё нет.
+
+**Собран двухэтапный API**: имя операции → самостоятельные required arguments.
+На второй стадии только public schema/goal/state; нет teacher directive или
+заранее выбранного оборудования/каталога. Previous public ok/error/operation
+передаётся дальше. Optional empty args сериализует adapter, invalid decisions
+расходуют реальные calls. PUBLIC control32/32 проверил полный v2 physical
+workflow. Learned native staged-policy loader/полный model workflow ещё открыты;
+веб Agent Lab автоматически не переключается на эти experimental checkpoints.
+
+**Новые данные полностью допущены native processor:**
+- 848 staged targets:192 operation,32 conditional arguments,624 measurement
+ assessments. Полные cards/responses/terminals replayed; failed actions не
+ становятся positive SFT. Measurement labels независимо сверены с physical judge.
+- 128 matched-stage physics targets:32 пары feasible/overloaded, одинаковые
+ goal/revision/budgets/feedback/freshness.64 public-control successes и128
+ independent before/after checks. Это64 observations на16 исходных сетях,
+ не64 независимых объекта. Labels/variant metadata в prompt не передаются.
+
+Все976 новых targets прошли prefix/actual-label/payload-mask checks. Они пока
+не использованы для optimizer updates, gold eligibility закрыта. Measurement
+assessment — частичная проверка наблюдаемых режимов; она не сертифицирует
+структуру/точное равенство округлённых паспортов/промышленную применимость.
+
+Проверки R06.86: **525 targeted Python tests**, **60 JS tests**, static build
+и976/976 native admissions прошли. Core и frozen v3 dependencies неизменны.
+Receipt: `reports/engineering-decision-physics-checks-2026-11-18/summary.json`.
+
+Canonical evidence:
+- `reports/engineering-decision-payload-plan-admitted-2026-11-18/summary.json`
+- `reports/engineering-decision-payload-pilot-2026-11-18/summary.json`
+- `reports/engineering-staged-episode-controls-2026-11-18/summary.json`
+- `reports/engineering-staged-teaching-admission-2026-11-18/summary.json`
+- `reports/engineering-matched-stage-physics-2026-11-18/summary.json`
+
+Дальше: отдельный recipe на physics contrasts/measurement reasoning/conditional
+arguments, native staged-policy inference qualification и полный learned v2
+workflow. Затем family-heldout и более широкая physics/VLM очередь. Подробности
+и hashes — LEARNING_PIPELINE R06.86.
+
+## R06.85 — выполнен skill pilot; найден и закрыт обход equipment budget
+
+**Fresh-base32-step skill pilot завершён: strict generated answers1/10→5/10,
+целевой gate10/10 НЕ пройден.** Это8 TRAIN exemplars +2 menu-presentation probes,
+не10 сетей и не полный workflow. Binding0/2→2/2, readiness0/2→2/2,
+choice0/4→0/4, perception1/2→1/2.32/32 used-target native admissions прошли,
+vision encoder5 forwards, finite gradients, frozen base и exact roundtrip
+подтверждены. Auto-extra-epochs/GRPO не запускались. Original128-step phase
+остаётся отдельной, её recipe/source fingerprints не изменены.
+
+Диагностическое содержание4/10→5/10: base уже понимал обе readiness labels,
+но добавлял Markdown; один binding был верен внутри wrapper. Остальные strict
+улучшения — формат, не доказательство новых инженерных навыков. Без изображения
+модель всё ещё отвечает100 вместо null. Все choice failures означают validate
+при уже validated/fresh overloaded state. Read-only operation-name probe без
+меню также0/2 у base и adapter: add_line вместо set_line_catalog. Это posthoc
+train-state diagnostic; единственная причина не установлена.
+
+**Обнаружен acceptance bypass в catalog-intervention/v1:** remove_line→add_line
+ВСЕХ линий сохранял catalog edit counter0; adversarial control32/32 success.
+Исправлен НОВЫМ equipment profile **catalog-replacement/v2**: публичный лимит
+maximum_changed_routes=1 и счётчик затронутых маршрутов, общий для set/remove/add.
+Легитимный remove/add одного маршрута разрешён, rejected edits не учитываются.
+Новые controls: expert32/32, rebuild-all0/32 при physics_success=True.
+Исторические source/receipts сохранены, прежний каталог с именем final теперь
+historical v1 candidate, не current gold. Сравнивать v1/v2 scores напрямую нельзя.
+
+Выпущены416 v2 teaching targets:192 positive expert choice и224 readiness,
+включая32 hard negatives «физика допустима, operational budget нарушен».
+Все cards/responses/terminals заново replayed. Failed-controller действия не
+входят в positive SFT. **832/832** native text/visual-hybrid batches прошли
+prefix/pixel/actual-label checks, max prompt3098, failures0. Это admission
+нового оборудования/encoding, не улучшение learned policy. Gold gate закрыт.
+
+Общий skill loader:6296 source rows после удаления48 точных source duplicates;
+3978 unique visible inputs/targets,2318 повторных visible pairs, deterministic
+label conflicts0. Proposed256-target sampler даёт64 на skill и выбирает
+family/base/stratum/unique pair; сам не запускает optimizer. Lineage visual
+frames восстанавливается из owner scene metadata.64/64 PUBLIC algorithmic
+choice-episode controls (старый профиль ×2 seeds) проверили runner; exact
+historical source сохранён перед добавлением episode factory.
+
+Проверки: **479 targeted Python tests**, **60 JS tests**, native admission832/832
+и static build прошли. Core и dependencies активного v3 job неизменны.
+Receipt: `reports/engineering-skills-checks-2026-11-18/summary.json`.
+
+Canonical R06.85 receipts:
+- `reports/engineering-skill-pilot-plan-2026-11-18/summary.json`
+- `reports/engineering-skill-pilot-2026-11-18/summary.json`
+- `reports/engineering-skill-error-diagnosis-2026-11-18/summary.json`
+- `reports/engineering-operation-probe-2026-11-18/summary.json`
+- `reports/engineering-visible-skill-audit-2026-11-18/summary.json`
+- `reports/engineering-replacement-challenge-v2-2026-11-18/summary.json`
+- `reports/engineering-replacement-teaching-v2-2026-11-18/summary.json`
+- `reports/engineering-replacement-native-admission-v2-2026-11-18/summary.json`
+
+Следом: отдельный operation-selection/insufficiency recipe, value-token metrics,
+затем learned v2 workflow с полным failure denominator. Full tiny gate,
+heldout-family transfer, topology perception и industrial physics curriculum
+остаются открытыми. Подробная очередь — LEARNING_PIPELINE R06.85.
+
+## R06.84 — аудит обучающего сигнала, новая программа обучения и проверка VLM
+
+**Качество инженерного агента пока не подтверждено.** Завершённый strict24k
+TRAIN-прогон65-step adapter дал **1/8** (diagnose1/3, assemble0/3, repair0/2),
+0 принятых правок против17 у base; base0/8. Это те же8 train-сетей/семейств,
+не generalization. Нулевые protocol errors не означают заполненных аргументов.
+Mixed128 phase R06.83 продолжается с прежними source fingerprints и recipe;
+новые данные ниже в неё не подмешиваются. Старые записи «adapter pending» ниже
+описывают прошлый момент.65-state admission завершён отдельно:50 prefixes,
+42 successful corrections,364/364 targets допущены; это не learned recovery.
+
+**Что реально нашли в данных:**
+- 4292 targets происходят из112 задач на16 исходных сетях/8 семействах;
+  2464 вызова без аргументов (57.4%), медиана prompt4301, максимум16905 tokens.
+- 208 повторов input/action и64 состояния с несколькими допустимыми действиями.
+  Последние не являются ошибочными метками: планы проверены физическим replay.
+  Все3784 argument fields сохранены; гипотеза потери аргументов при serialization
+  проверкой actual labels не подтвердилась.
+- На всех16 исходных исправных train-сетях замена ВСЕХ линий на copper-1 и,
+  отдельно, на copper-2 проходит физические ограничения. Старый набор слишком
+  слабо учит выбирать оборудование по режиму. Нужны случаи, где выбор меняет
+  допустимость, и отдельные operational constraints.
+- Старые изображения не показывали ID требуемых маршрутов и нагрузок; полный
+  JSON рядом позволял обходить визуальное наблюдение. Image admission сам по
+  себе не означал, что vision encoder участвовал в optimizer step.
+
+**Реализовано и выполнено:**
+- Новая публичная сцена с короткими N/L/R/D handles, маршрутами, обязательными
+  нагрузками, паспортами/единицами и каталогами. Stale observations запрещены.
+  Scene и equipment zoom; контрфактическая пара меняет ровно одно видимое число.
+- 1852 visual readout records,64 factual scenes,538 images; не1852 независимых
+  сетей. Все5556 image/text/missing-source processor batches прошли pixel,
+  prefix и actual-label checks; без источника positive label — null.
+- editor-card/v1: текущая публичная схема, цель, revision, budgets и свежий
+  результат расчёта;2448 targets из224 успешных teacher trajectories:
+  960 action,528 conditional argument binding,960 readiness. Есть64 состояния,
+  где расчёт свежий, но решение ещё не готово.4896 text/visual-hybrid batches
+  прошли native processor. Это НОВЫЙ интерфейс, не улучшение весов само по себе.
+- 32 paired catalog-selection задачи на16 train-сетях: перегрузка при формально
+  допустимом паспорте, разрешена одна замена. Эксперт32/32, «заменить всё»0/32;
+  PF независимо проверен NumPy reference до/после. Safe catalog name меняется
+  между парами, порядок enum одинаковый: найденная order-подсказка устранена.
+  Каталоги синтетические, не OEM;32/32 — контроль учителя, не результат Qwen.
+- action-choice/v1:1152 decision records, до59 публичных вариантов. Ошибочные
+  каталоги/объекты и преждевременный submit остаются доступны. Schema validity
+  обеспечивает adapter, а не интеллект модели. Есть resolver; полноценный
+  constrained decoder и standalone learned-policy результат ещё не выполнены.
+- Настоящий image-conditioned optimizer smoke:2 updates, vision encoder вызван
+  4 раза, finite gradients, frozen base/vision и exact adapter roundtrip прошли.
+  Это техническая проверка, не доказательство улучшения VLM/агента.
+
+**VLM проверена на6 dev-сетях/3 heldout families:** factual+changed-rating,
+12 ответов на candidate. По strict JSON обе пары прошли у base4/6, adapter65
+0/6. При ОТДЕЛЬНОМ диагностическом разборе одной Markdown fence оба правильно
+прочли числа6/6 пар. Исходный operational score не изменён. Значит здесь видна
+ошибка формата, а не потеря чтения изображения. В train missing-image/blank
+контроле base выдумывает100 вместо null. Это новая задача на abstention.
+Этот dev-набор теперь является development regression; для финального вывода
+нужен нетронутый test. Проверено чтение номинала, не вся топология/инженерный план.
+
+Canonical receipts (полные hashes — manifests и learning roadmap):
+- `reports/engineering-supervision-research-2026-11-18/summary.json`
+- `reports/engineering-catalog-shortcut-audit-2026-11-18/summary.json`
+- `reports/engineering-visual-grounding-release-2026-11-18/summary.json`
+- `reports/engineering-grounding-native-admission-2026-11-18/summary.json`
+- `reports/engineering-card-curriculum-release-2026-11-18/summary.json`
+- `reports/engineering-card-native-admission-2026-11-18/summary.json`
+- `reports/engineering-catalog-selection-final-2026-11-18/summary.json`
+- `reports/engineering-action-choice-curriculum-2026-11-18/summary.json`
+- `reports/engineering-grounding-heldout-2026-11-18/summary.json`
+- `reports/engineering-grounding-failure-diagnosis-2026-11-18/summary.json`
+- `reports/engineering-native-visual-optimizer-2026-11-18/summary.json`
+
+Следующая очередь и критерии — LEARNING_PIPELINE R06.84. Нельзя масштабировать
+сырые trajectories/GRPO до tiny standalone gate. Остаются здоровые/невозможные
+случаи, несколько дефектов, неопределённость, более широкие физика/семейства,
+visual topology tasks и оценка переноса; текущий учебный мир — balanced400V Z-load.
+Нельзя переносить его результаты на motor/AC/protection/EMT автоматически.
+
+Проверки R06.84: **438 Python tests**, включая29 новых, и **60 JS tests**
+прошли; static build выполнен, YAML валиден, diff whitespace clean. Все1852
+record→image hashes проверены, core fingerprint и dependencies активной128-step
+phase неизменны. Это targeted regression, не полный required-suite проекта.
+Receipt: `reports/engineering-data-research-checks-2026-11-18/summary.json`.
+
+## R06.83 — actual-student корпус допущен, mixed SFT v3 и проверяемое продолжение
+
+Завершён полный strict24k TRAIN base-прогон Qwen3.5-0.8B: **0/8**, все задачи
+в знаменателе,0 protocol errors,0 policy failures,17 принятых правок,3 submit.
+Это восемь зафиксированных сетей/семейств, не heldout/generalization score.
+Receipt `reports/engineering-tiny-base-2026-11-18/summary.json`, manifest
+`015c250b78c3b3ebd769e6868d5c04e948eb1d500fa2647eb365c355bacac52a`.
+Оценка65-step adapter и его paired report ещё выполняются; final score не заявлен.
+
+**LP-06 data admission фактически выполнен для base-visited TRAIN states:**
+117 visited prefixes,83 successful public-expert corrections,28 failed branches,
+6 terminal/budget-exhausted states. Всё сохранено. Получено686 expert targets,
+660 уникальных public context/action pairs; **686/686** прошли настоящий Qwen
+processor (prefix/masks/budgets), failures0, max prompt14995. Это производные
+восьми сетей, не83 независимых объекта. Source candidate — BASE model, adapter
+manifest null; эти данные не называются on-policy состояниями65-step adapter.
+
+Текущие source evidence:
+- `reports/engineering-student-admission-2026-11-18/summary.json`
+- full data campaign manifest `0deb10e7a0cf21c0bcb4814a4076f9ae5ff16e1cff56271ea5bee1d8a84adfa5`
+- corrections manifest `7cf4f234ae1e1c9cd9a0591ff191ffd1f90fed0fedd34cf6eb23eff8e3fa7f52`
+- preflight manifest `176ebb32901423bdc3ba63c85b8b232eb132b4ae680208f7bb5c12a5ac1d9a5d`
+-128-step mixture plan manifest `9521dfb6348b1122054707450476bbb3f232ab3b8874a8de5b6fafe6322b2fac`
+- planned source steps:64 procedural +64 base-student corrections, replacement.
+
+Реализован **trainer v3** (`benchmarks/engineering_trainer_v3.py`):
+проверяет обе data admissions, пересчитывает frozen mixture schedule/inventory,
+проверяет фактическую семантику labels перед каждым обновлением. Поддерживает
+явную новую фазу от completed v2 adapter (те же LoRA modules, fresh AdamW) и
+строгое same-phase resume (тот же plan/identity, adapters/AdamW/CPU RNG/cursor).
+Новая фаза и resume различаются; continuation не сбрасывает optimizer на chunks.
+Frozen base, finite gradients, semantic targets и exact adapter roundtrip обязательны.
+При сбое сохраняется sealed incomplete failure, а не пригодный policy checkpoint.
+
+Добавлены `engineering_v3_policy` и `engineering_v3_eval`: только completed
+owner checkpoint текущих source/target/contract identities; public-message-only
+native inference, одинаковый strict24k profile, полный failure denominator.
+Partial, missing weights, source drift или другой профиль отклоняются.
+Это experimental inference, не deployment/industrial qualification.
+
+Native lifecycle pilot запущен: одна двухшаговая phase с одним target каждого
+источника и минимум одним parameterized call; seed выбирается только по labels,
+без model outcomes. Проверяются uninterrupted против chunk/resume AdamW и LoRA,
+точное warm-start состояние65-step adapter, frozen base/roundtrip и загрузка
+через новый native proxy. **Нативный pilot завершён успешно**: LoRA и AdamW совпали побитно,
+warm start/frozen base/roundtrip/proxy loading прошли; exact conditional
+call не совпал с выбранным expert target;
+двухшаговая численная проверка не считается learned recovery или full-policy score.
+Receipt `reports/engineering-v3-native-pilot-2026-11-18/summary.json`, manifest
+`db825b5336ecbda5035be86fae55d6ce7c2a5f05184c1b06eb3f38c4606382f3`.
+
+Подготовлена и поставлена в исполнение условная **одна128-step фаза**:
+`reports/engineering-v3-mixture-phase-2026-11-18/state.json`.
+Gate native pilot + full data admission ПРОЙДЕН; начата новая128-step phase,
+сохраняет checkpoint каждые8 шагов, восстанавливает тот же optimizer при продолжении,
+затем выполняет standalone8-case evaluation и physical replay comparison с65-step
+adapter. При gate rejection не обучается. Никакого автоматического recipe search,
+новых эпох, GRPO или heldout tuning.128 steps — экспериментальная гипотеза,
+не доказательство достаточности. CPU wall times при параллельных jobs не являются
+сопоставимым resource benchmark.
+
+Для следующей итерации отдельно ожидается полный65-step model rollout:
+`reports/engineering-student65-admission-2026-11-18/state.json`.
+Его source version, corpus/preflight и возможный plan будут отдельными; frozen
+128-step phase использует явно закреплённый base-state corpus. Новые состояния
+не подставляются в уже начавшийся recipe.
+
+Проверки блока:409 Python-тестов,60 JS-тестов и сборка сайта прошли. Receipt:
+`reports/engineering-v3-implementation-checks-2026-11-18/summary.json`.
+Core fingerprint сохранён: `b82b66bfa07e737d627caa6d12844b70be19655fc41e3896cbe64503a332a84f`.
+
+LP-02 full tiny-workflow gate и LP-06 learned recovery improvement остаются
+открытыми. Контроль8/8 — public deterministic expert; модель не признана
+самостоятельным инженером. Все exports provisional, eligible_for_gold_sft:false.
+GitHub/CI, публикация, dev/test training и внешние model APIs не использовались.
+
+## R06.82 — эпоха65 завершена, строгий допуск student-state корпуса
+
+Нативное обучение Qwen3.5-0.8B на frozen tiny suite **ЗАВЕРШЕНО:65/65 optimizer
+steps**. Проверены точный полный schedule, неизменность base weights и exact
+adapter roundtrip. Rank16/alpha32, два language blocks,868864 параметра,
+strict24k profile. Checkpoint manifest:
+`45a69856b4effca6dc08e33722c771849f6b0ed35709c989d0b90ff526cdae67`.
+Это завершённая первая train-эпоха, **не** прохождение closed-loop gate.
+
+Base8-case evaluation и queued adapter/paired campaign ещё выполняются.
+В завершённых промежуточных trace видны лишние inspections, повторные simulate,
+неправильный тип location в диагнозе и незавершённая сборка. Частичный набор
+НЕ объявляется итоговой accuracy8-case suite и не допускается в обучение.
+Финальный success rate модели нужно читать только из complete sealed report.
+
+Реализован следующий слой LP-06:
+- `StudentCorrectionDataset` требует owner train/suite/model-evaluation/corpus
+  manifests, повторяет весь actual-student rollout и каждую correction branch.
+  Проверяет teacher revision, полный inventory failed/successful attempts,
+  attribution student/expert и все counters. Нельзя удалить failure, подменить
+  измерение, превратить student call в positive label или импортировать heldout.
+- `engineering_student_preflight` проверяет ВСЕ expert targets настоящим pinned
+  processor: prefix/causal masks/context. Пустой корпус не проходит; каждый
+  overflow/failure сохраняется без truncation/drop. Считает unique public
+  message/action targets, отдельно от числа зависимых trajectories.
+- `AdmittedTextMixture` допускает только одинаковые strict24k corpora с полными
+  passed preflights. Recipe предлагает примерно50/50 procedural/corrections,
+  баланс kind/family/action, выбор episode и expert action; replacement и
+  повторения явно записаны. Это proposed128-step plan, НЕ новый optimizer run
+  и НЕ доказательство оптимальности такого смешивания.
+- `engineering_student_campaign` ждёт complete sealed TRAIN model evaluation,
+  экспортирует все visited-prefix attempts, выполняет native admission и только
+  при полном успехе пишет owner-pinned mixture plan. При отказе сохраняет
+  preflight_rejected; при сбое — incomplete failure. Не запускает SFT/GRPO,
+  не использует dev/test и не отправляет данные внешним сервисам.
+
+Evidence / локальные jobs:
+- `reports/engineering-tiny-epoch1-2026-11-18/summary.json` — completed65
+- `reports/engineering-tiny-epoch1-2026-11-18/checkpoint/summary.json`
+- `reports/engineering-tiny-base-2026-11-18/` — оценка до seal не завершена
+- `reports/engineering-tiny-campaign-2026-11-18/state.json` — paired campaign
+- `reports/engineering-student-admission-2026-11-18/state.json` — student-data job
+- `reports/engineering-student-admission-tests-2026-11-18.xml` — новые проверки
+
+Проверки:360 уникальных Python-тестов,60 JS-тестов и сборка сайта прошли. Receipt:
+`reports/engineering-student-implementation-checks-2026-11-18/summary.json`.
+Posthoc train repair probe65-step adapter **завершился неудачей**:
+`reports/engineering-tiny-epoch1-repair-probe-2026-11-18/summary.json`.
+Семь wire-valid calls, но3 schema-invalid calls с пустыми обязательными
+аргументами;0 из5 required slots заполнены,0 принятых правок,submit отклонён.
+Physical replay подтверждён. Это один выбранный после base failure TRAIN-кейс,
+не итоговая accuracy8-case suite и не оценка генерализации.
+Новый `engineering_action_quality` разделяет wire/schema/tool/physical success;
+receipt: `reports/engineering-epoch1-action-quality-2026-11-18/summary.json`.
+
+Проверена отдельная гипотеза о потере аргументов шаблоном: **4292/4292 actual
+supervised completions** декодированы и совпали с исходными действиями целиком.
+Сохранены3784 argument fields /27372 value tokens; ни одно поле не потеряно.
+Receipt: `reports/engineering-target-semantics-2026-11-18/summary.json`.
+Это подтверждает семантику labels данного профиля, не умение модели их выдавать.
+Debug microgate **ПРОЙДЕН**: fresh-base, восемь повторов одного TRAIN
+set_line_catalog target1818; затем greedy generation из публичного teacher
+prefix точно воспроизвела function и оба аргумента (equipment_id/catalog_id).
+Путь `reports/engineering-argument-microgate-2026-11-18/summary.json`.
+Это отдельный adapter, не продолжение/замена65-step checkpoint. Conditional-call
+memorization не считается полным repair workflow или8/8 gate. Подтверждена
+узкая learnability одного вызова, а не правильность следующего broad recipe.
+
+Actual current-Qwen correction corpus и его native admission на момент записи
+ещё НЕ подтверждены. До complete receipts нельзя считать LP-06 выполненным,
+заявлять learned recovery, новую heldout accuracy или преимущество модели.
+Дальше: закончить standalone paired evaluation; после измерения — выбрать
+следующий recipe с admitted correction data. LP-02 tiny8/8 всё ещё OPEN.
+
+## R06.81 — фиксированный tiny gate, standalone evaluator и student-state corrections
+
+Реализован следующий блок LP-02/05/09: frozen tiny suite, полный train schedule,
+standalone процедурные эпизоды и парная проверка с повторным исполнением физики.
+Восемь clean TRAIN-задач выбраны ДО обучения и model scores: восемь базовых сетей,
+восемь семейств, сборка3 / диагностика3 / исправление2. Все65 expert targets
+входят ровно один раз в первую эпоху; порядок shuffle(seed42). Предельный prompt
+10433 токена, суммарно278746 prompt tokens. Это debug memorization suite,
+не независимая heldout оценка и не полный новый training corpus.
+
+Публичный deterministic control решил **8/8**,36 правок и8 submit; переходы
+повторно исполнены, итог подтверждён. Он не считается нейросетью и не открывает
+neural tiny gate. Evaluator даёт модели только public messages, не вызывает
+expert во время оценки, использует общий strict24k contract и свежий engine
+для каждой задачи. Неверные calls расходуют budget; ошибки процесса и context
+не исключают задачу. Сохраняются full denominator, protocol errors, edits,
+submit, stop reason, breakdown по kind/family и число базовых сетей.
+
+Paired auditor проверяет owner manifests, совпадение suite/source/contract,
+base/adapter identities, инвентарь всех episodes, заново исполняет действия,
+сверяет публичные ответы, terminal и пересчитывает метрики. Изменённые ответы,
+приписанный success, пропущенные episodes и подменённые counters отклоняются.
+Это проверка целостности и воспроизведения, не OS sandbox/внешняя аттестация.
+
+**Нативный CPU-прогон первой эпохи65 шагов и base8-case rollout ЗАПУЩЕНЫ;
+завершение и их success rate на момент записи ещё НЕ подтверждены.**
+Trainer v2/source/data/preflight остаются закреплены; recipe ранг16,alpha32,
+два language blocks, learning rate1e-4, frozen vision/head. Понижение loss
+на разных targets не трактуется как завершение задач. Старый guarded dev0/7
+сохранён как исторический результат; нового heldout результата здесь нет.
+
+Local campaign ожидает sealed train/base, проверяет точный полный schedule,
+автоматически оценивает adapter на тех же8 задачах и строит paired replay.
+Ожидание конечное (3 часа до sealed входов); сбой записывается как incomplete,
+не successful qualification. Дополнительные эпохи/GRPO/dev/test не запускаются
+неявно. Проверять итог нужно в `summary.json` либо `failure.json` кампании.
+
+Evidence / текущие локальные jobs:
+- suite: `reports/engineering-tiny-suite-2026-11-18/summary.json`
+- suite manifest `bcca8b715b7af3722de910e530f5a0ee3099dc3359a40228ca08629cb3080f29`
+- control: `reports/engineering-tiny-public-control-2026-11-18/summary.json`
+- training: `reports/engineering-tiny-epoch1-2026-11-18/recipe.json`
+- started recipe SHA `4feb207861d10dfe43d044846f989056bfccd195dadebcab3cf401c238131f51`
+- base: `reports/engineering-tiny-base-2026-11-18/` (до seal — незавершённый job)
+- campaign: `reports/engineering-tiny-campaign-2026-11-18/state.json`
+- будущие complete/paired receipts находятся внутри campaign root.
+
+LP-06 получил отдельный train-only collector `engineering_student_recovery`.
+Он принимает только полностью audited native-model TRAIN-rollout, повторно
+исполняет каждый реально посещённый prefix, продолжает публичным expert в
+ОСТАВШЕМСЯ исходном budget. Student/invalid actions — только контекст. Terminal
+и exhausted состояния не превращаются в положительные labels; unsuccessful
+continuations остаются в attempts и получают0 expert targets. Эксперт заново
+инспектирует после ошибок, не получает private truth. Это реализованный
+collector; **фактический корпус текущего Qwen rollout ещё НЕ экспортирован**,
+нет нового admitted student dataset, SFT/DAgger update или learned recovery.
+
+Проверки нового блока:25 дополнительных Python-тестов; вместе с прежними302
+прошли327 уникальных тестов,60 JS-тестов и сборка сайта. Implementation receipt:
+`reports/engineering-learning-implementation-checks-2026-11-18/summary.json`. LP-02 gate пока OPEN/RUNNING; следующий переход
+разрешает измеренное завершение8/8, затем matched dev с полным знаменателем.
+Если gate не пройден — анализ rollouts и изменение recipe, а не увеличение
+числа синтетических примеров ради объёма. GitHub/CI не используются.
+
+## R06.80 — разнообразные данные, независимый физический допуск и trainer v2
+
+Выполнен новый synthetic train-пилот: **196/196 сценариев**, 28 базовых сетей,
+14 канонических топологических семейств. Разбиение до генерации производных:
+train — 8 семейств / 16 сетей / 112 задач; dev и test — по 3 / 6 / 42.
+Семейства не пересекаются друг с другом и с тремя прежними топологиями.
+Переименование оборудования и порядок массивов не меняют family identity.
+Семь путей на train-задачу дают **784 траектории и 4 292 экспертных targets**;
+это НЕ 784 независимые сети. Варьируются схема, длины, нагрузки, источник,
+каталоги, идентификаторы, порядок исправлений и ошибочные начальные действия.
+
+Допуск требует свежего физического решения, публичного expert replay и
+независимого NumPy nodal-reference без production solver imports. Проверяются
+напряжения, токи, loading и доставленные источником P/Q, наблюдаемость дефекта,
+здоровое исправление, stale/nonconverged submit и неправильный диагноз.
+Неудачный производный случай карантинирует всю базовую группу без resampling.
+Область допуска: синтетические симметричные радиальные 400 V constant-Z сети,
+сборка, диагностика и исправление трёх видов дефекта. Не OEM/натурный эталон,
+не допуск машин, преобразователей или произвольных видов физики.
+
+Реальный pinned Qwen processor проверил **4 292/4 292 targets**: prefix,
+assistant-only causal labels и бюджеты. Первоначальный 16k профиль отверг
+16 targets; они сохранены, не обрезаны и не исключены. Текущий общий профиль:
+`qwen-native-strict-v1`, `compact-pf-v1`, context 24576, action 256,
+24 действия, repeat guard 2, thinking false; max prompt 16905 токенов.
+Strict-v1 явно запрещает prose до/после call: предыдущий native-v1 probe с
+пояснением сохранён как protocol_error. Новый base smoke выдал один корректный
+inspect_project; это не завершённая задача и не quality score.
+
+Экспортированы **784 VLM-пары / 128 уникальных PNG**. Только публичная схема,
+паспорта и требования после inspect_project; endpoints связывают ветви с
+паспортами. Нет hidden diagnosis или будущих результатов. Все 784 пары
+повторно отрендерены и проверены настоящим image processor: pixels/grid,
+prefix/masks/budgets; max prompt 12037. Это static paired candidate data,
+а не доказательство visual grounding или обученная VLM-политика.
+
+Trainer v2: сбалансированное семплирование kind/family/path, language LoRA
+rank16/alpha32 в двух последних mixed-attention блоках, 868864 параметра.
+На native Qwen выполнены два отладочных шага, второй после восстановления
+AdamW/RNG. Базовые веса неизменны, adapter roundtrip exact. Слои vision/head
+заморожены. Это text-action обучение; VLM optimization ещё не выполнена.
+**LP-02 closed-loop tiny-overfit не запускался; качество новой политики не
+измерено. Два шага и loss не заменяют инженерный success rate.**
+
+Текущие sealed evidence (исторические пакеты сохранены):
+- `reports/engineering-data-release-2026-11-18/summary.json`
+- train manifest `5e0b5ef8b96904e01e143674ad42ed83e510da64e0faf8c087e50b3fb79c8485`
+- evaluation manifest `38e258f2b4fac6c0379e9dc564be4b248a8c18370e9c68c543c08fa44667e97e`
+- `reports/engineering-data-strict24k-preflight-2026-11-18/summary.json`
+- `reports/engineering-visual-strict-release-2026-11-18/summary.json`
+- `reports/engineering-visual-strict-preflight-2026-11-18/summary.json`
+- `reports/engineering-trainer-v2-strict-resumed-2026-11-18/summary.json`
+- `reports/engineering-strict-base-wire-2026-11-18/summary.json`
+
+Проверки: **302 целевых Python-теста и 60 JS-тестов** прошли. Core fingerprint сохранён:
+`b82b66bfa07e737d627caa6d12844b70be19655fc41e3896cbe64503a332a84f`.
+Далее — tiny train gate на 8–16 траекториях, самостоятельный matched dev,
+здоровые/невыполнимые задачи, реальные student states, VLM ablations и GRPO
+после допуска. Все новые данные provisional, eligible_for_gold_sft:false.
+GitHub/CI и публикация не выполнялись.
+
 ## R06.79 — первичные конкурирующие работы, protocol contract и recovery foundation
 
 В [LEARNING_PIPELINE.md](LEARNING_PIPELINE.md) добавлена сверка PowerAgentBench-SS,

@@ -13,15 +13,26 @@ def adapt_completion(raw,contract,allowed):
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--target',required=True);p.add_argument('--target-sha256',required=True)
-    p.add_argument('--protocol',choices=['json-action-v1','qwen-native-v1'],required=True)
+    p.add_argument('--protocol',choices=['json-action-v1','qwen-native-v1','qwen-native-strict-v1'],required=True)
     p.add_argument('--public-view',choices=['raw','compact-pf-v1'],default='compact-pf-v1')
     p.add_argument('--action-tokens',type=int,default=256)
     p.add_argument('--maximum-actions',type=int,default=12)
     p.add_argument('--repeat-limit',type=int,default=2)
-    a=p.parse_args();contract=RunContract(protocol=a.protocol,public_view=a.public_view,action_tokens=a.action_tokens,maximum_actions=a.maximum_actions,repeat_limit=a.repeat_limit)
+    p.add_argument('--context-tokens',type=int,default=16384)
+    p.add_argument('--experimental-v2-adapter');p.add_argument('--adapter-manifest-sha256')
+    a=p.parse_args()
+    if bool(a.experimental_v2_adapter)!=bool(a.adapter_manifest_sha256):p.error('experimental adapter requires owner manifest')
+    contract=RunContract(protocol=a.protocol,public_view=a.public_view,action_tokens=a.action_tokens,maximum_actions=a.maximum_actions,repeat_limit=a.repeat_limit,context_tokens=a.context_tokens)
     from power_grid_env.qwen35_training import local_target,load_native
     import torch
+    metadata=None
+    if a.experimental_v2_adapter:
+        from benchmarks.engineering_v2_adapter import receipt
+        metadata=receipt(a.experimental_v2_adapter,a.adapter_manifest_sha256,a.target_sha256,contract)
     target=local_target(a.target,a.target_sha256);processor,model=load_native(target,4)
+    if metadata is not None:
+        from benchmarks.engineering_v2_adapter import restore
+        restore(model,a.experimental_v2_adapter,metadata)
     for line in sys.stdin:
         try:
             request=json.loads(line)

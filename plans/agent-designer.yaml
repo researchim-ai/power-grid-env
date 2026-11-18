@@ -339,12 +339,12 @@ engineering_guarded_dev_gate:
     - protocol_ablation_and_positive_rollouts_before_grpo
 
 learning_pipeline_v2:
-  status: planned_not_implemented
+  status: in_progress_audited_supervision_skill_curriculum_and_native_vlm
   specification: plans/LEARNING_PIPELINE.md
   target_model: Qwen/Qwen3.5-0.8B
-  current_quality_gate: failed_compact_guarded_dev_0_of_7
+  current_quality_gate: failed_named_decision40_10of12_unsafe_submit_workflow128_pending
   unrestricted_raw_quality: not_measured_complete
-  current_cpu_adapter_scope: final_decoder_block_rank4_smoke
+  current_cpu_adapter_scope: rank16_two_language_blocks_adapter65_reference_mixture128_completed_evaluation_running
   rationale:
     - teacher_forced_loss_is_not_closed_loop_success
     - align_training_and_evaluation_observation_versions
@@ -356,12 +356,12 @@ learning_pipeline_v2:
       objective: versioned_episode_observation_action_reward_render_run_contracts
       gate: replay_template_prefix_masks_and_matched_protocol_view_qualified
     - id: LP-02
-      status: planned
+      status: failed_tiny_train_base0of8_adapter65_1of8_zero_edits_mixture_pending
       objective: tiny_closed_loop_overfit_and_language_lora_capacity_pilot
       proposed_debug_gate: 100_percent_completion_on_8_to_16_memorization_episodes
       generalization_claim: false
     - id: LP-03
-      status: planned
+      status: in_progress_196_admitted_synthetic_scenarios_14_disjoint_families
       objective: procedural_family_grouped_splits_before_all_derived_data
       proposed_scale: debug_32_pilot_256_then_approximately_2000_train_scenarios
       scale_is_optimal_or_sufficient_claim: false
@@ -370,15 +370,15 @@ learning_pipeline_v2:
       objective: public_expert_multiple_valid_plans_and_recovery_labels
       gate: full_physical_replay_and_no_positive_student_error_labels
     - id: LP-05
-      status: planned
+      status: in_progress_v3_native_resume_passed_mixture128_training
       objective: matched_view_assistant_only_sft_v2_and_resource_qualification
       gate: tiny_success_then_new_train_validation_success_by_kind
     - id: LP-06
-      status: planned
+      status: in_progress_base_visited_corpus_686_targets_admitted_learned_recovery_not_measured
       objective: train_only_student_state_aggregation_with_expert_corrections
       gate: standalone_recovery_improves_without_teacher_in_evaluator
     - id: LP-07
-      status: planned
+      status: native_image_optimizer_smoke_passed_heldout_perception_format_separated_no_policy_gain
       objective: paired_text_image_scene_graph_then_multimodal_tool_use
       gate: perception_counterfactuals_modality_ablations_and_native_masks
     - id: LP-08
@@ -394,7 +394,7 @@ learning_pipeline_v2:
       objective: qualified_motor_start_ac_protection_and_dynamic_curricula
       gate: per_physics_profile_judge_observation_and_reference_qualification
   safeguards:
-    - no_training_runs_implicit_in_this_plan
+    - all_training_runs_require_explicit_sealed_recipe_and_quality_gate
     - no_dev_or_test_trajectory_admission_to_training
     - no_silent_guard_protocol_or_sampling_budget_changes
     - no_claim_of_gpu_availability_or_cross_host_resume_equivalence
@@ -431,3 +431,457 @@ competitor_informed_foundation:
   new_optimizer_updates: 0
   tiny_closed_loop_gate_passed: false
   full_protocol_ablation_complete: false
+
+data_quality_release_r0680:
+  status: provisional_synthetic_profile_admitted_policy_quality_not_measured
+  scope: balanced_400v_radial_constant_z_assembly_diagnosis_repair
+  independent_reference: numpy_complex_nodal_without_production_solver_imports
+  oem_or_field_validation: false
+  eligible_for_gold_sft: false
+  topology_families: {train: 8, dev: 3, test: 3}
+  base_networks: {train: 16, dev: 6, test: 6}
+  scenarios: {train: 112, dev: 42, test: 42}
+  train_trajectories: 784
+  expert_targets: 4292
+  all_text_targets_checked: 4292
+  visual_pairs_checked: 784
+  unique_public_images: 128
+  train_manifest_sha256: 5e0b5ef8b96904e01e143674ad42ed83e510da64e0faf8c087e50b3fb79c8485
+  evaluation_manifest_sha256: 38e258f2b4fac6c0379e9dc564be4b248a8c18370e9c68c543c08fa44667e97e
+  profile:
+    protocol: qwen-native-strict-v1
+    public_view: compact-pf-v1
+    context_tokens: 24576
+    action_tokens: 256
+    maximum_actions: 24
+    repeat_limit: 2
+    enable_thinking: false
+  training_debug:
+    rank: 16
+    alpha: 32
+    language_blocks: 2
+    trainable_parameters: 868864
+    completed_steps: 2
+    optimizer_resume_checked: true
+    frozen_base_unchanged: true
+    adapter_roundtrip_exact: true
+    closed_loop_quality_gate_status: not_run
+    vlm_optimization_run: false
+  evidence:
+    - reports/engineering-data-release-2026-11-18/summary.json
+    - reports/engineering-data-strict24k-preflight-2026-11-18/summary.json
+    - reports/engineering-visual-strict-release-2026-11-18/summary.json
+    - reports/engineering-visual-strict-preflight-2026-11-18/summary.json
+    - reports/engineering-trainer-v2-strict-resumed-2026-11-18/summary.json
+  next:
+    - tiny_8_to_16_train_episode_closed_loop_memorization_gate
+    - matched_standalone_validation_before_scale
+    - healthy_infeasible_and_ambiguous_scenario_contracts
+    - real_train_student_state_aggregation
+    - visual_counterfactuals_and_text_image_ablations
+    - train_reward_variance_pilot_before_grpo
+
+tiny_learning_r0681:
+  status: native_cpu_training_and_base_evaluation_running_results_not_yet_confirmed
+  suite: reports/engineering-tiny-suite-2026-11-18
+  suite_manifest_sha256: bcca8b715b7af3722de910e530f5a0ee3099dc3359a40228ca08629cb3080f29
+  tasks: 8
+  families: 8
+  base_networks: 8
+  kinds: {assemble: 3, diagnose: 3, repair: 2}
+  expert_targets: 65
+  epochs_started: 1
+  schedule: every_selected_expert_target_once_seed42_shuffle
+  maximum_prompt_tokens: 10433
+  total_prompt_tokens: 278746
+  public_control: {successes: 8, tasks: 8, physical_replay_checked: true, neural: false}
+  training: reports/engineering-tiny-epoch1-2026-11-18
+  started_recipe_sha256: 4feb207861d10dfe43d044846f989056bfccd195dadebcab3cf401c238131f51
+  base_evaluation: reports/engineering-tiny-base-2026-11-18
+  campaign: reports/engineering-tiny-campaign-2026-11-18
+  campaign_stages:
+    - wait_for_owner_pinned_training_recipe_and_sealed_complete_checkpoint
+    - wait_for_sealed_base_evaluation
+    - standalone_adapter_evaluation_on_identical_train_suite
+    - paired_full_denominator_physical_replay_and_metrics_audit
+  closed_loop_quality_gate_status: running_not_confirmed
+  heldout_generalization_claim: false
+  student_corrections:
+    collector_implemented: true
+    actual_current_qwen_corpus_exported: false
+    accepts_only: fully_audited_native_model_train_rollouts
+    student_actions_are_positive_targets: false
+    failed_continuations_preserved: true
+    admitted_sft_dataset: false
+    model_update_run: false
+
+student_admission_r0682:
+  status: implementation_ready_actual_model_corpus_admission_pending
+  native_tiny_training_completed_steps: 65
+  checkpoint_manifest_sha256: 45a69856b4effca6dc08e33722c771849f6b0ed35709c989d0b90ff526cdae67
+  closed_loop_model_quality_confirmed: false
+  actual_student_source: complete_sealed_tiny_train_native_model_evaluation
+  source_evaluation: reports/engineering-tiny-base-2026-11-18
+  data_campaign: reports/engineering-student-admission-2026-11-18
+  admission:
+    - replay_entire_source_model_evaluation
+    - replay_every_visited_prefix_and_public_expert_continuation
+    - retain_failed_terminal_exhausted_and_transport_attempts
+    - verify_positive_episode_inventory_and_source_attribution
+    - qualify_every_expert_target_with_pinned_native_processor
+    - reject_empty_corpus_overflows_or_any_unchecked_target
+    - record_unique_public_targets_separately_from_branch_counts
+  proposed_mixture:
+    status: plan_only_after_both_source_preflights_pass
+    steps: 128
+    source_balance: approximately_half_procedural_half_student_correction
+    inner_sampling: kind_family_action_then_episode_then_expert_action
+    with_replacement: true
+    optimizer_run: false
+    learned_recovery_claim: false
+  no_partial_evaluation_to_training: true
+  no_dev_test_labels: true
+  no_automatic_additional_epochs_or_grpo: true
+
+argument_fidelity_r0682:
+  supervised_completions_checked: 4292
+  supervised_semantic_roundtrips_passed: 4292
+  argument_fields_preserved: 3784
+  argument_value_tokens: 27372
+  semantic_evidence: reports/engineering-target-semantics-2026-11-18
+  posthoc_epoch1_repair_probe:
+    tasks: 1
+    successes: 0
+    wire_valid_calls: 7
+    schema_invalid_calls: 3
+    required_slots: 5
+    filled_required_slots: 0
+    accepted_edits: 0
+    evidence: reports/engineering-epoch1-action-quality-2026-11-18
+    full_suite_or_generalization_claim: false
+  conditional_argument_microgate:
+    status: passed_one_conditional_train_call
+    initialization: fresh_base
+    repeated_train_target_index: 1818
+    optimizer_steps: 8
+    exact_generated_call_passed: true
+    argument_fields_exact: 2
+    replaces_65_step_checkpoint: false
+    evidence: reports/engineering-argument-microgate-2026-11-18
+    full_policy_quality_claim: false
+
+mixed_sft_r0683:
+  status: native_lifecycle_passed_128_step_phase_training
+  base_train_evaluation: {tasks: 8, successes: 0, protocol_errors: 0, policy_failures: 0, accepted_edits: 17, submits: 3}
+  base_evaluation_manifest_sha256: 015c250b78c3b3ebd769e6868d5c04e948eb1d500fa2647eb365c355bacac52a
+  base_state_data:
+    source_adapter_manifest: null
+    original_networks: 8
+    visited_prefixes: 117
+    successful_corrections: 83
+    failed_continuations: 28
+    terminal_or_exhausted: 6
+    expert_targets: 686
+    checked_targets: 686
+    unique_public_targets: 660
+    maximum_prompt_tokens: 14995
+    preflight_failures: 0
+    admission: reports/engineering-student-admission-2026-11-18
+    manifest_sha256: 0deb10e7a0cf21c0bcb4814a4076f9ae5ff16e1cff56271ea5bee1d8a84adfa5
+    is_on_policy_for_adapter65: false
+    learned_recovery_claim: false
+  trainer_v3:
+    warm_start: completed_v2_same_lora_with_new_phase_adamw_reset
+    resume: same_phase_plan_and_adapters_adamw_rng_cursor_restored
+    per_step_semantic_target_verification: true
+    native_pilot: reports/engineering-v3-native-pilot-2026-11-18
+    native_pilot_status: passed_exact_cpu_adapters_and_adamw_resume
+    numerical_pilot_is_policy_quality: false
+    native_pilot_manifest_sha256: db825b5336ecbda5035be86fae55d6ce7c2a5f05184c1b06eb3f38c4606382f3
+  finite_phase:
+    campaign: reports/engineering-v3-mixture-phase-2026-11-18
+    state: standalone_eight_case_evaluation
+    steps: 128
+    chunks: 8
+    source_steps: {procedural: 64, base_student_correction: 64}
+    initialization_manifest_sha256: 45a69856b4effca6dc08e33722c771849f6b0ed35709c989d0b90ff526cdae67
+    evaluation: same_frozen_eight_train_cases_then_replay_against_adapter65
+    optimizer_phase_started: true
+    first_verified_checkpoint_steps: 8
+    first_checkpoint_manifest_sha256: 7606b5a7c2a4723b2e4e265db165c2257427133a529941ce621968db6318f1e3
+    full128_steps_completed: true
+    quality_confirmed: false
+    no_automatic_search_extra_epochs_or_grpo: true
+  separately_versioned_adapter65_states:
+    campaign: reports/engineering-student65-admission-2026-11-18
+    state: complete_50_prefixes_42_successful_corrections_364_targets_admitted
+    changes_frozen_128_step_recipe: false
+
+data_research_r0684:
+  status: implemented_data_and_native_checks_quality_gate_still_failed
+  strict_train_base:
+    tasks: 8
+    successes: 0
+    accepted_edits: 17
+  strict_train_adapter65:
+    tasks: 8
+    successes: 1
+    accepted_edits: 0
+  supervision:
+    targets: 4292
+    base_networks: 16
+    families: 8
+    no_argument_targets: 2464
+    duplicate_pairs: 208
+    states_with_valid_alternatives: 64
+    argument_loss_in_serialization: false
+  new_data:
+    visual_readout_records: 1852
+    visual_native_batches_passed: 5556
+    card_records: 2448
+    card_native_batches_passed: 4896
+    catalog_cases: 32
+    catalog_teacher_successes: 32
+    catalog_upgrade_all_successes: 0
+    action_choice_records: 1152
+    maximum_menu_size: 59
+    all_derived_from_train_base_networks: 16
+    eligible_for_gold_sft: false
+  native_visual_smoke:
+    optimizer_steps: 2
+    visual_encoder_forwards: 4
+    frozen_base_and_roundtrip_passed: true
+    learned_policy_gain_claim: false
+  heldout_dev_perception:
+    base_networks: 6
+    families: 3
+    readings_per_candidate: 12
+    strict_complete_pairs:
+      base: 4
+      adapter65: 0
+    diagnostic_content_pairs:
+      base: 6
+      adapter65: 6
+    diagnostic_unwrapping_changes_operational_score: false
+    final_test_used: false
+  comparison_rules:
+  - same_weights_for_raw_card_visual_interface_ablation
+  - same_versioned_interface_for_training_gain
+  - physical_terminal_and_budget_success_not_protocol_only
+  - keep_frozen128_phase_recipe_unchanged
+  - new_canonical_catalog_has_sorted_enums_old_intervention_release_is_prototype
+  next:
+  - finish_frozen128_and_full_tiny_comparison
+  - preregister_readout_abstention_binding_readiness_and_action_choice_skill_pilot
+  - tiny_standalone_workflow_gate_then_matched_dev
+  - train_only_checkpoint_specific_state_aggregation
+  - expand_physics_and_judges_before_labeling_new_task_types
+  - grpo_after_sft_gate_and_reward_variance_pilot
+  evidence:
+    engineering-supervision-research:
+      path: reports/engineering-supervision-research-2026-11-18
+      manifest_sha256: 7f0b36918afed263333d77bfd625b414faf70ca8a65dec8a280ed546ab4cbd83
+    engineering-catalog-shortcut-audit:
+      path: reports/engineering-catalog-shortcut-audit-2026-11-18
+      manifest_sha256: 5d7bb3b18c82c4ed13f6a89d02c2e1d1c8f142a8ce1aaf3884cf461e6c676e78
+    engineering-visual-grounding-release:
+      path: reports/engineering-visual-grounding-release-2026-11-18
+      manifest_sha256: a33a8cf869c53ec7e345f02ec9059bf924eb81e728f74f6442d57499911d2bfd
+    engineering-grounding-native-admission:
+      path: reports/engineering-grounding-native-admission-2026-11-18
+      manifest_sha256: 239b47aa37ae27e9b2e0c459d7b2d0265bfa6ba995b4088cd5a768cadf4d1fcc
+    engineering-card-curriculum-release:
+      path: reports/engineering-card-curriculum-release-2026-11-18
+      manifest_sha256: c437a2391fec8926083e9488d4b2e90966144e5292b06cfe92bac0bf38b87802
+    engineering-card-native-admission:
+      path: reports/engineering-card-native-admission-2026-11-18
+      manifest_sha256: 8a1cd0c9e373fe85315effd6e3a363813e166827689502ee548064f3c5a9d700
+    engineering-catalog-selection-final:
+      path: reports/engineering-catalog-selection-final-2026-11-18
+      manifest_sha256: fc5e5950c5939db1bee86de58c320dcd5ac58936b3b995aa287535f715f7308e
+    engineering-action-choice-curriculum:
+      path: reports/engineering-action-choice-curriculum-2026-11-18
+      manifest_sha256: 549a4f004424ffc87a749ad62455cd5d14d0c2d1acb42a59d68ecd45bd2a63df
+    engineering-native-visual-optimizer:
+      path: reports/engineering-native-visual-optimizer-2026-11-18
+      manifest_sha256: dc7fcc4fec637faf844fd2c6affd04b80b0519bcefcba4f16c90a80da7d3743a
+    engineering-grounding-heldout:
+      path: reports/engineering-grounding-heldout-2026-11-18
+      manifest_sha256: cb33d0d2159c92acfcfd9b1904316e9d0a1e8d82e6f16b2a399bcf5ba5c900d8
+    engineering-grounding-failure-diagnosis:
+      path: reports/engineering-grounding-failure-diagnosis-2026-11-18
+      manifest_sha256: f9c29cf75580e7104a56ffb227b178703436d331a5452f222e7ff1a33a9a7198
+    engineering-student65-admission:
+      path: reports/engineering-student65-admission-2026-11-18
+      manifest_sha256: b223968d8224e298fbe5b02acca56bd2f1322cafc3932f5aec21c332a79129d4
+
+data_research_r0685:
+  status: finite_skill_pilot_completed_failed_gate_replacement_v2_qualified
+  pilot:
+    steps: 32
+    train_exemplars: 8
+    additional_menu_order_probes: 2
+    strict_correct:
+      base: 1
+      adapter32: 5
+    diagnostic_content_correct:
+      base: 4
+      adapter32: 5
+    gate_passed: false
+    full_workflow_claim: false
+    extra_optimizer_phases_after_failed_gate: false
+  operation_probe:
+    base_correct: 0
+    adapter32_correct: 0
+    cases: 2
+    scope: posthoc_train_state_named_operation_ablation
+  visible_data:
+    source_rows: 6296
+    exact_source_duplicates_removed: 48
+    unique_visible_targets: 3978
+    repeated_visible_pairs: 2318
+    deterministic_conflicts: 0
+    proposed_balanced256_schedule_is_optimizer_recipe: false
+  replacement_v2:
+    public_maximum_changed_routes: 1
+    historical_v1_rebuild_all_successes: 32
+    v2_expert_successes: 32
+    v2_rebuild_all_successes: 0
+    cases: 32
+    base_networks: 16
+    teaching_targets: 416
+    hard_operational_negatives: 32
+    failed_actions_in_positive_sft: 0
+    native_batches_passed: 832
+    eligible_for_gold_sft: false
+  next:
+  - named_operation_selection_on_matched_public_states
+  - missing_information_abstention_gate
+  - semantic_value_token_metrics_separate_from_syntax_ce
+  - separately_preregistered_skill_recipe_no_automatic_extra_epochs
+  - learned_v2_episode_runner_and_feedback_then_full_tiny_gate
+  - matched_heldout_transfer_after_train_gate
+  evidence:
+    engineering-skill-pilot-plan:
+      path: reports/engineering-skill-pilot-plan-2026-11-18
+      manifest_sha256: 9022c36373b0d99057a5807cdf41dc065c0f933bf8d8dbfe53b0d434ff3bb099
+    engineering-skill-pilot:
+      path: reports/engineering-skill-pilot-2026-11-18
+      manifest_sha256: 6ebe842c76b00cc74b14e1a1be8d96330528b7944b7294827b3bfcba8421643a
+    engineering-skill-error-diagnosis:
+      path: reports/engineering-skill-error-diagnosis-2026-11-18
+      manifest_sha256: 0703023b3c7b5a94890f4133e775a57f8483dcb76ffd4d7e9d19eaf8e43be07e
+    engineering-operation-probe:
+      path: reports/engineering-operation-probe-2026-11-18
+      manifest_sha256: bd5ae23ed082fe14908ab7423a6ac9278aaa690a7a493f9b6fa356c0da07d999
+    engineering-visible-skill-audit:
+      path: reports/engineering-visible-skill-audit-2026-11-18
+      manifest_sha256: 086ed087f40fb6543c879b13776e1a138397273d79ff71c5eeca5b37c2de3157
+    engineering-choice-episode-controls:
+      path: reports/engineering-choice-episode-controls-2026-11-18
+      manifest_sha256: 58e1b2d45cfc6c54d4031841a37041162bde41d2e693628a36ea9934791f7a91
+    engineering-choice-episode-controls-source:
+      path: reports/engineering-choice-episode-controls-source-2026-11-18
+      manifest_sha256: 1644987e0f73d393c3da4699f37c5c8575babbf818f5f2c2b0970935a0eefd95
+    engineering-replacement-challenge-v2:
+      path: reports/engineering-replacement-challenge-v2-2026-11-18
+      manifest_sha256: b8cf91ab6169f0b2ee4ecc58e6c3a7623e2ab9dc743a64a23c91191353b12e91
+    engineering-replacement-teaching-v2:
+      path: reports/engineering-replacement-teaching-v2-2026-11-18
+      manifest_sha256: 7371f93540ec4aa5e5c228dd6695f16bbefb39847aea0c6924274198a32a8072
+    engineering-replacement-native-admission-v2:
+      path: reports/engineering-replacement-native-admission-v2-2026-11-18
+      manifest_sha256: 6f37c949982c896721b0ade229b5bcc98de1e7680e045103fec39d16fbd002a2
+  checks:
+    targeted_python_tests: 479
+    javascript_tests: 60
+    static_build: passed
+    active_v3_dependencies_unchanged: true
+    receipt: reports/engineering-skills-checks-2026-11-18
+
+data_research_r0686:
+  status: finite_decision_pilot_completed_gate_failed_staged_and_physics_data_admitted
+  pilot:
+    steps: 40
+    training_exemplars: 10
+    untrained_question_presentations: 2
+    strict:
+      base: 4
+      adapter40: 10
+      total: 12
+    preferred_operations:
+      base: 1
+      adapter40: 4
+      total: 6
+    readout_and_insufficiency:
+      base: 3
+      adapter40: 6
+      total: 6
+    payload_weight: 4.0
+    visual_encoder_forwards: 18
+    frozen_base_and_roundtrip_passed: true
+    gate_passed: false
+    weight_only_causal_claim: false
+    heldout_family_claim: false
+    errors:
+    - simulate_predicted_validate
+    - overloaded_repair_predicted_submit
+  staged_api:
+    profile: staged-operation-args/v1
+    public_reference_episodes: 32
+    public_reference_successes: 32
+    teacher_argument_directives: false
+    empty_optional_args_adapter_bookkeeping: true
+    previous_public_feedback: true
+    native_learned_policy_adapter_qualified: false
+  new_data:
+    staged_targets: 848
+    operation: 192
+    conditional_arguments: 32
+    measurement: 624
+    staged_native_admitted: 848
+    physical_pairs: 32
+    physical_observations: 64
+    physical_pair_targets: 128
+    physical_pair_native_admitted: 128
+    pair_control_successes: 64
+    independent_before_after_checks: 128
+    base_networks: 16
+    physical_metadata_matched: true
+    used_in_optimizer: false
+    gold_eligibility: false
+  measurement_scope: Public solved measurement/budget assessment only;no complete design/passport equality claim
+  next:
+  - complete_separate_frozen128_workflow_evaluation
+  - preregister_matched_physics_measurement_and_conditional_argument_recipe
+  - qualify_native_staged_policy_loading_and_generation_budgets
+  - full_learned_v2_workflow_then_matched_family_holdout
+  - broaden_visual_topology_and_motor_ac_protection_profiles
+  evidence:
+    engineering-decision-payload-plan-admitted:
+      path: reports/engineering-decision-payload-plan-admitted-2026-11-18
+      manifest_sha256: d47079ade9cea39bdf9b10a5b1fbb53d56bf00ce48de58ecb345795cc93feca3
+    engineering-decision-payload-pilot:
+      path: reports/engineering-decision-payload-pilot-2026-11-18
+      manifest_sha256: 36697f32c00c83d18e3b639f199ea03b596fef3b26cd04b126ab2cd6bdd6c2f9
+    engineering-staged-episode-controls:
+      path: reports/engineering-staged-episode-controls-2026-11-18
+      manifest_sha256: 78625a29e3bd1f036e9b7c201ceb75ea7c49b0d0c7b61e391c6574444ae577b9
+    engineering-staged-teaching-admission:
+      path: reports/engineering-staged-teaching-admission-2026-11-18
+      manifest_sha256: c2b9528e9ce812a8b58645c6612c405faff5c4fe74c0ad80262e7ce6a1a77d33
+    engineering-matched-stage-physics:
+      path: reports/engineering-matched-stage-physics-2026-11-18
+      manifest_sha256: b0f7edf24c495fb585f9ceb9a6590911c521ba2c55c48a3fc1cdaca6242186bc
+  checks:
+    targeted_python_tests: 525
+    javascript_tests: 60
+    static_build: passed
+    core_and_active_v3_sources_unchanged: true
+    receipt: reports/engineering-decision-physics-checks-2026-11-18
+  separate_frozen128:
+    optimizer_steps_completed: 128
+    checkpoint: reports/engineering-v3-mixture-phase-2026-11-18/chunk-0128
+    checkpoint_manifest_sha256: 2a323881df3e1aea4d5fc1cdd644bf9ae65f177b7b092368d833122ba2798b74
+    full_workflow_evaluation: running
+    quality_claim: false

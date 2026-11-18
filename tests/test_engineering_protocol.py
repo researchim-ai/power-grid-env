@@ -65,3 +65,14 @@ def test_exposed_tool_mask_matches_dispatch_no_export():
         assert 'export' not in task['tools']
         schemas=kwargs.get('tools',task.get('tool_schemas',[]))
         assert 'export' not in [s['function']['name'] for s in schemas]
+
+
+def test_strict_native_profile_explicitly_matches_one_call_parser():
+    from benchmarks import engineering_agent as env
+    from benchmarks.engineering_recovery import collect
+    messages=collect(env.registry()[0]['id'],'clean')['initial_messages']
+    legacy,_=render_history(messages,RunContract(protocol='qwen-native-v1'))
+    strict,_=render_history(messages,RunContract(protocol='qwen-native-strict-v1'))
+    assert 'No text before or after' in strict[0]['content']
+    assert legacy[0]['content']!=strict[0]['content']
+    assert RunContract(protocol='qwen-native-v1').fingerprint()!=RunContract(protocol='qwen-native-strict-v1').fingerprint()

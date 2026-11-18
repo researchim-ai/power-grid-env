@@ -12,7 +12,7 @@ from benchmarks.engineering_observations import referenced_messages
 class RunContract(BaseModel):
     model_config=ConfigDict(extra='forbid',strict=True,frozen=True)
     schema_version: Literal['engineering-run/v1']='engineering-run/v1'
-    protocol: Literal['json-action-v1','qwen-native-v1']='json-action-v1'
+    protocol: Literal['json-action-v1','qwen-native-v1','qwen-native-strict-v1']='json-action-v1'
     public_view: Literal['raw','compact-pf-v1']='compact-pf-v1'
     context_tokens: int=Field(default=16384,ge=1024,le=32768)
     action_tokens: int=Field(default=256,ge=32,le=512)
@@ -63,7 +63,10 @@ def render_history(messages,contract):
     tools=initial['task']['tool_schemas']
     if contract.protocol=='json-action-v1':return messages,{}
     task=initial['task'];initial['task']={k:v for k,v in task.items() if k!='tool_schemas'}
-    output=[dict(role='system',content='Solve the bounded power-grid task using the provided tools. Preserve owner requirements. Submit only after fresh physical validation.'),
+    instruction='Solve the bounded power-grid task using the provided tools. Preserve owner requirements. Submit only after fresh physical validation.'
+    if contract.protocol=='qwen-native-strict-v1':
+        instruction+=' Return exactly one native tool call per turn. No text before or after the tool call, no narration, no markdown, and no analysis outside the call.'
+    output=[dict(role='system',content=instruction),
             dict(role='user',content=json.dumps(initial,ensure_ascii=False,separators=(',',':')))]
     if (len(messages)-2)%2:raise ValueError('complete action/response history required')
     for i in range(2,len(messages),2):
