@@ -1,0 +1,879 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:power-grid-env:engineering-package:v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "project",
+    "task"
+  ],
+  "$defs": {
+    "Event": {
+      "additionalProperties": false,
+      "properties": {
+        "time_s": {
+          "exclusiveMinimum": 0,
+          "maximum": 10,
+          "title": "Time S",
+          "type": "number"
+        },
+        "kind": {
+          "enum": [
+            "motor_open",
+            "motor_close",
+            "source_voltage",
+            "load_torque_scale"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "equipment_id": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$",
+          "title": "Equipment Id",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "maximum": 2,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "time_s",
+        "kind",
+        "equipment_id"
+      ],
+      "title": "Event",
+      "type": "object"
+    },
+    "Fault": {
+      "additionalProperties": false,
+      "properties": {
+        "node_id": {
+          "default": "",
+          "maxLength": 32,
+          "title": "Node Id",
+          "type": "string"
+        },
+        "r_ohm": {
+          "default": 0.001,
+          "maximum": 100,
+          "minimum": 1e-05,
+          "title": "R Ohm",
+          "type": "number"
+        },
+        "x_ohm": {
+          "default": 0.0,
+          "maximum": 100,
+          "minimum": 0,
+          "title": "X Ohm",
+          "type": "number"
+        }
+      },
+      "title": "Fault",
+      "type": "object"
+    },
+    "Generator": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "node_id": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$",
+          "title": "Node Id",
+          "type": "string"
+        },
+        "mode": {
+          "default": "pq",
+          "enum": [
+            "pq",
+            "pv"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "rated_kva": {
+          "default": 100.0,
+          "maximum": 10000,
+          "minimum": 1,
+          "title": "Rated Kva",
+          "type": "number"
+        },
+        "p_kw": {
+          "default": 50.0,
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "P Kw",
+          "type": "number"
+        },
+        "q_kvar": {
+          "default": 0.0,
+          "maximum": 10000,
+          "minimum": -10000,
+          "title": "Q Kvar",
+          "type": "number"
+        },
+        "v_set_pu": {
+          "default": 1.0,
+          "maximum": 1.1,
+          "minimum": 0.9,
+          "title": "V Set Pu",
+          "type": "number"
+        },
+        "q_min_kvar": {
+          "default": -40.0,
+          "maximum": 10000,
+          "minimum": -10000,
+          "title": "Q Min Kvar",
+          "type": "number"
+        },
+        "q_max_kvar": {
+          "default": 40.0,
+          "maximum": 10000,
+          "minimum": -10000,
+          "title": "Q Max Kvar",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "node_id"
+      ],
+      "title": "Generator",
+      "type": "object"
+    },
+    "Line": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "from_node": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$",
+          "title": "From Node",
+          "type": "string"
+        },
+        "to_node": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$",
+          "title": "To Node",
+          "type": "string"
+        },
+        "length_m": {
+          "exclusiveMinimum": 0,
+          "maximum": 10000,
+          "title": "Length M",
+          "type": "number"
+        },
+        "r_ohm_km": {
+          "exclusiveMinimum": 0,
+          "maximum": 20,
+          "title": "R Ohm Km",
+          "type": "number"
+        },
+        "x_ohm_km": {
+          "exclusiveMinimum": 0,
+          "maximum": 20,
+          "title": "X Ohm Km",
+          "type": "number"
+        },
+        "rating_a": {
+          "exclusiveMinimum": 0,
+          "maximum": 10000,
+          "title": "Rating A",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "from_node",
+        "to_node",
+        "length_m",
+        "r_ohm_km",
+        "x_ohm_km",
+        "rating_a"
+      ],
+      "title": "Line",
+      "type": "object"
+    },
+    "Load": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "node_id": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$",
+          "title": "Node Id",
+          "type": "string"
+        },
+        "p_kw": {
+          "maximum": 2000,
+          "minimum": 0,
+          "title": "P Kw",
+          "type": "number"
+        },
+        "q_kvar": {
+          "maximum": 2000,
+          "minimum": 0,
+          "title": "Q Kvar",
+          "type": "number"
+        },
+        "model": {
+          "default": "constant_z",
+          "enum": [
+            "constant_z",
+            "constant_pq",
+            "constant_i",
+            "zip"
+          ],
+          "title": "Model",
+          "type": "string"
+        },
+        "zip_z": {
+          "default": 0.3,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Zip Z",
+          "type": "number"
+        },
+        "zip_i": {
+          "default": 0.3,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Zip I",
+          "type": "number"
+        },
+        "zip_p": {
+          "default": 0.4,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Zip P",
+          "type": "number"
+        },
+        "zip_zq": {
+          "default": 0.3,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Zip Zq",
+          "type": "number"
+        },
+        "zip_iq": {
+          "default": 0.3,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Zip Iq",
+          "type": "number"
+        },
+        "zip_pq": {
+          "default": 0.4,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Zip Pq",
+          "type": "number"
+        },
+        "vmin_pu": {
+          "default": 0.1,
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Vmin Pu",
+          "type": "number"
+        },
+        "vmax_pu": {
+          "default": 1.5,
+          "maximum": 2,
+          "minimum": 1,
+          "title": "Vmax Pu",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "node_id",
+        "p_kw",
+        "q_kvar"
+      ],
+      "title": "Load",
+      "type": "object"
+    },
+    "Motor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "node_id": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$",
+          "title": "Node Id",
+          "type": "string"
+        },
+        "rated_kva": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Rated Kva",
+          "type": "number"
+        },
+        "inertia_s": {
+          "maximum": 20,
+          "minimum": 0.01,
+          "title": "Inertia S",
+          "type": "number"
+        },
+        "fan_torque_pu": {
+          "maximum": 2,
+          "minimum": 0,
+          "title": "Fan Torque Pu",
+          "type": "number"
+        },
+        "stator_r_pu": {
+          "maximum": 1,
+          "minimum": 0.001,
+          "title": "Stator R Pu",
+          "type": "number"
+        },
+        "stator_x_pu": {
+          "maximum": 2,
+          "minimum": 0.001,
+          "title": "Stator X Pu",
+          "type": "number"
+        },
+        "rotor_r_pu": {
+          "maximum": 1,
+          "minimum": 0.001,
+          "title": "Rotor R Pu",
+          "type": "number"
+        },
+        "rotor_x_pu": {
+          "maximum": 2,
+          "minimum": 0.001,
+          "title": "Rotor X Pu",
+          "type": "number"
+        },
+        "magnetizing_x_pu": {
+          "maximum": 20,
+          "minimum": 0.1,
+          "title": "Magnetizing X Pu",
+          "type": "number"
+        },
+        "start_s": {
+          "maximum": 10,
+          "minimum": 0,
+          "title": "Start S",
+          "type": "number"
+        },
+        "model": {
+          "default": "single_cage",
+          "enum": [
+            "single_cage",
+            "double_cage"
+          ],
+          "title": "Model",
+          "type": "string"
+        },
+        "rotor2_r_pu": {
+          "default": 0.04,
+          "maximum": 1,
+          "minimum": 0.001,
+          "title": "Rotor2 R Pu",
+          "type": "number"
+        },
+        "rotor2_x_pu": {
+          "default": 0.15,
+          "maximum": 2,
+          "minimum": 0.001,
+          "title": "Rotor2 X Pu",
+          "type": "number"
+        },
+        "thermal_enabled": {
+          "default": false,
+          "title": "Thermal Enabled",
+          "type": "boolean"
+        },
+        "thermal_tau_s": {
+          "default": 5.0,
+          "maximum": 10000,
+          "minimum": 0.01,
+          "title": "Thermal Tau S",
+          "type": "number"
+        },
+        "thermal_trip": {
+          "default": 10.0,
+          "maximum": 1000,
+          "minimum": 0.01,
+          "title": "Thermal Trip",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "node_id",
+        "rated_kva",
+        "inertia_s",
+        "fan_torque_pu",
+        "stator_r_pu",
+        "stator_x_pu",
+        "rotor_r_pu",
+        "rotor_x_pu",
+        "magnetizing_x_pu",
+        "start_s"
+      ],
+      "title": "Motor",
+      "type": "object"
+    },
+    "Node": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "nominal_ll_v": {
+          "anyOf": [
+            {
+              "maximum": 35000,
+              "minimum": 100,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Nominal Ll V"
+        },
+        "x": {
+          "maximum": 2000,
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "maximum": 1400,
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "x",
+        "y"
+      ],
+      "title": "Node",
+      "type": "object"
+    },
+    "Switch": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "from_node": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$",
+          "title": "From Node",
+          "type": "string"
+        },
+        "to_node": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$",
+          "title": "To Node",
+          "type": "string"
+        },
+        "kind": {
+          "default": "breaker",
+          "enum": [
+            "breaker",
+            "disconnector"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "closed": {
+          "default": true,
+          "title": "Closed",
+          "type": "boolean"
+        },
+        "r_ohm": {
+          "default": 0.0001,
+          "maximum": 1,
+          "minimum": 1e-06,
+          "title": "R Ohm",
+          "type": "number"
+        },
+        "x_ohm": {
+          "default": 1e-05,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "X Ohm",
+          "type": "number"
+        },
+        "rated_current_a": {
+          "default": 400.0,
+          "exclusiveMinimum": 0,
+          "maximum": 100000,
+          "title": "Rated Current A",
+          "type": "number"
+        },
+        "interrupt_current_a": {
+          "default": 25000.0,
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Interrupt Current A",
+          "type": "number"
+        },
+        "operate_time_s": {
+          "default": 0.05,
+          "exclusiveMinimum": 0,
+          "maximum": 10,
+          "title": "Operate Time S",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "from_node",
+        "to_node"
+      ],
+      "title": "Switch",
+      "type": "object"
+    },
+    "Transformer": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "from_node": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$",
+          "title": "From Node",
+          "type": "string"
+        },
+        "to_node": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$",
+          "title": "To Node",
+          "type": "string"
+        },
+        "rated_kva": {
+          "maximum": 10000,
+          "minimum": 1,
+          "title": "Rated Kva",
+          "type": "number"
+        },
+        "r_percent": {
+          "maximum": 20,
+          "minimum": 0,
+          "title": "R Percent",
+          "type": "number"
+        },
+        "x_percent": {
+          "exclusiveMinimum": 0,
+          "maximum": 40,
+          "title": "X Percent",
+          "type": "number"
+        },
+        "tap_primary": {
+          "maximum": 1.2,
+          "minimum": 0.8,
+          "title": "Tap Primary",
+          "type": "number"
+        },
+        "tap_secondary": {
+          "maximum": 1.2,
+          "minimum": 0.8,
+          "title": "Tap Secondary",
+          "type": "number"
+        },
+        "vector_group": {
+          "enum": [
+            "Yy0",
+            "Dyn11",
+            "Dyn1",
+            "Dd0"
+          ],
+          "title": "Vector Group",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "from_node",
+        "to_node",
+        "rated_kva",
+        "r_percent",
+        "x_percent",
+        "tap_primary",
+        "tap_secondary",
+        "vector_group"
+      ],
+      "title": "Transformer",
+      "type": "object"
+    },
+    "StudioProject": {
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "enum": [
+            "power-grid-env.grid-editor/v1",
+            "power-grid-env.grid-editor/v2",
+            "power-grid-env.grid-editor/v3",
+            "power-grid-env.grid-editor/v4",
+            "power-grid-env.grid-editor/v5"
+          ],
+          "title": "Schema",
+          "type": "string"
+        },
+        "nominal_ll_v": {
+          "maximum": 35000,
+          "minimum": 100,
+          "title": "Nominal Ll V",
+          "type": "number"
+        },
+        "source_node": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$",
+          "title": "Source Node",
+          "type": "string"
+        },
+        "source_r_ohm": {
+          "maximum": 10,
+          "minimum": 0.0001,
+          "title": "Source R Ohm",
+          "type": "number"
+        },
+        "source_x_ohm": {
+          "maximum": 10,
+          "minimum": 0.0001,
+          "title": "Source X Ohm",
+          "type": "number"
+        },
+        "duration_s": {
+          "maximum": 10,
+          "minimum": 0.1,
+          "title": "Duration S",
+          "type": "number"
+        },
+        "step_s": {
+          "maximum": 0.0025,
+          "minimum": 0.001,
+          "title": "Step S",
+          "type": "number"
+        },
+        "nodes": {
+          "items": {
+            "$ref": "#/$defs/Node"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "title": "Nodes",
+          "type": "array"
+        },
+        "lines": {
+          "items": {
+            "$ref": "#/$defs/Line"
+          },
+          "maxItems": 15,
+          "title": "Lines",
+          "type": "array"
+        },
+        "motors": {
+          "items": {
+            "$ref": "#/$defs/Motor"
+          },
+          "maxItems": 16,
+          "minItems": 0,
+          "title": "Motors",
+          "type": "array"
+        },
+        "loads": {
+          "items": {
+            "$ref": "#/$defs/Load"
+          },
+          "maxItems": 16,
+          "title": "Loads",
+          "type": "array"
+        },
+        "events": {
+          "items": {
+            "$ref": "#/$defs/Event"
+          },
+          "maxItems": 64,
+          "title": "Events",
+          "type": "array"
+        },
+        "transformers": {
+          "items": {
+            "$ref": "#/$defs/Transformer"
+          },
+          "maxItems": 8,
+          "title": "Transformers",
+          "type": "array"
+        },
+        "generators": {
+          "items": {
+            "$ref": "#/$defs/Generator"
+          },
+          "maxItems": 8,
+          "title": "Generators",
+          "type": "array"
+        },
+        "switches": {
+          "items": {
+            "$ref": "#/$defs/Switch"
+          },
+          "maxItems": 24,
+          "title": "Switches",
+          "type": "array"
+        },
+        "fault": {
+          "$ref": "#/$defs/Fault"
+        },
+        "profile": {
+          "default": "lv_motor_start",
+          "enum": [
+            "lv_motor_start",
+            "multivoltage_motor_start",
+            "passive_power_flow",
+            "passive_3ph_fault",
+            "ac_power_flow"
+          ],
+          "title": "Profile",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema",
+        "nominal_ll_v",
+        "source_node",
+        "source_r_ohm",
+        "source_x_ohm",
+        "duration_s",
+        "step_s",
+        "nodes",
+        "lines",
+        "motors"
+      ],
+      "title": "Draft",
+      "type": "object"
+    },
+    "EngineeringTask": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "id",
+        "title",
+        "criteria"
+      ],
+      "properties": {
+        "schema": {
+          "const": "power-grid-env.engineering-task/v1"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,63}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        },
+        "criteria": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "minimum_voltage_pu",
+            "maximum_branch_loading_pct",
+            "all_loads_energized"
+          ],
+          "properties": {
+            "minimum_voltage_pu": {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 1.2
+            },
+            "maximum_branch_loading_pct": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 500
+            },
+            "all_loads_energized": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    }
+  },
+  "properties": {
+    "schema": {
+      "const": "power-grid-env.engineering-package/v1"
+    },
+    "project": {
+      "$ref": "#/$defs/StudioProject"
+    },
+    "task": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/EngineeringTask"
+        }
+      ]
+    },
+    "conversion": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_format",
+            "input_sha256",
+            "warnings"
+          ],
+          "properties": {
+            "source_format": {
+              "const": "matpower_v2"
+            },
+            "input_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "warnings": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 1000
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

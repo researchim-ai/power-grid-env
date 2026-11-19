@@ -1,0 +1,126 @@
+{
+  "schema": "power-grid-env.website-learning-experiment/v1",
+  "date": "2026-11-19",
+  "profile": "compact-solver-orchestration/v1",
+  "scope": "Synthetic balanced 400V radial constant-Z networks; text-only cable selection.",
+  "aggregate_suite_tasks": 30,
+  "models": {
+    "qwen08b": {
+      "stages": {
+        "base": {
+          "train": {
+            "successes": 0,
+            "total": 16
+          },
+          "dev": {
+            "successes": 0,
+            "total": 8
+          },
+          "test": {
+            "successes": 0,
+            "total": 6
+          }
+        },
+        "fixed96": {
+          "train": {
+            "successes": 10,
+            "total": 16
+          },
+          "dev": {
+            "successes": 5,
+            "total": 8
+          },
+          "test": {
+            "successes": 3,
+            "total": 6
+          }
+        },
+        "decision240": {
+          "train": {
+            "successes": 15,
+            "total": 16
+          },
+          "dev": {
+            "successes": 5,
+            "total": 8
+          },
+          "test": {
+            "successes": 3,
+            "total": 6
+          }
+        }
+      },
+      "no_previous_success_losses": false
+    },
+    "qwen4b": {
+      "stages": {
+        "base": {
+          "train": {
+            "successes": 0,
+            "total": 16
+          },
+          "dev": {
+            "successes": 0,
+            "total": 8
+          },
+          "test": {
+            "successes": 0,
+            "total": 6
+          }
+        },
+        "fixed96": {
+          "train": {
+            "successes": 11,
+            "total": 16
+          },
+          "dev": {
+            "successes": 5,
+            "total": 8
+          },
+          "test": {
+            "successes": 5,
+            "total": 6
+          }
+        },
+        "decision240": {
+          "train": {
+            "successes": 15,
+            "total": 16
+          },
+          "dev": {
+            "successes": 7,
+            "total": 8
+          },
+          "test": {
+            "successes": 6,
+            "total": 6
+          }
+        }
+      },
+      "no_previous_success_losses": true
+    }
+  },
+  "data": {
+    "initial_train_examples": 64,
+    "expanded_train_examples": 240,
+    "train_bases": 8,
+    "train_families": 4,
+    "expanded_successful_continuations": 160
+  },
+  "audit": {
+    "episodes_replayed": 180,
+    "manifest_sha256": "5c3e5abcd07e8064029e07b76094f20f10eb88e3decaea02ea30270361e628d7"
+  },
+  "first_heldout_test": {
+    "tasks": 6,
+    "bases": 3,
+    "families": 2,
+    "base_successes": 0,
+    "qwen08b_successes": 3,
+    "qwen4b_successes": 5
+  },
+  "later_evaluation": "Previously disclosed regression only; not a new independent test.",
+  "visual_input": false,
+  "grpo_run": false,
+  "inference_release": false
+}

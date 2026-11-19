@@ -3,17 +3,5 @@
   "profile": "local declared scope",
   "snapshot": "2026-11-06",
   "physical_solver_connected": false,
-  "grid_studio_recorded_data": true,
-  "grid_studio_live_solver": true,
-  "grid_studio_designs": 2,
-  "grid_studio_studies": 12,
-  "grid_studio_solver_requires_local_server": true,
-  "grid_editor_profiles": [
-    "lv_motor_start",
-    "multivoltage_motor_start",
-    "passive_power_flow",
-    "passive_3ph_fault",
-    "ac_power_flow"
-  ],
-  "grid_editor_two_winding_transformers": true
+  "engineering_application_separate": true
 }

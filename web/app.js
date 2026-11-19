@@ -6,8 +6,49 @@
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const ru = Object.fromEntries($$('[data-i18n]').map(el => [el.dataset.i18n, el.innerHTML]));
   const en = {
-    skip:'Skip to content',topline:'Open engineering. Verifiable results.',navPlatform:'Platform',navLab:'Laboratory',navAi:'Intelligence',navProof:'Validation',docs:'Documentation',hero1:'Grid physics.',hero2:'Machine logic.',hero3:'New intelligence.',heroDescription:'Explore complex power grids. Test scenarios. Find answers with physical models and AI-assisted engineering tools.',explore:'Enter the laboratory',discover:'Explore the platform',heroLocal:'Runs locally',aiLayer:'AI layer',visualHint:'Select a node to explore',heroFoot:'From a single motor to the behavior of a connected system.',strip1:'Build your model',strip2:'Define a scenario',strip3:'Verify the physics',strip4:'Repeat the result',platformTitle:'One grid.<br>Many ways<br>to understand it.',platformDescription:'Operating conditions, machine dynamics and automation in one open engineering environment.',feature1Title:'Physics under the hood',feature1Body:'Power flow, machine dynamics and network equations. Electrical, mechanical and thermal processes with explicit parameters and applicability limits.',feature2Title:'Scenarios that matter',feature2Body:'Direct-on-line starts and motor restarts, voltage sags, protection, standby transfer and islanding. Compare alternatives and follow the sequence of events.',feature3Title:'Model-grounded intelligence',feature3Body:'Parameter identification, critical scenario search and approximations with measured error. AI tools work alongside the physical solver.',scopeNote:'Every study type has its own verified scope. Detailed limitations are included in the documentation.',labTitle:'What if<br>the grid changes?',labIntro:'Start with a scenario. Explore the relationship between voltage, motion and events in a connected system.',scenarioLabel:'Scenario',scenarioMotor:'Motor start',scenarioMotorSub:'From connection to acceleration',scenarioSag:'Voltage sag',scenarioSagSub:'Disturbance and recovery',scenarioIsland:'Islanding',scenarioIslandSub:'Changing the network topology',loadLabel:'Load level',run:'Run scenario',demoNote:'Interactive illustration. Physical calculations run separately in the project’s Python core.',traceLabel:'TRAJECTORY / ILLUSTRATION',ready:'Ready to run',voltage:'Voltage',time:'Time',export:'Export JSON',eventLabel:'EVENT LOG',eventReady:'Scenario prepared. Run the illustration.',aiTitle:'AI proposes.<br>Physics verifies.',aiDescription:'Data-driven parameter identification, critical scenario search and approximate models with measurable error. Intelligence supports exploration. The physical core verifies the result.',aiP1:'Explicit constraints',aiP2:'Independent held-out data',aiP3:'Reproducible studies',proofTitle:'Trust is built<br>on verification.',proofIntro:'Open equations. Independent references. Preserved inputs and results. Every conclusion can be traced and reproduced.',testLabel:'HISTORICAL REQUIRED PROFILE / B15',testDescription:'tests without failures or skips<br>in the dated B15 snapshot',evidenceDate:'SNAPSHOT / 2026-11-06',proofProfiles:'verified dynamic<br>identification profiles',proofTraces:'synthetic traces from<br>original motulator',proofNetwork:'independent network checks<br>of identified passports',manifestNote:'A research principle, not a live API response.',statusDownload:'Download project status',validationNote:'Numerical checks apply to declared profiles. Synthetic observations are not field measurements, and local acceptance is not equipment certification.',startTitle:'Your next grid<br>starts with you.',startDescription:'Open source. Your model. Verifiable results.',startButton:'Start exploring',footerTagline:'Engineering thinking. Open source.',backTop:'Back to top ↑',docsTitle:'From code to insight.',docsIntro:'Run these commands from the project root. The recommended environment is Linux with Python 3.12.',docsStart:'First study',docsCampaign:'Study campaigns',docsScope:'Model scope'
+    skip:'Skip to content',
+    navPlatform:'Platform',
+    navLab:'Laboratory',
+    navAi:'Intelligence',
+    navProof:'Validation',
+    docs:'Documentation',
+    explore:'Build your network',
+    discover:'Explore the platform',
+    heroLocal:'Runs locally',
+    aiLayer:'AI layer',
+    visualHint:'Select a node to explore',
+    strip1:'Build your model',
+    strip2:'Define a scenario',
+    scenarioLabel:'Scenario',
+    scenarioMotor:'Motor start',
+    scenarioMotorSub:'From connection to acceleration',
+    scenarioSag:'Voltage sag',
+    scenarioSagSub:'Disturbance and recovery',
+    scenarioIsland:'Islanding',
+    scenarioIslandSub:'Changing the network topology',
+    loadLabel:'Load level',
+    run:'Run scenario',
+    traceLabel:'TRAJECTORY / ILLUSTRATION',
+    ready:'Ready to run',
+    voltage:'Voltage',
+    time:'Time',
+    export:'Export JSON',
+    eventLabel:'EVENT LOG',
+    eventReady:'Scenario prepared. Run the illustration.',
+    testLabel:'HISTORICAL REQUIRED PROFILE / B15',
+    testDescription:'tests without failures or skips<br>in the dated B15 snapshot',
+    evidenceDate:'SNAPSHOT / 2026-11-06',
+    proofProfiles:'verified dynamic<br>identification profiles',
+    proofTraces:'synthetic traces from<br>original motulator',
+    proofNetwork:'independent network checks<br>of identified passports',
+    statusDownload:'Download project status',
+    backTop:'Back to top ',
+    docsIntro:'Run these commands from the project root. The recommended environment is Linux with Python 3.12.',
+    docsStart:'First study',
+    docsCampaign:'Study campaigns',
+    docsScope:'Model scope'
   };
+  Object.assign(en,Object.fromEntries($$('[data-en]').map(el=>[el.dataset.i18n,el.dataset.en])));
   const state = {locale:'ru', scenario:'motor', load:70, running:false, progress:0, frame:0, selectedNode:'station', doc:'start', data:[]};
   try { if (localStorage.getItem('pge-language') === 'en') state.locale = 'en'; } catch { /* Storage is optional. */ }
   const t = (r, e) => state.locale === 'ru' ? r : e;
@@ -17,7 +58,7 @@
   const nodes = {
     grid:{kind:'01 / GRID',ru:['Внешняя сеть','Источник питания и электрические связи.'],en:['External grid','The supply source and its electrical connections.']},
     solar:{kind:'02 / SOLAR',ru:['Распределённая генерация','Часть общей системы источников и нагрузок.'],en:['Distributed generation','Part of a connected system of sources and loads.']},
-    station:{kind:'03 / SUBSTATION',ru:['Связи определяют поведение.','Выберите объект, чтобы исследовать сеть.'],en:['Connections shape behavior.','Select an object to explore the grid.']},
+    station:{kind:'03 / SUBSTATION',ru:['Подстанция','Выберите объект на схеме, чтобы посмотреть его описание.'],en:['Substation','Select a network element to read its description.']},
     wind:{kind:'04 / WIND',ru:['Изменяющееся питание','Исследуйте влияние источников на режим сети.'],en:['Variable generation','Explore how sources affect network behavior.']},
     factory:{kind:'05 / INDUSTRY',ru:['Промышленная нагрузка','Машины, защита и сценарии восстановления.'],en:['Industrial load','Machines, protection and recovery scenarios.']},
     motor:{kind:'06 / MOTOR',ru:['Машина в динамике','Электрические связи, разгон и механическая нагрузка.'],en:['Machine dynamics','Electrical connections, acceleration and mechanical load.']}
@@ -89,7 +130,7 @@
     ['U / I / ω','FEATURES','MODEL','VERIFY'].forEach((label,k)=>{const text=document.createElementNS(ns,'text');text.setAttribute('x',layers[k].x);text.setAttribute('y',285);text.setAttribute('text-anchor','middle');text.setAttribute('fill','#74935f');text.setAttribute('style','font:8px monospace;letter-spacing:1px');text.textContent=label;svg.append(text);});
   }
   const commands={install:'python -m pip install -e . "scipy==1.15.2"',start:'python -m power_grid_env.cli identify-dynamic-motor \\\n  --input cases/dynamic-identification/linear.json \\\n  --out /tmp/identified-motor',campaign:'python -m power_grid_env.cli campaign run \\\n  --plan cases/campaign/industrial-21-parallel.json \\\n  --out /tmp/grid-campaign',verify:'python -m power_grid_env.cli campaign verify /tmp/grid-campaign'};
-  function codeBlock(command){const div=document.createElement('div');div.className='docs-code';const pre=document.createElement('pre');pre.textContent=command;const copy=document.createElement('button');copy.type='button';copy.className='copy-button';copy.textContent=t('КОПИРОВАТЬ ↗','COPY ↗');copy.dataset.copy=command;div.append(copy,pre);return div;}
+  function codeBlock(command){const div=document.createElement('div');div.className='docs-code';const pre=document.createElement('pre');pre.textContent=command;const copy=document.createElement('button');copy.type='button';copy.className='copy-button';copy.textContent=t('КОПИРОВАТЬ ','COPY ');copy.dataset.copy=command;div.append(copy,pre);return div;}
   function renderDocs(){
     const root=$('#docs-content');root.replaceChildren();const heading=document.createElement('h3');heading.className='docs-content-heading';const p=document.createElement('p');p.className='docs-content-copy';
     if(state.doc==='start'){heading.textContent=t('01 / Установите зависимости','01 / Install dependencies');p.textContent=t('Выполните в локальной копии проекта. motulator нужен для отдельных независимых бенчмарков, а не для этой команды идентификации.','Run in a local copy of the project. motulator is needed for separate reference benchmarks, not for this identification command.');root.append(heading,p,codeBlock(commands.install));const h=document.createElement('h3');h.className='docs-content-heading';h.textContent=t('02 / Найдите параметры двигателя','02 / Identify motor parameters');root.append(h,codeBlock(commands.start));}
@@ -102,9 +143,9 @@
   function closeMenu(){$('#menu').setAttribute('aria-expanded','false');$('#navigation').classList.remove('open');}
   $('#menu').addEventListener('click',()=>{const open=$('#menu').getAttribute('aria-expanded')!=='true';$('#menu').setAttribute('aria-expanded',String(open));$('#navigation').classList.toggle('open',open);});$$('#navigation a').forEach(link=>link.addEventListener('click',closeMenu));document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMenu();});
   $$('details').forEach(details=>details.addEventListener('toggle',()=>{if(details.open)$$('details').filter(el=>el!==details).forEach(el=>el.open=false);}));
-  function translate(){document.documentElement.lang=state.locale;$$('[data-i18n]').forEach(el=>{const key=el.dataset.i18n;el.innerHTML=state.locale==='ru'?ru[key]:(en[key]??ru[key]);});$('#language').textContent=state.locale==='ru'?'EN':'RU';$('#language').setAttribute('aria-label',t('Switch to English','Переключить на русский'));$('#menu').setAttribute('aria-label',t('Открыть меню','Open navigation'));$('#close-docs').setAttribute('aria-label',t('Закрыть','Close'));$('#navigation').setAttribute('aria-label',t('Основная навигация','Main navigation'));$$('a.brand').forEach(el=>el.setAttribute('aria-label',t('power-grid-env — главная','power-grid-env — home')));$$('[data-node]').forEach(el=>el.setAttribute('aria-label',nodes[el.dataset.node][state.locale][0]));$('.scenario-tabs').setAttribute('aria-label',t('Сценарии','Scenarios'));$('.docs-tabs').setAttribute('aria-label',t('Раздел документации','Documentation section'));$('#network-title').textContent=t('Электросеть и нейронный слой','Power grid and neural layer');$('#network-desc').textContent=t('Интерактивная иллюстрация электросети. Выберите объект для описания.','Interactive power-grid illustration. Select an object for a description.');$('#chart-description').textContent=t('Иллюстративные траектории, не результат физического расчёта.','Illustrative trajectories, not physical solver output.');document.title=t('power-grid-env — Физика сети. Сила интеллекта.','power-grid-env — Grid physics. New intelligence.');selectNode(state.selectedNode);prepare();if(dialog.open)renderDocs();}
+  function translate(){document.documentElement.lang=state.locale;$$('[data-i18n]').forEach(el=>{const key=el.dataset.i18n;el.innerHTML=state.locale==='ru'?ru[key]:(en[key]??ru[key]);});$('#language').textContent=state.locale==='ru'?'EN':'RU';$('#language').setAttribute('aria-label',t('Switch to English','Переключить на русский'));$('#menu').setAttribute('aria-label',t('Открыть меню','Open navigation'));$('#close-docs').setAttribute('aria-label',t('Закрыть','Close'));$('#navigation').setAttribute('aria-label',t('Основная навигация','Main navigation'));$$('a.brand').forEach(el=>el.setAttribute('aria-label',t('power-grid-env — главная','power-grid-env — home')));$$('[data-node]').forEach(el=>el.setAttribute('aria-label',nodes[el.dataset.node][state.locale][0]));$('.scenario-tabs').setAttribute('aria-label',t('Сценарии','Scenarios'));$('.docs-tabs').setAttribute('aria-label',t('Раздел документации','Documentation section'));$('#network-title').textContent=t('Электросеть и нейронный слой','Power grid and neural layer');$('#network-desc').textContent=t('Интерактивная иллюстрация электросети. Выберите объект для описания.','Interactive power-grid illustration. Select an object for a description.');$('#chart-description').textContent=t('Иллюстративные траектории, не результат физического расчёта.','Illustrative trajectories, not physical solver output.');document.title=t('power-grid-env — Моделирование электросетей и обучение агентов','power-grid-env — Power-grid simulation and agent learning');selectNode(state.selectedNode);prepare();if(dialog.open)renderDocs();}
   $('#language').addEventListener('click',()=>{state.locale=state.locale==='ru'?'en':'ru';try{localStorage.setItem('pge-language',state.locale);}catch{}translate();});
   neuralArt();translate();
   // Explicitly dated historical metrics; current project status is exported separately.
-  if(location.protocol!=='file:')fetch('./assets/site-data.json').then(response=>response.ok?response.json():null).then(data=>{if(data&&Number.isSafeInteger(data.required_tests)&&data.required_tests>0)$('#test-count').replaceChildren(String(data.required_tests),Object.assign(document.createElement('span'),{textContent:'↗'}));}).catch(()=>{});
+  if(location.protocol!=='file:')fetch('./assets/site-data.json').then(response=>response.ok?response.json():null).then(data=>{if(data&&Number.isSafeInteger(data.required_tests)&&data.required_tests>0)$('#test-count').replaceChildren(String(data.required_tests));}).catch(()=>{});
 })();

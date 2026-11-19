@@ -1,0 +1,757 @@
+{
+  "schema": "power-grid-env.blog-learning-examples/v1",
+  "date": "2026-11-19",
+  "source": {
+    "plan": {
+      "manifest_sha256": "9ee8749480a77dbcc9d140d20a0be0e061f6d420efeeef5ec53b6c0a67b2300f",
+      "folder": "engineering-workflow-holdout-plan-2026-11-19"
+    },
+    "base": {
+      "manifest_sha256": "52661227160abdce0e156eaae92cdf7bcd57c99c281c7c3467df782cd559c030",
+      "folder": "engineering-workflow-holdout-qwen4b-2026-11-19"
+    },
+    "expanded": {
+      "manifest_sha256": "3d6a390ccc7fe4009d51fe768a8eb1efa4a232bea0df3cf556e58a25880567d0",
+      "folder": "engineering-decision-regression-qwen4b-2026-11-19"
+    }
+  },
+  "generator_sha256": "72559c20b44eb7badaa016350e7ee45fe9891f09cc5d653052432100d29e1f0f",
+  "examples": [
+    {
+      "id": "train-example-1",
+      "kind": "verify_healthy",
+      "split": "train",
+      "task_id": "healthy-catalog-9653ee31e697cab955c3fc88",
+      "model": "Qwen3.5-4B",
+      "training_phase": "decision240",
+      "nodes": [
+        "N1",
+        "N2",
+        "N3",
+        "N4",
+        "N5",
+        "N6",
+        "N7"
+      ],
+      "source": "N1",
+      "lines": [
+        {
+          "id": "L1",
+          "from_node": "N1",
+          "to_node": "N3",
+          "length_m": 84.24049841899367,
+          "r_ohm_km": 0.25540442084083675,
+          "x_ohm_km": 0.06569824613601356,
+          "rating_a": 35.40171613494653
+        },
+        {
+          "id": "L2",
+          "from_node": "N5",
+          "to_node": "N2",
+          "length_m": 111.96079345837944,
+          "r_ohm_km": 0.25540442084083675,
+          "x_ohm_km": 0.06569824613601356,
+          "rating_a": 35.40171613494653
+        },
+        {
+          "id": "L3",
+          "from_node": "N7",
+          "to_node": "N5",
+          "length_m": 96.51850628005619,
+          "r_ohm_km": 0.25540442084083675,
+          "x_ohm_km": 0.06569824613601356,
+          "rating_a": 35.40171613494653
+        },
+        {
+          "id": "L4",
+          "from_node": "N4",
+          "to_node": "N6",
+          "length_m": 80.59278980125318,
+          "r_ohm_km": 0.25540442084083675,
+          "x_ohm_km": 0.06569824613601356,
+          "rating_a": 35.40171613494653
+        },
+        {
+          "id": "L5",
+          "from_node": "N1",
+          "to_node": "N4",
+          "length_m": 120.0,
+          "r_ohm_km": 0.08385928343726978,
+          "x_ohm_km": 0.0620525066016758,
+          "rating_a": 353.3768022948709
+        },
+        {
+          "id": "L6",
+          "from_node": "N6",
+          "to_node": "N7",
+          "length_m": 110.23727022604312,
+          "r_ohm_km": 0.25540442084083675,
+          "x_ohm_km": 0.06569824613601356,
+          "rating_a": 35.40171613494653
+        }
+      ],
+      "changed_line": null,
+      "initial": {
+        "nodes": [
+          {
+            "id": "N1",
+            "voltage_pu_min": 0.9990354313326968,
+            "energized": true
+          },
+          {
+            "id": "N4",
+            "voltage_pu_min": 0.9970948243881766,
+            "energized": true
+          },
+          {
+            "id": "N6",
+            "voltage_pu_min": 0.9941765377967489,
+            "energized": true
+          },
+          {
+            "id": "N3",
+            "voltage_pu_min": 0.9982973802502112,
+            "energized": true
+          },
+          {
+            "id": "N7",
+            "voltage_pu_min": 0.9912099269033539,
+            "energized": true
+          },
+          {
+            "id": "N5",
+            "voltage_pu_min": 0.9894903126879211,
+            "energized": true
+          },
+          {
+            "id": "N2",
+            "voltage_pu_min": 0.9884364816459773,
+            "energized": true
+          }
+        ],
+        "branches": [
+          {
+            "id": "L5",
+            "loading_pct": 11.123203580130603
+          },
+          {
+            "id": "L4",
+            "loading_pct": 89.6574101067895
+          },
+          {
+            "id": "L1",
+            "loading_pct": 21.685553388687907
+          },
+          {
+            "id": "L6",
+            "loading_pct": 66.61662849011017
+          },
+          {
+            "id": "L3",
+            "loading_pct": 44.08455355296657
+          },
+          {
+            "id": "L2",
+            "loading_pct": 23.283014011454224
+          }
+        ],
+        "assessment": {
+          "converged": true,
+          "measurement_feasible": true,
+          "structure_matches": true,
+          "minimum_voltage_pu": 0.9884364816459773,
+          "maximum_branch_loading_pct": 89.6574101067895,
+          "overloaded_branches": [],
+          "undervoltage_nodes": [],
+          "deenergized_nodes": []
+        }
+      },
+      "final": {
+        "nodes": [
+          {
+            "id": "N1",
+            "voltage_pu_min": 0.9990354313326968,
+            "energized": true
+          },
+          {
+            "id": "N4",
+            "voltage_pu_min": 0.9970948243881766,
+            "energized": true
+          },
+          {
+            "id": "N6",
+            "voltage_pu_min": 0.9941765377967489,
+            "energized": true
+          },
+          {
+            "id": "N3",
+            "voltage_pu_min": 0.9982973802502112,
+            "energized": true
+          },
+          {
+            "id": "N7",
+            "voltage_pu_min": 0.9912099269033539,
+            "energized": true
+          },
+          {
+            "id": "N5",
+            "voltage_pu_min": 0.9894903126879211,
+            "energized": true
+          },
+          {
+            "id": "N2",
+            "voltage_pu_min": 0.9884364816459773,
+            "energized": true
+          }
+        ],
+        "branches": [
+          {
+            "id": "L5",
+            "loading_pct": 11.123203580130603
+          },
+          {
+            "id": "L4",
+            "loading_pct": 89.6574101067895
+          },
+          {
+            "id": "L1",
+            "loading_pct": 21.685553388687907
+          },
+          {
+            "id": "L6",
+            "loading_pct": 66.61662849011017
+          },
+          {
+            "id": "L3",
+            "loading_pct": 44.08455355296657
+          },
+          {
+            "id": "L2",
+            "loading_pct": 23.283014011454224
+          }
+        ],
+        "assessment": {
+          "converged": true,
+          "measurement_feasible": true,
+          "structure_matches": true,
+          "minimum_voltage_pu": 0.9884364816459773,
+          "maximum_branch_loading_pct": 89.6574101067895,
+          "overloaded_branches": [],
+          "undervoltage_nodes": [],
+          "deenergized_nodes": []
+        }
+      },
+      "previews": [],
+      "base": {
+        "success": false,
+        "calls": 3,
+        "trace": [
+          {
+            "action": {
+              "name": "__invalid_action__",
+              "arguments": {}
+            },
+            "raw": "{\"tool\":\"preview_line_catalog\",\"equipment_id\":\"L5\",\"catalog_id\":\"copper-1\"}",
+            "decode_error": "ValueError:one known tool name and optional arguments object required",
+            "ok": false,
+            "error": "ValueError:unknown operation or invalid arguments"
+          },
+          {
+            "action": {
+              "name": "__invalid_action__",
+              "arguments": {}
+            },
+            "raw": "{\"tool\":\"set_line_catalog\",\"equipment_id\":\"L5\",\"catalog_id\":\"copper-1\"}",
+            "decode_error": "ValueError:one known tool name and optional arguments object required",
+            "ok": false,
+            "error": "ValueError:unknown operation or invalid arguments"
+          },
+          {
+            "action": {
+              "name": "__invalid_action__",
+              "arguments": {}
+            },
+            "raw": "{\"tool\":\"set_line_catalog\",\"equipment_id\":\"L5\",\"catalog_id\":\"copper-1\"}",
+            "decode_error": "ValueError:one known tool name and optional arguments object required",
+            "ok": false,
+            "error": "ValueError:unknown operation or invalid arguments"
+          }
+        ]
+      },
+      "sft": {
+        "success": true,
+        "calls": 2,
+        "trace": [
+          {
+            "action": {
+              "name": "simulate",
+              "arguments": {}
+            },
+            "raw": "{\"name\":\"simulate\",\"arguments\":{}}",
+            "decode_error": null,
+            "ok": true,
+            "error": null
+          },
+          {
+            "action": {
+              "name": "submit",
+              "arguments": {}
+            },
+            "raw": "{\"name\":\"submit\",\"arguments\":{}}",
+            "decode_error": null,
+            "ok": true,
+            "error": null
+          }
+        ]
+      },
+      "project_file": "learning-example-1.project.json",
+      "modified_project_file": "learning-example-1-after.project.json",
+      "selected_passport": null
+    },
+    {
+      "id": "train-example-2",
+      "kind": "compare_replacements",
+      "split": "train",
+      "task_id": "tradeoff-catalog-65776384dbdcef09f5342767",
+      "model": "Qwen3.5-4B",
+      "training_phase": "decision240",
+      "nodes": [
+        "N1",
+        "N2",
+        "N3",
+        "N4",
+        "N5",
+        "N6",
+        "N7"
+      ],
+      "source": "N6",
+      "lines": [
+        {
+          "id": "L1",
+          "from_node": "N6",
+          "to_node": "N7",
+          "length_m": 83.08485452699418,
+          "r_ohm_km": 0.2839181983073237,
+          "x_ohm_km": 0.08944398701847164,
+          "rating_a": 32.93722647435892
+        },
+        {
+          "id": "L2",
+          "from_node": "N2",
+          "to_node": "N5",
+          "length_m": 120.0,
+          "r_ohm_km": 0.2839181983073237,
+          "x_ohm_km": 0.08944398701847164,
+          "rating_a": 32.93722647435892
+        },
+        {
+          "id": "L3",
+          "from_node": "N5",
+          "to_node": "N3",
+          "length_m": 111.10305719998289,
+          "r_ohm_km": 0.2839181983073237,
+          "x_ohm_km": 0.08944398701847164,
+          "rating_a": 32.93722647435892
+        },
+        {
+          "id": "L4",
+          "from_node": "N6",
+          "to_node": "N1",
+          "length_m": 91.4206407391878,
+          "r_ohm_km": 0.2839181983073237,
+          "x_ohm_km": 0.08944398701847164,
+          "rating_a": 32.93722647435892
+        },
+        {
+          "id": "L5",
+          "from_node": "N1",
+          "to_node": "N4",
+          "length_m": 96.6646996980278,
+          "r_ohm_km": 0.2839181983073237,
+          "x_ohm_km": 0.08944398701847164,
+          "rating_a": 32.93722647435892
+        },
+        {
+          "id": "L6",
+          "from_node": "N4",
+          "to_node": "N2",
+          "length_m": 82.18128496198513,
+          "r_ohm_km": 0.2839181983073237,
+          "x_ohm_km": 0.08944398701847164,
+          "rating_a": 32.93722647435892
+        }
+      ],
+      "changed_line": "L4",
+      "initial": {
+        "nodes": [
+          {
+            "id": "N6",
+            "voltage_pu_min": 0.9993656136132265,
+            "energized": true
+          },
+          {
+            "id": "N1",
+            "voltage_pu_min": 0.9950854365877214,
+            "energized": true
+          },
+          {
+            "id": "N4",
+            "voltage_pu_min": 0.9914211644519715,
+            "energized": true
+          },
+          {
+            "id": "N7",
+            "voltage_pu_min": 0.9985305642218261,
+            "energized": true
+          },
+          {
+            "id": "N2",
+            "voltage_pu_min": 0.9891629455746209,
+            "energized": true
+          },
+          {
+            "id": "N5",
+            "voltage_pu_min": 0.9870251969905746,
+            "energized": true
+          },
+          {
+            "id": "N3",
+            "voltage_pu_min": 0.9860545185399917,
+            "energized": true
+          }
+        ],
+        "branches": [
+          {
+            "id": "L4",
+            "loading_pct": 110.51253774634509
+          },
+          {
+            "id": "L5",
+            "loading_pct": 89.48746225365494
+          },
+          {
+            "id": "L1",
+            "loading_pct": 23.75420925102261
+          },
+          {
+            "id": "L6",
+            "loading_pct": 64.83480182680495
+          },
+          {
+            "id": "L2",
+            "loading_pct": 42.04097519623001
+          },
+          {
+            "id": "L3",
+            "loading_pct": 20.610204667318595
+          }
+        ],
+        "assessment": {
+          "converged": true,
+          "measurement_feasible": false,
+          "structure_matches": true,
+          "minimum_voltage_pu": 0.9860545185399917,
+          "maximum_branch_loading_pct": 110.51253774634509,
+          "overloaded_branches": [
+            {
+              "id": "L4",
+              "loading_pct": 110.51253774634509
+            }
+          ],
+          "undervoltage_nodes": [],
+          "deenergized_nodes": []
+        }
+      },
+      "final": {
+        "nodes": [
+          {
+            "id": "N6",
+            "voltage_pu_min": 0.9993643711434964,
+            "energized": true
+          },
+          {
+            "id": "N1",
+            "voltage_pu_min": 0.9970528725911444,
+            "energized": true
+          },
+          {
+            "id": "N4",
+            "voltage_pu_min": 0.9933813556293111,
+            "energized": true
+          },
+          {
+            "id": "N7",
+            "voltage_pu_min": 0.998529322790278,
+            "energized": true
+          },
+          {
+            "id": "N2",
+            "voltage_pu_min": 0.9911186719080791,
+            "energized": true
+          },
+          {
+            "id": "N5",
+            "voltage_pu_min": 0.9889766966683348,
+            "energized": true
+          },
+          {
+            "id": "N3",
+            "voltage_pu_min": 0.9880040990380904,
+            "energized": true
+          }
+        ],
+        "branches": [
+          {
+            "id": "L4",
+            "loading_pct": 12.872128648008813
+          },
+          {
+            "id": "L5",
+            "loading_pct": 89.66439264437042
+          },
+          {
+            "id": "L1",
+            "loading_pct": 23.754179718398756
+          },
+          {
+            "id": "L6",
+            "loading_pct": 64.962990139787
+          },
+          {
+            "id": "L2",
+            "loading_pct": 42.12409663000459
+          },
+          {
+            "id": "L3",
+            "loading_pct": 20.650954192140723
+          }
+        ],
+        "assessment": {
+          "converged": true,
+          "measurement_feasible": true,
+          "structure_matches": true,
+          "minimum_voltage_pu": 0.9880040990380904,
+          "maximum_branch_loading_pct": 89.66439264437042,
+          "overloaded_branches": [],
+          "undervoltage_nodes": [],
+          "deenergized_nodes": []
+        }
+      },
+      "previews": [
+        {
+          "equipment_id": "L4",
+          "catalog_id": "part-0344c17b1f",
+          "passport": {
+            "id": "part-0344c17b1f",
+            "r_ohm_km": 0.03710438216292358,
+            "x_ohm_km": 0.06703122884448612,
+            "rating_a": 9.099941210018768
+          },
+          "assessment": {
+            "converged": true,
+            "measurement_feasible": false,
+            "structure_matches": true,
+            "minimum_voltage_pu": 0.989548305769998,
+            "maximum_branch_loading_pct": 401.4172795375104,
+            "overloaded_branches": [
+              {
+                "id": "L4",
+                "loading_pct": 401.4172795375104
+              }
+            ],
+            "undervoltage_nodes": [],
+            "deenergized_nodes": []
+          },
+          "actual_assessment": {
+            "converged": true,
+            "measurement_feasible": false,
+            "structure_matches": true,
+            "minimum_voltage_pu": 0.9860545185399917,
+            "maximum_branch_loading_pct": 110.51253774634509,
+            "overloaded_branches": [
+              {
+                "id": "L4",
+                "loading_pct": 110.51253774634509
+              }
+            ],
+            "undervoltage_nodes": [],
+            "deenergized_nodes": []
+          },
+          "actual_revision": 0
+        },
+        {
+          "equipment_id": "L4",
+          "catalog_id": "part-5140b18f82",
+          "passport": {
+            "id": "part-5140b18f82",
+            "r_ohm_km": 0.14841752865169433,
+            "x_ohm_km": 0.06703122884448612,
+            "rating_a": 283.33878363139786
+          },
+          "assessment": {
+            "converged": true,
+            "measurement_feasible": true,
+            "structure_matches": true,
+            "minimum_voltage_pu": 0.9880040990380904,
+            "maximum_branch_loading_pct": 89.66439264437042,
+            "overloaded_branches": [],
+            "undervoltage_nodes": [],
+            "deenergized_nodes": []
+          },
+          "actual_assessment": {
+            "converged": true,
+            "measurement_feasible": false,
+            "structure_matches": true,
+            "minimum_voltage_pu": 0.9860545185399917,
+            "maximum_branch_loading_pct": 110.51253774634509,
+            "overloaded_branches": [
+              {
+                "id": "L4",
+                "loading_pct": 110.51253774634509
+              }
+            ],
+            "undervoltage_nodes": [],
+            "deenergized_nodes": []
+          },
+          "actual_revision": 0
+        }
+      ],
+      "base": {
+        "success": false,
+        "calls": 3,
+        "trace": [
+          {
+            "action": {
+              "name": "__invalid_action__",
+              "arguments": {}
+            },
+            "raw": "{\"tool\":\"preview_line_catalog\",\"equipment_id\":\"L1\",\"catalog_id\":\"part-5140b18f82\"}",
+            "decode_error": "ValueError:one known tool name and optional arguments object required",
+            "ok": false,
+            "error": "ValueError:unknown operation or invalid arguments"
+          },
+          {
+            "action": {
+              "name": "__invalid_action__",
+              "arguments": {}
+            },
+            "raw": "{\"tool\":\"set_line_catalog\",\"equipment_id\":\"L1\",\"catalog_id\":\"part-5140b18f82\"}",
+            "decode_error": "ValueError:one known tool name and optional arguments object required",
+            "ok": false,
+            "error": "ValueError:unknown operation or invalid arguments"
+          },
+          {
+            "action": {
+              "name": "__invalid_action__",
+              "arguments": {}
+            },
+            "raw": "{\"tool\":\"set_line_catalog\",\"equipment_id\":\"L1\",\"catalog_id\":\"part-5140b18f82\"}",
+            "decode_error": "ValueError:one known tool name and optional arguments object required",
+            "ok": false,
+            "error": "ValueError:unknown operation or invalid arguments"
+          }
+        ]
+      },
+      "sft": {
+        "success": true,
+        "calls": 6,
+        "trace": [
+          {
+            "action": {
+              "name": "simulate",
+              "arguments": {}
+            },
+            "raw": "{\"name\":\"simulate\",\"arguments\":{}}",
+            "decode_error": null,
+            "ok": true,
+            "error": null
+          },
+          {
+            "action": {
+              "name": "preview_line_catalog",
+              "arguments": {
+                "equipment_id": "L4",
+                "catalog_id": "part-0344c17b1f"
+              }
+            },
+            "raw": "{\"name\":\"preview_line_catalog\",\"arguments\":{\"equipment_id\":\"L4\",\"catalog_id\":\"part-0344c17b1f\"}}",
+            "decode_error": null,
+            "ok": true,
+            "error": null
+          },
+          {
+            "action": {
+              "name": "preview_line_catalog",
+              "arguments": {
+                "equipment_id": "L4",
+                "catalog_id": "part-5140b18f82"
+              }
+            },
+            "raw": "{\"name\":\"preview_line_catalog\",\"arguments\":{\"equipment_id\":\"L4\",\"catalog_id\":\"part-5140b18f82\"}}",
+            "decode_error": null,
+            "ok": true,
+            "error": null
+          },
+          {
+            "action": {
+              "name": "set_line_catalog",
+              "arguments": {
+                "equipment_id": "L4",
+                "catalog_id": "part-5140b18f82"
+              }
+            },
+            "raw": "{\"name\":\"set_line_catalog\",\"arguments\":{\"equipment_id\":\"L4\",\"catalog_id\":\"part-5140b18f82\"}}",
+            "decode_error": null,
+            "ok": true,
+            "error": null
+          },
+          {
+            "action": {
+              "name": "simulate",
+              "arguments": {}
+            },
+            "raw": "{\"name\":\"simulate\",\"arguments\":{}}",
+            "decode_error": null,
+            "ok": true,
+            "error": null
+          },
+          {
+            "action": {
+              "name": "submit",
+              "arguments": {}
+            },
+            "raw": "{\"name\":\"submit\",\"arguments\":{}}",
+            "decode_error": null,
+            "ok": true,
+            "error": null
+          }
+        ]
+      },
+      "project_file": "learning-example-2.project.json",
+      "modified_project_file": "learning-example-2-after.project.json",
+      "selected_passport": {
+        "id": "part-5140b18f82",
+        "r_ohm_km": 0.14841752865169433,
+        "x_ohm_km": 0.06703122884448612,
+        "rating_a": 283.33878363139786
+      }
+    }
+  ],
+  "task_types": [
+    {
+      "kind": "verify_healthy",
+      "total": 15,
+      "base_successes": 0,
+      "sft_successes": 15,
+      "evaluation": "previously_disclosed_regression"
+    },
+    {
+      "kind": "compare_replacements",
+      "total": 15,
+      "base_successes": 0,
+      "sft_successes": 13,
+      "evaluation": "previously_disclosed_regression"
+    }
+  ],
+  "scope": "Retrospectively selected TRAIN illustrations; not a new test or representative success-rate sample. Initial-state measurements are from the trained model first simulation; the base model did not run a valid study. Layout is schematic."
+}

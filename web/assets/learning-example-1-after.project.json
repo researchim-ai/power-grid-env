@@ -1,0 +1,212 @@
+{
+  "schema": "power-grid-env.grid-editor/v5",
+  "nominal_ll_v": 400.0,
+  "source_node": "N1",
+  "source_r_ohm": 0.0034586842711122083,
+  "source_x_ohm": 0.006154527135608433,
+  "duration_s": 0.2,
+  "step_s": 0.002,
+  "nodes": [
+    {
+      "id": "N1",
+      "nominal_ll_v": 400.0,
+      "x": 100.0,
+      "y": 150.0
+    },
+    {
+      "id": "N2",
+      "nominal_ll_v": 400.0,
+      "x": 450.0,
+      "y": 150.0
+    },
+    {
+      "id": "N3",
+      "nominal_ll_v": 400.0,
+      "x": 800.0,
+      "y": 150.0
+    },
+    {
+      "id": "N4",
+      "nominal_ll_v": 400.0,
+      "x": 1150.0,
+      "y": 150.0
+    },
+    {
+      "id": "N5",
+      "nominal_ll_v": 400.0,
+      "x": 100.0,
+      "y": 400.0
+    },
+    {
+      "id": "N6",
+      "nominal_ll_v": 400.0,
+      "x": 450.0,
+      "y": 400.0
+    },
+    {
+      "id": "N7",
+      "nominal_ll_v": 400.0,
+      "x": 800.0,
+      "y": 400.0
+    }
+  ],
+  "lines": [
+    {
+      "id": "L1",
+      "from_node": "N1",
+      "to_node": "N3",
+      "length_m": 84.24049841899367,
+      "r_ohm_km": 0.25540442084083675,
+      "x_ohm_km": 0.06569824613601356,
+      "rating_a": 35.40171613494653
+    },
+    {
+      "id": "L2",
+      "from_node": "N5",
+      "to_node": "N2",
+      "length_m": 111.96079345837944,
+      "r_ohm_km": 0.25540442084083675,
+      "x_ohm_km": 0.06569824613601356,
+      "rating_a": 35.40171613494653
+    },
+    {
+      "id": "L3",
+      "from_node": "N7",
+      "to_node": "N5",
+      "length_m": 96.51850628005619,
+      "r_ohm_km": 0.25540442084083675,
+      "x_ohm_km": 0.06569824613601356,
+      "rating_a": 35.40171613494653
+    },
+    {
+      "id": "L4",
+      "from_node": "N4",
+      "to_node": "N6",
+      "length_m": 80.59278980125318,
+      "r_ohm_km": 0.25540442084083675,
+      "x_ohm_km": 0.06569824613601356,
+      "rating_a": 35.40171613494653
+    },
+    {
+      "id": "L5",
+      "from_node": "N1",
+      "to_node": "N4",
+      "length_m": 120.0,
+      "r_ohm_km": 0.08385928343726978,
+      "x_ohm_km": 0.0620525066016758,
+      "rating_a": 353.3768022948709
+    },
+    {
+      "id": "L6",
+      "from_node": "N6",
+      "to_node": "N7",
+      "length_m": 110.23727022604312,
+      "r_ohm_km": 0.25540442084083675,
+      "x_ohm_km": 0.06569824613601356,
+      "rating_a": 35.40171613494653
+    }
+  ],
+  "motors": [],
+  "loads": [
+    {
+      "id": "D1",
+      "node_id": "N3",
+      "p_kw": 5.109774473709763,
+      "q_kvar": 1.5088574991662593,
+      "model": "constant_z",
+      "zip_z": 0.3,
+      "zip_i": 0.3,
+      "zip_p": 0.4,
+      "zip_zq": 0.3,
+      "zip_iq": 0.3,
+      "zip_pq": 0.4,
+      "vmin_pu": 0.1,
+      "vmax_pu": 1.5
+    },
+    {
+      "id": "D2",
+      "node_id": "N4",
+      "p_kw": 5.126474037279742,
+      "q_kvar": 1.1691874849343864,
+      "model": "constant_z",
+      "zip_z": 0.3,
+      "zip_i": 0.3,
+      "zip_p": 0.4,
+      "zip_zq": 0.3,
+      "zip_iq": 0.3,
+      "zip_pq": 0.4,
+      "vmin_pu": 0.1,
+      "vmax_pu": 1.5
+    },
+    {
+      "id": "D3",
+      "node_id": "N7",
+      "p_kw": 5.481230506821209,
+      "q_kvar": 1.0368389356172314,
+      "model": "constant_z",
+      "zip_z": 0.3,
+      "zip_i": 0.3,
+      "zip_p": 0.4,
+      "zip_zq": 0.3,
+      "zip_iq": 0.3,
+      "zip_pq": 0.4,
+      "vmin_pu": 0.1,
+      "vmax_pu": 1.5
+    },
+    {
+      "id": "D4",
+      "node_id": "N2",
+      "p_kw": 5.593214090623027,
+      "q_kvar": 1.4473276527478545,
+      "model": "constant_z",
+      "zip_z": 0.3,
+      "zip_i": 0.3,
+      "zip_p": 0.4,
+      "zip_zq": 0.3,
+      "zip_iq": 0.3,
+      "zip_pq": 0.4,
+      "vmin_pu": 0.1,
+      "vmax_pu": 1.5
+    },
+    {
+      "id": "D5",
+      "node_id": "N5",
+      "p_kw": 5.059704417712,
+      "q_kvar": 1.0142789385587445,
+      "model": "constant_z",
+      "zip_z": 0.3,
+      "zip_i": 0.3,
+      "zip_p": 0.4,
+      "zip_zq": 0.3,
+      "zip_iq": 0.3,
+      "zip_pq": 0.4,
+      "vmin_pu": 0.1,
+      "vmax_pu": 1.5
+    },
+    {
+      "id": "D6",
+      "node_id": "N6",
+      "p_kw": 5.582569909955716,
+      "q_kvar": 1.0766864897570814,
+      "model": "constant_z",
+      "zip_z": 0.3,
+      "zip_i": 0.3,
+      "zip_p": 0.4,
+      "zip_zq": 0.3,
+      "zip_iq": 0.3,
+      "zip_pq": 0.4,
+      "vmin_pu": 0.1,
+      "vmax_pu": 1.5
+    }
+  ],
+  "events": [],
+  "transformers": [],
+  "generators": [],
+  "switches": [],
+  "fault": {
+    "node_id": "N1",
+    "r_ohm": 0.001,
+    "x_ohm": 0.0
+  },
+  "profile": "passive_power_flow"
+}

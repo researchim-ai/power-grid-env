@@ -1,0 +1,76 @@
+{
+  "schema": "power-grid-env.engineering-package/v1",
+  "project": {
+    "schema": "power-grid-env.grid-editor/v5",
+    "nominal_ll_v": 400.0,
+    "source_node": "n0",
+    "source_r_ohm": 0.001,
+    "source_x_ohm": 0.005,
+    "duration_s": 1.0,
+    "step_s": 0.0025,
+    "nodes": [
+      {
+        "id": "n0",
+        "nominal_ll_v": 400.0,
+        "x": 100.0,
+        "y": 200.0
+      },
+      {
+        "id": "n1",
+        "nominal_ll_v": 400.0,
+        "x": 500.0,
+        "y": 200.0
+      }
+    ],
+    "lines": [
+      {
+        "id": "l1",
+        "from_node": "n0",
+        "to_node": "n1",
+        "length_m": 100.0,
+        "r_ohm_km": 0.1,
+        "x_ohm_km": 0.05,
+        "rating_a": 200.0
+      }
+    ],
+    "motors": [],
+    "loads": [
+      {
+        "id": "load1",
+        "node_id": "n1",
+        "p_kw": 20.0,
+        "q_kvar": 5.0,
+        "model": "constant_pq",
+        "zip_z": 0.3,
+        "zip_i": 0.3,
+        "zip_p": 0.4,
+        "zip_zq": 0.3,
+        "zip_iq": 0.3,
+        "zip_pq": 0.4,
+        "vmin_pu": 0.1,
+        "vmax_pu": 1.5
+      }
+    ],
+    "events": [],
+    "transformers": [],
+    "generators": [],
+    "switches": [],
+    "fault": {
+      "node_id": "n1",
+      "r_ohm": 0.001,
+      "x_ohm": 0.0
+    },
+    "profile": "ac_power_flow"
+  },
+  "task": {
+    "schema": "power-grid-env.engineering-task/v1",
+    "id": "example_pf",
+    "title": "Проверка напряжения и загрузки",
+    "criteria": {
+      "minimum_voltage_pu": 0.95,
+      "maximum_branch_loading_pct": 100.0,
+      "all_loads_energized": true
+    }
+  },
+  "conversion": null
+}

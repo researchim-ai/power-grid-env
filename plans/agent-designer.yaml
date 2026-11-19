@@ -1,5 +1,5 @@
 schema: power-grid-env.agent-designer-roadmap/v1
-updated_on: '2026-11-18'
+updated_on: '2026-11-19'
 status: in_progress
 economics: excluded
 github_and_ci: forbidden_by_owner
@@ -342,7 +342,7 @@ learning_pipeline_v2:
   status: in_progress_audited_supervision_skill_curriculum_and_native_vlm
   specification: plans/LEARNING_PIPELINE.md
   target_model: Qwen/Qwen3.5-0.8B
-  current_quality_gate: failed_named_decision40_10of12_unsafe_submit_workflow128_pending
+  current_quality_gate: failed_raw128_0of8_staged_last2_0of3_and_last8_0of3
   unrestricted_raw_quality: not_measured_complete
   current_cpu_adapter_scope: rank16_two_language_blocks_adapter65_reference_mixture128_completed_evaluation_running
   rationale:
@@ -571,7 +571,7 @@ argument_fidelity_r0682:
     full_policy_quality_claim: false
 
 mixed_sft_r0683:
-  status: native_lifecycle_passed_128_step_phase_training
+  status: completed128_standalone0of8_gate_failed
   base_train_evaluation: {tasks: 8, successes: 0, protocol_errors: 0, policy_failures: 0, accepted_edits: 17, submits: 3}
   base_evaluation_manifest_sha256: 015c250b78c3b3ebd769e6868d5c04e948eb1d500fa2647eb365c355bacac52a
   base_state_data:
@@ -600,7 +600,7 @@ mixed_sft_r0683:
     native_pilot_manifest_sha256: db825b5336ecbda5035be86fae55d6ce7c2a5f05184c1b06eb3f38c4606382f3
   finite_phase:
     campaign: reports/engineering-v3-mixture-phase-2026-11-18
-    state: standalone_eight_case_evaluation
+    state: complete_standalone0of8_gate_failed
     steps: 128
     chunks: 8
     source_steps: {procedural: 64, base_student_correction: 64}
@@ -883,5 +883,316 @@ data_research_r0686:
     optimizer_steps_completed: 128
     checkpoint: reports/engineering-v3-mixture-phase-2026-11-18/chunk-0128
     checkpoint_manifest_sha256: 2a323881df3e1aea4d5fc1cdd644bf9ae65f177b7b092368d833122ba2798b74
-    full_workflow_evaluation: running
+    full_workflow_evaluation: complete_failed0of8
     quality_claim: false
+
+data_research_r0692:
+  status: declared_train_regressions_prevented_learning_and_workflow_still_partial
+  diagnosis: reports/engineering-regression-native-diagnosis-2026-11-19
+  diagnosis_manifest_sha256: 284c81eaf0013057ed13cfc4c287338c3522084c986b8040e1daf210dc986aec
+  local_gradient_cosines: [-0.2576898142606257, -0.3514770551851681]
+  prefix_intervention: reports/engineering-regression-prefix-proof-2026-11-19
+  prefix_manifest_sha256: a47779c393dfad9b3d1eac16b4affeb6e50adb609e523536481a4ba2c6490c73
+  balanced_retention_after: 6
+  kl_retention_after: 10
+  guarded_retention_before_after: [12, 12]
+  guarded_focused_before_after: [1, 5]
+  guarded_additional_before_after: [4, 7]
+  common_targets_per_group: 20
+  additional_targets: 12
+  declared_train_retention_regressions: 0
+  guarded_run: reports/engineering-retention-guard-cached-native-2026-11-19
+  guarded_manifest_sha256: f124789a40318d00bd4587141cf12301961e51a133a833d2989da5936e3e67ee
+  sft_proposals: 60
+  accepted_optimizer_updates: 22
+  tentative_optimizer_steps: 243
+  guard_forward_calls: 1992
+  guard_conditions_on_known_train_replies: 12
+  guarded_key_order_views_are_training_constraints: true
+  cache_initial_and_final_bit_exact: true
+  cached_frozen_prefix_blocks: 22
+  original_runtime_abort: reports/engineering-retention-guard-native-2026-11-19
+  cross_arm_audit: reports/engineering-regression-repair-comparison-2026-11-19
+  cross_arm_audit_manifest_sha256: 1fbb114fdb238be8cfd2988db5030406f7ff41c4114f81d9a2f4ab114a5c15c2
+  regression_fix_verified_on_declared_train_probes: true
+  targeted_python_tests_per_runtime: 101
+  web_checks: 60
+  full52_probe_gate_passed: false
+  full_workflow_gate_passed: false
+  independent_heldout_evaluated: false
+  inference_release: false
+  next: field_and_class_balanced_microbatches_then_multibase_action_workflows
+data_research_r0691:
+  status: focused_phase_regressed_balanced_plan_admitted_not_trained
+  focused_release: reports/engineering-focused-native-release-2026-11-19
+  focused_manifest_sha256: 4ba73bdce78beabd776cced5c0d93601cd2bae4b395807ca1fa5b173072a163b
+  records: 1504
+  native_checks: 1504
+  maximum_prompt_tokens: 343
+  train_base_networks_in_corpus: 8
+  phase: reports/engineering-focused-native-phase-2026-11-19
+  phase_manifest_sha256: 28c555de520ebfa514a579ec328df51711a69aa16d5e01f273e36b3fce9b862f
+  new_phase_updates: 60
+  parent_generation_replay_exact: true
+  phase_train_base_networks: 1
+  focused_before_after: [1, 14]
+  retention_before_after: [12, 8]
+  targets_per_source: 20
+  individual_retention_regressions: 4
+  focused_and_retention_gate_passed: false
+  full_workflow_gate_passed: false
+  independent_heldout_evaluated: false
+  inference_release: false
+  selected_deficient_answer_heads: 4
+  balanced_plan: reports/engineering-focused-balanced-plan-2026-11-19
+  balanced_plan_manifest_sha256: 54532da3d8626c358caaba1b1b97ffe8345c5232c3b34fec55a90a5f0ccaff7d
+  balanced_originals: 16
+  balanced_nuisance_probes: 16
+  balanced_native_checks: 32
+  balanced_proposed_updates: 60
+  balanced_training_complete: false
+  balanced_plan_consumer_implemented: false
+  next: validated_plan_consumer_and_same_budget_balanced_phase_from_original_parent
+  targeted_python_tests_per_runtime: 87
+  web_checks: 60
+data_research_r0690:
+  status: new_family_primitive_admission_passed_learning_pilot_partial_gate_failed
+  registry: reports/engineering-new-family-registry-2026-11-19
+  registry_manifest_sha256: 0a1165c836f469416b00e364c71dbd810cc18ad3fa02ce35b71232df7a83edd0
+  historical_procedural_families: 14
+  excluded_families_including_legacy: 17
+  new_family_counts: {train: 4, dev: 2, test: 2}
+  corpus: reports/engineering-primitive-release-2026-11-19
+  corpus_manifest_sha256: 8fd1e0e82aae17bdfb1d060fb7ca4d49e498c6c6ccef2a2c626c17fc249f3445
+  records: 780
+  base_networks: 15
+  requested_bases: 16
+  quarantined_bases_without_resampling: 1
+  nuisance_pairs: 390
+  boundary_groups: 60
+  records_by_split: {train: 416, dev: 208, test: 156}
+  admission: reports/engineering-primitive-native-admission-2026-11-19
+  admission_manifest_sha256: ef9358fe2b0895adbe316dbd15fcf4d3cbd89fecd5ce0a2072662d6fe5a4c1f5
+  train_native_labels_checked: 416
+  heldout_prompt_only_checked: 364
+  maximum_prompt_tokens: 352
+  pilot: reports/engineering-primitive-native-pilot-2026-11-19
+  pilot_manifest_sha256: 07a8c7cdeebd4c1dc0facdb5b4a7317646f922f1983a640686ae5b61af2fcedc
+  pilot_updates: 30
+  pilot_train_originals: 10
+  pilot_nuisance_probes: 10
+  pilot_base_networks: 1
+  pilot_before_correct: 1
+  pilot_after_correct: 12
+  pilot_total: 20
+  primitive_gate_passed: false
+  full_workflow_gate_passed: false
+  independent_heldout_model_evaluated: false
+  frozen_base_unchanged: true
+  adapter_roundtrip_exact: true
+  inference_release: false
+  next: focused_api_freshness_null_and_coarse_comparison_before_scaling
+  targeted_python_tests_per_runtime: 72
+  web_checks: 60
+data_research_r0689:
+  status: exact_text_sft_admitted_native_two_step_smoke_not_policy_qualified
+  release: reports/engineering-exact-sft-release-2026-11-18
+  release_manifest_sha256: d53f90e7b0d91a5895464e62358a9161449835f02d01117c7a4f15ec8109d90c
+  admission: reports/engineering-exact-sft-qualified-2026-11-18
+  admission_manifest_sha256: 80e9b43d07b02ad8dda18c554f2caa80e58d5826c92ff68632a72d2c3c5003b2
+  records: 3136
+  alternatives_checked: 3232
+  successful_expert_trajectories: 192
+  maximum_prompt_tokens: 4548
+  higher_rating_voltage_failure_cases: 32
+  base_networks: 16
+  families: 8
+  modality: text_only
+  native_admission_passed: true
+  independent_heldout_available: false
+  eligible_for_production_training: false
+  proposed_schedule_steps: 384
+  native_smoke_steps: 2
+  native_resume_audit: reports/engineering-exact-sft-native-resume-audit-2026-11-18
+  native_resume_two_positions_bit_exact: true
+  native_optimizer_updates_across_comparison_runs: 4
+  targeted_python_tests_per_runtime: 47
+  web_checks: 60
+  frozen_base_unchanged: true
+  adapter_roundtrip_exact: true
+  learned_workflow_quality_gate_passed: false
+  inference_release: false
+  next: clean_family_registry_then_primitive_pairs_recovery_and_visual_release
+data_research_r0688:
+  status: audit_complete_data_repairs_planned_not_trained
+  report: reports/engineering-data-observability-2026-11-18/summary.json
+  cases: 32
+  base_networks: 16
+  families: 8
+  constructed_initial_observation_collisions: 64
+  existing_corrupt_record_count_claim: false
+  max_rating_public_control_successes: 32
+  healthy_simulate_submit_successes: 32
+  optimizer_run: false
+  next_blocks:
+    - DQ-01_observation_and_tool_contract
+    - DQ-02_skill_ladder_and_minimal_pairs
+    - DQ-03_catalogue_alternatives_and_negative_replay
+    - DQ-04_visual_engineering_tasks
+    - DQ-05_family_split_lineage_and_sampling
+    - DQ-06_native_admission_and_learning_gates
+  implementation_complete: false
+  data_only_failure_causality_proven: false
+data_research_r0687:
+  status: native_staged_replay_causal_and_capacity_qualified_learning_gates_failed
+  raw128:
+    steps: 128
+    reference_successes: 1
+    candidate_successes: 0
+    tasks: 8
+    schema_valid_calls: 26
+    required_slots: 0
+    full_replay_passed: true
+  joint_last2:
+    steps: 78
+    train_targets: 13
+    generated_targets: 15
+    before_skill_correct: 7
+    after_skill_correct: 7
+    before_workflow_successes: 0
+    after_workflow_successes: 0
+    workflow_tasks: 3
+    workflow_base_networks: 1
+    replay_passed: true
+    model_simulations: 0
+    gate_passed: false
+  causal_runtime:
+    passed: true
+    states: 3
+    target_positions: 8
+    maximum_logit_difference: 1.6689300537109375e-05
+    prefill_cache_difference: 0
+    train_eval_difference: 0
+    text_image_text_invariant: true
+    all_runtime_claim: false
+  posthoc_probes:
+    alias_exact:
+      before: 0
+      after: 1
+      total: 2
+    public_summary_exact:
+      before: 0
+      after: 1
+      total: 2
+    primary_scores_changed: false
+  capacity_arm:
+    variant: last8_capacity
+    controlled_change: lora.last_blocks:2_to8
+    steps: 78
+    initial: adapter40
+    same_data_schedule_seed_lr_value_weight_budgets: true
+    initial_function_bit_exact_inputs: 15
+    before_baseline_reused: true
+    native_optimizer_state: completed78_gate_failed
+    quality_claim: false
+    auto_extra_epochs: false
+    source: benchmarks/engineering_capacity_campaign.py
+    after_skills: 8
+    skill_targets: 15
+    after_workflows: 0
+    workflow_tasks: 3
+    gate_passed: false
+    skill_gain_vs_depth2: one_retention_question
+    skill_gain_vs_parent40: one_healthy_assessment_with_zero_counts
+    planning_gain: false
+  next:
+  - minimal_two_state_operation_overfit_and_public_state_reading
+  - separate_numeric_comparison_and_catalog_ranking_gates
+  - matched_compact_vs_full_observation_ablation_not_a_weight_gain
+  - preregister_convergence_budget_and_sampling_before_scaling_data
+  - full_tiny_workflows_then_family_transfer_and_reward_variance_pilot
+  evidence:
+    engineering-v3-mixture-phase:
+      path: reports/engineering-v3-mixture-phase-2026-11-18
+      manifest_sha256: c419d0f604c191376c54e4ec4dda48668abf3e5071b0bb119ebc75440e471d4e
+    engineering-physics-joint-plan:
+      path: reports/engineering-physics-joint-plan-2026-11-18
+      manifest_sha256: e8fffbd2c5e8e73e8a97a11a452c1d01ed482cf189ffadeb2b6ee60f0f2ca445
+    engineering-physics-joint-phase:
+      path: reports/engineering-physics-joint-phase-2026-11-18
+      manifest_sha256: 146bbff245df9260d37fd1814de73f143bfda4592e19f00c0d6ee78672ddb25b
+    engineering-physics-joint-replay:
+      path: reports/engineering-physics-joint-replay-2026-11-18
+      manifest_sha256: fe22968bb25214eda5ca1a29e0c4ed649aca83fc67a8df24f6b28c40097f2fe8
+    engineering-native-causal-audit:
+      path: reports/engineering-native-causal-audit-2026-11-18
+      manifest_sha256: 12b22fbefcb3e168e856cdb5e06ccc9cabda88962b86bae00e655ec64e0c6950
+    engineering-physics-observation-probes:
+      path: reports/engineering-physics-observation-probes-2026-11-18
+      manifest_sha256: d49d58092f9817953899a54838b670ccfb89ba0dd79edfac16a47d06c0f75b5f
+    engineering-depth8-capacity-plan:
+      path: reports/engineering-depth8-capacity-plan-2026-11-18
+      manifest_sha256: 56fce5ce80bca1d7e1875a88e8d6fdb185ea468085b20d1e293e8e357dc8cff2
+    engineering-depth8-capacity-phase:
+      path: reports/engineering-depth8-capacity-phase-2026-11-18
+      manifest_sha256: 3a73203919261459ac531c21cfd9cdfaf8241d3f74e03d374a999a7ad968dc92
+    engineering-depth8-capacity-replay:
+      path: reports/engineering-depth8-capacity-replay-2026-11-18
+      manifest_sha256: 4aa36e10db16b2c3746cdc24dce24c60b77c7214ff3370e580a2f334025c5767
+  checks:
+    targeted_python_tests: 660
+    javascript_tests: 60
+    static_build: passed
+    core_unchanged: true
+    receipt: reports/engineering-physics-learning-checks-2026-11-18
+
+gpu_workflow_sft_20261119:
+  status: research_only
+  candidates: [Qwen3.5-0.8B, Qwen3.5-4B]
+  runtime: CUDA_BF16_SDPA_frozen_base_FP32_text_LoRA_last8
+  fixed96_first_test:
+    base: {successes: 0, total: 6}
+    qwen08b: {successes: 3, total: 6}
+    qwen4b: {successes: 5, total: 6}
+    bases: 3
+    topology_families: 2
+  decision_coverage:
+    train_records: 240
+    successful_continuations: 160
+    train_bases: 8
+    train_families: 4
+    optimizer_steps: 240
+    later_disclosed_test_use: regression_only
+  visual_input: false
+  inference_release: false
+  next: fresh_hidden_families_and_ID_order_robustness_then_image_required_VLM
+  decision240_regression_results:
+    qwen08b: {train: 15/16, dev: 5/8, disclosed_test: 3/6, total: 23/30}
+    qwen4b: {train: 15/16, dev: 7/8, disclosed_test: 6/6, total: 28/30}
+    unbiased_test: false
+    release: false
+
+interface_separation_20261119:
+  website: web
+  engineering_application: studio
+  website_default_port: 5173
+  application_default_port: 5174
+  static_website_build_independent_of_simulator: true
+  website_embeds_engineering_runtime: false
+  application_embeds_blog: false
+  public_application_url_config: PGE_STUDIO_URL_or_web_site_config
+  application_agent_http_tools: available
+  gui_model_connections: planned
+  gui_training_job_queue: planned
+  current_training_execution: Python_CLI
+
+model_exchange_20261119:
+  application_page: studio/exchange.html
+  formats: [native_project_JSON, native_engineering_package_JSON, studio_CSV, MATPOWER_v2_subset_import]
+  task_scope: user_supplied_stationary_PF_criteria_not_trusted_agent_reward
+  matpower_scope: balanced_single_voltage_PQ_one_slack_2_to_16_buses_100V_to_35kV
+  matpower_requires_conversion_acknowledgement: true
+  matpower_export: not_implemented
+  cim_cgmes: planned
+  full_agent_task_import: planned
+  article_examples: two_retrospectively_selected_TRAIN_cases

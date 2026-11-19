@@ -1,12 +1,18 @@
 # power-grid-env
 
-**AC PF:** PQ/I/ZIP loads, static PQ/PV generators, reactive limits and reverse flows in the [engineering web workspace](web/README.md).
+**Separate interfaces:** the [project website and journal](web/README.md) build as independent static pages. [Power Grid Studio](studio/README.md) runs separately with the editor, visualization, study API and agent tools.
 
-**Engineering web workspace:** manual RMS grids with transformers, passive PF/finite-Z three-phase faults, static switch states and deenergized sections. [Startup and profile scope](web/README.md).
+**GPU engineering-agent SFT:** on the first held-out six-task synthetic catalogue test, Qwen3.5-4B improved from0/6 to5/6;0.8B from0/6 to3/6. Three networks/two topology families; text-only, no general engineering qualification. [Scope and current results](plans/CURRENT_STATUS.md).
 
-**Manual network editor:** buses, lines and motor parameters → validation → local SciPy simulation → Grid Studio. Bounded balanced radial motor-start profile. [Startup and scope](web/README.md).
+Expanded TRAIN decision-state coverage:4B solves28/30 previously disclosed regression tasks; this is not a new held-out test.
 
-**Grid Studio:** interactive single-line diagrams, power flows, equipment inspection and waveforms from12 recorded physical studies. [Local startup and scope](web/README.md).
+**AC PF:** PQ/I/ZIP loads, static PQ/PV generators, reactive limits and reverse flows in the [engineering web workspace](studio/README.md).
+
+**Engineering web workspace:** manual RMS grids with transformers, passive PF/finite-Z three-phase faults, static switch states and deenergized sections. [Startup and profile scope](studio/README.md).
+
+**Manual network editor:** buses, lines and motor parameters → validation → local SciPy simulation → Grid Studio. Bounded balanced radial motor-start profile. [Startup and scope](studio/README.md).
+
+**Grid Studio:** interactive single-line diagrams, power flows, equipment inspection and waveforms from12 recorded physical studies. [Local startup and scope](studio/README.md).
 
 Two-cage RMS R(T):individual cage currents/losses,common rotor heating and
 joint stationary equilibrium —
@@ -870,17 +876,52 @@ tests pass,160 also in the native stack. Seen-train probes score3/12 and show
 wrong refusal despite low aggregate loss. Semantic loss and a bounded training
 pilot come next;test stays closed and engineering-agent quality is unqualified.
 
-Agent Lab provides bounded construction, diagnosis and repair episodes with a real PF checker: 21 cases across three topology-disjoint splits. Seven training cases are exposed locally. Teacher success is not learned-agent performance; exports are not gold SFT. See [local setup and limitations](web/README.md).
+Agent Lab provides bounded construction, diagnosis and repair episodes with a real PF checker: 21 cases across three topology-disjoint splits. Seven training cases are exposed locally. Teacher success is not learned-agent performance; exports are not gold SFT. See [local setup and limitations](studio/README.md).
 
-**Current learning status — R06.87,18 November2026**:
+**Current data and learning status — R06.92,19 November 2026**:
 [results and queue](plans/CURRENT_STATUS.md), [learning pipeline](plans/LEARNING_PIPELINE.md).
+Native regression diagnosis measures local gradient interference, unequal
+per-value loss weights and cascading generation errors. Balanced/KL controls
+still forget old replies. A transactional AdamW guard preserves all12 declared
+correct TRAIN replies through EOS; common focused1/20→5/20, extra4/12→7/12.
+It accepts22 updates from60 proposals. The inference-only frozen-prefix cache
+matches native logits bit-for-bit before/after updates. The full52-probe gate
+still fails; this is a bounded training-stability fix, not a qualified policy.
+
+Earlier focused phase (R06.91):
+All1504 focused targets pass native admission. A real60-update phase improves new
+probes1/20→14/20 but regresses previous probes12/20→8/20:four individual losses,
+failed learning gate and no inference release. The selected lessons omit typed
+answer contrasts in four heads. A new class-coverage guard rejects that selection;
+a16-original balanced plan passes32 native checks but has not been trained.
+Full workflows, held-out model evaluation and engineering VLM remain open.
+
+Earlier primitive pilot (R06.90):
+The primitive curriculum uses eight new families, excluding 17 registered
+historical topologies, with 780 examples and splits frozen before parameter
+generation. Native admission passes 416 TRAIN targets and 364 label-free
+held-out prompts. A fixed 30-update pilot improves exact answers from 1/20 to
+12/20 on one TRAIN base and reordered-key probes; the primitive gate still fails.
+New held-out model scores, complete workflows and engineering VLM remain open.
+
+Earlier exact SFT/v2 (R06.89):
+Exact SFT/v2 separates installed/required passports and retains tool semantics.
+It provides3136 text inputs,192 successful replayed expert trajectories and
+3232/3232 native-admitted alternative targets, with a4548-token maximum prompt.
+A native two-step research smoke updates LoRA with frozen base weights and exact
+adapter roundtrip. Continuous2 and chunk1+resume1 match bit-for-bit in adapter,
+AdamW/RNG and history. These are16 TRAIN bases/8 families, not an independent test or
+a trained VLM policy. Production learning remains gated. The bounded trainer,
+resume and separate generated-answer/full-workflow evaluator are implemented;
+the full384-step proposed recipe has not been executed.
+Earlier policy results (R06.87):
 Qwen3.5-0.8B and native image/text batches are checked, but autonomous engineering
 quality remains unqualified: the raw128-step TRAIN run completes0/8 workflows;
 the staged last2 physics phase completes0/3 variants of one base network.
 These are different interfaces and their scores are not directly comparable.
 The native staged API selects an operation and then arguments without a teacher
 argument directive; a separate verifier replays raw decisions and physical terminals.
-Low loss is not task completion. A controlled depth2→depth8 arm keeps the data,
-78 updates and parent weights fixed; its initial logits/loss match bit-for-bit
-on15 fixed inputs. No quality gain is claimed before completed generated-answer
-and workflow results. These engineering ML runs stay local; no GitHub/CI is used.
+Low loss is not task completion. The completed depth2→depth8 comparison keeps data,
+78 updates and parent weights fixed; initial logits/loss match bit-for-bit on15
+inputs. Depth8 scores8/15 versus7/15, but workflows remain0/3. The one-answer gain
+is retention, not planning. These engineering ML runs stay local; no GitHub/CI is used.

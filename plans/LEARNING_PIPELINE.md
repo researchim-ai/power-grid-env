@@ -1,11 +1,68 @@
 # Пайплайн обучения инженерного агента Power Grid
 
-Дата: 18 ноября 2026. Статус: план, не отчёт об исполнении будущих этапов.
+## Текущий эксперимент: GPU solver-assisted SFT (19.11.2026)
+
+Успех измеряется terminal физического решателя, а не CE или отдельными flags.
+Одинаковый fixed96 recipe на64 full-action TRAIN targets дал на первом закрытом
+TEST:0.8B3/6 и4B5/6 против0/6 у обоих base. Это3 базы/2 topology families;
+4B repair2/3,0.8B repair0/3. Разработка API использовала DEV, а TEST раскрыт
+однократно для уже зафиксированных финальных checkpoints. Все дальнейшие прогоны
+на этих случаях — regression, нужна новая заранее закрытая выборка для promotion.
+
+В compact observation остаются точные lines/catalogues, реальные constraints,
+actual result/revision/freshness и гипотетические studies. Нет скрытого correct
+catalog ID в prompt. Контроллер создаёт только TRAIN teachers и algorithmic control;
+он никогда не исполняет действия вместо LLM. Все вызовы/ошибки тратят бюджет.
+Preview не сертифицирует actual сеть. Нативные nested argument payload labels
+проверяются на каждом примере, prompt замаскирован полностью.
+
+`engineering_branch_sft` строит240 уникальных TRAIN rows из160 физически успешных
+продолжений: все16 subsets previews на каждом из8 repair cases и recovery после
+повторных расчётов исправной сети. TRAIN остаётся8 баз/4 семейства: больше states
+не означает больше независимых сетей. Fixed240 updates,accumulation4,одно действие
+каждого класса за update; модели стартуют с fresh pinned weights. Одновременно
+меняются state coverage, число updates и seed; причинный вклад каждого не установлен.
+Vision не используется, этот профиль нельзя называть VLM обучением.
+
+Воспроизведение при наличии локальных sealed parent plans и pinned моделей:
+
+```bash
+.venv-qwen35-08b/bin/python -m benchmarks.engineering_gpu_workflow \
+  --candidate qwen4b --device cuda:1 --steps 96 --out reports/my-workflow-4b
+.venv-qwen35-08b/bin/python -m benchmarks.engineering_branch_sft build \
+  --out reports/my-decision-coverage
+```
+
+Новая output directory обязательна; train требует manifest hash созданного корпуса.
+В fixed96 runs обучались3,607,552 LoRA parameters у0.8B и8,116,224 у4B;
+карты различаются (3090Ti/3090), поэтому timings не доказывают преимущество
+скорости одной модели. Одинаковая структура LoRA не означает одинаковый бюджет
+параметров.
+
+GPU runtime вне песочницы: BF16/SDPA, frozen backbone, FP32 LoRA/AdamW, без quantization
+и скачивания weights. Finite research run сохраняет adapter и логи, не durable
+optimizer/RNG resume. Все manifests проверяют целостность, не внешнюю подпись.
+
+Итог расширенной фазы:4B28/30 (TRAIN15/16,DEV7/8,раскрытыйTEST6/6),
+0.8B23/30 (15/16,5/8,3/6). У4B сохранены все21 прежних успехов и добавлены7;
+у0.8B —6 новых TRAIN успехов при1 потере, без роста DEV/TEST. Новая фаза не
+подтверждает перенос на новую закрытую выборку и не устраняет все циклы инструментов.
+Все180 эпизодов обеих моделей/трёх фаз проходят отдельный offline replay/proof audit.
+
+Следом: разделить recipes data-only/steps-only на TRAIN-development splits;
+заморозить новые physics/topology families для независимой оценки; провести
+ID/catalogue-order perturbations; затем image-required observations и отдельный
+GRPO experiment с terminal physical reward. Области за пределами radial constant-Z
+требуют самостоятельных данных и профилей. Актуальные числа — CURRENT_STATUS.md.
+
+
+Дата: 19 ноября 2026. Статус: выполненные этапы отмечены отдельно от очереди.
 Цель: Qwen3.5-0.8B решает инженерные задачи через инструменты и проверяемый
 физический расчёт, затем работает со схемами/графиками как VLM.
 Экономика исключена. GitHub, CI и отправка данных внешним сервисам не требуются.
 
-Актуальное продолжение — **R06.87 в конце этого файла**, аудит — R06.84–86.
+Актуальное продолжение — **R06.92 в конце этого файла**: native diagnosis,
+контроли balanced/KL и transactional retention guard; full-policy — R06.87.
 Раздел0 и прежние R06.* сохранены как история экспериментов, не текущий score.
 
 ## 0. Откуда начинаем
@@ -1216,9 +1273,885 @@ raw traces и functional proof. Он не считается заново сге
 judge, frozen-base/roundtrip/source invariants обязательны. Только один finite
 arm, никаких автоматических дополнительных epochs или resource-побед.
 
-Состояние нового arm — `reports/engineering-depth8-capacity-phase-2026-11-18/state.json`.
-До complete sealed summary он не закрывает learning gate. Resume в этом конечном
-diagnostic runner не реализован. После результата сравнить depth2/depth8 на
-ОДИНАКОВЫХ denominators, отдельно отметить baseline reuse и стоимость depth8.
-Даже15/15 и3/3 будут только tiny train memorization на одной base network.
+Arm завершён: `reports/engineering-depth8-capacity-phase-2026-11-18/summary.json`.
+Learning gate failed, подробности ниже. Resume в этом конечном diagnostic runner
+не реализован. Depth2/depth8 сравниваются на одинаковых denominators с явным
+baseline reuse. Даже15/15 и3/3 дали бы только tiny train memorization на одной сети.
 Следом — больше base networks/семейств и перенос, а не сразу GRPO/industrial claim.
+
+### Результат контролируемого сравнения и следующая очередь
+
+Depth8 arm78/78 завершён, manifest
+`3a73203919261459ac531c21cfd9cdfaf8241d3f74e03d374a999a7ad968dc92`.
+Before baseline reused7/15, after8/15; full workflows0/3→0/3. Against depth2
+control7/15,0/3: +1 skill answer, +0 workflows. Разница ПРОТИВ DEPTH2 — только
+сохранённый from_node/to_node null на ранее не обучавшемся вопросе. Относительно
+parent40 прибавился один healthy measurement assessment с заполненными нулями;
+нарушенные режимы и planning по-прежнему неверны. Неверные
+catalog IDs, workload/over-budget assessment и все три preferred-operation
+ошибки сохранились. Все3 after episodes снова24 validate calls без model
+simulations/edits. Depth8 gate failed. Frozen base/vision, exact roundtrip,
+source invariants и повторная проверка15-input initialization прошли.
+
+`engineering_capacity_audit` независимо проверил manifest/parent/proof attribution,
+копии baseline byte hashes, after raw completions/actions/feedback/terminal,
+native token caps, generated score, control delta и отсутствие gate promotion.
+Replay receipt — `reports/engineering-depth8-capacity-replay-2026-11-18`.
+Baseline reuse не превращается в повторный inference result. Никаких resource
+побед или общих утверждений о бесполезности depth8: вывод относится только к
+этому fixed78/13-target budget. Другие LR/budgets не проверялись.
+
+Следующая работа уточняется результатом: сначала minimal2-state operation
+calibration и чтение публичных state fields. Разделить API knowledge, catalog
+numeric ranking и full planning; проверить short/full public views с одинаковыми
+weights, чтобы не смешать interface assistance и обучение. Заранее зафиксировать
+convergence budget/learning rate и train-only stop rule, затем возвращать остальные
+roles/retention и проверять3 full workflows. Не увеличивать одновременно depth,
+corpus, objective и число физических профилей. GRPO пока не имеет qualified
+positive full-workflow/reward-variance pilot; новый RL update не запускался.
+
+## R06.88 — исправление данных: от сериализации к обучаемому инженерному навыку
+
+Статус: аудит выполнен; перечисленные ниже новые профили данных ещё не
+реализованы и не обучены. Это порядок реализации, не декларация улучшения модели.
+Данные — подтверждённый источник ограничений, но не доказанная единственная
+причина failed learning gates. 13 targets ×6 updates не проверяют обучение на
+всём корпусе; depth8 на этом бюджете не исключает проблемы оптимизации.
+
+### Что подтверждено и что из этого следует
+
+1. Исторические4292 targets — всего16 base networks/8 families, не4292 схемы.
+   2464 вызова без аргументов (57.4%),208 точных input/action duplicates.
+   64 одинаковых input имеют несколько допустимых успешных продолжений:
+   это НЕ автоматически ошибки разметки. Проверка3784 argument fields не
+   обнаружила потери payload в supervised tokens: переписывать токенизацию
+   как установленную причину не следует.
+2. Staged848 содержит624 measurement,192 operation и лишь32 conditional
+   argument targets. Старые528 binding targets прямо называют нужные ID в
+   directive: они учат исполнению поручения, не самостоятельному выбору.
+   Разделить эти навыки и их метрики. Число строк/рендеров не заменяет разнообразие
+   физических состояний и независимых семейств.
+3. Новый воспроизводимый аудит32 cases/16 bases/8 families:
+   `reports/engineering-data-observability-2026-11-18/summary.json`.
+   На каждом healthy варианте построены два контрпримера: r_ohm_km+1e-8
+   скрывается округлением, installed p_kw+0.25 не виден, потому что карточка
+   показывает required p_kw. Начальные public cards равны, structure_errors
+   различаются:64 constructed collisions. Это НЕ измеренная частота ошибок
+   текущего корпуса и НЕ неразличимость после свежего расчёта.
+4. Public max-rating control решает32/32 через настоящий solver/v2 route budget.
+   Переименование copper-1/copper-2 не устраняет shortcut «больший номинал».
+   На healthy вариантах simulate→submit успешен32/32 без validate. Поэтому
+   teacher-preferred validate нельзя считать единственным правильным следующим
+   действием. Схемы/описания tools удаляются из operation prompt, список всегда
+   заканчивается validate. Возможный эффект порядка — гипотеза, не causal proof.
+5. Последний last2/last8 полный workflow score0/3 на ОДНОЙ base network.
+   Чтение паспортной цифры на картинке не доказывает визуальную диагностику,
+   планирование или применение физики. Три варианта одной сети не три независимых
+   инженерных задачи. Нового обучения в этом аудите не было.
+
+### DQ-01 — достаточное наблюдение и единый контракт (первый блок)
+
+- Выпустить ObservationSpec/v2 отдельно от frozen v1. Развести required и
+  installed equipment: реальные P/Q/тип нагрузки, узел и наличие; параметры
+  каждой фактической линии и требования маршрута. Не подписывать required
+  значения как фактический паспорт. Передавать актуальные revision/freshness,
+  budgets и состояние защит/аппаратов, только если они реально моделируются.
+- Машиночитаемый текст хранит исходные public численные значения, единицы и
+  идентификатор паспорта; изображение имеет объявленную точность отображения.
+  Проверка паспортов использует явную версию каталога/ID и объявленное правило
+  сравнения: дискретное соответствие или физически обоснованный допуск.
+  Нельзя просто ослабить judge, чтобы скрыть ошибки. Граничные условия проверять
+  по исходным значениям; если округлённое изображение не определяет ответ,
+  правильное действие — запрос точных данных, а не угаданный бинарный класс.
+- ToolSpec содержит смысл validate/simulate/inspect/mutate/submit, эффекты на
+  revision и свежесть, схемы и ошибки. Возвращать публичный result инспекции
+  и конкретную ошибку; текущий staged feedback теряет result. Поле предыдущего
+  действия явно назвать last_executed_operation. Ни teacher action, ни скрытый
+  диагноз, ни solver future result не попадают в candidate observation.
+- Один контракт при генерации, SFT, rollout и оценке. Task-specific responses
+  допускаются, но сохраняют task_type/schema_version: readiness boolean не
+  смешивать с числами и action JSON. Проверять значения/типы/null, не только JSON.
+- Приёмка: регрессии на обе найденные коллизии; все величины, от которых зависит
+  запрошенный ответ, наблюдаемы или задача размечена insufficient_information.
+  Новые inspect results действительно меняют доступную информацию. v1 sealed
+  артефакты остаются историческими. Переход интерфейса оценивается matched A/B.
+
+### DQ-02 — учебная лестница и минимальные контрфактуальные пары
+
+Порядок навыков: (1) читать installed/required/revision/freshness; (2) понимать
+эффекты API; (3) сравнивать численные значения с публичным пределом; (4) находить
+нарушенную линию/узел; (5) выбирать совместимый паспорт и аргументы; (6) выполнять
+план и проверять результат. Каждый уровень имеет отдельный generated score.
+Порог берётся из goal, а не hardcoded100. Включить <, =, >; разные единицы,
+положительные/нулевые/отрицательные допустимые значения и точность near-threshold.
+Недопустимые входы не маскируются под допустимые физические состояния.
+
+Для каждой основной развилки нужны paired examples: один значимый факт меняется
+и ответ меняется; отдельно nuisance-only пары, где ответ сохраняется. Например:
+validated true/false при одинаковой свежести; fresh/stale; исправный/перегруженный
+режим; один и тот же ток при другом допустимом пределе; правильный/неправильный
+паспорт; свежая симуляция после изменения и до него. Требуемые физические
+изменения заново рассчитываются и проходят независимый reference, labels не
+подменяются поверх прежнего расчёта. Синтетические логические microtasks явно
+отделены от solver-completed networks и не считаются новой физической валидацией.
+
+Менять aliases, порядок enum/JSON keys, имена каталога, направление записи
+маршрута и layout независимо от ответа. Семантика и типы сохраняются.
+Не использовать fault-specific framing/crop/filename как подсказку. Шаблоны
+вопросов и названия файлов не должны кодировать класс. Тестировать постоянный
+ответ, последний tool в списке, копирование feedback и выбор max-rating:
+публиковать успех каждой эвристики, не объявлять любой простой алгоритм ошибкой.
+
+### DQ-03 — оборудование, альтернативы и отрицательные примеры
+
+- Каталог не должен иметь универсальный доминирующий ответ. В пределах уже
+  реализованной физики строить случаи, где больший I_rated недостаточен из-за
+  импеданса/просадки, и разные допустимые варианты. Каждую комбинацию реально
+  пересчитать, включая отсутствие решения. Новые тепловые/топологические/
+  конструктивные ограничения требуют реализации judge прежде новых labels.
+  Если обе позиции одинаково допустимы, принимать обе; не придумывать экономику.
+- Добавить already-feasible/no-edit, несколько дефектов, структурно корректный
+  перегруз, физически допустимое превышение бюджета изменений, missing/stale
+  измерения, отказ расчёта и отсутствие допустимого решения в доступном каталоге.
+  «Не могу определить» и «доказано неразрешимо» — разные классы. Не выдавать
+  отсутствие решения у одного teacher за доказательство infeasible.
+- Хранить preferred_action и acceptable_actions отдельно. Допустимость первого
+  шага определяется replay продолжения в бюджете; validate first — стиль teacher,
+  а не закон физики. Бесконечно повторять допустимый validate не успешная политика.
+  Отчитывать schema validity, progress, terminal constraints и cost отдельно.
+- Failed student trajectories полезны как состояния: восстановление после
+  ошибки, получение недостающих данных, новый расчёт после мутации. Действие
+  неудачной модели НЕ становится positive SFT label. Корректирующее действие
+  проверяется replay; отрицательные кандидаты идут в preference/verifier данные
+  с конкретным классом нарушения и provenance, не в assistant gold ответы.
+
+### DQ-04 — VLM учится инженерному чтению, а не только OCR
+
+Общий публичный scene graph порождает текст и изображение с revision, единицами,
+легендой и происхождением измерений. Кроме паспортов нужны одно-линейная схема,
+положение выключателей, графики U/I/скорости во времени, загрузки и напряжения.
+Изображать только реально рассчитанные величины; динамические задачи добавлять
+через соответствующий solver profile, не рисовать выдуманные осциллограммы.
+
+Задачи: локализовать объект, проследить соединения, найти обесточенный участок,
+прочитать пик/момент события, связать график с объектом, сравнить до/после,
+выбрать следующее измерение. На paired pixels менять один наблюдаемый факт;
+проверять изменение ответа. На изменении темы/масштаба/раскладки ответ сохраняется.
+Image-only, text-only, combined, blank/missing/occluded — отдельные профили.
+Combined может законно решаться по тексту: это не доказательство использования
+vision. Image-required задачи не дублируют ответ в тексте/alt/имени файла.
+Кроп выбирается вопросом или публичным объектом, а не скрытым правильным диагнозом.
+Частично видимые/нечитаемые данные должны вызывать локальный запрос уточнения;
+не учить общему null на все сложные изображения. Processor admission проверяет
+фактические pixel inputs, разрешение, truncation и supervised payload.
+
+### DQ-05 — состав, lineage и независимая оценка
+
+Запись связывает family/base/scenario/pair/trajectory/revision, source hashes,
+solver/judge/observation/tool/render versions, public-input hash, modality,
+skill/answer class, preferred/acceptable targets, evidence и replay status.
+Gold/expert, student-negative, constructed counterexample и evaluation — разные
+источники. Контрпримеры этого аудита автоматически НЕ являются gold SFT.
+
+Split выполняется по семействам/базовым физическим объектам ДО генерации
+траекторий, aliases, images и counterfactuals; все производные остаются вместе.
+Отдельно отчитывать same-family new parameters и new-family/OOD topology.
+Аудировать точные и нормализованные duplicates между splits, label conflicts,
+распределение ответов/слотов/числовых диапазонов и видимые shortcut признаки.
+Точный duplicate не обязательно ошибка: его повтор не увеличивает diversity.
+Сэмплировать по skill × answer class × family/base с ограничением вклада одной
+траектории. Null/zero/validate/submit не должны вытеснять ошибки и аргументы.
+Не обещать универсальную оптимальную пропорцию; рецепт и веса фиксировать заранее.
+
+### DQ-06 — условия допуска к следующему обучению
+
+1. Пройти DQ-01 и processor admission: нет необъяснённых неоднозначных labels,
+   скрытых необходимых величин, потерянных payload, split leakage и failed gold
+   replay. Все выявленные классы недостаточности получают явное решение.
+2. На маленьком train-only наборе проверить отдельно state reading, API effects,
+   threshold comparison, catalogue selection и operation; generated answers и
+   retention, не только падающий teacher-forced loss. Минимальные пары проверяются
+   обеими сторонами. Сначала короткий и полный view с одинаковыми weights;
+   менять один фактор. Budget/LR/stop rule фиксировать до запуска, не крутить
+   бесконечно по dev. Добиться воспроизводимого освоения tiny set прежде масштаба.
+3. Выполнить несколько целых train workflows с реальными edits/simulate/submit
+   без teacher fallback, затем dev на независимых bases/families. Отчёт содержит
+   все seeds/ошибки/бюджеты/отказы, число уникальных сетей и доверительные интервалы
+   там, где выборка позволяет. Старые0/3 не заменять результатом другого профиля.
+4. Масштабировать SFT только после этих gates; объём определять покрытием и
+   learning curves. Формальная квота тысяч примеров не гарантирует обучение.
+   GRPO — после положительного policy pilot и проверенной variance reward:
+   обязательные физические/структурные/операционные ограничения отдельно,
+   короткий JSON или частые simulate сами по себе не дают reward за решение.
+5. Итог сравнивать на одинаковом heldout contract с base, простыми алгоритмами,
+   SFT text и SFT VLM. Успех на допусках, отсутствие небезопасных действий,
+   completion rate и вычислительная стоимость важнее одного exact preferred match.
+
+Следующая реализация: DQ-01 → DQ-02 и DQ-03 → DQ-04/DQ-05 → DQ-06.
+Никакие новые веса и claims о росте качества в R06.88 не выпущены.
+
+## R06.89 — реализованный тракт SFT/v2 и следующая очередь качества
+
+Этот раздел продолжает DQ-01–06. Существующие v1 generators, judge и model receipts
+не переписаны. Новый профиль пока **text-only, balanced400V, constant-Z, radial,
+не более8 узлов**; он не покрывает весь симулятор и не доказывает качество агента.
+
+### Что работает в коде
+
+- `benchmarks/engineering_sft_contract_v2.py`: ExactEpisode поверх того же
+  физического owner engine/v2 route budget. Паспорта без округления в тексте;
+  required/installed нагрузки раздельно, включая реальные P/Q и лишние нагрузки.
+  Tool schemas и effects остаются в operation prompt. Инспекция сохраняет
+  фактический public result; previous action явно last_executed_operation.
+  Tool feedback расчёта имеет объявленный balanced-study-summary/v2: напряжения,
+  токи, загрузки, сходимость и revision; исходный фазный ответ хранится в trace.
+- `engineering_sft_release_v2.py`: replay успешных complete trajectories,
+  state/structure/measurement/operation/conditional arguments как разные skills.
+  validate-first и simulate-first варианты сохраняют проверенные допустимые
+  альтернативы. Кандидат их не получает как подсказку. Factual labels вычисляются
+  из public card и сверяются с owner judge, fresh studies — с независимыми
+  NumPy nodal equations. Failed actions не являются positive SFT.
+- Реальные higher-rating distractors: больший токовый номинал вместе с высоким
+  импедансом нарушает минимум напряжения. Каждый вариант физически пересчитан;
+  имена всех позиций перемешаны через однотипные content-derived part IDs.
+  Это устраняет универсальность max-I в данном наборе, но **не доказывает**
+  отсутствие других shortcuts: min-R и другие простые controls остаются нужны.
+- `engineering_sft_admission_v2.py`: anchored inventory/source проверка,
+  полное восстановление supervision из replay, factual conflict/boolean typing,
+  family/base/input split leakage, schema и all-alternatives native pack checks.
+  Неудачный/частичный допуск не может попасть в AdmittedDataset/optimizer.
+- `engineering_sft_train_v2.py`: только passing admission; bounded explicit chunk,
+  assistant-only uniform CE, last2 LoRA rank16/alpha32; frozen vision/base,
+  AdamW/adapter/RNG в safetensors, same-phase resume, exact adapter roundtrip.
+  Параметры рецепта и schedule связаны manifest/source/core hashes. Новый запуск
+  начинает с закреплённой базы; не подмешивает молча прежние failed adapters.
+  Частичные checkpoints не выпущены как inference policy; завершение schedule
+  также не повышает closed-loop gate автоматически.
+- `engineering_sft_runtime_v2.py` и `engineering_sft_eval_v2.py`: тот же public
+  запрос при rollout; строгий JSON/schema, ошибочные решения расходуют бюджет,
+  без teacher fallback и скрытого исправления аргументов. Generated-answer score
+  принимает replayed alternatives, а успех workflow требует физического terminal.
+  Отдельные denominators: skill/class/family, workflow cases/bases/families,
+  фактические edits/simulations. TRAIN diagnostic не называется heldout score.
+
+### Реально выполненный data admission
+
+Release: `reports/engineering-exact-sft-release-2026-11-18`, manifest
+`d53f90e7b0d91a5895464e62358a9161449835f02d01117c7a4f15ec8109d90c`.
+3136 deduplicated inputs из3520 raw targets:768 state,768 structure,
+768 measurement,704 operation,128 arguments.96 inputs имеют несколько
+проверенных допустимых ответов.192 успешные полные trajectories,32 физически
+проверенных higher-rating voltage failures;16 base networks/8 families.
+Все записи имеют историческую TRAIN ancestry: нового независимого dev/test нет.
+
+Native admission: `reports/engineering-exact-sft-qualified-2026-11-18`, manifest
+`80e9b43d07b02ad8dda18c554f2caa80e58d5826c92ff68632a72d2c3c5003b2`.
+**3232/3232 alternatives** прошли локальный Qwen3.5-0.8B processor,0 failures,
+maximum prompt4548 tokens. Prefix/assistant mask/decoded values/value-bearing
+payload проверены, не только сериализованный JSON. Model weights для этого
+допуска не грузились. Eligible только для train-only calibration, production
+training gate закрыт из-за отсутствия независимого evaluation corpus.
+
+Первая версия с полными дублированными фазными tool results честно провалила
+native admission по8192 token budget. Failed receipt сохранён отдельно в
+`reports/engineering-exact-sft-admission-2026-11-18`; он не используется тренером.
+Окончательный компактный профиль — отдельный release; tokenizer truncation
+не используется для скрытого удаления данных. Разные версии входов не смешаны.
+
+### Конечный исследовательский рецепт, а не обещание сходимости
+
+Admission содержит proposed384-step ceiling:128 foundation (state/structure/
+measurement),128 grounding (arguments/state/measurement),128 policy (operation/
+arguments/state/structure/measurement). Sampling round-robin skill → answer
+class → family, seeded cycling внутри bucket. Проверенные альтернативы циклически
+выбираются при повторных экспозициях, а не размечаются как ошибки друг друга.
+Это не оптимальные пропорции, не освоенный curriculum и не доказательство,
+что384 updates достаточно. Ни один dev/test target не входит в schedule.
+
+Запуск требует явного --max-new-steps. Технический smoke из одного/двух шагов
+проверяет тракт и сохранение, но не годится для заявления «модель научилась».
+Same-phase resume обязан сохранять admission, рецепт, cursor, AdamW, RNG,
+adapter inventory и code fingerprints. Новый corpus/recipe — новая фаза,
+а не подмена данных в продолжающемся оптимизаторе.
+
+### Обязательная следующая очередь до большого SFT
+
+1. **Чистый evaluation registry.** Зафиксировать ранее использованные family
+   signatures и принадлежность split. Новые семьи выбирать с проверкой пересечений
+   до генерации паспортов/картинок/траекторий. Все производные сохраняют один split.
+   Не превращать текущие16 TRAIN bases в независимый test случайным разделением
+   строк. Отдельно new parameters same family и новые topology families.
+2. **Primitive curriculum.** Добавить самостоятельные API-effect, scalar
+   threshold/comparison, ranking и necessary-information задачи. Сейчас отдельные
+   state/structure/measurement навыки есть, но API quiz и near-threshold curriculum
+   ещё не выпущены. Логические контрфактуалы явно отличаются от solver studies.
+   Ввести paired >=/=/<= с единицами и точностью; предел берётся из goal.
+3. **Минимальные пары и nuisance invariance.** Одинаковые budgets/revision/goal,
+   меняется одна значимая величина; отдельно перестановки aliases/catalog order/
+   JSON order/layout, не меняющие ответа. Не перемешивать единицы без пересчёта.
+   Испытать constant-answer, last-tool, copied-feedback, max-I/min-R controls.
+   Данные допускаются по покрытию заявленных навыков, не по числу строк.
+4. **Отказы и восстановление.** Реальные visited states прошлой модели,
+   недостаточные сведения, stale studies, отклонённые аргументы, no feasible
+   catalogue, multiple faults, физически допустимое нарушение бюджета. Отказ
+   teacher найти план не доказывает infeasible; нужна исчерпывающая проверка
+   заявленного конечного action space либо более узкая метка unknown.
+5. **VLM release с независимым смыслом.** Единый public scene graph с токами,
+   напряжениями/загрузками, topology/switch states и computed time series в
+   соответствующем solver profile. Image-only/text-only/combined отдельны;
+   masking/blank/occlusion, pixel counterfactuals и localization. Ответ не должен
+   дублироваться в filename/alt/тексте image-required задач. Динамические графики
+   не синтезируются без расчёта. Текущий exact/v2 не претендует на это покрытие.
+6. **Learning gates.** Сначала train-only tiny-set generated memorization по
+   каждому primitive skill и обеим сторонам minimal pairs с retention остальных
+   ответов. Зафиксировать budget/LR/stop rule и несколько seeds до запуска.
+   Затем реальные edit→simulate→verify→submit workflows без guards/fallback,
+   новый dev с неизменённым contract, только затем большой SFT и closed test.
+   Изменение интерфейса, глубины LoRA и objective проверять раздельно.
+7. **GRPO позже.** Нужна ненулевая доля полных успешных policy rollouts и
+   различимый физический reward с anti-shortcut controls. Schema-valid JSON,
+   частый simulate или малый loss не достаточны. Не заменять физический judge
+   свободным языковым оценщиком. Reward/expert data/evaluation версии закреплены.
+
+### Воспроизводимые команды
+
+Команды из корня репозитория; для повторения нужны НОВЫЕ output directories.
+Manifest после генерации читается через study_artifacts.verify и явно передаётся
+следующему шагу. Ни GitHub, ни CI, ни внешняя отправка данных не используются.
+
+```bash
+python -m benchmarks.engineering_sft_release_v2 \
+  --source reports/engineering-catalog-selection-final-2026-11-18 \
+  --manifest-sha256 fc5e5950c5939db1bee86de58c320dcd5ac58936b3b995aa287535f715f7308e \
+  --out reports/my-exact-sft-release
+
+.venv-qwen35-08b/bin/python -m benchmarks.engineering_sft_admission_v2 \
+  --source reports/engineering-exact-sft-release-2026-11-18 \
+  --manifest-sha256 d53f90e7b0d91a5895464e62358a9161449835f02d01117c7a4f15ec8109d90c \
+  --target requirements/qwen35-08b-local-target.json \
+  --target-sha256 e763c82b7f4f1d5acea273b43674e45bcdb949fc91d000cb7537ea54b5fa0262 \
+  --out reports/my-exact-sft-admission
+
+.venv-qwen35-08b/bin/python -m benchmarks.engineering_sft_train_v2 \
+  --target requirements/qwen35-08b-local-target.json \
+  --target-sha256 e763c82b7f4f1d5acea273b43674e45bcdb949fc91d000cb7537ea54b5fa0262 \
+  --admission reports/engineering-exact-sft-qualified-2026-11-18 \
+  --manifest-sha256 80e9b43d07b02ad8dda18c554f2caa80e58d5826c92ff68632a72d2c3c5003b2 \
+  --out reports/my-exact-sft-calibration --max-new-steps 2
+```
+
+Третий пример — bounded research calibration, не запуск production training.
+Для resume добавить --resume и --resume-manifest-sha256, оставив тот же admission.
+Для данного профиля нет автоматически подключённого нового endpoint в Agent Lab.
+
+### Native smoke и точное продолжение: выполнено
+
+`engineering-exact-sft-native-two-2026-11-18` выполнил2/384 позиции; отдельно
+`engineering-exact-sft-native-one-2026-11-18` выполнил первую позицию и
+`engineering-exact-sft-native-resumed-2026-11-18` восстановил AdamW/adapter/RNG
+и выполнил вторую. В сумме4 optimizer executions, но только2 уникальные позиции.
+Никаких generated skill/workflow scores этот smoke не измеряет.
+
+`engineering_sft_resume_audit_v2.py` проверил manifests/ancestry/recipe/core,
+сравнил30 adapter tensors,91 tensor optimizer artifact (включая RNG), отдельный
+RNG и весь loss/gradient/target history: **битовое совпадение** continuous2 и
+chunk1+resume1. Frozen base/vision неизменны, adapter save/restore logits/loss exact.
+Proof: `reports/engineering-exact-sft-native-resume-audit-2026-11-18`.
+Это two-position CPU qualification, не проверка всего384-step curriculum.
+47 целевых tests прошли и в base Python, и в native Qwen environment;
+web build и60 JS checks прошли. Model/core fingerprint прежний.
+
+Для следующего большого выпуска также нужны evidence-grounded объяснения:
+структурированные claim/observed value/unit/limit/revision и проверка результата
+действия. Такие targets должны выводиться из публичного расчёта; выдуманные
+reasoning traces не становятся gold. Сложную арифметику/исследования агент
+поручает проверяемым инструментам. Отдельные метрики: правильность вывода,
+достаточность evidence и успешный полный workflow. Текущий flat-payload профиль
+ещё не поддерживает nested evidence schema — для неё нужен новый native admission.
+
+## R06.90 — frozen new families, primitive data и measured learning pilot
+
+Дата:19 ноября2026. Реализованы registry/generator/admission/finite pilot/audit.
+Это продолжение DQ-02/DQ-05/DQ-06, а не завершение full-policy/VLM qualification.
+Все прежние sealed receipts и исходники SFT/v2 сохранены.
+
+### Новый реестр и lineage
+
+`engineering_family_registry.py` проверяет manifests исторических procedural
+train/evaluation releases, соответствие публичной схемы canonical rooted-tree
+signature и отсутствие конфликтов split.14 известных procedural families и3
+legacy families исключены. Затем назначаются4 новых train/2 dev/2 test families
+и реестр sealed ДО вызова генерации новых параметров. Aliases/порядок строк не
+меняют семейство. Не используется random split по строкам или переприсвоение
+старых TRAIN examples в test. Новизна относительна только перечисленным anchored
+источникам; неизвестные pretraining данные Qwen этим не проверяются.
+
+Registry `reports/engineering-new-family-registry-2026-11-19`, manifest
+`0a1165c836f469416b00e364c71dbd810cc18ad3fa02ce35b71232df7a83edd0`.
+Параметры берутся существующим deterministic procedural factory после freezing
+registry. Его внутренние provisional train tags заменяются назначениями реестра
+до публикации каких-либо производных примеров. Старый factory не изменён.
+
+### Состав primitive release
+
+`engineering_primitive_curriculum.py` строит780 examples на15 bases/8 families:
+120 чтение состояния,180 API-effect assessments,480 decimal/unit comparisons.
+Train416 на4 families/8 bases; dev208 на2/4; test156 на2/3.
+Один из16 запрошенных base variants помещён в карантин: недостаточная разница
+токов для unique one-line overload. Resampling/подмена отсутствуют, все8 families
+покрыты. Это явно ограниченная conditional task distribution, не полный набор
+возможных аварий или доказательство отсутствия неоднозначных режимов вообще.
+
+- **State reading:** настоящие revision/validated/freshness до validate, после
+  него, после simulate и после мутации. Compact публичный microtask view включает
+  источник/число узлов, без task IDs или скрытого желаемого ответа. Все состояния
+  одной базы присутствуют: источник не кодирует класс ответа.
+- **API effects:** реально выполненные validate/simulate/inspect/mutation/rejected
+  mutation. Заданный action, schema, installed handles и before state публичны;
+  labels вычислены из engine transition. Это прогноз API при явном предположении
+  успешного выполнения schema-valid study, НЕ прогноз физической сходимости.
+  Отказ invalid catalogue сохраняет freshness, mutation её сбрасывает.
+- **Comparison:** Decimal, строгое above/below, равенство допустимо, missing→
+  unknown/null; A/kA, V/kV, pu/%voltage, отдельный %loading dimension. Это analytic
+  microtasks, НЕ заменённые solver результаты. Near-threshold примеры имеют точную
+  decimal representation; unsupported units/nonfinite values отвергаются.
+- **Pairs:**390 key-order nuisance pairs с неизменными targets и60 semantic
+  boundary groups below/equal/above/missing. Метаданные member/pair_group/evidence
+  принадлежат owner; candidate получает только messages. Порядок ключей не должен
+  влиять на смысл. Это не доказательство всех permutation/layout invariances.
+
+Release `reports/engineering-primitive-release-2026-11-19`, manifest
+`8fd1e0e82aae17bdfb1d060fb7ca4d49e498c6c6ccef2a2c626c17fc249f3445`.
+Сохраняются train.jsonl, owner-evaluation.jsonl и отдельные dev/test-prompts.jsonl.
+Prompt projection содержит только id/split/skill/messages, без answer/member/
+pair-group/evidence. Разделение файлов — data-flow boundary, не ОС sandbox;
+внешнему оцениваемому агенту нельзя давать доступ к evaluator filesystem.
+
+### Admission и учебный доступ
+
+`engineering_primitive_admission.py` заново воспроизводит все API transitions и
+row IDs, проверяет соответствие registry, семейств/баз/inputs, factual labels,
+комплектность пар и всех объявленных семейств. Нельзя сохранить оба неверных
+nuisance labels и выдать consistency за правильность: engine replay обнаруживает
+подмену. Невозможность принять конкретную базу не превращается в gold infeasible.
+
+Native Qwen3.5-0.8B:416/416 TRAIN labels/payloads прошли assistant-only pack;
+364/364 dev/test prompts проверены БЕЗ добавления их ответов в SFT. Max prompt352.
+Это отдельный microtask profile; снижение длины относительно exact full-card/v2
+не является сравнением ресурсов на одинаковой инженерной задаче.
+`PrimitiveDataset` хранит и отдаёт optimizer только TRAIN rows; отклоняет
+heldout injection, negative/bool indices, failed/partial admission и code drift.
+
+Admission `reports/engineering-primitive-native-admission-2026-11-19`, manifest
+`ef9358fe2b0895adbe316dbd15fcf4d3cbd89fecd5ce0a2072662d6fe5a4c1f5`.
+
+### Реальный контролируемый learning pilot: 1/20 → 12/20
+
+`engineering_primitive_pilot.py`:10 заранее выбранных TRAIN originals одной базы,
+каждый показан3 раза, итого30 updates. Fresh base, last2 LoRA rank16/alpha32,
+LR1e-4, uniform assistant CE, fixed seed, без warm-start/teacher fallback/
+automatic extension.10 reordered-key probes не входят в optimization schedule.
+План записывается до inference. Это tiny TRAIN memorization/retention test,
+не обучение на всех416 rows и не OOD topology evaluation.
+
+До: originals1/10 и reorder0/10. После:6/10 и6/10, суммарно12/20.
+По skills после: state4/4, API4/8, threshold4/8. До было8 protocol errors,
+3 field-schema errors,8 wrong-value/type errors и1 правильный ответ. После
+формат/schema корректны20/20, но8 wrong-value/type errors остались.
+
+Четыре неосвоенных original cases (и те же четыре reorder probes):
+1. simulate: модель оставляет fresh=false/simulations_spent=0 вместо true/1;
+2. rejected mutation: wrongly сбрасывает свежесть прежнего расчёта;
+3. above-limit: выдаёт below и отсутствие нарушения;
+4. missing measurement: computable=false/unknown правильны, но violation=false
+   вместо null. Это ошибка типа/смысла, не физическое доказательство безопасности.
+
+Frozen base/vision unchanged; adapter roundtrip logits/loss exact.
+**Primitive learning gate FAILED (требовались20/20).** Full workflows и новые
+heldout model scores не выполнялись; test не использовался для выбора рецепта.
+Нельзя сравнивать12/20 с прежними7/15 или8/15 как одну метрику: tasks/interfaces
+различаются. Этот checkpoint не выпущен в Agent Lab и не inference release.
+
+Pilot `reports/engineering-primitive-native-pilot-2026-11-19`, manifest
+`07a8c7cdeebd4c1dc0facdb5b4a7317646f922f1983a640686ae5b61af2fcedc`.
+`engineering_primitive_pilot_audit.py` пересчитал scores/группы/типовые ошибки,
+проверил TRAIN attribution, fixed schedule30 и отсутствие gate promotion.
+Audit `reports/engineering-primitive-pilot-audit-2026-11-19` passed; это audit
+записанных outputs/lineage, не независимая аттестация выполнения model kernels.
+
+### Следующий корректирующий эксперимент
+
+1. Разложить API-effect ответ на one-field microtasks: fresh_after отдельно,
+   simulations_spent отдельно, revision_delta отдельно. Все labels брать из того
+   же executed transition; затем вернуть совместный ответ с проверкой retention.
+   Представления сравнивать при одинаковых weights, не одновременно с depth/LR.
+2. Null curriculum: неизвестно/ложь/ноль — разные ответы. Сначала отдельное поле
+   violation для known-safe/known-unsafe/missing; затем исходный3-field формат.
+   Missing scalar не выдавать за общее умение воздерживаться в workflow/VLM.
+3. Численные сравнения: сначала целые/простые десятичные, затем units и
+   near-threshold precision. Сохранять строгое правило равенства и эталон Decimal.
+   Не обучать округлением, меняющим правильный класс. Для сложных инженерных
+   расчётов учить вызову проверяемого инструмента, а не доверять mental arithmetic.
+4. Зафиксировать новый finite budget/seed/stop rule до запуска. Старые30 updates
+   не продолжать с подменой dataset. Не менять одновременно длину prompt, loss,
+   адаптируемые слои и schedule. Новые targeted rows пройти всем тем же admission.
+5. Только после TRAIN gate возвращать multi-base curriculum и полные
+   edit→simulate→check→submit episodes. Dev использовать по объявленному плану;
+   test открыть для фиксированного кандидата после выбора рецепта, не для retries.
+6. Дальше — recovery/infeasible tasks и VLM engineering scenes; registry
+   assignments применяются ко всем images/trajectories/counterfactuals. Преимущество
+   VLM измерять image-required controls, не ростом text-only accuracy.
+
+Ни GitHub, ни CI, ни внешняя отправка данных не использовались.
+
+Проверки R06.90:72 целевых Python tests в base и native окружениях,60 JS checks,
+web build и whitespace checks — passed. Core fingerprint и исходники прежнего
+qualified SFT/v2 неизменны. Итоговый audit manifest:
+`7f3bbfcdee864089aa806c974b26db1dfe9a0048427be4e8f84985b2813a50b7`.
+
+Воспроизведение finite pilot на уже проверенных источниках (нужен новый --out):
+
+```bash
+.venv-qwen35-08b/bin/python -m benchmarks.engineering_primitive_pilot \
+  --admission reports/engineering-primitive-native-admission-2026-11-19 \
+  --manifest-sha256 ef9358fe2b0895adbe316dbd15fcf4d3cbd89fecd5ce0a2072662d6fe5a4c1f5 \
+  --target requirements/qwen35-08b-local-target.json \
+  --target-sha256 e763c82b7f4f1d5acea273b43674e45bcdb949fc91d000cb7537ea54b5fa0262 \
+  --out reports/my-primitive-pilot
+```
+
+Это повторение фиксированного исследования, не следующий корректирующий рецепт.
+Для новой генерации: family_registry.build(history,out) → verify(registry) →
+primitive_curriculum.build(registry,anchor,out) → verify(release) →
+primitive_admission.qualify(release,anchor,target,target_sha,out). Каждый шаг
+требует свежую директорию; изменённые sources/registry требуют нового admission.
+
+## R06.91 — focused fields, measured regression и coverage gate
+
+Новые модули изолированы от source-pinned R06.89/R06.90. GitHub/CI и внешняя
+отправка не используются. Ни один из новых adapters не подключён как Agent Lab
+inference endpoint. Новая работа относится только к TRAIN primitives.
+
+### Выпущенные данные и фактически выполненная фаза
+
+`engineering_focused_curriculum` берёт только TRAIN rows из passing native
+PrimitiveDataset, выделяет отдельные API/comparison fields без изменения меток,
+добавляет простые decimal comparisons в одинаковых единицах. Вопрос указывает
+requested_field, но не содержит teacher answer. Missing/false/true/null сохранены
+с точным типом. Учебная арифметика не называется новым physical study.
+Все производные сохраняют family/base/source_row lineage и nuisance pairs.
+
+1504 records:480 api_field,768 comparison_field,256 coarse_threshold на8 TRAIN
+bases. Все1504 native packs прошли prefix/assistant-only/payload roundtrip,
+max prompt343 tokens. Release:
+`reports/engineering-focused-native-release-2026-11-19`, manifest
+`4ba73bdce78beabd776cced5c0d93601cd2bae4b395807ca1fa5b173072a163b`.
+Dataset loader заново выводит targets из admitted parent, проверяет source pins
+и полный native inventory; resealed false-vs-null подмена обнаруживается.
+
+`engineering_focused_phase` провёл заранее ограниченные60 updates:
+10 новых focused +10 прежних retention originals, каждый показан3 раза.
+Fresh AdamW поверх complete primitive30 adapter, last2 LoRA rank16/alpha32,
+LR1e-4, прежний uniform assistant CE. Это НОВАЯ фаза, не optimizer resume.
+Parent lineage/source/target/complete recipe проверены до weights; до updates
+20 прежних raw completions реально воспроизведены побитно. Дополнительные20
+focused probes имеют собственные знаменатели;10 из них — untrained key order.
+
+Measured outcome:
+- Focused1/20→14/20:13 новых правильных probes,0 регрессий в этой группе.
+- Retention12/20→8/20:4 индивидуальных регрессии,0 новых правильных.
+- Потеряны full API mutation answer и equality comparison вместе с их key-order
+  представлениями. Прочие старые simulate/rejection/above/missing ошибки остались.
+- После40/40 outputs имеют правильный JSON/набор полей, однако wrong value/type
+  errors12/20 retention и6/20 focused. Нет оснований объявлять их все format bugs.
+- Frozen base/vision unchanged, adapter logits/loss roundtrip exact.
+- **Focused+retention gate FAILED.** Нет full workflows, новых dev/test model
+  scores, inference release или доказанной причинности конкретного изменения.
+  Одновременно менялись учебный состав/презентация/число обновлений относительно
+  исходного primitive pilot: это correction bundle, не one-factor ablation.
+
+Phase `reports/engineering-focused-native-phase-2026-11-19`, manifest
+`28c555de520ebfa514a579ec328df51711a69aa16d5e01f273e36b3fce9b862f`.
+`engineering_focused_audit` заново проверил selection/schedule60, исходные target
+values/types, raw outputs, parent exact replay, агрегаты и КАЖДУЮ регрессию.
+Audit `reports/engineering-focused-phase-audit-2026-11-19`, manifest
+`19441ce0098afab7adeef11d86330a489208d4b67d013fc25d3629f5b59587f1`.
+Audit passed означает корректность attribution/пересчёта, не passing learning
+или независимую аттестацию исполнения model kernels.
+
+### Найденный дефект выбора задач, который не ловит all-corpus admission
+
+В полном1504-row корпусе нужные противоположные классы есть. Однако выбранные
+10 focus originals из error-mining не покрывают4 learning heads:
+
+1. fresh_after: есть true, отсутствует false в one-field format;
+2. simulations_spent: есть1, отсутствует0 в one-field format;
+3. relation: есть above, отсутствуют below/equal/unknown в one-field format;
+4. violation: есть true/null, отсутствует false в one-field format.
+
+Присутствие false в ДРУГОМ multi-field retention format не означает наличия
+контраста в изучаемом one-field формате. Ошибки equality→null и частичный
+constant-answer behavior согласуются с этой проблемой, но причинность всех
+регрессий ей не доказана. Малый бюджет/оптимизация/адаптация остаются гипотезами.
+
+`engineering_focused_balance.coverage` строит typed answer classes по task
+head/field (и direction для joint coarse comparisons). Проверяется именно
+selected optimization set, не только размер доступного корпуса. Булево false,
+нулевое число и null не сливаются. `require_coverage` отклоняет исходную выборку.
+Граница критерия — наблюдаемые классы текущего корпуса: он не доказывает полноту
+всех API, physics modes или систематическую генерализацию. В частности, такие
+API exercises не покрывают успешное submit/true finished и не квалифицируют это.
+
+### Исправленный план подготовлен и проверен, но НЕ обучен
+
+Новая deterministic selection сохраняет исходные10 focus originals и добавляет
+6 contrasts: fresh_after=false, simulations_spent=0, relation=below/equal/unknown,
+violation=false. Получается16 originals/16 key-order probes. Нужные labels уже
+подтверждены parent replay/Decimal; новые PF studies не придумываются.
+
+Plan `reports/engineering-focused-balanced-plan-2026-11-19`, manifest
+`54532da3d8626c358caaba1b1b97ffe8345c5232c3b34fec55a90a5f0ccaff7d`.
+Все32 proposed native probes повторно упакованы. Coverage4 deficient heads→0.
+Бюджет остаётся60 (30 focus/30 retention), все16 contrasts экспонируются хотя бы
+один раз, остальные экспозиции фиксированы seed. Старые10 retention originals
+сохраняют по3 экспозиции. Sample frequencies и порядок отличаются от failed
+phase: это не причинный контроль только одной переменной.
+
+Parent для нового плана — исходный primitive30 adapter с12/20, не регрессировавший
+focused60 с8/20 retention. Сравнение обязано сохранять общие20 focused/20 retention
+probes;12 добавленных contrast probes отчитываются отдельно. Нельзя заменять
+старый знаменатель40 новым52 и объявлять повышение accuracy без paired сравнения.
+
+`load_plan` проверяет focused release и target ancestry, parent receipt, source
+pins, точный selected set, coverage, deterministic schedule и complete32 native
+inventory. **Новый trainer-потребитель этого validated plan ещё не реализован;
+веса по исправленному плану не обучались.** Старый frozen focused runner остаётся
+для воспроизведения failed phase и не должен выдаваться за новый consumer.
+
+Следующий блок: реализовать plan-consuming bounded runner с теми же weight/target/
+optimizer checks и обязательным coverage gate ДО model load; выполнить заранее
+заявленный balanced60 без продолжения regressed weights, сравнить common probes,
+каждую retention regression, все typed fields и дополнительные contrasts.
+Если tiny TRAIN gate не пройден — вывод остаётся failed, без auto extra epochs,
+heldout tuning или выпуска в production. После освоения primitives вернуться к
+multi-base/full workflows, затем unseen-family dev/test и VLM engineering data.
+
+R06.91 validation:87 целевых Python tests в каждом из base/native окружений,
+60 JS checks, web build, YAML, whitespace и status mirror passed. Physics core
+fingerprint и source pins прежних admitted releases неизменны.
+
+## R06.92 — выяснение механизмов регрессии и constrained training
+
+Работа локальная, TRAIN-only, без GitHub/CI. Старые source-pinned корпуса и
+checkpoint receipts не переписаны. Ни один failed/diagnostic checkpoint не
+подключается к Agent Lab автоматически.
+
+### Что проверено нативно, а что остаётся гипотезой
+
+`engineering_regression_diagnosis.py` загрузил parent30 и failed focused60,
+воспроизвёл exact completions mutation/equality и измерил teacher-forced logits
+на одинаковых public inputs/labels. Frozen base не менялась, optimizer updates0.
+
+- Mutation fresh_after=false: token probability0.508514→0.416264. До обучения
+  correct решение было хрупким, близким к argmax boundary. Finished=false на
+  правильном teacher prefix остаётся top1 с probability0.887928 после обучения,
+  хотя при свободной генерации output finished=true.
+- Equality violation=false:0.713540→0.417492. Это value regression, не JSON parse
+  failure. Потерянные значения представлены в supervised payload: masking их
+  не удалил. Native generations совпали с сохранёнными raw completions.
+- Uniform CE для mutation0.080388→0.044781, threshold0.073701→0.064190:
+  средний loss улучшился одновременно с ухудшением важных значений.
+- Parent gradient dot products двух old/new pairs отрицательны, cosine−0.257690
+  и−0.351477. Это измеренное ЛОКАЛЬНОЕ interference под историческим uniform CE;
+  оно не доказывает единственную причину всей60-step AdamW траектории.
+- Значение в API full answer получает coefficient1/28, в field answer1/8
+  (3.5×); в threshold full answer1/17 против1/8 (2.125×). Это коэффициенты CE,
+  а не утверждение о равном масштабе реальных gradients.50/50 по examples не
+  равняется балансу смысловых полей, особенно при missing negative classes.
+
+Diagnosis artifact `reports/engineering-regression-native-diagnosis-2026-11-19`,
+manifest `284c81eaf0013057ed13cfc4c287338c3522084c986b8040e1daf210dc986aec`.
+
+`engineering_regression_prefix.py` выполнил один контролируемый prefix experiment
+на FAILED checkpoint: public question неизменен, только предыдущий assistant
+fresh_after переключён false→true. Для следующего finished probability false
+упала0.887928→0.345659, greedy false→true. Это проверка autoregressive cascading
+error в ОДНОМ случае; counterfactual assistant prefixes не являются gold SFT или
+physical studies. Teacher forcing даёт правильный предыдущий token, реальный
+decoder получает собственную ошибку, поэтому одной teacher loss недостаточно.
+Artifact `reports/engineering-regression-prefix-proof-2026-11-19`, manifest
+`a47779c393dfad9b3d1eac16b4affeb6e50adb609e523536481a4ba2c6490c73`.
+
+Проверенные причины/факторы: выбранная смесь не содержала части contrasts,
+objective давал разный per-value вес, gradients конфликтовали локально,
+одна ошибка prefix вызывала следующую. Не найдено основания объяснять ЭТИ
+регрессии потерей labels, сменой solver, порчей checkpoint или parser-only bug.
+Не исключаются малый бюджет, narrow last2 adaptation, variance online updates,
+малое число сетей и влияние формата задач. Token probabilities не являются
+калиброванной вероятностью инженерной безопасности.
+
+### Consumer balanced plan и matched TRAIN controls: выполнено
+
+`engineering_balanced_training.py` загружает только validated/source-pinned plan,
+полностью воспроизводит его coverage/selection/schedule/native inventory ДО
+открытия weights и начинает от исходного primitive30.60 fixed SFT updates,
+LR1e-4, last2/rank16, те же SFT inputs/order, fresh AdamW. Первоначальные52 raw
+completions совпали между balanced и anchored runs побитно. Метрики:
+
+- Balanced: common retention12/20→6/20; common focused1/20→10/20;
+  additional contrasts4/12→6/12.8 прежде правильных retention replies потеряны,
+  2 прежние ошибки исправлены: общий балл скрывал бы часть forgetting.
+- Anchored: retention12/20→10/20; common focused1/20→8/20; additional4/12→7/12.
+  Использован full-vocabulary KL только на value-bearing tokens6 корректных
+  TRAIN originals, teacher probabilities от parent, weight2. Teacher frozen,
+  payload target top1 проверен до обучения. Это6 дополнительных anchor forwards
+  в цикле, не equal-compute сравнение с обычным SFT. Nuisance views для KL не
+  использовались. Потеряны2 retention replies,0 новых retention successes.
+
+KL — soft penalty, а не запрет переключать argmax. Parent fresh_after=false
+было всего0.5085: небольшое распределительное смещение может разрушить correct
+greedy output. Оба run получили failed learning gates и inference_release=false.
+Сбалансированного selected class coverage оказалось недостаточно для полной
+стабильности. Контрастные примеры остаются необходимой защитой данных, не
+гарантией обучения. Это TRAIN controls, не независимое подтверждение OOD качества.
+
+Artifacts:
+`reports/engineering-balanced-control-2026-11-19`, manifest
+`da5515aae6c7864cd6975c401ddae8ee628d6a3aa9a3577cd525a96945338f04`;
+`reports/engineering-balanced-anchored-2026-11-19`, manifest
+`21330c69c60212aefd8b5137ff6831102ed0c9dae5c932c1d529fa55da197605`.
+
+### Hard retention constraints и корректный rollback
+
+`engineering_retention_guard.py` принимает тот же balanced plan и parent30.
+60 SFT proposals, до5 заранее заданных LR trials (1,.5,.25,.125,.0625) на каждое.
+Для trial используется тот же clipped gradient и одно исходное AdamW состояние.
+При failure возвращаются ВСЕ adapter weights и AdamW moments/step counters;
+при exception rollback также обязателен. Accepted trial advances moments один
+раз, не число retries. После trial base LR восстанавливается. Полностью rejected
+proposal не меняет weights/optimizer. Unit tests проверяют это на настоящем AdamW.
+
+Witness — фактически сгенерированная правильная parent completion целиком до
+первого EOS, без template newline после EOS. На каждом candidate проверяется
+argmax каждого causal token в12 parent-correct TRAIN replies. Это защищает всю
+известную цепочку, а не только loss или отдельный teacher-forced field. Свободная
+native generation после обучения оценивается отдельно: numerical/cache changes
+могут нарушить строгую эквивалентность witness и другого runtime.
+
+Guard использует и6 original, и6 key-order TRAIN views. Эти views теперь влияют
+на принятие updates, поэтому их нельзя называть независимой transfer оценкой.
+Проверка ограничена12 известными правильными replies; не гарантирует безопасность
+новых вопросов/сетей и не мешает модели исправлять остальные ошибочные TRAIN
+replies. Guard не является runtime teacher fallback и не меняет ответы модели.
+Если forward/gradient не удаётся или качество не проходит gate, release не
+повышается. Accepted updates и tentative trials отчитываются раздельно.
+
+### Проверенный inference-only prefix cache
+
+Первый full-model guard запуск прерван из-за CPU стоимости повторных witnesses.
+`reports/engineering-retention-guard-native-2026-11-19` sealed как ABORTED:
+частичная history и исходник runtime сохранены, финальных weights/scores нет.
+Это не successful run и не resume checkpoint. Новая попытка снова начинается
+от исходного parent30 с тем же plan/schedule, а не от потерянных partial weights.
+
+`engineering_frozen_prefix_cache.py` использует forward pre-hooks только для
+наблюдения native inputs последних decoder blocks. Модуль не заменяет methods
+и не изменяет parameters. Frozen earlier layers/embeddings неизменны, поэтому
+их hidden states и per-layer kwargs для фиксированного witness можно повторно
+использовать. Replay вызывает те же последние blocks, final norm и LM head.
+
+Кэш разрешён только для eval/inference, stateless text batches и trainable tail;
+trainable prefix/norm/head, изменённый input или active grad mode отвергаются.
+Hooks снимаются после capture. На КАЖДОМ из12 witnesses перед updates требуется
+bit-exact сравнение всех selected logits с native full forward. После updates
+повторяются те же12 full/native comparisons. Это квалификация text/last2 profile,
+не общий VLM/EMT cache и не утверждение о времени/памяти без matched измерений.
+
+Финальные результаты cached guard и cross-arm audit добавляются после завершения
+native generation и проверок целостности. Полный52-probe gate и full-workflow gate
+отчитываются отдельно; защита от известных regressions не равна освоению среды.
+
+### Финальный guarded результат и cross-arm audit: выполнено
+
+`reports/engineering-retention-guard-cached-native-2026-11-19`, manifest
+`f124789a40318d00bd4587141cf12301961e51a133a833d2989da5936e3e67ee`:
+common retention12/20→12/20,**0 потерянных правильных replies**;
+common focused1/20→5/20; additional contrasts4/12→7/12.
+22 accepted optimizer updates из60 proposals,38 полностью rejected;
+243 tentative optimizer steps,1992 witness tail forwards. Это НЕ60 применённых
+updates. Первые16 recorded gradients/losses/decisions/history совпали побитно
+с aborted full-model implementation: prefix cache не изменил уже наблюдавшуюся
+траекторию. Initial и final cache/native logits равны побитно на всех12 witnesses,
+max difference0. Reuse охватывает22 frozen decoder blocks для text/last2 profile.
+
+Final free greedy generation с обычным NativePolicy (не cached witness path)
+подтвердила сохранение всех12 прежде правильных replies. Новые правильные ответы
+появились, поэтому результат не сводится к возврату нетронутого parent. При этом
+full52-probe gate FAILED:24/52 correct, не квалифицированный инженерный агент.
+Full workflow/independent dev-test/VLM scores отсутствуют, inference_release=false.
+
+`engineering_regression_suite.py` воспроизвёл source/parent/plan attribution,
+общие initial52 generations, raw scores, individual losses, schedule targets,
+backtracking trial scales и cache proofs. Balanced/KL/guarded имеют одинаковый
+основной SFT schedule, но guard принимает только часть updates и использует
+дополнительные TRAIN views как constraints; это не equal-compute benchmark и
+не доказательство переносимости. Cross-arm artifact:
+`reports/engineering-regression-repair-comparison-2026-11-19`.
+
+### Что именно исправлено и что ещё требует работы
+
+- Проверка selected curriculum отклоняет отсутствие typed contrasts, даже если
+  весь исходный корпус прошёл processor admission. Эту защиту сохраняем, хотя
+  эксперименты показали, что сама по себе она не устраняет forgetting.
+- Реализован consumer проверенного плана; нет незаметного продолжения failed
+  weights. Native parent reproduction/target/source checks обязательны.
+- Добавлена проверка каждого известного правильного TRAIN reply и transactional
+  rollback параметров ВМЕСТЕ с AdamW. Средний score/loss не может скрыть потерю
+  конкретного защищаемого ответа. Guard constraints и финальное generation
+  оцениваются отдельно, чтобы не скрыть teacher-forcing/cache mismatch.
+- Учебные outputs/weights, diagnostic counterfactual prefixes и physical results
+  не смешиваются. Prefix experiments с неверным fresh_after не попадают в SFT.
+- Высокое качество новых задач ещё не достигнуто: guard защищает старые знания,
+  но отбрасывает38 конфликтующих proposals и освоение новых targets медленное.
+  Нельзя заявлять устранение всех причин, общий convergence result или преимущество
+  над другими агентами по одному tiny TRAIN случаю.
+
+Следующий controlled recipe должен менять sampling/accumulation по semantic
+field/class и контролировать нормировки loss. Нужны coherent mixed microbatches,
+а не только50/50 online examples с разным label length; сравнение при заранее
+зафиксированных budgets и явных gradient/margin diagnostics. Raw token
+probabilities остаются некалиброванными diagnostic quantities, не инженерной
+confidence оценкой. Затем расширять8 TRAIN bases и выполнять полные реальные
+measure→edit→simulate→check workflows, где revision/freshness/terminal принадлежат
+engine и наблюдаются агентом. API-effect forecasting — диагностический навык,
+он не заменяет task completion. Старый52-probe gate остаётся failed; новый
+workflow profile требует собственного объявленного admission/evaluation.
+
+Новые dev/test families остаются закрыты для настройки модели. Guard key-order
+views, использованные при выборе updates, нельзя повторно назвать независимым
+transfer. Для VLM нужны отдельные image-required tasks/controls, не текстовая
+accuracy под другим названием. Ни один guarded training результат не является
+общей гарантией безопасности реальной сети.
+
+Cross-arm audit manifest:
+`1fbb114fdb238be8cfd2988db5030406f7ff41c4114f81d9a2f4ab114a5c15c2`.
+101 целевой Python test в каждом base/native окружении и60 JS checks passed;
+web build, YAML, whitespace и source/physics identity checks прошли.
+Guarded runner — finite research profile без same-phase resume; transactional
+rollback внутри процесса не надо выдавать за durable optimizer checkpointing.
+
+Воспроизведение guarded профиля (новая output directory обязательна):
+
+```bash
+.venv-qwen35-08b/bin/python -m benchmarks.engineering_retention_guard \
+  --plan reports/engineering-focused-balanced-plan-2026-11-19 \
+  --manifest-sha256 54532da3d8626c358caaba1b1b97ffe8345c5232c3b34fec55a90a5f0ccaff7d \
+  --target requirements/qwen35-08b-local-target.json \
+  --target-sha256 e763c82b7f4f1d5acea273b43674e45bcdb949fc91d000cb7537ea54b5fa0262 \
+  --out reports/my-guarded-research-run
+```
+
+Для controls используется `engineering_balanced_training` с теми же --plan,
+--manifest-sha256/--target/--target-sha256 и --arm balanced либо --arm anchored.
+Эти команды воспроизводят fixed TRAIN исследования, не запускают промышленную
+поставку, внешний CI или автоматическое продолжение failed learning recipe.

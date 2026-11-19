@@ -3,14 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "A local-first, dependency-free presentation of power-grid-env",
+  "description": "Standalone static project website and research journal",
   "scripts": {
     "dev": "node server.mjs",
     "start": "node server.mjs",
     "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs",
-    "check:api": "node tests/editor-api.test.mjs",
-    "check:agent-api": "node tests/agent-api.test.mjs"
+    "check:integration": "node tests/site-server.test.mjs",
+    "sync:evidence": "node scripts/sync-evidence.mjs"
   },
   "engines": {
     "node": ">=20"

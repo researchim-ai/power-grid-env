@@ -1,0 +1,19 @@
+{
+  "name": "power-grid-env-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local engineering workspace, network visualization and agent tool API",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs",
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "check:api": "node tests/editor-api.test.mjs",
+    "check:agent-api": "node tests/agent-api.test.mjs",
+    "check:exchange-api": "node tests/exchange-api.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
